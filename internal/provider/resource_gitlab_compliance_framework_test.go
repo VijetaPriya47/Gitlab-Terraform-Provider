@@ -21,7 +21,6 @@ func TestAccGitlabComplianceFramework_basic(t *testing.T) {
 	testutil.SkipIfCE(t)
 
 	testGroup := testutil.CreateGroups(t, 1)[0]
-	testProject := testutil.CreateProjectWithNamespace(t, testGroup.ID)
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
@@ -36,7 +35,7 @@ func TestAccGitlabComplianceFramework_basic(t *testing.T) {
 						description = "A test Compliance Framework"
 						color = "#87BEEF"
 					}
-						`, testProject.Namespace.FullPath),
+						`, testGroup.FullPath),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("gitlab_compliance_framework.foo", "default", "false"),
 					resource.TestCheckResourceAttrSet("gitlab_compliance_framework.foo", "id"),
@@ -56,7 +55,7 @@ func TestAccGitlabComplianceFramework_basic(t *testing.T) {
 						description = "A test Compliance Framework update"
 						color = "#42BEEF"
 					}
-						`, testProject.Namespace.FullPath),
+						`, testGroup.FullPath),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("gitlab_compliance_framework.foo", "default", "false"),
 					resource.TestCheckResourceAttrSet("gitlab_compliance_framework.foo", "id"),
@@ -76,7 +75,7 @@ func TestAccGitlabComplianceFramework_basic(t *testing.T) {
 						description = "A test Compliance Framework"
 						color = "#87BEEF"
 					}
-						`, testProject.Namespace.FullPath),
+						`, testGroup.FullPath),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("gitlab_compliance_framework.foo", "default", "false"),
 					resource.TestCheckResourceAttrSet("gitlab_compliance_framework.foo", "id"),
@@ -95,7 +94,6 @@ func TestAccGitlabComplianceFramework_basicWithDefaultFramework(t *testing.T) {
 	testutil.SkipIfCE(t)
 
 	testGroup := testutil.CreateGroups(t, 1)[0]
-	testProject := testutil.CreateProjectWithNamespace(t, testGroup.ID)
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
@@ -111,7 +109,7 @@ func TestAccGitlabComplianceFramework_basicWithDefaultFramework(t *testing.T) {
 						color = "#87BEEF"
 						default = true
 					}
-						`, testProject.Namespace.FullPath),
+						`, testGroup.FullPath),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("gitlab_compliance_framework.foo", "default", "true"),
 					resource.TestCheckResourceAttrSet("gitlab_compliance_framework.foo", "id"),
@@ -131,7 +129,7 @@ func TestAccGitlabComplianceFramework_basicWithDefaultFramework(t *testing.T) {
 						color = "#87BEEF"
 						default = true
 					}
-						`, testProject.Namespace.FullPath),
+						`, testGroup.FullPath),
 				Destroy: true,
 			},
 		},
@@ -142,7 +140,6 @@ func TestAccGitlabComplianceFramework_basicWithPipelineConfiguration(t *testing.
 	testutil.SkipIfCE(t)
 
 	testGroup := testutil.CreateGroups(t, 1)[0]
-	testProject := testutil.CreateProjectWithNamespace(t, testGroup.ID)
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
@@ -159,7 +156,7 @@ func TestAccGitlabComplianceFramework_basicWithPipelineConfiguration(t *testing.
 						default = false
 						pipeline_configuration_full_path = "%s"
 					}
-						`, testProject.Namespace.FullPath, "path/pipeline.yml@group/project"),
+						`, testGroup.FullPath, "path/pipeline.yml@group/project"),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("gitlab_compliance_framework.foo", "default", "false"),
 					resource.TestCheckResourceAttrSet("gitlab_compliance_framework.foo", "id"),
@@ -178,7 +175,6 @@ func TestAccGitlabComplianceFramework_EnsureErrorOnInvalidColor(t *testing.T) {
 	testutil.SkipIfCE(t)
 
 	testGroup := testutil.CreateGroups(t, 1)[0]
-	testProject := testutil.CreateProjectWithNamespace(t, testGroup.ID)
 
 	err_regex, err := regexp.Compile("Invalid Attribute Value Match")
 	if err != nil {
@@ -199,7 +195,7 @@ func TestAccGitlabComplianceFramework_EnsureErrorOnInvalidColor(t *testing.T) {
 						color = "Blue"
 						default = false
 					}
-						`, testProject.Namespace.FullPath),
+						`, testGroup.FullPath),
 				ExpectError: err_regex,
 			},
 		},

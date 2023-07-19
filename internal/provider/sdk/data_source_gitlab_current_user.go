@@ -81,12 +81,12 @@ func dataSourceGitlabCurrentUserRead(ctx context.Context, d *schema.ResourceData
 		return diag.FromErr(err)
 	}
 
-	userID, err := extractIIDFromGlobalID(response.Data.CurrentUser.ID)
+	userID, err := api.ExtractIIDFromGlobalID(response.Data.CurrentUser.ID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	namespaceID, err := extractIIDFromGlobalID(response.Data.CurrentUser.Namespace.ID)
+	namespaceID, err := api.ExtractIIDFromGlobalID(response.Data.CurrentUser.Namespace.ID)
 	if err != nil {
 		return diag.FromErr(err)
 	}

@@ -126,7 +126,7 @@ func (r *gitlabComplianceFrameworkResource) Configure(ctx context.Context, req r
 	r.client = req.ProviderData.(*gitlab.Client)
 }
 
-func (r *gitlabComplianceFrameworkResource) complianceFrameworkToStateModel(response *graphQLComplianceFramework, namespacePath string, data *gitlabComplianceFrameworkResourceModel) {
+func (r *gitlabComplianceFrameworkResource) complianceFrameworkToStateModel(response *api.GraphQLComplianceFramework, namespacePath string, data *gitlabComplianceFrameworkResourceModel) {
 	data.FrameworkId = types.StringValue(response.ID)
 	data.NamespacePath = types.StringValue(namespacePath)
 	data.Name = types.StringValue(response.Name)
@@ -430,7 +430,7 @@ type complianceFrameworkResponse struct {
 		Namespace struct {
 			NamespacePath        string `json:"fullPath"`
 			ComplianceFrameworks struct {
-				Nodes []graphQLComplianceFramework `json:"nodes"`
+				Nodes []api.GraphQLComplianceFramework `json:"nodes"`
 			} `json:"complianceFrameworks"`
 		} `json:"namespace"`
 	} `json:"data"`
@@ -439,7 +439,7 @@ type complianceFrameworkResponse struct {
 type createComplianceFrameworkResponse struct {
 	Data struct {
 		CreateComplianceFramework struct {
-			Framework graphQLComplianceFramework `json:"framework"`
+			Framework api.GraphQLComplianceFramework `json:"framework"`
 		} `json:"createComplianceFramework"`
 	} `json:"data"`
 }
@@ -447,16 +447,7 @@ type createComplianceFrameworkResponse struct {
 type updateComplianceFrameworkResponse struct {
 	Data struct {
 		UpdateComplianceFramework struct {
-			ComplianceFramework graphQLComplianceFramework `json:"complianceFramework"`
+			ComplianceFramework api.GraphQLComplianceFramework `json:"complianceFramework"`
 		} `json:"updateComplianceFramework"`
 	} `json:"data"`
-}
-
-type graphQLComplianceFramework struct {
-	ID                            string `json:"id"` // This comes back as a globally unique ID
-	Name                          string `json:"name"`
-	Description                   string `json:"description"`
-	Color                         string `json:"color"`
-	DefaultFramework              bool   `json:"default"`
-	PipelineConfigurationFullPath string `json:"pipelineConfigurationFullPath"`
 }

@@ -719,3 +719,68 @@ func CopyFile(src, dst string) error {
 	}
 	return out.Close()
 }
+
+func CreateComplianceFramework(t *testing.T, group *gitlab.Group) *api.GraphQLComplianceFramework {
+	t.Helper()
+
+	query := api.GraphQLQuery{
+		Query: fmt.Sprintf(`
+			mutation {
+				createComplianceFramework(
+					input: {
+						params: {
+							name: "Compliance Framework %d",
+							description: "Test Compliance Framework",
+							color: "#042",
+							default: false
+						},
+						namespacePath: "%s"
+					}
+				) {
+					framework {
+						id,
+						name,
+						description,
+						color,
+						default,
+						pipelineConfigurationFullPath
+					}
+					errors
+				}
+			}`, acctest.RandInt(), group.FullPath),
+	}
+
+	type createComplianceFrameworkResponse struct {
+		Data struct {
+			CreateComplianceFramework struct {
+				Framework api.GraphQLComplianceFramework `json:"framework"`
+			} `json:"createComplianceFramework"`
+		} `json:"data"`
+	}
+
+	var response createComplianceFrameworkResponse
+	if _, err := api.SendGraphQLRequest(context.Background(), TestGitlabClient, query, &response); err != nil {
+		t.Fatalf("Unable to create compliance framework: %s", err.Error())
+	}
+
+	t.Cleanup(func() {
+		query := api.GraphQLQuery{
+			Query: fmt.Sprintf(`
+				mutation {
+					destroyComplianceFramework(
+						input: {
+							id: "%s"
+						}
+					) {
+						errors
+					}
+				}`, response.Data.CreateComplianceFramework.Framework.ID),
+		}
+
+		if _, err := api.SendGraphQLRequest(context.Background(), TestGitlabClient, query, nil); err != nil {
+			t.Fatalf("Unable to delete compliance framework: %s", err.Error())
+		}
+	})
+
+	return &response.Data.CreateComplianceFramework.Framework
+}
