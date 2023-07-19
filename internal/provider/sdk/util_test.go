@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/xanzy/go-gitlab"
+	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 )
 
 func TestGitlab_extractIIDFromGlobalID(t *testing.T) {
@@ -22,7 +23,7 @@ func TestGitlab_extractIIDFromGlobalID(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		iid, err := extractIIDFromGlobalID(tc.GlobalID)
+		iid, err := api.ExtractIIDFromGlobalID(tc.GlobalID)
 		if err != nil {
 			t.Fatalf("expected valid global id, got %q: %v", tc.GlobalID, err)
 		}
@@ -49,7 +50,7 @@ func TestGitlab_extractIIDFromGlobalID_invalidGlobalID(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		iid, err := extractIIDFromGlobalID(tc.GlobalID)
+		iid, err := api.ExtractIIDFromGlobalID(tc.GlobalID)
 		if err == nil {
 			t.Fatalf("expected invalid global id, got id %q instead from global id %q", iid, tc.GlobalID)
 		}
