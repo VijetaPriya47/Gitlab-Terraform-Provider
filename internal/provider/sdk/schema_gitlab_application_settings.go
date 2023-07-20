@@ -1,11 +1,25 @@
 package sdk
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/xanzy/go-gitlab"
+	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
+
+var allowedImportSources = []string{
+	"github",
+	"bitbucket",
+	"bitbucket_server",
+	"fogbugz",
+	"git",
+	"gitlab_project",
+	"gitea",
+	"manifest",
+}
 
 func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
@@ -839,11 +853,14 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 		},
 
 		"import_sources": {
-			Description: "Sources to allow project import from, possible values: github, bitbucket, bitbucket_server, gitlab, fogbugz, git, gitlab_project, gitea, manifest, and phabricator.",
+			Description: fmt.Sprintf("Sources to allow project import from. Valid values are: %s", utils.RenderValueListForDocs(allowedImportSources)),
 			Type:        schema.TypeList,
-			Elem:        &schema.Schema{Type: schema.TypeString},
-			Optional:    true,
-			Computed:    true,
+			Elem: &schema.Schema{
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice(allowedImportSources, false),
+			},
+			Optional: true,
+			Computed: true,
 		},
 
 		"in_product_marketing_emails_enabled": {
