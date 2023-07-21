@@ -15,7 +15,7 @@ BUG FIXES:
 
 - resource/gitlab_application_settings: Fixed documentation to list the correct `import_sources` ([!1638](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/1638))
 - resource/gitlab_project: Previously, `name_regex_delete` was improperly deprecated. Removed deprecation notice, and added notice to `name_regex`, which is the proper field ([1600](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/1600))
-- (PENDING) resource/gitlab_repository_file: Fixed an issue where Updating a repository file when using the `text` encoding returned a base64 encoding error ([!642](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/1642))
+- (PENDING) resource/gitlab_repository_file: Fixed an issue where Updating a repository file when using the `text` encoding returned a base64 encoding error ([!1642](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/1642))
 
 ## 16.1.1 (2023-07-17)
 
