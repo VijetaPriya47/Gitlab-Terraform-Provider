@@ -25,7 +25,7 @@ func gitlabRepositoryFileGetSchema() map[string]*schema.Schema {
 			ForceNew:         true,
 		},
 		"content": {
-			Description: "File content. If the content is not yet base64 encoded, it will be encoded automatically. No other encoding is currently supported, because of a [GitLab API bug](https://gitlab.com/gitlab-org/gitlab/-/issues/342430).",
+			Description: "File content.",
 			Type:        schema.TypeString,
 			Required:    true,
 		},
