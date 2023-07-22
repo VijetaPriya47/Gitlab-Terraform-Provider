@@ -61,6 +61,57 @@ func TestAccGitlabRepositoryFile_basic(t *testing.T) {
 	})
 }
 
+// Test that we can successfully migrate from a pre-16.0 provider to the
+// post 16.0 provider when a plaintext encoding is applied.
+func TestAccGitlabRepositoryFile_stateMigration(t *testing.T) {
+	var file gitlab.File
+	testProject := testutil.CreateProject(t)
+
+	resource.ParallelTest(t, resource.TestCase{
+		CheckDestroy: testAccCheckGitlabRepositoryFileDestroy,
+		Steps: []resource.TestStep{
+			{
+				// Create the project with an old version of the provider
+				ExternalProviders: map[string]resource.ExternalProvider{
+					"gitlab": {
+						VersionConstraint: "~> 15.9.0",
+						Source:            "gitlabhq/gitlab",
+					},
+				},
+				Config: fmt.Sprintf(`
+				resource "gitlab_repository_file" "this" {
+				  project = %d
+				  file_path = "meow.txt"
+				  branch = "main"
+				  content = "Example Plaintext Data"
+				  author_email = "meow@catnip.com"
+				  author_name = "Meow Meowington"
+				  commit_message = "feature: add launch codes"
+				}
+				`, testProject.ID),
+			},
+			{
+				// Use the same configuration with the current version of the provider
+				// Adding "encoding = text" to the resource to match new requirements
+				ProtoV6ProviderFactories: providerFactoriesV6,
+				Config: fmt.Sprintf(`
+				resource "gitlab_repository_file" "this" {
+				  project = %d
+				  file_path = "meow.txt"
+				  branch = "main"
+				  content = "Example Plaintext Data"
+				  encoding = "text"
+				  author_email = "meow@catnip.com"
+				  author_name = "Meow Meowington"
+				  commit_message = "feature: add launch codes"
+				}
+				`, testProject.ID),
+				Check: testAccCheckGitlabRepositoryFileExists("gitlab_repository_file.this", &file),
+			},
+		},
+	})
+}
+
 func TestAccGitlabRepositoryFile_overwriteOnCreate(t *testing.T) {
 	var file gitlab.File
 	testProject := testutil.CreateProject(t)

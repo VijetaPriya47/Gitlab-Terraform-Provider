@@ -293,10 +293,6 @@ func resourceGitlabRepositoryFileUpdate(ctx context.Context, d *schema.ResourceD
 	}
 
 	content := d.Get("content").(string)
-	if _, err := base64.StdEncoding.DecodeString(content); err != nil {
-		return diag.Errorf(`Invalid base64 string in "content". Ensure the content is base64 encoded, or use the "base64encode" terraform function to encode it.`)
-	}
-
 	updateOptions := &gitlab.UpdateFileOptions{
 		Branch:        gitlab.String(branch),
 		AuthorEmail:   gitlab.String(d.Get("author_email").(string)),
