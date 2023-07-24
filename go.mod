@@ -13,7 +13,7 @@ require (
 	github.com/hashicorp/terraform-plugin-mux v0.11.2
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.26.1
 	github.com/mitchellh/hashstructure/v2 v2.0.2
-	github.com/onsi/gomega v1.27.9
+	github.com/onsi/gomega v1.27.10
 	github.com/xanzy/go-gitlab v0.88.0
 )
 
