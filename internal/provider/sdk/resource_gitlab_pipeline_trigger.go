@@ -96,7 +96,7 @@ func resourceGitlabPipelineTriggerBuildId(project string, pipelineTriggerId int)
 
 func resourceGitlabPipelineTriggerParseId(id string) (string, int, error) {
 	project, rawPipelineTriggerId, err := utils.ParseTwoPartID(id)
-	e := fmt.Errorf("unabel to parse id %q. Expected format <project>:<pipeline-trigger-id>", id)
+	e := fmt.Errorf("unable to parse id %q. Expected format <project>:<pipeline-trigger-id>", id)
 	if err != nil {
 		return "", 0, e
 	}
