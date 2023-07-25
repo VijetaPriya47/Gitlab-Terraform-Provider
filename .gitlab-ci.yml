@@ -161,6 +161,7 @@ go:test:
 
 .testacc:
   stage: acceptance-test
+  retry: 1
   services:
     - docker:24.0.5-dind
   variables:
