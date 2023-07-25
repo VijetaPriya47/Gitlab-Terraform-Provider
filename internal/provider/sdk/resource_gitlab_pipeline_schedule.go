@@ -113,7 +113,7 @@ func resourceGitlabPipelineScheduleBuildId(project string, pipelineScheduleId in
 
 func resourceGitlabPipelineScheduleParseId(id string) (string, int, error) {
 	project, rawPipelineScheduleId, err := utils.ParseTwoPartID(id)
-	e := fmt.Errorf("unabel to parse id %q. Expected format <project>:<pipeline-schedule-id>", id)
+	e := fmt.Errorf("unable to parse id %q. Expected format <project>:<pipeline-schedule-id>", id)
 	if err != nil {
 		return "", 0, e
 	}
