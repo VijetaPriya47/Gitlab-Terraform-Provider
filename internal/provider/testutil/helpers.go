@@ -243,7 +243,7 @@ func CreateUsersWithPrefix(t *testing.T, n int, prefix string) []*gitlab.User {
 			SkipConfirmation: gitlab.Bool(true),
 		})
 		if err != nil {
-			t.Fatalf("could not create test user: %v", err)
+			t.Fatalf("could not create test user (username=%q): %v", username, err)
 		}
 
 		userID := users[i].ID // Needed for closure.

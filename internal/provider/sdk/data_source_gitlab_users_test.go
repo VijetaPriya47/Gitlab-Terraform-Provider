@@ -17,8 +17,8 @@ import (
 
 func TestAccDataSourceGitlabUsers_basic(t *testing.T) {
 	rInt := acctest.RandInt()
-	testutil.CreateUsersWithPrefix(t, 12, fmt.Sprintf("ds-%d-acctest-a-", rInt))
-	testUsersGroupB := testutil.CreateUsersWithPrefix(t, 12, fmt.Sprintf("ds-%d-acctest-b-", rInt))
+	testutil.CreateUsersWithPrefix(t, 12, fmt.Sprintf("ds-%d-acctest-a", rInt))
+	testUsersGroupB := testutil.CreateUsersWithPrefix(t, 12, fmt.Sprintf("ds-%d-acctest-b", rInt))
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
