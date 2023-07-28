@@ -507,6 +507,17 @@ func CreateProjectIssues(t *testing.T, pid interface{}, n int) []*gitlab.Issue {
 	return issues
 }
 
+func CreateGroupIssueBoard(t *testing.T, pid interface{}) *gitlab.GroupIssueBoard {
+	t.Helper()
+
+	issueBoard, _, err := TestGitlabClient.GroupIssueBoards.CreateGroupIssueBoard(pid, &gitlab.CreateGroupIssueBoardOptions{Name: gitlab.String(acctest.RandomWithPrefix("acctest"))})
+	if err != nil {
+		t.Fatalf("could not create test group issue board: %v", err)
+	}
+
+	return issueBoard
+}
+
 func CreateProjectIssueBoard(t *testing.T, pid interface{}) *gitlab.IssueBoard {
 	t.Helper()
 
@@ -516,6 +527,21 @@ func CreateProjectIssueBoard(t *testing.T, pid interface{}) *gitlab.IssueBoard {
 	}
 
 	return issueBoard
+}
+
+func CreateGroupLabels(t *testing.T, pid interface{}, n int) []*gitlab.GroupLabel {
+	t.Helper()
+
+	var labels []*gitlab.GroupLabel
+	for i := 0; i < n; i++ {
+		label, _, err := TestGitlabClient.GroupLabels.CreateGroupLabel(pid, &gitlab.CreateGroupLabelOptions{Name: gitlab.String(acctest.RandomWithPrefix("acctest")), Color: gitlab.String("#000000")})
+		if err != nil {
+			t.Fatalf("could not create test group label: %v", err)
+		}
+		labels = append(labels, label)
+	}
+
+	return labels
 }
 
 func CreateProjectLabels(t *testing.T, pid interface{}, n int) []*gitlab.Label {
@@ -574,6 +600,31 @@ func AddProjectMilestones(t *testing.T, project *gitlab.Project, n int) []*gitla
 		milestones[i], _, err = TestGitlabClient.Milestones.CreateMilestone(project.ID, &gitlab.CreateMilestoneOptions{
 			Title:       gitlab.String(fmt.Sprintf("Milestone %d", i)),
 			Description: gitlab.String(fmt.Sprintf("Description %d", i)),
+		})
+		if err != nil {
+			t.Fatalf("Could not create test milestones: %v", err)
+		}
+	}
+
+	return milestones
+}
+
+func AddGroupMilestones(t *testing.T, group *gitlab.Group, n int) []*gitlab.GroupMilestone {
+	t.Helper()
+
+	milestones := make([]*gitlab.GroupMilestone, n)
+
+	for i := range milestones {
+		var err error
+		startDate := time.Date(2023, 8, 1, 0, 0, 0, 0, time.UTC)
+		x := gitlab.ISOTime(startDate)
+		endDate := time.Date(2023, 9, 1, 0, 0, 0, 0, time.UTC)
+		y := gitlab.ISOTime(endDate)
+		milestones[i], _, err = TestGitlabClient.GroupMilestones.CreateGroupMilestone(group.ID, &gitlab.CreateGroupMilestoneOptions{
+			Title:       gitlab.String(fmt.Sprintf("Milestone %d", i)),
+			Description: gitlab.String(fmt.Sprintf("Description %d", i)),
+			StartDate:   &x,
+			DueDate:     &y,
 		})
 		if err != nil {
 			t.Fatalf("Could not create test milestones: %v", err)

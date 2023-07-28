@@ -5,5 +5,7 @@
     "GITLAB_BASE_URL": "http://127.0.0.1:8085"
   },
   "go.testFlags": ["-count=1", "-v", "-tags=acceptance", "-parallel=2"],
-  "go.buildFlags": ["-tags=acceptance"]
+  "go.buildFlags": [
+    "-tags=acceptance"
+  ],
 }
