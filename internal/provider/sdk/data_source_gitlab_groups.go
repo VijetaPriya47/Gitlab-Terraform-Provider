@@ -9,6 +9,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/xanzy/go-gitlab"
+
+	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
 
 var _ = registerDataSource("gitlab_groups", func() *schema.Resource {
@@ -128,6 +130,11 @@ var _ = registerDataSource("gitlab_groups", func() *schema.Resource {
 							Type:        schema.TypeBool,
 							Computed:    true,
 						},
+						"wiki_access_level": {
+							Description: fmt.Sprintf("The group's wiki access level. Only available on Premium and Ultimate plans. Valid values are %s.", utils.RenderValueListForDocs(validWikiAccessLevels)),
+							Type:        schema.TypeString,
+							Computed:    true,
+						},
 					},
 				},
 			},
@@ -184,6 +191,7 @@ func flattenGitlabGroups(groups []*gitlab.Group) []interface{} {
 			"runners_token":                 group.RunnersToken,
 			"default_branch_protection":     group.DefaultBranchProtection,
 			"prevent_forking_outside_group": group.PreventForkingOutsideGroup,
+			"wiki_access_level":             group.WikiAccessLevel,
 		}
 
 		groupsList = append(groupsList, values)

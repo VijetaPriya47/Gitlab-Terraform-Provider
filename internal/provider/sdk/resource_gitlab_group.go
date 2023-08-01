@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/xanzy/go-gitlab"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
+	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
 
 var _ = registerResource("gitlab_group", func() *schema.Resource {
@@ -180,6 +181,13 @@ var _ = registerResource("gitlab_group", func() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 				Optional:    true,
 			},
+			"wiki_access_level": {
+				Description:  fmt.Sprintf("The group's wiki access level. Only available on Premium and Ultimate plans. Valid values are %s.", utils.RenderValueListForDocs(validWikiAccessLevels)),
+				Type:         schema.TypeString,
+				Optional:     true,
+				Computed:     true,
+				ValidateFunc: validation.StringInSlice(validWikiAccessLevels, true),
+			},
 		}, avatarableSchema()),
 		CustomizeDiff: avatarableDiff,
 	}
@@ -290,6 +298,10 @@ func resourceGitlabGroupCreate(ctx context.Context, d *schema.ResourceData, meta
 		}
 	}
 
+	if v, ok := d.GetOk("wiki_access_level"); ok {
+		options.WikiAccessLevel = stringToAccessControlValue(v.(string))
+	}
+
 	log.Printf("[DEBUG] create gitlab group %q", *options.Name)
 
 	group, _, err := client.Groups.CreateGroup(options, gitlab.WithContext(ctx))
@@ -397,6 +409,7 @@ func resourceGitlabGroupRead(ctx context.Context, d *schema.ResourceData, meta i
 	d.Set("extra_shared_runners_minutes_limit", group.ExtraSharedRunnersMinutesLimit)
 	d.Set("shared_runners_minutes_limit", group.SharedRunnersMinutesLimit)
 	d.Set("avatar_url", group.AvatarURL)
+	d.Set("wiki_access_level", group.WikiAccessLevel)
 
 	// The value comes back from the API as a comma separated string, and stores in TF as a set.
 	// We need to set the value only if it's "", otherwise the split gives up [""] which will result
@@ -510,6 +523,10 @@ func resourceGitlabGroupUpdate(ctx context.Context, d *schema.ResourceData, meta
 			Filename: avatar.Filename,
 			Image:    avatar.Image,
 		}
+	}
+
+	if d.HasChange("wiki_access_level") {
+		options.WikiAccessLevel = stringToAccessControlValue(d.Get("wiki_access_level").(string))
 	}
 
 	log.Printf("[DEBUG] update gitlab group %s", d.Id())
