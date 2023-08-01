@@ -330,6 +330,7 @@ func TestAccGitlabGroup_EE(t *testing.T) {
 						membership_lock                    = false
 						extra_shared_runners_minutes_limit = 0
 						shared_runners_minutes_limit       = 0
+						wiki_access_level                  = "disabled"
 					}
 				`, testGroupName),
 			},

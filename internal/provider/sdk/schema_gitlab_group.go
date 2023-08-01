@@ -161,6 +161,12 @@ func gitlabGroupSchema() map[string]*schema.Schema {
 			Computed: true,
 			Optional: true,
 		},
+		"wiki_access_level": {
+			Description: "",
+			Type:        schema.TypeString,
+			Computed:    true,
+			Optional:    true,
+		},
 	}
 }
 
@@ -191,5 +197,12 @@ func gitlabGroupToStateMap(group *gitlab.Group) map[string]interface{} {
 	stateMap["two_factor_grace_period"] = group.TwoFactorGracePeriod
 	stateMap["visibility"] = group.Visibility
 	stateMap["web_url"] = group.WebURL
+	stateMap["wiki_access_level"] = group.WikiAccessLevel
 	return stateMap
+}
+
+var validWikiAccessLevels = []string{
+	"disabled",
+	"private",
+	"enabled",
 }

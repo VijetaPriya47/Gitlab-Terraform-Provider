@@ -8,6 +8,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/xanzy/go-gitlab"
+
+	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
 
 var _ = registerDataSource("gitlab_group", func() *schema.Resource {
@@ -112,6 +114,11 @@ var _ = registerDataSource("gitlab_group", func() *schema.Resource {
 				Type:        schema.TypeInt,
 				Computed:    true,
 			},
+			"wiki_access_level": {
+				Description: fmt.Sprintf("The group's wiki access level. Only available on Premium and Ultimate plans. Valid values are %s.", utils.RenderValueListForDocs(validWikiAccessLevels)),
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
 		},
 	}
 })
@@ -160,6 +167,7 @@ func dataSourceGitlabGroupRead(ctx context.Context, d *schema.ResourceData, meta
 	d.Set("membership_lock", group.MembershipLock)
 	d.Set("extra_shared_runners_minutes_limit", group.ExtraSharedRunnersMinutesLimit)
 	d.Set("shared_runners_minutes_limit", group.SharedRunnersMinutesLimit)
+	d.Set("wiki_access_level", group.WikiAccessLevel)
 
 	d.SetId(fmt.Sprintf("%d", group.ID))
 
