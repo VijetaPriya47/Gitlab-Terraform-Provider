@@ -33,6 +33,7 @@ func TestAccGitlabGroupBadge_basic(t *testing.T) {
 					testAccCheckGitlabGroupBadgeAttributes(&badge, &testAccGitlabGroupBadgeExpectedAttributes{
 						LinkURL:  fmt.Sprintf("https://example.com/badge-%d", rInt),
 						ImageURL: fmt.Sprintf("https://example.com/badge-%d.svg", rInt),
+						Name:     "badge",
 					}),
 				),
 			},
@@ -50,6 +51,7 @@ func TestAccGitlabGroupBadge_basic(t *testing.T) {
 					testAccCheckGitlabGroupBadgeAttributes(&badge, &testAccGitlabGroupBadgeExpectedAttributes{
 						LinkURL:  fmt.Sprintf("https://example.com/new-badge-%d", rInt),
 						ImageURL: fmt.Sprintf("https://example.com/new-badge-%d.svg", rInt),
+						Name:     "badge-updated",
 					}),
 				),
 			},
@@ -87,6 +89,7 @@ func testAccCheckGitlabGroupBadgeExists(n string, badge *gitlab.GroupBadge) reso
 type testAccGitlabGroupBadgeExpectedAttributes struct {
 	LinkURL  string
 	ImageURL string
+	Name     string
 }
 
 func testAccCheckGitlabGroupBadgeAttributes(badge *gitlab.GroupBadge, want *testAccGitlabGroupBadgeExpectedAttributes) resource.TestCheckFunc {
@@ -97,6 +100,10 @@ func testAccCheckGitlabGroupBadgeAttributes(badge *gitlab.GroupBadge, want *test
 
 		if badge.ImageURL != want.ImageURL {
 			return fmt.Errorf("got image_url %s; want %s", badge.ImageURL, want.ImageURL)
+		}
+
+		if badge.Name != want.Name {
+			return fmt.Errorf("got name %s; want %s", badge.Name, want.Name)
 		}
 
 		return nil
@@ -141,6 +148,7 @@ resource "gitlab_group_badge" "foo" {
   group     = "${gitlab_group.foo.id}"
   link_url  = "https://example.com/badge-%d"
   image_url = "https://example.com/badge-%d.svg"
+  name      = "badge"
 }
 	`, rInt, rInt, rInt, rInt)
 }
@@ -162,6 +170,7 @@ resource "gitlab_group_badge" "foo" {
   group     = "${gitlab_group.foo.id}"
   link_url  = "https://example.com/new-badge-%d"
   image_url = "https://example.com/new-badge-%d.svg"
+  name      = "badge-updated"
 }
 	`, rInt, rInt, rInt, rInt)
 }

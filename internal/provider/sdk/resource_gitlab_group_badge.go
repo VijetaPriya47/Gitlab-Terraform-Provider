@@ -43,6 +43,11 @@ var _ = registerResource("gitlab_group_badge", func() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 			},
+			"name": {
+				Description: "The name of the badge.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
 			"rendered_link_url": {
 				Description: "The link_url argument rendered (in case of use of placeholders).",
 				Type:        schema.TypeString,
@@ -63,6 +68,10 @@ func resourceGitlabGroupBadgeCreate(ctx context.Context, d *schema.ResourceData,
 	options := &gitlab.AddGroupBadgeOptions{
 		LinkURL:  gitlab.String(d.Get("link_url").(string)),
 		ImageURL: gitlab.String(d.Get("image_url").(string)),
+	}
+
+	if v, ok := d.GetOk("name"); ok {
+		options.Name = gitlab.String(v.(string))
 	}
 
 	log.Printf("[DEBUG] create gitlab group variable %s/%s", *options.LinkURL, *options.ImageURL)
@@ -118,6 +127,10 @@ func resourceGitlabGroupBadgeUpdate(ctx context.Context, d *schema.ResourceData,
 		ImageURL: gitlab.String(d.Get("image_url").(string)),
 	}
 
+	if d.HasChange("name") {
+		options.Name = gitlab.String(d.Get("name").(string))
+	}
+
 	log.Printf("[DEBUG] update gitlab group badge %s/%d", groupID, badgeID)
 
 	_, _, err = client.GroupBadges.EditGroupBadge(groupID, badgeID, options, gitlab.WithContext(ctx))
@@ -150,6 +163,7 @@ func resourceGitlabGroupBadgeDelete(ctx context.Context, d *schema.ResourceData,
 func resourceGitlabGroupBadgeSetToState(d *schema.ResourceData, badge *gitlab.GroupBadge, groupID *string) {
 	d.Set("link_url", badge.LinkURL)
 	d.Set("image_url", badge.ImageURL)
+	d.Set("name", badge.Name)
 	d.Set("rendered_link_url", badge.RenderedLinkURL)
 	d.Set("rendered_image_url", badge.RenderedImageURL)
 	d.Set("group", groupID)
