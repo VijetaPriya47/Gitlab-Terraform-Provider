@@ -1,10 +1,11 @@
 //go:build acceptance
 // +build acceptance
 
-package sdk
+package provider
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -14,6 +15,55 @@ import (
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
+// This test actually tests two different things:
+// 1 - it tests that resources created with the old SDK implementation still work in the framework implementation
+// 2 - it tests that the framework state migrator works properly, since 15.11.0 used state v0. That's why the config uses `project_id` instead of `project`
+// This is because the old SDK resource handled a migration, and we can't assume every user has migrated, so we need to maintain that migration in the new
+// framework resource.
+func TestAccGitlabProjectLevelMRApprovals_UpgradeFromSDKToFramework(t *testing.T) {
+	testutil.SkipIfCE(t)
+	testProject := testutil.CreateProject(t)
+
+	resource.ParallelTest(t, resource.TestCase{
+		CheckDestroy: testAccCheckGitlabProjectLevelMRApprovalsDestroy,
+		Steps: []resource.TestStep{
+			{
+
+				ExternalProviders: map[string]resource.ExternalProvider{
+					"gitlab": {
+						VersionConstraint: "~> 15.11.0",
+						Source:            "gitlabhq/gitlab",
+					},
+				},
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_level_mr_approvals" "foo" {
+					project_id                                        = "%d"
+					reset_approvals_on_push                        = true
+					disable_overriding_approvers_per_merge_request = true
+					merge_requests_author_approval                 = true
+					merge_requests_disable_committers_approval     = true
+					require_password_to_approve                    = true
+				}
+			`, testProject.ID),
+			},
+			{
+				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_level_mr_approvals" "foo" {
+					project                                        = "%d"
+					reset_approvals_on_push                        = true
+					disable_overriding_approvers_per_merge_request = true
+					merge_requests_author_approval                 = true
+					merge_requests_disable_committers_approval     = true
+					require_password_to_approve                    = true
+				}
+			`, testProject.ID),
+				PlanOnly: true,
+			},
+		},
+	})
+}
+
 func TestAccGitlabProjectLevelMRApprovals_basic(t *testing.T) {
 	testutil.SkipIfCE(t)
 
@@ -21,7 +71,7 @@ func TestAccGitlabProjectLevelMRApprovals_basic(t *testing.T) {
 	testProject := testutil.CreateProject(t)
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabProjectLevelMRApprovalsDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -119,7 +169,7 @@ func TestAccGitlabProjectLevelMRApprovals_basicWithNamespace(t *testing.T) {
 	testProject := testutil.CreateProject(t)
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabProjectLevelMRApprovalsDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -154,12 +204,100 @@ func TestAccGitlabProjectLevelMRApprovals_basicWithNamespace(t *testing.T) {
 	})
 }
 
+func TestAccGitlabProjectLevelMRApprovals_selectiveCodeOwnerValidation(t *testing.T) {
+	testutil.SkipIfCE(t)
+
+	var projectApprovals gitlab.ProjectApprovals
+	testProject := testutil.CreateProject(t)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabProjectLevelMRApprovalsDestroy,
+		Steps: []resource.TestStep{
+			{ // Error because both are set to "true" and expect the error
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_level_mr_approvals" "foo" {
+						project                                        = "%s"
+						reset_approvals_on_push                        = true
+						disable_overriding_approvers_per_merge_request = true
+						merge_requests_author_approval                 = true
+						merge_requests_disable_committers_approval     = true
+						require_password_to_approve                    = true
+						selective_code_owner_removals                  = true
+					}
+				`, testProject.PathWithNamespace),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabProjectLevelMRApprovalsExists("gitlab_project_level_mr_approvals.foo", &projectApprovals),
+					testAccCheckGitlabProjectLevelMRApprovalsAttributes(&projectApprovals, &testAccGitlabProjectLevelMRApprovalsExpectedAttributes{
+						resetApprovalsOnPush:                      true,
+						disableOverridingApproversPerMergeRequest: true,
+						mergeRequestsAuthorApproval:               true,
+						mergeRequestsDisableCommittersApproval:    true,
+						requirePasswordToApprove:                  true,
+					}),
+				),
+				ExpectError: regexp.MustCompile("selective_code_owner_removals can only be enabled when reset_approvals_on_push is disabled"),
+			},
+			{ // enable the selective code owner removals
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_level_mr_approvals" "foo" {
+						project                                        = "%s"
+						reset_approvals_on_push                        = false
+						disable_overriding_approvers_per_merge_request = true
+						merge_requests_author_approval                 = true
+						merge_requests_disable_committers_approval     = true
+						require_password_to_approve                    = true
+						selective_code_owner_removals                  = true
+					}
+				`, testProject.PathWithNamespace),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabProjectLevelMRApprovalsExists("gitlab_project_level_mr_approvals.foo", &projectApprovals),
+					testAccCheckGitlabProjectLevelMRApprovalsAttributes(&projectApprovals, &testAccGitlabProjectLevelMRApprovalsExpectedAttributes{
+						resetApprovalsOnPush:                      false,
+						disableOverridingApproversPerMergeRequest: true,
+						mergeRequestsAuthorApproval:               true,
+						mergeRequestsDisableCommittersApproval:    true,
+						requirePasswordToApprove:                  true,
+						selectiveCodeOwnerRemovals:                gitlab.Bool(true),
+					}),
+				),
+			},
+			{ //invert the settings, disabling selective code owner removal and setting reset approvals
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_level_mr_approvals" "foo" {
+						project                                        = "%s"
+						reset_approvals_on_push                        = true
+						disable_overriding_approvers_per_merge_request = true
+						merge_requests_author_approval                 = true
+						merge_requests_disable_committers_approval     = true
+						require_password_to_approve                    = true
+						selective_code_owner_removals                  = false
+					}
+				`, testProject.PathWithNamespace),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabProjectLevelMRApprovalsExists("gitlab_project_level_mr_approvals.foo", &projectApprovals),
+					testAccCheckGitlabProjectLevelMRApprovalsAttributes(&projectApprovals, &testAccGitlabProjectLevelMRApprovalsExpectedAttributes{
+						resetApprovalsOnPush:                      true,
+						disableOverridingApproversPerMergeRequest: true,
+						mergeRequestsAuthorApproval:               true,
+						mergeRequestsDisableCommittersApproval:    true,
+						requirePasswordToApprove:                  true,
+						selectiveCodeOwnerRemovals:                gitlab.Bool(false),
+					}),
+				),
+			},
+		},
+	})
+}
+
+// pointer where the argument is optional, so it doesn't need to be provided and validated in every test.
 type testAccGitlabProjectLevelMRApprovalsExpectedAttributes struct {
 	resetApprovalsOnPush                      bool
 	disableOverridingApproversPerMergeRequest bool
 	mergeRequestsAuthorApproval               bool
 	mergeRequestsDisableCommittersApproval    bool
 	requirePasswordToApprove                  bool
+	selectiveCodeOwnerRemovals                *bool
 }
 
 func testAccCheckGitlabProjectLevelMRApprovalsAttributes(projectApprovals *gitlab.ProjectApprovals, want *testAccGitlabProjectLevelMRApprovalsExpectedAttributes) resource.TestCheckFunc {
@@ -178,6 +316,9 @@ func testAccCheckGitlabProjectLevelMRApprovalsAttributes(projectApprovals *gitla
 		}
 		if projectApprovals.RequirePasswordToApprove != want.requirePasswordToApprove {
 			return fmt.Errorf("got require_password_to_approve %t; want %t", projectApprovals.RequirePasswordToApprove, want.requirePasswordToApprove)
+		}
+		if want.selectiveCodeOwnerRemovals != nil && projectApprovals.SelectiveCodeOwnerRemovals != *want.selectiveCodeOwnerRemovals {
+			return fmt.Errorf("got selective_code_owner_removals %t; want %t", projectApprovals.SelectiveCodeOwnerRemovals, *want.selectiveCodeOwnerRemovals)
 		}
 		return nil
 	}
