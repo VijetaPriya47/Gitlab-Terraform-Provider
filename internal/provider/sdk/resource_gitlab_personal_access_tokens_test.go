@@ -30,8 +30,10 @@ func TestAccGitlabPersonalAccessToken_basic(t *testing.T) {
 					user_id = %d
 					name    = "foo"
 					scopes  = ["api"]
+
+					expires_at = %q
 				}
-				`, user.ID),
+				`, user.ID, time.Now().Add(time.Hour*48).Format(iso8601)),
 				// Check computed and default attributes.
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("gitlab_personal_access_token.foo", "active", "true"),
@@ -56,6 +58,7 @@ func TestAccGitlabPersonalAccessToken_basic(t *testing.T) {
 					user_id    = %d
 					name       = "foo"
 					scopes     = ["api", "read_user", "read_api", "read_repository", "write_repository", "sudo", "read_registry", "write_registry"]
+					
 					expires_at = %q
 				}
 				`, user.ID, time.Now().Add(time.Hour*48).Format("2006-01-02")),
@@ -95,8 +98,10 @@ func TestAccGitlabPersonalAccessToken_admin_mode(t *testing.T) {
 					user_id = %d
 					name    = "foo"
 					scopes  = ["admin_mode"]
+
+					expires_at = %q
 				}
-				`, user.ID),
+				`, user.ID, time.Now().Add(time.Hour*48).Format(iso8601)),
 				// Check computed and default attributes.
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("gitlab_personal_access_token.foo", "active", "true"),

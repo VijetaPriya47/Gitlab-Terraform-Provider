@@ -82,9 +82,8 @@ var _ = registerResource("gitlab_personal_access_token", func() *schema.Resource
 			"expires_at": {
 				Description:      "The token expires at midnight UTC on that date. The date must be in the format YYYY-MM-DD.",
 				Type:             schema.TypeString,
-				Optional:         true,
+				Required:         true,
 				ForceNew:         true,
-				Computed:         true,
 				ValidateDiagFunc: isISO6801Date,
 			},
 			"token": {
