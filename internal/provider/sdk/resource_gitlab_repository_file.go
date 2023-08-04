@@ -77,9 +77,31 @@ var _ = registerResource("gitlab_repository_file", func() *schema.Resource {
 					ForceNew:    true,
 				},
 				"commit_message": {
-					Description: "Commit message.",
-					Type:        schema.TypeString,
-					Required:    true,
+					Description:   "Commit message.",
+					Type:          schema.TypeString,
+					Optional:      true,
+					ConflictsWith: []string{"create_commit_message", "update_commit_message", "delete_commit_message"},
+				},
+				"create_commit_message": {
+					Description:   "Create commit message.",
+					Type:          schema.TypeString,
+					Optional:      true,
+					ConflictsWith: []string{"commit_message"},
+					RequiredWith:  []string{"update_commit_message", "delete_commit_message"},
+				},
+				"update_commit_message": {
+					Description:   "Update commit message.",
+					Type:          schema.TypeString,
+					Optional:      true,
+					ConflictsWith: []string{"commit_message"},
+					RequiredWith:  []string{"create_commit_message", "delete_commit_message"},
+				},
+				"delete_commit_message": {
+					Description:   "Delete Commit message.",
+					Type:          schema.TypeString,
+					Optional:      true,
+					ConflictsWith: []string{"commit_message"},
+					RequiredWith:  []string{"create_commit_message", "update_commit_message"},
 				},
 				"start_branch": {
 					Description: "Name of the branch to start the new commit from.",
@@ -124,17 +146,21 @@ func resourceGitlabRepositoryFileCreate(ctx context.Context, d *schema.ResourceD
 	content := d.Get("content").(string)
 
 	options := &gitlab.CreateFileOptions{
-		Branch:        gitlab.String(d.Get("branch").(string)),
-		AuthorEmail:   gitlab.String(d.Get("author_email").(string)),
-		AuthorName:    gitlab.String(d.Get("author_name").(string)),
-		Content:       gitlab.String(content),
-		CommitMessage: gitlab.String(d.Get("commit_message").(string)),
+		Branch:      gitlab.String(d.Get("branch").(string)),
+		AuthorEmail: gitlab.String(d.Get("author_email").(string)),
+		AuthorName:  gitlab.String(d.Get("author_name").(string)),
+		Content:     gitlab.String(content),
 	}
 	if startBranch, ok := d.GetOk("start_branch"); ok {
 		options.StartBranch = gitlab.String(startBranch.(string))
 	}
 	if executeFilemode, ok := d.GetOk("execute_filemode"); ok {
 		options.ExecuteFilemode = gitlab.Bool(executeFilemode.(bool))
+	}
+	if commitMessage, ok := d.GetOk("commit_message"); ok {
+		options.CommitMessage = gitlab.String(commitMessage.(string))
+	} else {
+		options.CommitMessage = gitlab.String(d.Get("create_commit_message").(string))
 	}
 
 	// check if the encoding value is provided
@@ -164,11 +190,10 @@ func resourceGitlabRepositoryFileCreate(ctx context.Context, d *schema.ResourceD
 				log.Printf("[DEBUG] %s already exists and overwrite_on_create is true. File will be overwritten.", filePath)
 
 				updateOptions := &gitlab.UpdateFileOptions{
-					Branch:        gitlab.String(*options.Branch),
-					AuthorEmail:   gitlab.String(d.Get("author_email").(string)),
-					AuthorName:    gitlab.String(d.Get("author_name").(string)),
-					Content:       gitlab.String(content),
-					CommitMessage: gitlab.String(d.Get("commit_message").(string)),
+					Branch:      gitlab.String(*options.Branch),
+					AuthorEmail: gitlab.String(d.Get("author_email").(string)),
+					AuthorName:  gitlab.String(d.Get("author_name").(string)),
+					Content:     gitlab.String(content),
 				}
 
 				// check if the encoding value is provided
@@ -181,6 +206,11 @@ func resourceGitlabRepositoryFileCreate(ctx context.Context, d *schema.ResourceD
 				}
 				if executeFilemode, ok := d.GetOk("execute_filemode"); ok {
 					updateOptions.ExecuteFilemode = gitlab.Bool(executeFilemode.(bool))
+				}
+				if commitMessage, ok := d.GetOk("commit_message"); ok {
+					updateOptions.CommitMessage = gitlab.String(commitMessage.(string))
+				} else {
+					updateOptions.CommitMessage = gitlab.String(d.Get("update_commit_message").(string))
 				}
 
 				updateOptions.LastCommitID = gitlab.String(existingRepositoryFile.LastCommitID)
@@ -294,11 +324,10 @@ func resourceGitlabRepositoryFileUpdate(ctx context.Context, d *schema.ResourceD
 
 	content := d.Get("content").(string)
 	updateOptions := &gitlab.UpdateFileOptions{
-		Branch:        gitlab.String(branch),
-		AuthorEmail:   gitlab.String(d.Get("author_email").(string)),
-		AuthorName:    gitlab.String(d.Get("author_name").(string)),
-		Content:       gitlab.String(content),
-		CommitMessage: gitlab.String(d.Get("commit_message").(string)),
+		Branch:      gitlab.String(branch),
+		AuthorEmail: gitlab.String(d.Get("author_email").(string)),
+		AuthorName:  gitlab.String(d.Get("author_name").(string)),
+		Content:     gitlab.String(content),
 	}
 
 	// check if the encoding value is provided
@@ -311,6 +340,11 @@ func resourceGitlabRepositoryFileUpdate(ctx context.Context, d *schema.ResourceD
 	}
 	if executeFilemode, ok := d.GetOk("execute_filemode"); ok {
 		updateOptions.ExecuteFilemode = gitlab.Bool(executeFilemode.(bool))
+	}
+	if commitMessage, ok := d.GetOk("commit_message"); ok {
+		updateOptions.CommitMessage = gitlab.String(commitMessage.(string))
+	} else {
+		updateOptions.CommitMessage = gitlab.String(d.Get("update_commit_message").(string))
 	}
 
 	err = retry.RetryContext(ctx, d.Timeout(schema.TimeoutUpdate), func() *retry.RetryError {
@@ -357,10 +391,14 @@ func resourceGitlabRepositoryFileDelete(ctx context.Context, d *schema.ResourceD
 		Ref: gitlab.String(branch),
 	}
 	deleteOptions := &gitlab.DeleteFileOptions{
-		Branch:        gitlab.String(d.Get("branch").(string)),
-		AuthorEmail:   gitlab.String(d.Get("author_email").(string)),
-		AuthorName:    gitlab.String(d.Get("author_name").(string)),
-		CommitMessage: gitlab.String(fmt.Sprintf("[DELETE]: %s", d.Get("commit_message").(string))),
+		Branch:      gitlab.String(d.Get("branch").(string)),
+		AuthorEmail: gitlab.String(d.Get("author_email").(string)),
+		AuthorName:  gitlab.String(d.Get("author_name").(string)),
+	}
+	if commitMessage, ok := d.GetOk("commit_message"); ok {
+		deleteOptions.CommitMessage = gitlab.String(fmt.Sprintf("[DELETE]: %s", commitMessage.(string)))
+	} else {
+		deleteOptions.CommitMessage = gitlab.String(d.Get("delete_commit_message").(string))
 	}
 
 	err = retry.RetryContext(ctx, d.Timeout(schema.TimeoutDelete), func() *retry.RetryError {
