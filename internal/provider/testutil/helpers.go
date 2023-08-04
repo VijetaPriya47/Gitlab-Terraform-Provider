@@ -507,6 +507,33 @@ func CreateProjectIssues(t *testing.T, pid interface{}, n int) []*gitlab.Issue {
 	return issues
 }
 
+func CreateGroupEpicBoard(t *testing.T, path string) {
+	t.Helper()
+	query := api.GraphQLQuery{
+		Query: fmt.Sprintf(`
+			mutation {
+				epicBoardCreate(
+					input: {
+						groupPath: "%s",
+						name: "%s"
+					}
+				) {
+					epicBoard {
+						id,
+						name
+					}
+					errors
+				}
+			}`, path, acctest.RandomWithPrefix("acctest")),
+	}
+
+	ctx := context.Background()
+	var pid interface{}
+	if _, err := api.SendGraphQLRequest(ctx, TestGitlabClient, query, &pid); err != nil {
+		t.Fatalf(fmt.Sprintf("Unable to create epic board: %s", err.Error()))
+	}
+}
+
 func CreateGroupIssueBoard(t *testing.T, pid interface{}) *gitlab.GroupIssueBoard {
 	t.Helper()
 
