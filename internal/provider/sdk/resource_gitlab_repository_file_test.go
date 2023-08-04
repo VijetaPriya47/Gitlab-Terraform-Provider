@@ -61,6 +61,150 @@ func TestAccGitlabRepositoryFile_basic(t *testing.T) {
 	})
 }
 
+func TestAccGitlabRepositoryFile_SeparateCreateUpdateCommitMessages(t *testing.T) {
+	var file gitlab.File
+	testProject := testutil.CreateProject(t)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabRepositoryFileDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_repository_file" "this" {
+				  project = %d
+				  file_path = "meow.txt"
+				  branch = "main"
+				  content = "bWVvdyBtZW93IG1lb3c="
+				  author_email = "meow@catnip.com"
+				  author_name = "Meow Meowington"
+				  create_commit_message = "feature: add launch codes"
+				  update_commit_message = "update: updated launch codes"
+				  delete_commit_message = "delete: deleted launch codes"
+				}
+					`, testProject.ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabRepositoryFileExists("gitlab_repository_file.this", &file),
+					testAccCheckGitlabRepositoryFileAttributes(&file, &testAccGitlabRepositoryFileAttributes{
+						FilePath: "meow.txt",
+						Content:  "bWVvdyBtZW93IG1lb3c=",
+					}),
+					testAccCheckGitlabRepositoryFileCommitMessage("gitlab_repository_file.this", &file, "feature: add launch codes"),
+					resource.TestCheckResourceAttr("gitlab_repository_file.this", "content", "bWVvdyBtZW93IG1lb3c="),
+				),
+			},
+			{
+				ResourceName:            "gitlab_repository_file.this",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"author_email", "author_name", "create_commit_message", "update_commit_message", "delete_commit_message"},
+			},
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_repository_file" "this" {
+				  project = %d
+				  file_path = "meow.txt"
+				  branch = "main"
+				  content = "bWVvdyBtZW93IG1lb3cgbWVvdyBtZW93Cg=="
+				  author_email = "meow@catnip.com"
+				  author_name = "Meow Meowington"
+				  create_commit_message = "feature: add launch codes"
+				  update_commit_message = "update: updated launch codes"
+				  delete_commit_message = "delete: deleted launch codes"
+				}
+					`, testProject.ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabRepositoryFileExists("gitlab_repository_file.this", &file),
+					testAccCheckGitlabRepositoryFileAttributes(&file, &testAccGitlabRepositoryFileAttributes{
+						FilePath: "meow.txt",
+						Content:  "bWVvdyBtZW93IG1lb3cgbWVvdyBtZW93Cg==",
+					}),
+					testAccCheckGitlabRepositoryFileCommitMessage("gitlab_repository_file.this", &file, "update: updated launch codes"),
+					resource.TestCheckResourceAttr("gitlab_repository_file.this", "content", "bWVvdyBtZW93IG1lb3cgbWVvdyBtZW93Cg=="),
+				),
+			},
+			{
+				ResourceName:            "gitlab_repository_file.this",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"author_email", "author_name", "create_commit_message", "update_commit_message", "delete_commit_message"},
+			},
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_repository_file" "this" {
+						project = %d
+						file_path = "meow.txt"
+						branch = "main"
+						content = "bWVvdyBtZW93IG1lb3cgbWVvdyBtZW93Cg=="
+						author_email = "meow@catnip.com"
+						author_name = "Meow Meowington"
+						create_commit_message = "feature: add launch codes"
+						update_commit_message = "update: updated launch codes"
+						delete_commit_message = "delete: deleted launch codes"
+					}
+						`, testProject.ID),
+				Destroy: true,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabRepositoryFileDeleteCommitMessage("gitlab_repository_file.this", "delete: deleted launch codes"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccGitlabRepositoryFile_EnsureErrorsWithCommitMessage(t *testing.T) {
+	testProject := testutil.CreateProject(t)
+
+	err_incompatable_commit_messages, err := regexp.Compile("conflicts with commit_message")
+	if err != nil {
+		t.Errorf("Unable to format expected conflicts error regex: %s", err)
+	}
+
+	err_missing_update_commit_message, err := regexp.Compile("Missing required argument")
+	if err != nil {
+		t.Errorf("Unable to format expected required error regex: %s", err)
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabRepositoryFileDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_repository_file" "this" {
+				  project = %d
+				  file_path = "meow.txt"
+				  branch = "main"
+				  content = "bWVvdyBtZW93IG1lb3c="
+				  author_email = "meow@catnip.com"
+				  author_name = "Meow Meowington"
+				  commit_message = "Extra commit message"
+				  create_commit_message = "feature: add launch codes"
+				  update_commit_message = "update: updated launch codes"
+				  delete_commit_message = "delete: deleted launch codes"
+				}
+					`, testProject.ID),
+				ExpectError: err_incompatable_commit_messages,
+			},
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_repository_file" "this" {
+				  project = %d
+				  file_path = "meow.txt"
+				  branch = "main"
+				  content = "bWVvdyBtZW93IG1lb3c="
+				  author_email = "meow@catnip.com"
+				  author_name = "Meow Meowington"
+				  create_commit_message = "feature: add launch codes"
+				  delete_commit_message = "delete: deleted launch codes"
+				}
+					`, testProject.ID),
+				ExpectError: err_missing_update_commit_message,
+			},
+		},
+	})
+}
+
 // Test that we can successfully migrate from a pre-16.0 provider to the
 // post 16.0 provider when a plaintext encoding is applied.
 func TestAccGitlabRepositoryFile_stateMigration(t *testing.T) {
@@ -464,6 +608,83 @@ func testAccCheckGitlabRepositoryFileExists(n string, file *gitlab.File) resourc
 			return nil
 		}
 		return fmt.Errorf("File does not exist")
+	}
+}
+
+func testAccCheckGitlabRepositoryFileCommitMessage(n string, file *gitlab.File, message string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[n]
+		if !ok {
+			return fmt.Errorf("Not found: %s", n)
+		}
+
+		_, branch, fileID, err := resourceGitLabRepositoryFileParseId(rs.Primary.ID)
+		if err != nil {
+			return fmt.Errorf("Error parsing repository file ID: %s", err)
+		}
+		if branch == "" {
+			return fmt.Errorf("No branch set")
+		}
+		options := &gitlab.GetFileBlameOptions{
+			Ref: gitlab.String(branch),
+		}
+		repoName := rs.Primary.Attributes["project"]
+		if repoName == "" {
+			return fmt.Errorf("No project ID set")
+		}
+
+		gotFile, _, err := testutil.TestGitlabClient.RepositoryFiles.GetFileBlame(repoName, fileID, options)
+		if err != nil {
+			return fmt.Errorf("Cannot get file: %v", err)
+		}
+
+		if len(gotFile) == 0 {
+			return fmt.Errorf("No FileBlame returned")
+		}
+
+		if gotFile[0].Commit.Message == message {
+			return nil
+		}
+		return fmt.Errorf("Commit message does not match")
+	}
+}
+
+func testAccCheckGitlabRepositoryFileDeleteCommitMessage(n string, message string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[n]
+		if !ok {
+			return fmt.Errorf("Not found: %s", n)
+		}
+
+		_, branch, _, err := resourceGitLabRepositoryFileParseId(rs.Primary.ID)
+		if err != nil {
+			return fmt.Errorf("Error parsing repository file ID: %s", err)
+		}
+		if branch == "" {
+			return fmt.Errorf("No branch set")
+		}
+		options := &gitlab.ListCommitsOptions{
+			RefName: gitlab.String(branch),
+			All:     gitlab.Bool(true),
+		}
+		repoName := rs.Primary.Attributes["project"]
+		if repoName == "" {
+			return fmt.Errorf("No project ID set")
+		}
+
+		commits, _, err := testutil.TestGitlabClient.Commits.ListCommits(repoName, options)
+		if err != nil {
+			return fmt.Errorf("Cannot get commits: %v", err)
+		}
+
+		if len(commits) == 0 {
+			return fmt.Errorf("No Commits returned")
+		}
+
+		if commits[len(commits)-1].Message == message {
+			return nil
+		}
+		return fmt.Errorf("Commit message does not match")
 	}
 }
 
