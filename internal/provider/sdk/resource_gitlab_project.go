@@ -532,6 +532,7 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 		Description: "Disable email notifications.",
 		Type:        schema.TypeBool,
 		Optional:    true,
+		Computed:    true,
 	},
 	"external_authorization_classification_label": {
 		Description: "The classification label for the project.",
@@ -862,7 +863,10 @@ func resourceGitlabProjectSetToState(ctx context.Context, client *gitlab.Client,
 		return fmt.Errorf("error setting container_expiration_policy: %v", err)
 	}
 	d.Set("container_registry_access_level", string(project.ContainerRegistryAccessLevel))
+
+	// nolint:staticcheck // SA1019 ignore deprecated EmailsDisabled
 	d.Set("emails_disabled", project.EmailsDisabled)
+
 	d.Set("external_authorization_classification_label", project.ExternalAuthorizationClassificationLabel)
 	d.Set("forking_access_level", string(project.ForkingAccessLevel))
 	d.Set("issues_access_level", string(project.IssuesAccessLevel))
@@ -2064,6 +2068,7 @@ func resourceGitlabProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	if d.HasChange("emails_disabled") {
+		// nolint:staticcheck // SA1019 ignore deprecated EmailsDisabled
 		options.EmailsDisabled = gitlab.Bool(d.Get("emails_disabled").(bool))
 	}
 

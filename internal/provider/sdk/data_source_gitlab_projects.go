@@ -183,7 +183,6 @@ func flattenProjects(projects []*gitlab.Project) (values []map[string]interface{
 				"builds_access_level":                              string(project.BuildsAccessLevel),
 				"container_expiration_policy":                      flattenContainerExpirationPolicy(project.ContainerExpirationPolicy),
 				"container_registry_access_level":                  string(project.ContainerRegistryAccessLevel),
-				"emails_disabled":                                  project.EmailsDisabled,
 				"external_authorization_classification_label":      project.ExternalAuthorizationClassificationLabel,
 				"forking_access_level":                             string(project.ForkingAccessLevel),
 				"issues_access_level":                              string(project.IssuesAccessLevel),
@@ -204,6 +203,9 @@ func flattenProjects(projects []*gitlab.Project) (values []map[string]interface{
 				"feature_flags_access_level":                       string(project.FeatureFlagsAccessLevel),
 				"infrastructure_access_level":                      string(project.InfrastructureAccessLevel),
 				"monitor_access_level":                             string(project.MonitorAccessLevel),
+
+				// nolint:staticcheck // SA1019 ignore deprecated EmailsDisabled
+				"emails_disabled": project.EmailsDisabled,
 			}
 			values = append(values, v)
 		}
