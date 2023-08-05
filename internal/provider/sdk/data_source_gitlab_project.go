@@ -528,11 +528,13 @@ func dataSourceGitlabProjectRead(ctx context.Context, d *schema.ResourceData, me
 		return diag.Errorf("error setting container_expiration_policy: %v", err)
 	}
 	d.Set("container_registry_access_level", string(found.ContainerRegistryAccessLevel))
-	d.Set("emails_disabled", found.EmailsDisabled)
 	d.Set("external_authorization_classification_label", found.ExternalAuthorizationClassificationLabel)
 	d.Set("forking_access_level", string(found.ForkingAccessLevel))
 	d.Set("issues_access_level", string(found.IssuesAccessLevel))
 	d.Set("merge_requests_access_level", string(found.MergeRequestsAccessLevel))
+
+	// nolint:staticcheck // SA1019 ignore deprecated EmailsDisabled
+	d.Set("emails_disabled", found.EmailsDisabled)
 
 	// Map PublicJobs -> PublicBuild until we have a breaking version.
 	d.Set("public_builds", found.PublicJobs)
