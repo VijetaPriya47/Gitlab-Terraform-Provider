@@ -289,7 +289,7 @@ goreleaser:
   only:
     - tags
   image:
-    name: goreleaser/goreleaser:v1.19.2
+    name: goreleaser/goreleaser:v1.20.0
     entrypoint: [""]
   variables:
     # Disable shallow cloning so that goreleaser can diff between tags to
