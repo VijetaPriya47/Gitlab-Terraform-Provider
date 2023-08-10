@@ -75,7 +75,7 @@ var _ = registerResource("gitlab_group", func() *schema.Resource {
 				Type:         schema.TypeInt,
 				Optional:     true,
 				Computed:     true,
-				ValidateFunc: validation.IntInSlice([]int{0, 1, 2, 3}),
+				ValidateFunc: validation.IntInSlice([]int{0, 1, 2, 3, 4}),
 			},
 			"request_access_enabled": {
 				Description: "Defaults to false. Allow users to request member access.",

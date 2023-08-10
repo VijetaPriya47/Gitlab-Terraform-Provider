@@ -4,6 +4,7 @@
 package sdk
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -86,6 +87,33 @@ func TestAccGitlabGroup_basic(t *testing.T) {
 						EmailsDisabled:          gitlab.Bool(true),
 						ShareWithGroupLock:      gitlab.Bool(true),
 						DefaultBranchProtection: gitlab.Int(0),
+					}),
+				),
+			},
+			// Verify Import
+			{
+				ResourceName:      "gitlab_group.foo",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Update the group to use new value 4 for `default_branch_protection`
+			{
+				SkipFunc: api.IsGitLabVersionLessThan(context.Background(), testutil.TestGitlabClient, "16.1"),
+				Config:   testAccGitlabGroupUpdateConfig(rInt, 4),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabGroupExists("gitlab_group.foo", &group),
+					testAccCheckGitlabGroupAttributes(&group, &testAccGitlabGroupExpectedAttributes{
+						Name:                    fmt.Sprintf("bar-name-%d", rInt),
+						Path:                    fmt.Sprintf("bar-path-%d", rInt),
+						Description:             "Terraform acceptance tests! Updated description",
+						LFSEnabled:              gitlab.Bool(false),
+						RequestAccessEnabled:    gitlab.Bool(true),
+						RequireTwoFactorAuth:    gitlab.Bool(true),
+						TwoFactorGracePeriod:    gitlab.Int(56),
+						AutoDevopsEnabled:       gitlab.Bool(true),
+						EmailsDisabled:          gitlab.Bool(true),
+						ShareWithGroupLock:      gitlab.Bool(true),
+						DefaultBranchProtection: gitlab.Int(4),
 					}),
 				),
 			},
