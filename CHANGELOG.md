@@ -17,10 +17,10 @@ IMPROVEMENTS:
 
 BUG FIXES:
 
-- resource/gitlab_group_access_token: `expires_at` is now required ([!1661](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/1661))
-- resource/gitlab_personal_access_token: `expires_at` is now required ([!1661](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/1661))
-- resource/gitlab_project_access_token: `expires_at` is now required ([!1661](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/1661))
-- resource/gitlab_pipeline_schedule_variable: Fixed several spelling errors in the documentation that would make examples non-functional ([!1647](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/1647))
+- resource/gitlab_group_access_token: Require the `expires_at` attribute ([!1661](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/1661))
+- resource/gitlab_personal_access_token: Require the `expires_at` attribute ([!1661](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/1661))
+- resource/gitlab_project_access_token: Require the `expires_at` attribute ([!1661](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/1661))
+- resource/gitlab_pipeline_schedule_variable: Fix several spelling errors in the documentation that would make examples non-functional ([!1647](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/1647))
 
 
 ## 16.2.0 (2023-07-22)
