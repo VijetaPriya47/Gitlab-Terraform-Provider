@@ -17,6 +17,16 @@ import (
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
 
+var validProjectAccessTokenScopes = []string{
+	"api",
+	"read_api",
+	"read_registry",
+	"write_registry",
+	"read_repository",
+	"write_repository",
+	"create_runner",
+}
+
 var _ = registerResource("gitlab_project_access_token", func() *schema.Resource {
 	return &schema.Resource{
 		Description: `The ` + "`" + `gitlab_project_access_token` + "`" + ` resource allows to manage the lifecycle of a project access token.
@@ -44,13 +54,13 @@ var _ = registerResource("gitlab_project_access_token", func() *schema.Resource 
 				ForceNew:    true,
 			},
 			"scopes": {
-				Description: "Valid values: `api`, `read_api`, `read_repository`, `write_repository`, `read_registry`, `write_registry`.",
+				Description: fmt.Sprintf("The scope for the project access token. It determines the actions which can be performed when authenticating with this token. Valid values are: %s.", utils.RenderValueListForDocs(validProjectAccessTokenScopes)),
 				Type:        schema.TypeSet,
 				Required:    true,
 				ForceNew:    true,
 				Elem: &schema.Schema{
 					Type:         schema.TypeString,
-					ValidateFunc: validation.StringInSlice([]string{"api", "read_api", "read_repository", "write_repository", "read_registry", "write_registry"}, false),
+					ValidateFunc: validation.StringInSlice(validProjectAccessTokenScopes, false),
 				},
 			},
 			"expires_at": {
