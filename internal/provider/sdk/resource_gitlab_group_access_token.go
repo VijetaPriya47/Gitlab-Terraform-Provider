@@ -22,6 +22,7 @@ var validGroupAccessTokenScopes = []string{
 	"write_registry",
 	"read_repository",
 	"write_repository",
+	"create_runner",
 }
 var validAccessLevels = []string{
 	"guest",
