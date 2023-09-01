@@ -29,7 +29,7 @@ func TestAccGitlabIntegrationSlack_basic(t *testing.T) {
 			{
 				Config: testAccGitlabIntegrationSlackMinimalConfig(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabIntegrationExists(slackResourceName, &slackService),
+					testAccCheckGitlabSlackIntegrationExists(slackResourceName, &slackService),
 					resource.TestCheckResourceAttr(slackResourceName, "webhook", "https://test.com"),
 				),
 			},
@@ -48,7 +48,7 @@ func TestAccGitlabIntegrationSlack_basic(t *testing.T) {
 			{
 				Config: testAccGitlabIntegrationSlackConfig(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabIntegrationExists(slackResourceName, &slackService),
+					testAccCheckGitlabSlackIntegrationExists(slackResourceName, &slackService),
 					resource.TestCheckResourceAttr(slackResourceName, "webhook", "https://test.com"),
 					resource.TestCheckResourceAttr(slackResourceName, "push_events", "true"),
 					resource.TestCheckResourceAttr(slackResourceName, "push_channel", "test"),
@@ -75,7 +75,7 @@ func TestAccGitlabIntegrationSlack_basic(t *testing.T) {
 			{
 				Config: testAccGitlabIntegrationSlackUpdateConfig(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabIntegrationExists(slackResourceName, &slackService),
+					testAccCheckGitlabSlackIntegrationExists(slackResourceName, &slackService),
 					resource.TestCheckResourceAttr(slackResourceName, "webhook", "https://testwebhook.com"),
 					resource.TestCheckResourceAttr(slackResourceName, "push_events", "false"),
 					resource.TestCheckResourceAttr(slackResourceName, "push_channel", "test push_channel"),
@@ -97,7 +97,7 @@ func TestAccGitlabIntegrationSlack_basic(t *testing.T) {
 			{
 				Config: testAccGitlabIntegrationSlackConfig(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabIntegrationExists(slackResourceName, &slackService),
+					testAccCheckGitlabSlackIntegrationExists(slackResourceName, &slackService),
 					resource.TestCheckResourceAttr(slackResourceName, "webhook", "https://test.com"),
 					resource.TestCheckResourceAttr(slackResourceName, "push_events", "true"),
 					resource.TestCheckResourceAttr(slackResourceName, "push_channel", "test"),
@@ -119,7 +119,7 @@ func TestAccGitlabIntegrationSlack_basic(t *testing.T) {
 			{
 				Config: testAccGitlabIntegrationSlackMinimalConfig(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabIntegrationExists(slackResourceName, &slackService),
+					testAccCheckGitlabSlackIntegrationExists(slackResourceName, &slackService),
 					resource.TestCheckResourceAttr(slackResourceName, "webhook", "https://test.com"),
 					resource.TestCheckResourceAttr(slackResourceName, "push_channel", ""),
 				),
@@ -164,7 +164,7 @@ func TestAccGitlabIntegrationSlack_backwardsCompatibility(t *testing.T) {
 				}
 				`, rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabIntegrationExists(slackResourceName, &slackService),
+					testAccCheckGitlabSlackIntegrationExists(slackResourceName, &slackService),
 					resource.TestCheckResourceAttr(slackResourceName, "webhook", "https://test.com"),
 				),
 			},
@@ -183,7 +183,7 @@ func TestAccGitlabIntegrationSlack_backwardsCompatibility(t *testing.T) {
 	})
 }
 
-func testAccCheckGitlabIntegrationExists(n string, service *gitlab.SlackService) resource.TestCheckFunc {
+func testAccCheckGitlabSlackIntegrationExists(n string, service *gitlab.SlackService) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
