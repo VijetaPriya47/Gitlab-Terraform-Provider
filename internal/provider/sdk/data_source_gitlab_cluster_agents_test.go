@@ -35,6 +35,14 @@ func TestAccDataSourceGitlabClusterAgents_basic(t *testing.T) {
 					resource.TestCheckResourceAttrSet("data.gitlab_cluster_agents.this", "cluster_agents.1.name"),
 					resource.TestCheckResourceAttrSet("data.gitlab_cluster_agents.this", "cluster_agents.1.created_at"),
 					resource.TestCheckResourceAttrSet("data.gitlab_cluster_agents.this", "cluster_agents.1.created_by_user_id"),
+
+					// Check that the agent_id is set to a non-0 value for the first agent
+					resource.TestCheckResourceAttrWith("data.gitlab_cluster_agents.this", "cluster_agents.0.agent_id", func(value string) error {
+						if value == "" || value == "0" {
+							return fmt.Errorf("agent_id should be a non-empty and non-zero value. Actual value: %s", value)
+						}
+						return nil
+					}),
 				),
 			},
 		},

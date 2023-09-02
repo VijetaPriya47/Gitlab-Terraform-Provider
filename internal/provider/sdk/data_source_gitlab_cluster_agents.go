@@ -3,6 +3,7 @@ package sdk
 import (
 	"context"
 	"log"
+	"strconv"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -70,8 +71,12 @@ func flattenClusterAgentsForState(clusterAgents []*gitlab.Agent) (values []map[s
 	for _, clusterAgent := range clusterAgents {
 		values = append(values, map[string]interface{}{
 			"name":               clusterAgent.Name,
+			"agent_id":           clusterAgent.ID,
 			"created_at":         clusterAgent.CreatedAt.Format(time.RFC3339),
 			"created_by_user_id": clusterAgent.CreatedByUserID,
+
+			//convert required because schema is `TypeString`
+			"project": strconv.Itoa(clusterAgent.ConfigProject.ID),
 		})
 	}
 	return values
