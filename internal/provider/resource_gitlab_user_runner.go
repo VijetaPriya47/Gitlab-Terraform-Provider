@@ -148,6 +148,7 @@ func (d *gitlabUserRunnerResource) Schema(_ context.Context, _ resource.SchemaRe
 			},
 			"token": schema.StringAttribute{
 				Computed:            true,
+				Sensitive:           true,
 				MarkdownDescription: "The authentication token to use when setting up a new runner with this configuration. This value cannot be imported.",
 				PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
