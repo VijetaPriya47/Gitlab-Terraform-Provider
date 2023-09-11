@@ -12,6 +12,8 @@ import (
 )
 
 func TestAccDataSourceGitlabSubGroups_basic(t *testing.T) {
+	t.Parallel()
+
 	group := testutil.CreateGroups(t, 1)
 	groupID := fmt.Sprint(group[0].ID)
 	subgroups := testutil.CreateSubGroups(t, group[0], 5)
@@ -89,6 +91,40 @@ func TestAccDataSourceGitlabSubGroups_basic(t *testing.T) {
 						"group_id":  fmt.Sprint(subgroups[4].ID),
 						"name":      subgroups[4].Name,
 						"path":      subgroups[4].Path,
+						"parent_id": groupID,
+					}),
+				),
+			},
+		},
+	})
+}
+
+func TestAccDataSourceGitlabSubGroups_subgroupPagination(t *testing.T) {
+	t.Parallel()
+	group := testutil.CreateGroups(t, 1)
+	groupID := fmt.Sprint(group[0].ID)
+
+	// Needs to be greater than 20 to test pagination
+	subgroups := testutil.CreateSubGroups(t, group[0], 25)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+					data "gitlab_group_subgroups" "subs_foo" {
+						group_id = "%s"
+					}
+				`, groupID),
+				Check: resource.ComposeTestCheckFunc(
+					// check if all subgroups are returned
+					resource.TestCheckResourceAttr("data.gitlab_group_subgroups.subs_foo", "subgroups.#", "25"),
+
+					// Test the first subgroup is still set properly when paginating
+					resource.TestCheckTypeSetElemNestedAttrs("data.gitlab_group_subgroups.subs_foo", "subgroups.*", map[string]string{
+						"group_id":  fmt.Sprint(subgroups[0].ID),
+						"name":      subgroups[0].Name,
+						"path":      subgroups[0].Path,
 						"parent_id": groupID,
 					}),
 				),

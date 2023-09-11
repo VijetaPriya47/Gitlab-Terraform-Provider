@@ -3,8 +3,8 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/xanzy/go-gitlab"
@@ -94,9 +94,7 @@ func dataSourceGitlabGroupSubgroupsRead(ctx context.Context, d *schema.ResourceD
 	client := meta.(*gitlab.Client)
 
 	var subgroups []*gitlab.Group
-	var err error
-
-	log.Printf("[INFO] Reading Gitlab group subgroups")
+	tflog.Info(ctx, "Gitlab group subgroups")
 
 	groupIDData, groupIDOk := d.GetOk("group_id")
 
@@ -105,12 +103,27 @@ func dataSourceGitlabGroupSubgroupsRead(ctx context.Context, d *schema.ResourceD
 		skipGroups := intListToIntSlice(data.([]interface{}))
 		listGroupsOptions.SkipGroups = skipGroups
 	}
+
 	if groupIDOk {
-		// Get group subgroups by id
-		subgroups, _, err = client.Groups.ListSubGroups(groupIDData.(int), listGroupsOptions, gitlab.WithContext(ctx))
-		if err != nil {
-			return diag.FromErr(err)
+
+		// Iterate through pages of subgroups to retrieve them all
+		page := 1
+		groupsLen := 0
+		for page == 1 || groupsLen != 0 {
+			listGroupsOptions.Page = page
+
+			// List subgroups
+			groups, _, err := client.Groups.ListSubGroups(groupIDData.(int), listGroupsOptions, gitlab.WithContext(ctx))
+			if err != nil {
+				return diag.FromErr(err)
+			}
+			subgroups = append(subgroups, groups...)
+
+			// Update Pagination info
+			page = page + 1
+			groupsLen = len(groups)
 		}
+
 	} else {
 		return diag.Errorf("group_id is not valid")
 	}
