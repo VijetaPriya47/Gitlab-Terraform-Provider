@@ -93,39 +93,34 @@ var _ = registerDataSource("gitlab_group_subgroups", func() *schema.Resource {
 func dataSourceGitlabGroupSubgroupsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
-	var subgroups []*gitlab.Group
 	tflog.Info(ctx, "Gitlab group subgroups")
 
 	groupIDData, groupIDOk := d.GetOk("group_id")
-
-	listGroupsOptions := &gitlab.ListSubGroupsOptions{}
-	if data, ok := d.GetOk("skip_groups"); ok {
-		skipGroups := intListToIntSlice(data.([]interface{}))
-		listGroupsOptions.SkipGroups = skipGroups
+	if !groupIDOk {
+		return diag.Errorf("group_id is not valid")
 	}
 
-	if groupIDOk {
+	options := gitlab.ListSubGroupsOptions{
+		ListOptions: gitlab.ListOptions{
+			PerPage: 20,
+			Page:    1,
+		},
+	}
+	if data, ok := d.GetOk("skip_groups"); ok {
+		skipGroups := intListToIntSlice(data.([]interface{}))
+		options.SkipGroups = skipGroups
+	}
 
-		// Iterate through pages of subgroups to retrieve them all
-		page := 1
-		groupsLen := 0
-		for page == 1 || groupsLen != 0 {
-			listGroupsOptions.Page = page
-
-			// List subgroups
-			groups, _, err := client.Groups.ListSubGroups(groupIDData.(int), listGroupsOptions, gitlab.WithContext(ctx))
-			if err != nil {
-				return diag.FromErr(err)
-			}
-			subgroups = append(subgroups, groups...)
-
-			// Update Pagination info
-			page = page + 1
-			groupsLen = len(groups)
+	var subgroups []*gitlab.Group
+	for options.Page != 0 {
+		// List subgroups
+		paginatedSubgroups, resp, err := client.Groups.ListSubGroups(groupIDData.(int), &options, gitlab.WithContext(ctx))
+		if err != nil {
+			return diag.FromErr(err)
 		}
 
-	} else {
-		return diag.Errorf("group_id is not valid")
+		subgroups = append(subgroups, paginatedSubgroups...)
+		options.Page = resp.NextPage
 	}
 
 	d.SetId(fmt.Sprintf("%d", groupIDData))
