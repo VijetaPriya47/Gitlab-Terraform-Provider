@@ -187,6 +187,7 @@ go:test:
     - make testacc
   artifacts:
     paths:
+      - tests-log.jsonl
       - $GITLAB_EDITION-$GITLAB_VERSION-docker-compose-pull-logs.txt
       - $CI_PROJECT_DIR/$GITLAB_EDITION-$GITLAB_VERSION-acctest.jsonl
     expire_in: 2 days
