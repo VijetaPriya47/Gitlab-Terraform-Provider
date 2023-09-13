@@ -184,7 +184,7 @@ func resourceGitlabBranchRead(ctx context.Context, d *schema.ResourceData, meta 
 		if api.Is404(err) {
 			log.Printf("[DEBUG] recieved 404 for gitlab branch %s, removing from state", name)
 			d.SetId("")
-			return diag.FromErr(err)
+			return nil
 		}
 		log.Printf("[DEBUG] failed to read gitlab branch %s response %v", name, resp)
 		return diag.FromErr(err)
