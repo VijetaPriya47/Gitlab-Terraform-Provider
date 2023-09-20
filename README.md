@@ -15,3 +15,8 @@ GitLab resources, like users, groups and projects.
 ## Contributing
 
 Check out the [CONTRIBUTING.md](/CONTRIBUTING.md) guide for tips on how to contribute and develop the provider.
+
+
+## Note this Provider is not supported by the GitLab Support team
+
+If you are a customer who has a GitLab License, **support for this provider is not covered by that license agreement as this is not part of the GitLab Product**. Feel free to open an issue in this project and the maintainers may be able to help.
