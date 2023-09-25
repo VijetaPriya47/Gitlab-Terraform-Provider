@@ -3,7 +3,6 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -16,6 +15,12 @@ import (
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
+
+// Values to be used for validation and documentation
+var defaultBranchProtectionValues = []int{0, 1, 2, 3, 4}
+var visibilityLevelValues = []string{"private", "internal", "public"}
+var projectCreationLevelValues = []string{"noone", "maintainer", "developer"}
+var subGroupCreationLevelValues = []string{"owner", "maintainer"}
 
 var _ = registerResource("gitlab_group", func() *schema.Resource {
 	return &schema.Resource{
@@ -35,7 +40,7 @@ var _ = registerResource("gitlab_group", func() *schema.Resource {
 
 		Schema: constructSchema(map[string]*schema.Schema{
 			"name": {
-				Description: "The name of this group.",
+				Description: "The name of the group.",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
@@ -60,76 +65,76 @@ var _ = registerResource("gitlab_group", func() *schema.Resource {
 				Computed:    true,
 			},
 			"description": {
-				Description: "The description of the group.",
+				Description: "The group's description.",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
 			"lfs_enabled": {
-				Description: "Defaults to true. Enable/disable Large File Storage (LFS) for the projects in this group.",
+				Description: "Enable/disable Large File Storage (LFS) for the projects in this group.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Computed:    true,
 			},
 			"default_branch_protection": {
-				Description:  "Defaults to 2. See https://docs.gitlab.com/ee/api/groups.html#options-for-default_branch_protection",
+				Description:  fmt.Sprintf("See https://docs.gitlab.com/ee/api/groups.html#options-for-default_branch_protection. Valid values are: %s.", utils.RenderIntValueListForDocs(defaultBranchProtectionValues)),
 				Type:         schema.TypeInt,
 				Optional:     true,
 				Computed:     true,
-				ValidateFunc: validation.IntInSlice([]int{0, 1, 2, 3, 4}),
+				ValidateFunc: validation.IntInSlice(defaultBranchProtectionValues),
 			},
 			"request_access_enabled": {
-				Description: "Defaults to false. Allow users to request member access.",
+				Description: "Allow users to request member access.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Computed:    true,
 			},
 			"visibility_level": {
-				Description:  "The group's visibility. Can be `private`, `internal`, or `public`.",
+				Description:  fmt.Sprintf("The group's visibility. Can be `private`, `internal`, or `public`. Valid values are: %s.", utils.RenderValueListForDocs(visibilityLevelValues)),
 				Type:         schema.TypeString,
 				Optional:     true,
 				Computed:     true,
-				ValidateFunc: validation.StringInSlice([]string{"private", "internal", "public"}, true),
+				ValidateFunc: validation.StringInSlice(visibilityLevelValues, true),
 			},
 			"share_with_group_lock": {
-				Description: "Defaults to false. Prevent sharing a project with another group within this group.",
+				Description: "Prevent sharing a project with another group within this group.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Computed:    true,
 			},
 			"project_creation_level": {
-				Description:  "Defaults to maintainer. Determine if developers can create projects in the group.",
+				Description:  fmt.Sprintf("Determine if developers can create projects in the group. Valid values are: %s", utils.RenderValueListForDocs(projectCreationLevelValues)),
 				Type:         schema.TypeString,
 				Optional:     true,
 				Computed:     true,
-				ValidateFunc: validation.StringInSlice([]string{"noone", "maintainer", "developer"}, true),
+				ValidateFunc: validation.StringInSlice(projectCreationLevelValues, true),
 			},
 			"auto_devops_enabled": {
-				Description: "Defaults to false. Default to Auto DevOps pipeline for all projects within this group.",
+				Description: "Default to Auto DevOps pipeline for all projects within this group.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Computed:    true,
 			},
 			"emails_disabled": {
-				Description: "Defaults to false. Disable email notifications.",
+				Description: "Disable email notifications.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Computed:    true,
 			},
 			"mentions_disabled": {
-				Description: "Defaults to false. Disable the capability of a group from getting mentioned.",
+				Description: "Disable the capability of a group from getting mentioned.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Computed:    true,
 			},
 			"subgroup_creation_level": {
-				Description:  "Defaults to owner. Allowed to create subgroups.",
+				Description:  fmt.Sprintf("Allowed to create subgroups. Valid values are: %s.", utils.RenderValueListForDocs(subGroupCreationLevelValues)),
 				Type:         schema.TypeString,
 				Optional:     true,
 				Computed:     true,
-				ValidateFunc: validation.StringInSlice([]string{"owner", "maintainer"}, true),
+				ValidateFunc: validation.StringInSlice(subGroupCreationLevelValues, true),
 			},
 			"require_two_factor_authentication": {
-				Description: "Defaults to false. Require all users in this group to setup Two-factor authentication.",
+				Description: "Require all users in this group to setup Two-factor authentication.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Computed:    true,
@@ -302,7 +307,9 @@ func resourceGitlabGroupCreate(ctx context.Context, d *schema.ResourceData, meta
 		options.WikiAccessLevel = stringToAccessControlValue(v.(string))
 	}
 
-	log.Printf("[DEBUG] create gitlab group %q", *options.Name)
+	tflog.Debug(ctx, "[DEBUG] create gitlab group", map[string]interface{}{
+		"name": *options.Name,
+	})
 
 	group, _, err := client.Groups.CreateGroup(options, gitlab.WithContext(ctx))
 	if err != nil {
@@ -322,7 +329,10 @@ func resourceGitlabGroupCreate(ctx context.Context, d *schema.ResourceData, meta
 				if api.Is404(err) {
 					return out, "Creating", nil
 				}
-				log.Printf("[ERROR] Received error: %#v", err)
+				tflog.Error(ctx, "[ERROR] Received error retrieving group", map[string]interface{}{
+					"group_id": group.ID,
+					"error":    err,
+				})
 				return out, "Error", err
 			}
 			return out, "Created", nil
@@ -366,19 +376,26 @@ func resourceGitlabGroupCreate(ctx context.Context, d *schema.ResourceData, meta
 
 func resourceGitlabGroupRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
-	log.Printf("[DEBUG] read gitlab group %s", d.Id())
+
+	tflog.Debug(ctx, "[DEBUG] read gitlab group", map[string]interface{}{
+		"group_id": d.Id(),
+	})
 
 	group, _, err := client.Groups.GetGroup(d.Id(), nil, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] gitlab group %s not found so removing from state", d.Id())
+			tflog.Debug(ctx, "[DEBUG] gitlab group not found so removing", map[string]interface{}{
+				"id": d.Id(),
+			})
 			d.SetId("")
 			return nil
 		}
 		return diag.FromErr(err)
 	}
 	if group.MarkedForDeletionOn != nil {
-		log.Printf("[DEBUG] gitlab group %s is marked for deletion", d.Id())
+		tflog.Debug(ctx, "[DEBUG] gitlab group marked for deletion", map[string]interface{}{
+			"id": d.Id(),
+		})
 		d.SetId("")
 		return nil
 	}
@@ -529,7 +546,10 @@ func resourceGitlabGroupUpdate(ctx context.Context, d *schema.ResourceData, meta
 		options.WikiAccessLevel = stringToAccessControlValue(d.Get("wiki_access_level").(string))
 	}
 
-	log.Printf("[DEBUG] update gitlab group %s", d.Id())
+	tflog.Debug(ctx, "update gitlab group", map[string]interface{}{
+		"group_id": d.Id(),
+		"options":  fmt.Sprintf("%+v", options),
+	})
 
 	_, _, err = client.Groups.UpdateGroup(d.Id(), options, gitlab.WithContext(ctx))
 	if err != nil {
@@ -555,10 +575,18 @@ func transferSubGroup(ctx context.Context, d *schema.ResourceData, client *gitla
 
 	opt := &gitlab.TransferSubGroupOptions{}
 	if parentId != 0 {
-		log.Printf("[DEBUG] transfer gitlab group %s from %v to new parent group %v", d.Id(), o, n)
+		tflog.Debug(ctx, "transfer gitlab group", map[string]interface{}{
+			"group_id":  d.Id(),
+			"old_group": o,
+			"new_group": parentId,
+		})
+
 		opt.GroupID = gitlab.Int(parentId)
 	} else {
-		log.Printf("[DEBUG] turn gitlab group %s from %v to a new top-level group", d.Id(), o)
+		tflog.Debug(ctx, "turn gitlab group into a new top-level group", map[string]interface{}{
+			"group_id":  d.Id(),
+			"old_group": o,
+		})
 	}
 
 	_, _, err := client.Groups.TransferSubGroup(d.Id(), opt, gitlab.WithContext(ctx))
@@ -571,7 +599,9 @@ func transferSubGroup(ctx context.Context, d *schema.ResourceData, client *gitla
 
 func resourceGitlabGroupDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
-	log.Printf("[DEBUG] Delete gitlab group %s", d.Id())
+	tflog.Debug(ctx, "delete gitlab group", map[string]interface{}{
+		"id": d.Id(),
+	})
 
 	_, err := client.Groups.DeleteGroup(d.Id(), gitlab.WithContext(ctx))
 	if err != nil && !strings.Contains(err.Error(), "Group has been already marked for deletion") {
@@ -589,7 +619,9 @@ func resourceGitlabGroupDelete(ctx context.Context, d *schema.ResourceData, meta
 				if response != nil && response.StatusCode == 404 {
 					return out, "Deleted", nil
 				}
-				log.Printf("[ERROR] Received error: %#v", err)
+				tflog.Error(ctx, "Received error", map[string]interface{}{
+					"error": err,
+				})
 				return out, "Error", err
 			}
 			if out.MarkedForDeletionOn != nil {
