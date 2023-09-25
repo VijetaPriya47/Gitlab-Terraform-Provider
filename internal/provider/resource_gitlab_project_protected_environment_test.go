@@ -466,6 +466,60 @@ func TestAcc_GitlabProjectProtectedEnvironment_regressionIssue1132(t *testing.T)
 	})
 }
 
+func TestAcc_GitlabProjectProtectedEnvironment_regressionIssue6104(t *testing.T) {
+	t.Skipf("Unable to run this test, because for_each is not supported with the testing framework. See https://github.com/hashicorp/terraform-plugin-sdk/issues/536")
+	testutil.SkipIfCE(t)
+
+	// Set up project environment.
+	project := testutil.CreateProject(t)
+	environment := testutil.CreateProjectEnvironment(t, project.ID, &gitlab.CreateEnvironmentOptions{
+		Name: gitlab.String(acctest.RandomWithPrefix("test-protected-environment")),
+	})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAcc_GitlabProjectProtectedEnvironment_CheckDestroy(project.ID, environment.Name),
+		Steps: []resource.TestStep{
+			// Create a basic protected environment.
+			{
+				Config: fmt.Sprintf(`
+				locals {
+				  project_id = %d
+				
+				  environments = {
+					%s = {
+					  access_level = "maintainer"
+					}
+				  }
+				}
+				
+				resource "gitlab_project_protected_environment" "this" {
+				  for_each = local.environments
+				
+				  project     = local.project_id
+				  environment = each.key
+				
+				  deploy_access_levels {
+					for_each = [each.value.access_level]
+					# for_each = each.value.access_level != null ? [each.value.access_level] : []
+				
+					content {
+					  access_level = deploy_access_levels.value
+					}
+				  }
+				}
+				`, project.ID, environment.Name),
+			},
+			// Verify upstream attributes with an import.
+			{
+				ResourceName:      "gitlab_project_protected_environment.this",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 func TestAcc_GitlabProjectProtectedEnvironment_EnsureDeployAccessLevelsAreUnordered(t *testing.T) {
 	testutil.SkipIfCE(t)
 

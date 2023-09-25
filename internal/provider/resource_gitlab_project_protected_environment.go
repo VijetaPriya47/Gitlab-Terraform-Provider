@@ -50,8 +50,8 @@ type gitlabProjectProtectedEnvironmentResourceModel struct {
 	RequiredApprovalCount types.Int64  `tfsdk:"required_approval_count"`
 
 	// Set objects
-	DeployAccessLevels []gitlabProjectProtectedEnvironmentDeployAccessLevelModel `tfsdk:"deploy_access_levels"`
-	ApprovalRules      types.List                                                `tfsdk:"approval_rules"`
+	DeployAccessLevels types.Set  `tfsdk:"deploy_access_levels"`
+	ApprovalRules      types.List `tfsdk:"approval_rules"`
 }
 
 type gitlabProjectProtectedEnvironmentDeployAccessLevelModel struct {
@@ -225,29 +225,44 @@ func (r *gitlabProjectProtectedEnvironmentResource) Configure(ctx context.Contex
 func (r *gitlabProjectProtectedEnvironmentResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
 	var data gitlabProjectProtectedEnvironmentResourceModel
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
-
-	rules := make([]*gitlabProjectProtectedEnvironmentApprovalRuleModel, len(data.ApprovalRules.Elements()))
-	data.ApprovalRules.ElementsAs(ctx, &rules, true)
-
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	for i, dal := range data.DeployAccessLevels {
-		if !dal.UserId.IsNull() && !dal.GroupId.IsNull() {
-			resp.Diagnostics.AddAttributeError(path.Root("deploy_access_levels").AtListIndex(i), "Invalid Attribute Combination", "Cannot have user_id and group_id in the same deploy_access_levels block")
+	if !data.DeployAccessLevels.IsNull() && !data.DeployAccessLevels.IsUnknown() {
+		deployAccessLevels := make([]*gitlabProjectProtectedEnvironmentDeployAccessLevelModel, 0, len(data.DeployAccessLevels.Elements()))
+		resp.Diagnostics.Append(data.DeployAccessLevels.ElementsAs(ctx, &deployAccessLevels, false)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		for i, dal := range deployAccessLevels {
+			if !dal.UserId.IsNull() && !dal.GroupId.IsNull() {
+				resp.Diagnostics.AddAttributeError(path.Root("deploy_access_levels").AtListIndex(i), "Invalid Attribute Combination", "Cannot have user_id and group_id in the same deploy_access_levels block")
+			}
 		}
 	}
-
-	for i, ar := range rules {
-		if !ar.UserId.IsNull() && !ar.GroupId.IsNull() {
-			resp.Diagnostics.AddAttributeError(path.Root("approval_rules").AtListIndex(i), "Invalid Attribute Combination", "Cannot have user_id and group_id in the same approval_rules block")
-		}
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	for i, ar := range rules {
-		if !ar.UserId.IsNull() && !ar.RequiredApprovals.IsNull() {
-			resp.Diagnostics.AddAttributeError(path.Root("approval_rules").AtListIndex(i), "Invalid Attribute Combination", "Cannot have user_id and required_approvals in the same approval_rules block")
+	if !data.ApprovalRules.IsNull() && !data.DeployAccessLevels.IsUnknown() {
+		rules := make([]*gitlabProjectProtectedEnvironmentApprovalRuleModel, 0, len(data.ApprovalRules.Elements()))
+		data.ApprovalRules.ElementsAs(ctx, &rules, true)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		for i, ar := range rules {
+			if !ar.UserId.IsNull() && !ar.GroupId.IsNull() {
+				resp.Diagnostics.AddAttributeError(path.Root("approval_rules").AtListIndex(i), "Invalid Attribute Combination", "Cannot have user_id and group_id in the same approval_rules block")
+			}
+		}
+
+		for i, ar := range rules {
+			if !ar.UserId.IsNull() && !ar.RequiredApprovals.IsNull() {
+				resp.Diagnostics.AddAttributeError(path.Root("approval_rules").AtListIndex(i), "Invalid Attribute Combination", "Cannot have user_id and required_approvals in the same approval_rules block")
+			}
 		}
 	}
 }
@@ -278,8 +293,13 @@ func (r *gitlabProjectProtectedEnvironmentResource) Create(ctx context.Context, 
 	}
 
 	// deploy access levels
-	deployAccessLevelsOption := make([]*gitlab.EnvironmentAccessOptions, len(data.DeployAccessLevels))
-	for i, v := range data.DeployAccessLevels {
+	deployAccessLevels := make([]*gitlabProjectProtectedEnvironmentDeployAccessLevelModel, 0, len(data.DeployAccessLevels.Elements()))
+	resp.Diagnostics.Append(data.DeployAccessLevels.ElementsAs(ctx, &deployAccessLevels, false)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	deployAccessLevelsOption := make([]*gitlab.EnvironmentAccessOptions, len(deployAccessLevels))
+	for i, v := range deployAccessLevels {
 		deployAccessLevelOptions := &gitlab.EnvironmentAccessOptions{}
 
 		if !v.AccessLevel.IsNull() && v.AccessLevel.ValueString() != "" {
@@ -443,8 +463,13 @@ func (r *gitlabProjectProtectedEnvironmentResource) Update(ctx context.Context, 
 	}
 
 	// deploy access levels
+	deployAccessLevels := make([]*gitlabProjectProtectedEnvironmentDeployAccessLevelModel, 0, len(data.DeployAccessLevels.Elements()))
+	resp.Diagnostics.Append(data.DeployAccessLevels.ElementsAs(ctx, &deployAccessLevels, false)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 	deployAccessLevelsOption := make([]*gitlab.UpdateEnvironmentAccessOptions, 0)
-	for _, v := range data.DeployAccessLevels {
+	for _, v := range deployAccessLevels {
 		deployAccessLevelOptions := &gitlab.UpdateEnvironmentAccessOptions{}
 
 		// the ID will be null when adding a new deploy rule via update
@@ -468,7 +493,7 @@ func (r *gitlabProjectProtectedEnvironmentResource) Update(ctx context.Context, 
 	// Remove deploy access levels that aren't present in the config
 	for _, v := range protectedEnvironment.DeployAccessLevels {
 		isPresent := false
-		for _, j := range data.DeployAccessLevels {
+		for _, j := range deployAccessLevels {
 			if v.ID == int(j.ID.ValueInt64()) {
 				isPresent = true
 				break
@@ -647,7 +672,9 @@ func (r *gitlabProjectProtectedEnvironmentResource) protectedEnvironmentToStateM
 
 		deployAccessLevelsData = append(deployAccessLevelsData, deployAccessLevelData)
 	}
-	data.DeployAccessLevels = deployAccessLevelsData
+	dalSetType, newDiag := types.SetValueFrom(ctx, deployAccessLevelSchema().NestedObject.Type(), deployAccessLevelsData)
+	existingDiag.Append(newDiag...)
+	data.DeployAccessLevels = dalSetType
 
 	approvalRulesData := make([]gitlabProjectProtectedEnvironmentApprovalRuleModel, 0)
 	for _, v := range protectedEnvironment.ApprovalRules {
