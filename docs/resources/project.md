@@ -197,7 +197,8 @@ resource "gitlab_project" "import_private" {
 - `path` (String) The path of the repository.
 - `pipelines_enabled` (Boolean, Deprecated) Enable pipelines for the project. The `pipelines_enabled` field is being sent as `jobs_enabled` in the GitLab API calls.
 - `printing_merge_request_link_enabled` (Boolean) Show link to create/view merge request when pushing from the command line
-- `public_builds` (Boolean) If true, jobs can be viewed by non-project members.
+- `public_builds` (Boolean, Deprecated) If true, jobs can be viewed by non-project members.
+- `public_jobs` (Boolean) If true, jobs can be viewed by non-project members.
 - `push_rules` (Block List, Max: 1) Push rules for the project. (see [below for nested schema](#nestedblock--push_rules))
 - `releases_access_level` (String) Set the releases access level. Valid values are `disabled`, `private`, `enabled`.
 - `remove_source_branch_after_merge` (Boolean) Enable `Delete source branch` option by default for all new merge requests.

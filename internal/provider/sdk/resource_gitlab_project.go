@@ -560,11 +560,20 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 		Computed:         true,
 		ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(validProjectAccessLevels, false)),
 	},
+	"public_jobs": {
+		Description:   "If true, jobs can be viewed by non-project members.",
+		Type:          schema.TypeBool,
+		Optional:      true,
+		Computed:      true,
+		ConflictsWith: []string{"public_builds"},
+	},
 	"public_builds": {
-		Description: "If true, jobs can be viewed by non-project members.",
-		Type:        schema.TypeBool,
-		Optional:    true,
-		Computed:    true,
+		Description:   "If true, jobs can be viewed by non-project members.",
+		Type:          schema.TypeBool,
+		Optional:      true,
+		Computed:      true,
+		ConflictsWith: []string{"public_jobs"},
+		Deprecated:    "The `public_builds` attribute has been deprecated in favor of `public_jobs` and will be removed in the next major version of the provider.",
 	},
 	"repository_access_level": {
 		Description:      fmt.Sprintf("Set the repository access level. Valid values are %s.", utils.RenderValueListForDocs(validProjectAccessLevels)),
@@ -872,8 +881,14 @@ func resourceGitlabProjectSetToState(ctx context.Context, client *gitlab.Client,
 	d.Set("issues_access_level", string(project.IssuesAccessLevel))
 	d.Set("merge_requests_access_level", string(project.MergeRequestsAccessLevel))
 
-	//(PatrickRice): In 16.0, we need to rename this to "public_jobs"
-	d.Set("public_builds", project.PublicJobs)
+	// First, try to set the public_jobs. If it's not available, fall back to public_builds.
+	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
+	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
+	if err := d.Set("public_jobs", project.PublicJobs); err != nil {
+		if err := d.Set("public_builds", project.PublicJobs); err != nil {
+			return fmt.Errorf("error setting public_jobs: %v", err)
+		}
+	}
 
 	d.Set("repository_access_level", string(project.RepositoryAccessLevel))
 	d.Set("repository_storage", project.RepositoryStorage)
@@ -888,7 +903,7 @@ func resourceGitlabProjectSetToState(ctx context.Context, client *gitlab.Client,
 	d.Set("squash_commit_template", project.SquashCommitTemplate)
 	d.Set("merge_commit_template", project.MergeCommitTemplate)
 
-	//Note: This field is deprecated and will always be an empty string starting in GitLab 15.0.
+	// Note: This field is deprecated and will always be an empty string starting in GitLab 15.0.
 	d.Set("build_coverage_regex", project.BuildCoverageRegex)
 
 	d.Set("ci_default_git_depth", project.CIDefaultGitDepth)
@@ -1075,9 +1090,12 @@ func resourceGitlabProjectCreate(ctx context.Context, d *schema.ResourceData, me
 			options.MergeRequestsAccessLevel = stringToAccessControlValue(v.(string))
 		}
 
+		// Ignore deprecated public_builds in favor of public_jobs.
 		// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
 		// lintignore: XR001 // TODO: replace with alternative for GetOkExists
-		if v, ok := d.GetOkExists("public_builds"); ok {
+		if v, ok := d.GetOkExists("public_jobs"); ok {
+			options.PublicBuilds = gitlab.Bool(v.(bool))
+		} else if v, ok := d.GetOkExists("public_builds"); ok {
 			options.PublicBuilds = gitlab.Bool(v.(bool))
 		}
 
@@ -1367,7 +1385,7 @@ func resourceGitlabProjectCreate(ctx context.Context, d *schema.ResourceData, me
 			stateConf := &retry.StateChangeConf{
 				Pending: []string{"false"},
 				Target:  []string{"true"},
-				Timeout: 2 * time.Minute, //The async action usually completes very quickly, within seconds. Don't wait too long.
+				Timeout: 2 * time.Minute, // The async action usually completes very quickly, within seconds. Don't wait too long.
 				Refresh: func() (interface{}, string, error) {
 					branch, _, err := client.Branches.GetBranch(project.ID, project.DefaultBranch, gitlab.WithContext(ctx))
 					if err != nil {
@@ -1378,7 +1396,7 @@ func resourceGitlabProjectCreate(ctx context.Context, d *schema.ResourceData, me
 							return branch, "true", nil
 						}
 
-						//This is legit error, return the error.
+						// This is legit error, return the error.
 						return nil, "", err
 					}
 
@@ -1676,9 +1694,12 @@ func resourceGitlabProjectCreate(ctx context.Context, d *schema.ResourceData, me
 			editProjectOptions.MergeRequestsAccessLevel = stringToAccessControlValue(v.(string))
 		}
 
+		// Ignore deprecated public_builds in favor of public_jobs.
 		// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
 		// lintignore: XR001 // TODO: replace with alternative for GetOkExists
-		if v, ok := d.GetOkExists("public_builds"); ok {
+		if v, ok := d.GetOkExists("public_jobs"); ok {
+			editProjectOptions.PublicBuilds = gitlab.Bool(v.(bool))
+		} else if v, ok := d.GetOkExists("public_builds"); ok {
 			editProjectOptions.PublicBuilds = gitlab.Bool(v.(bool))
 		}
 
@@ -2088,7 +2109,10 @@ func resourceGitlabProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 		options.MergeRequestsAccessLevel = stringToAccessControlValue(d.Get("merge_requests_access_level").(string))
 	}
 
-	if d.HasChange("public_builds") {
+	// Ignore deprecated public_builds in favor of public_jobs.
+	if d.HasChange("public_jobs") {
+		options.PublicBuilds = gitlab.Bool(d.Get("public_jobs").(bool))
+	} else if d.HasChange("public_builds") {
 		options.PublicBuilds = gitlab.Bool(d.Get("public_builds").(bool))
 	}
 

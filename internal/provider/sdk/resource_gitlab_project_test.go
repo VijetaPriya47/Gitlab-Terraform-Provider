@@ -363,7 +363,6 @@ max_file_size = 123
 			},
 		},
 	})
-
 }
 
 func TestAccGitlabProject_initializeWithReadme(t *testing.T) {
@@ -817,7 +816,7 @@ func TestAccGitlabProject_importURLWithPassword(t *testing.T) {
           lifecycle {
             ignore_changes = [import_url]
           }
-				}	
+				}
 				`, rInt, importUrl),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("gitlab_project.this", "import_url"),
@@ -845,7 +844,7 @@ func TestAccGitlabProject_importURL_publicRepository(t *testing.T) {
 	testProject := testutil.CreateProject(t)
 
 	config := fmt.Sprintf(`
-    resource "gitlab_project" "test" { 
+    resource "gitlab_project" "test" {
       name = "%s"
 
       import_url = "%s"
@@ -903,7 +902,7 @@ func TestAccGitlabProject_importURL_privateRepository(t *testing.T) {
 	tokenForUpdate := createToken()
 
 	createConfig := fmt.Sprintf(`
-    resource "gitlab_project" "test" { 
+    resource "gitlab_project" "test" {
       name = "imported-%s"
 
       import_url          = "%s"
@@ -929,7 +928,7 @@ func TestAccGitlabProject_importURL_privateRepository(t *testing.T) {
 			// Update the token and trigger a change
 			{
 				Config: fmt.Sprintf(`
-          resource "gitlab_project" "test" { 
+          resource "gitlab_project" "test" {
             name = "imported-%s"
 
             import_url          = "%s"
@@ -1559,7 +1558,7 @@ func TestAccGitlabProject_containerExpirationPolicyRegex(t *testing.T) {
 							cadence = "1d"
 							keep_n            = 5
 							name_regex_keep   = ""
-							older_than        = "7d"						
+							older_than        = "7d"
 							name_regex_delete = "[0-9a-zA-Z]{40}"
 						}
 
@@ -1602,7 +1601,7 @@ func TestAccGitlabProject_doubleContainerExpirationPolicyRegexError(t *testing.T
 							cadence = "1d"
 							keep_n            = 5
 							name_regex_keep   = ""
-							older_than        = "7d"						
+							older_than        = "7d"
 							name_regex_delete = "[0-9a-zA-Z]{40}"
 							name_regex        = "[0-9a-zA-Z]{40}"
 						}
@@ -1664,7 +1663,7 @@ func TestAccGitlabProject_SetDefaultFalseBooleansOnCreate(t *testing.T) {
 						auto_devops_enabled                 = false
 						autoclose_referenced_issues         = false
 						emails_disabled                     = false
-						public_builds                       = false
+						public_jobs                         = false
 						merge_pipelines_enabled             = false
 						merge_trains_enabled                = false
 						ci_forward_deployment_enabled       = false
@@ -1675,6 +1674,24 @@ func TestAccGitlabProject_SetDefaultFalseBooleansOnCreate(t *testing.T) {
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"initialize_with_readme"},
+			},
+		},
+	})
+}
+
+func TestAccGitlabProject_PublicJobs(t *testing.T) {
+	rInt := acctest.RandInt()
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabProjectDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project" "this" {
+						name        = "foo-%d"
+						public_jobs = true
+					}`, rInt),
 			},
 		},
 	})
@@ -1691,10 +1708,31 @@ func TestAccGitlabProject_PublicBuilds(t *testing.T) {
 			{
 				Config: fmt.Sprintf(`
 					resource "gitlab_project" "this" {
-						name             = "foo-%d"
-						public_builds       = true
-					  
+						name          = "foo-%d"
+						public_builds = true
+
 					}`, rInt),
+			},
+		},
+	})
+}
+
+func TestAccGitlabProject_PublicJobsAndPublicBuilds(t *testing.T) {
+	rInt := acctest.RandInt()
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabProjectDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+
+					resource "gitlab_project" "this" {
+						name          = "foo-%d"
+						public_jobs   = true
+						public_builds = true
+					}`, rInt),
+				ExpectError: regexp.MustCompile("Error: Conflicting configuration arguments"),
 			},
 		},
 	})
@@ -2305,7 +2343,7 @@ resource "gitlab_project" "foo" {
   forking_access_level = "enabled"
   issues_access_level = "enabled"
   merge_requests_access_level = "enabled"
-  public_builds = false
+  public_jobs = false
   repository_access_level = "enabled"
   repository_storage = "default"
   security_and_compliance_access_level = "enabled"
@@ -2412,7 +2450,7 @@ resource "gitlab_project" "foo" {
   forking_access_level = "disabled"
   issues_access_level = "disabled"
   merge_requests_access_level = "disabled"
-  public_builds = false
+  public_jobs = false
   repository_access_level = "disabled"
   repository_storage = "default"
   security_and_compliance_access_level = "disabled"
@@ -2558,7 +2596,7 @@ resource "gitlab_project" "foo" {
   forking_access_level = "enabled"
   issues_access_level = "enabled"
   merge_requests_access_level = "enabled"
-  public_builds = false
+  public_jobs = false
   repository_access_level = "enabled"
   repository_storage = "default"
   security_and_compliance_access_level = "enabled"
@@ -2743,7 +2781,7 @@ resource "gitlab_project" "foo" {
   forking_access_level = "enabled"
   issues_access_level = "enabled"
   merge_requests_access_level = "enabled"
-  public_builds = false
+  public_jobs = false
   repository_access_level = "enabled"
   repository_storage = "default"
   security_and_compliance_access_level = "enabled"
