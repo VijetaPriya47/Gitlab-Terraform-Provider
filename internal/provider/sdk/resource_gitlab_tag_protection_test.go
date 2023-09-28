@@ -231,7 +231,7 @@ func TestAccGitlabTagProtection_customAccessLevel(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
-			// Update the Tag Protection
+			// Update the Tag Protection and set "create_access_level" to "maintainer"
 			{
 				Config: fmt.Sprintf(`
 				resource "gitlab_tag_protection" "TagProtect" {
@@ -254,6 +254,39 @@ func TestAccGitlabTagProtection_customAccessLevel(t *testing.T) {
 					testAccCheckGitlabTagProtectionAttributes(&pt, &testAccGitlabTagProtectionExpectedAttributes{
 						Name:                  fmt.Sprintf("TagProtect-%d", rInt),
 						CreateAccessLevel:     api.AccessLevelValueToName[gitlab.MaintainerPermissions],
+						UsersAllowedToCreate:  []string{myUpdatedUser[0].Username},
+						GroupsAllowedToCreate: []string{myUpdatedGroup[0].Name},
+					}),
+				),
+			},
+			{
+				ResourceName:      "gitlab_tag_protection.TagProtect",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Update the Tag Protection and set "create_access_level to "no one"
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_tag_protection" "TagProtect" {
+				  project = "%d"
+				  tag = "TagProtect-%d"
+
+				  # Update to maintainer permission
+				  create_access_level = "no one"
+
+				  allowed_to_create {
+					user_id = %d
+				  }
+				  allowed_to_create {
+					group_id = %d
+				  }
+				}
+				`, project.ID, rInt, myUpdatedUser[0].ID, myUpdatedGroup[0].ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabTagProtectionExists("gitlab_tag_protection.TagProtect", &pt),
+					testAccCheckGitlabTagProtectionAttributes(&pt, &testAccGitlabTagProtectionExpectedAttributes{
+						Name:                  fmt.Sprintf("TagProtect-%d", rInt),
+						CreateAccessLevel:     api.AccessLevelValueToName[gitlab.NoPermissions],
 						UsersAllowedToCreate:  []string{myUpdatedUser[0].Username},
 						GroupsAllowedToCreate: []string{myUpdatedGroup[0].Name},
 					}),

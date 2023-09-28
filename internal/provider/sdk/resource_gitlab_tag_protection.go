@@ -163,7 +163,7 @@ func resourceGitlabTagProtectionRead(ctx context.Context, d *schema.ResourceData
 		return diag.FromErr(err)
 	}
 
-	accessLevel, ok := tagProtectionAccessLevelNames[pt.CreateAccessLevels[0].AccessLevel]
+	accessLevel, ok := tagProtectionAccessLevelNames[getProtectedTagAccessLevel(pt)]
 	if !ok {
 		return diag.Errorf("tag protection access level %d is not supported. Supported are: %v", pt.CreateAccessLevels[0].AccessLevel, tagProtectionAccessLevelNames)
 	}
@@ -237,4 +237,15 @@ func flattenNonZeroTagAccessDescriptions(descriptions []*gitlab.TagAccessDescrip
 	}
 
 	return values
+}
+
+// The "base" access level is the access level that doesn't have a user or group assigned to it.
+// all access levels specified within an "allowed_to_create" block will have one of those two attributes specified.
+func getProtectedTagAccessLevel(pt *gitlab.ProtectedTag) gitlab.AccessLevelValue {
+	for _, cal := range pt.CreateAccessLevels {
+		if cal.UserID == 0 && cal.GroupID == 0 {
+			return cal.AccessLevel
+		}
+	}
+	return gitlab.NoPermissions
 }
