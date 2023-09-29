@@ -43,6 +43,17 @@ var (
 		"rebase_merge",
 		"ff",
 	}
+	validPagesAccessLevelValues = []string{
+		"public",
+		"private",
+		"enabled",
+		"disabled",
+	}
+	validVisibilityLevelValues = []string{
+		"private",
+		"internal",
+		"public",
+	}
 )
 
 var resourceGitLabProjectSchema = map[string]*schema.Schema{
@@ -163,11 +174,11 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 		Computed:    true,
 	},
 	"visibility_level": {
-		Description:  "Set to `public` to create a public project.",
+		Description:  fmt.Sprintf("Set to `public` to create a public project. Valid values are %s.", utils.RenderValueListForDocs(validVisibilityLevelValues)),
 		Type:         schema.TypeString,
 		Optional:     true,
 		Computed:     true,
-		ValidateFunc: validation.StringInSlice([]string{"private", "internal", "public"}, true),
+		ValidateFunc: validation.StringInSlice(validVisibilityLevelValues, true),
 	},
 	"merge_method": {
 		Description:  fmt.Sprintf("Set the merge method. Valid values are %s.", utils.RenderValueListForDocs(validMergeMethods)),
@@ -364,11 +375,11 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 		Optional:    true,
 	},
 	"pages_access_level": {
-		Description:  "Enable pages access control",
+		Description:  fmt.Sprintf("Enable pages access control. Valid values are %s.", utils.RenderValueListForDocs(validPagesAccessLevelValues)),
 		Type:         schema.TypeString,
 		Optional:     true,
 		Computed:     true,
-		ValidateFunc: validation.StringInSlice([]string{"public", "private", "enabled", "disabled"}, true),
+		ValidateFunc: validation.StringInSlice(validPagesAccessLevelValues, true),
 	},
 	// The GitLab API requires that import_url is also set when mirror options are used
 	// Ref: https://gitlab.com/gitlab-org/terraform-provider-gitlab/pull/449#discussion_r549729230
@@ -494,7 +505,7 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 		Computed:    true,
 	},
 	"build_git_strategy": {
-		Description:      "The Git strategy. Defaults to fetch.",
+		Description:      fmt.Sprintf("The Git strategy. Defaults to fetch. Valid values are %s.", utils.RenderValueListForDocs(validProjectBuildGitStrategyValues)),
 		Type:             schema.TypeString,
 		Optional:         true,
 		Computed:         true,
