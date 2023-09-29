@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -23,38 +24,37 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces
-var _ resource.Resource = &gitlabProjectProtectedEnvironmentResource{}
-var _ resource.ResourceWithConfigure = &gitlabProjectProtectedEnvironmentResource{}
-var _ resource.ResourceWithImportState = &gitlabProjectProtectedEnvironmentResource{}
-var _ resource.ResourceWithValidateConfig = &gitlabProjectProtectedEnvironmentResource{}
+var (
+	_ resource.Resource                   = &gitlabGroupProtectedEnvironmentResource{}
+	_ resource.ResourceWithConfigure      = &gitlabGroupProtectedEnvironmentResource{}
+	_ resource.ResourceWithImportState    = &gitlabGroupProtectedEnvironmentResource{}
+	_ resource.ResourceWithValidateConfig = &gitlabGroupProtectedEnvironmentResource{}
+)
 
 func init() {
-	registerResource(NewGitLabProjectProtectedEnvironmentResource)
+	registerResource(NewgitlabGroupProtectedEnvironmentResource)
 }
 
-// NewGitLabProjectProtectedEnvironmentResource is a helper function to simplify the provider implementation.
-func NewGitLabProjectProtectedEnvironmentResource() resource.Resource {
-	return &gitlabProjectProtectedEnvironmentResource{}
+func NewgitlabGroupProtectedEnvironmentResource() resource.Resource {
+	return &gitlabGroupProtectedEnvironmentResource{}
 }
 
-// gitlabProjectProtectedEnvironmentResource defines the resource implementation.
-type gitlabProjectProtectedEnvironmentResource struct {
+type gitlabGroupProtectedEnvironmentResource struct {
 	client *gitlab.Client
 }
 
-// gitlabProjectProtectedEnvironmentResourceModel describes the resource data model.
-type gitlabProjectProtectedEnvironmentResourceModel struct {
+type gitlabGroupProtectedEnvironmentResourceModel struct {
 	Id                    types.String `tfsdk:"id"`
-	Project               types.String `tfsdk:"project"`
+	Group                 types.String `tfsdk:"group"`
 	Environment           types.String `tfsdk:"environment"`
 	RequiredApprovalCount types.Int64  `tfsdk:"required_approval_count"`
 
 	// Set objects
-	DeployAccessLevels types.Set  `tfsdk:"deploy_access_levels"`
-	ApprovalRules      types.List `tfsdk:"approval_rules"`
+	DeployAccessLevels types.Set `tfsdk:"deploy_access_levels"`
+	ApprovalRules      types.Set `tfsdk:"approval_rules"`
 }
 
-type gitlabProjectProtectedEnvironmentDeployAccessLevelModel struct {
+type gitlabGroupProtectedEnvironmentDeployAccessLevelModel struct {
 	ID                     types.Int64  `tfsdk:"id"`
 	AccessLevel            types.String `tfsdk:"access_level"`
 	AccessLevelDescription types.String `tfsdk:"access_level_description"`
@@ -62,7 +62,7 @@ type gitlabProjectProtectedEnvironmentDeployAccessLevelModel struct {
 	GroupId                types.Int64  `tfsdk:"group_id"`
 }
 
-type gitlabProjectProtectedEnvironmentApprovalRuleModel struct {
+type gitlabGroupProtectedEnvironmentApprovalRuleModel struct {
 	ID                     types.Int64  `tfsdk:"id"`
 	AccessLevel            types.String `tfsdk:"access_level"`
 	AccessLevelDescription types.String `tfsdk:"access_level_description"`
@@ -71,60 +71,64 @@ type gitlabProjectProtectedEnvironmentApprovalRuleModel struct {
 	RequiredApprovals      types.Int64  `tfsdk:"required_approvals"`
 }
 
-func (r *gitlabProjectProtectedEnvironmentResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_project_protected_environment"
+func (r *gitlabGroupProtectedEnvironmentResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_group_protected_environment"
 }
 
-func (r *gitlabProjectProtectedEnvironmentResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *gitlabGroupProtectedEnvironmentResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+	// Valid values for the schema
+	var validEnvironments = []string{"production", "staging", "testing", "development", "other"}
+
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `The ` + "`gitlab_project_protected_environment`" + ` resource allows to manage the lifecycle of a protected environment in a project.
+		MarkdownDescription: `The ` + "`gitlab_group_protected_environment`" + ` resource allows to manage the lifecycle of a protected environment in a group.
 
-~> In order to use a user or group in the ` + "`deploy_access_levels`" + ` configuration,
-   you need to make sure that users have access to the project and groups must have this project shared.
-   You may use the ` + "`gitlab_project_membership`" + ` and ` + "`gitlab_project_shared_group`" + ` resources to achieve this.
-   Unfortunately, the GitLab API does not complain about users and groups without access to the project and just ignores those.
-   In case this happens you will get perpetual state diffs.
+~> In order to use a user_id in the ` + "`deploy_access_levels`" + ` configuration,
+   you need to make sure that users have access to the group with Maintainer role or higher.
+   In order to use a group_id in the ` + "`deploy_access_levels`" + ` configuration,
+   the group_id must be a sub-group under the given group.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/protected_environments.html)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/group_protected_environments.html)`,
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:            true,
-				MarkdownDescription: "The ID of this Terraform resource. In the format of `<project>:<environment-name>`.",
+				MarkdownDescription: "The ID of this Terraform resource. In the format of `<group>:<environment-name>`.",
 				PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
-			"project": schema.StringAttribute{
-				MarkdownDescription: "The ID or full path of the project which the protected environment is created against.",
+			"group": schema.StringAttribute{
+				MarkdownDescription: "The ID or full path of the group which the protected environment is created against.",
 				Required:            true,
 				PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
 			"environment": schema.StringAttribute{
-				MarkdownDescription: "The name of the environment.",
+				MarkdownDescription: fmt.Sprintf("The deployment tier of the environment.  Valid values are %s.", utils.RenderValueListForDocs(validEnvironments)),
 				Required:            true,
 				PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
+				Validators: []validator.String{
+					stringvalidator.OneOf(validEnvironments...),
+				},
 			},
 			"required_approval_count": schema.Int64Attribute{
 				MarkdownDescription: "The number of approvals required to deploy to this environment.",
 				Optional:            true,
 				Computed:            true,
 				PlanModifiers: []planmodifier.Int64{
-					int64planmodifier.RequiresReplace(),
 					int64planmodifier.UseStateForUnknown(),
 				},
 			},
-			"approval_rules": approvalRuleSchema(),
-		},
-		Blocks: map[string]schema.Block{
-			"deploy_access_levels": deployAccessLevelSchema(),
+			"deploy_access_levels": groupDeployAccessLevelSchema(),
+			"approval_rules":       groupApprovalRuleSchema(),
 		},
 	}
 }
 
-func deployAccessLevelSchema() schema.SetNestedBlock {
-	return schema.SetNestedBlock{
+func groupDeployAccessLevelSchema() schema.SetNestedAttribute {
+	return schema.SetNestedAttribute{
 		MarkdownDescription: "Array of access levels allowed to deploy, with each described by a hash.",
-		NestedObject: schema.NestedBlockObject{
+		Required:            true,
+		Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
+		NestedObject: schema.NestedAttributeObject{
 			Attributes: map[string]schema.Attribute{
 				"id": schema.Int64Attribute{
 					MarkdownDescription: "The unique ID of the Deploy Access Level object.",
@@ -137,22 +141,21 @@ func deployAccessLevelSchema() schema.SetNestedBlock {
 					PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 					Validators: []validator.String{
 						stringvalidator.ExactlyOneOf(path.MatchRelative().AtParent().AtName("user_id"), path.MatchRelative().AtParent().AtName("group_id")),
-						stringvalidator.OneOfCaseInsensitive(api.ValidProtectedEnvironmentDeploymentLevelNames...),
+						stringvalidator.OneOf(api.ValidProtectedEnvironmentDeploymentLevelNames...),
 					},
 				},
 				"access_level_description": schema.StringAttribute{
 					MarkdownDescription: "Readable description of level of access.",
 					Computed:            true,
-					PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 				},
 				"user_id": schema.Int64Attribute{
-					MarkdownDescription: "The ID of the user allowed to deploy to this protected environment. The user must be a member of the project.",
+					MarkdownDescription: "The ID of the user allowed to deploy to this protected environment. The user must be a member of the group with Maintainer role or higher.",
 					Optional:            true,
 					PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
 					Validators:          []validator.Int64{int64validator.AtLeast(1)},
 				},
 				"group_id": schema.Int64Attribute{
-					MarkdownDescription: "The ID of the group allowed to deploy to this protected environment. The project must be shared with the group.",
+					MarkdownDescription: "The ID of the group allowed to deploy to this protected environment. The group must be a sub-group under the given group.",
 					Optional:            true,
 					PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
 					Validators:          []validator.Int64{int64validator.AtLeast(1)},
@@ -162,8 +165,8 @@ func deployAccessLevelSchema() schema.SetNestedBlock {
 	}
 }
 
-func approvalRuleSchema() schema.ListNestedAttribute {
-	return schema.ListNestedAttribute{
+func groupApprovalRuleSchema() schema.SetNestedAttribute {
+	return schema.SetNestedAttribute{
 		MarkdownDescription: "Array of approval rules to deploy, with each described by a hash.",
 		Optional:            true,
 		Computed:            true,
@@ -180,7 +183,7 @@ func approvalRuleSchema() schema.ListNestedAttribute {
 					Optional:            true,
 					PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 					Validators: []validator.String{
-						stringvalidator.OneOfCaseInsensitive(api.ValidProtectedEnvironmentDeploymentLevelNames...),
+						stringvalidator.OneOf(api.ValidProtectedEnvironmentDeploymentLevelNames...),
 					},
 				},
 				"access_level_description": schema.StringAttribute{
@@ -189,13 +192,13 @@ func approvalRuleSchema() schema.ListNestedAttribute {
 					PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 				},
 				"user_id": schema.Int64Attribute{
-					MarkdownDescription: "The ID of the user allowed to approve a deployment to this protected environment. The user must be a member of the project. This is mutually exclusive with group_id and required_approvals.",
+					MarkdownDescription: "The ID of the user allowed to approve a deployment to this protected environment. The user must be a member of the group with Maintainer role or higher. This is mutually exclusive with group_id and required_approvals.",
 					Optional:            true,
 					PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
 					Validators:          []validator.Int64{int64validator.AtLeast(1)},
 				},
 				"group_id": schema.Int64Attribute{
-					MarkdownDescription: "The ID of the group allowed to approve a deployment to this protected environment. The project must be shared with the group. This is mutually exclusive with user_id.",
+					MarkdownDescription: "The ID of the group allowed to approve a deployment to this protected environment. TThe group must be a sub-group under the given group. This is mutually exclusive with user_id.",
 					Optional:            true,
 					PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
 					Validators:          []validator.Int64{int64validator.AtLeast(1)},
@@ -213,7 +216,7 @@ func approvalRuleSchema() schema.ListNestedAttribute {
 }
 
 // Configure adds the provider configured client to the resource.
-func (r *gitlabProjectProtectedEnvironmentResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *gitlabGroupProtectedEnvironmentResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	// Prevent panic if the provider has not been configured.
 	if req.ProviderData == nil {
 		return
@@ -222,15 +225,15 @@ func (r *gitlabProjectProtectedEnvironmentResource) Configure(ctx context.Contex
 	r.client = req.ProviderData.(*gitlab.Client)
 }
 
-func (r *gitlabProjectProtectedEnvironmentResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
-	var data gitlabProjectProtectedEnvironmentResourceModel
+func (r *gitlabGroupProtectedEnvironmentResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	var data gitlabGroupProtectedEnvironmentResourceModel
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	if !data.DeployAccessLevels.IsNull() && !data.DeployAccessLevels.IsUnknown() {
-		deployAccessLevels := make([]*gitlabProjectProtectedEnvironmentDeployAccessLevelModel, 0, len(data.DeployAccessLevels.Elements()))
+		deployAccessLevels := make([]*gitlabGroupProtectedEnvironmentDeployAccessLevelModel, 0, len(data.DeployAccessLevels.Elements()))
 		resp.Diagnostics.Append(data.DeployAccessLevels.ElementsAs(ctx, &deployAccessLevels, false)...)
 		if resp.Diagnostics.HasError() {
 			return
@@ -241,50 +244,51 @@ func (r *gitlabProjectProtectedEnvironmentResource) ValidateConfig(ctx context.C
 				resp.Diagnostics.AddAttributeError(path.Root("deploy_access_levels").AtListIndex(i), "Invalid Attribute Combination", "Cannot have user_id and group_id in the same deploy_access_levels block")
 			}
 		}
-	}
-	if resp.Diagnostics.HasError() {
-		return
+
+		if resp.Diagnostics.HasError() {
+			return
+		}
 	}
 
 	if !data.ApprovalRules.IsNull() && !data.DeployAccessLevels.IsUnknown() {
-		rules := make([]*gitlabProjectProtectedEnvironmentApprovalRuleModel, 0, len(data.ApprovalRules.Elements()))
-		data.ApprovalRules.ElementsAs(ctx, &rules, true)
+		approvalRules := make([]*gitlabGroupProtectedEnvironmentApprovalRuleModel, 0, len(data.ApprovalRules.Elements()))
+		resp.Diagnostics.Append(data.ApprovalRules.ElementsAs(ctx, &approvalRules, true)...)
 		if resp.Diagnostics.HasError() {
 			return
 		}
 
-		for i, ar := range rules {
+		for i, ar := range approvalRules {
 			if !ar.UserId.IsNull() && !ar.GroupId.IsNull() {
 				resp.Diagnostics.AddAttributeError(path.Root("approval_rules").AtListIndex(i), "Invalid Attribute Combination", "Cannot have user_id and group_id in the same approval_rules block")
 			}
 		}
 
-		for i, ar := range rules {
+		for i, ar := range approvalRules {
 			if !ar.UserId.IsNull() && !ar.RequiredApprovals.IsNull() {
 				resp.Diagnostics.AddAttributeError(path.Root("approval_rules").AtListIndex(i), "Invalid Attribute Combination", "Cannot have user_id and required_approvals in the same approval_rules block")
 			}
+		}
+
+		if resp.Diagnostics.HasError() {
+			return
 		}
 	}
 }
 
 // Create creates a new upstream resources and adds it into the Terraform state.
-func (r *gitlabProjectProtectedEnvironmentResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var data *gitlabProjectProtectedEnvironmentResourceModel
+func (r *gitlabGroupProtectedEnvironmentResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var data *gitlabGroupProtectedEnvironmentResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
-
-	rules := make([]*gitlabProjectProtectedEnvironmentApprovalRuleModel, len(data.ApprovalRules.Elements()))
-	data.ApprovalRules.ElementsAs(ctx, &rules, true)
-
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// local copies of plan arguments
-	projectID := data.Project.ValueString()
+	groupID := data.Group.ValueString()
 	environmentName := data.Environment.ValueString()
 
 	// configure GitLab API call
-	options := &gitlab.ProtectRepositoryEnvironmentsOptions{
+	options := &gitlab.ProtectGroupEnvironmentOptions{
 		Name: gitlab.String(environmentName),
 	}
 
@@ -293,14 +297,14 @@ func (r *gitlabProjectProtectedEnvironmentResource) Create(ctx context.Context, 
 	}
 
 	// deploy access levels
-	deployAccessLevels := make([]*gitlabProjectProtectedEnvironmentDeployAccessLevelModel, 0, len(data.DeployAccessLevels.Elements()))
+	deployAccessLevels := make([]*gitlabGroupProtectedEnvironmentDeployAccessLevelModel, 0, len(data.DeployAccessLevels.Elements()))
 	resp.Diagnostics.Append(data.DeployAccessLevels.ElementsAs(ctx, &deployAccessLevels, false)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	deployAccessLevelsOption := make([]*gitlab.EnvironmentAccessOptions, len(deployAccessLevels))
+	deployAccessLevelsOption := make([]*gitlab.GroupEnvironmentAccessOptions, len(deployAccessLevels))
 	for i, v := range deployAccessLevels {
-		deployAccessLevelOptions := &gitlab.EnvironmentAccessOptions{}
+		deployAccessLevelOptions := &gitlab.GroupEnvironmentAccessOptions{}
 
 		if !v.AccessLevel.IsNull() && v.AccessLevel.ValueString() != "" {
 			deployAccessLevelOptions.AccessLevel = gitlab.AccessLevel(api.AccessLevelNameToValue[v.AccessLevel.ValueString()])
@@ -316,9 +320,14 @@ func (r *gitlabProjectProtectedEnvironmentResource) Create(ctx context.Context, 
 	options.DeployAccessLevels = &deployAccessLevelsOption
 
 	// approval rules
-	approvalRulesOption := make([]*gitlab.EnvironmentApprovalRuleOptions, len(rules))
-	for i, v := range rules {
-		approvalRuleOptions := &gitlab.EnvironmentApprovalRuleOptions{}
+	approvalRules := make([]*gitlabGroupProtectedEnvironmentApprovalRuleModel, 0, len(data.ApprovalRules.Elements()))
+	resp.Diagnostics.Append(data.ApprovalRules.ElementsAs(ctx, &approvalRules, true)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	approvalRulesOption := make([]*gitlab.GroupEnvironmentApprovalRuleOptions, len(approvalRules))
+	for i, v := range approvalRules {
+		approvalRuleOptions := &gitlab.GroupEnvironmentApprovalRuleOptions{}
 
 		if !v.AccessLevel.IsNull() && v.AccessLevel.ValueString() != "" {
 			approvalRuleOptions.AccessLevel = gitlab.AccessLevel(api.AccessLevelNameToValue[v.AccessLevel.ValueString()])
@@ -337,20 +346,20 @@ func (r *gitlabProjectProtectedEnvironmentResource) Create(ctx context.Context, 
 	}
 	options.ApprovalRules = &approvalRulesOption
 
-	tflog.Debug(ctx, "Creating protected environment with options", map[string]interface{}{
-		"data":      data,
-		"projectId": projectID,
-		"name":      environmentName,
-		"options":   options,
+	tflog.Debug(ctx, "Creating group protected environment with options", map[string]interface{}{
+		"data":    data,
+		"groupId": groupID,
+		"name":    environmentName,
+		"options": options,
 	})
 
 	// Protect environment
-	protectedEnvironment, _, err := r.client.ProtectedEnvironments.ProtectRepositoryEnvironments(projectID, options, gitlab.WithContext(ctx))
+	protectedEnvironment, _, err := r.client.GroupProtectedEnvironments.ProtectGroupEnvironment(groupID, options, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
 			resp.Diagnostics.AddError(
 				"GitLab Feature not available",
-				fmt.Sprintf("The protected environment feature is not available on this project. Make sure it's part of an enterprise plan. Error: %s", err.Error()),
+				fmt.Sprintf("The protected environment feature is not available on this group. Make sure it's part of an enterprise plan. Error: %s", err.Error()),
 			)
 			return
 		}
@@ -358,26 +367,26 @@ func (r *gitlabProjectProtectedEnvironmentResource) Create(ctx context.Context, 
 		return
 	}
 
-	tflog.Debug(ctx, "Protected Environment before state is persisted", map[string]interface{}{
+	tflog.Debug(ctx, "Group Protected Environment before state is persisted", map[string]interface{}{
 		"data":        data,
-		"projectId":   projectID,
+		"groupId":     groupID,
 		"name":        environmentName,
 		"environment": protectedEnvironment,
 	})
 
 	// Create resource ID and persist in state model
-	data.Id = types.StringValue(utils.BuildTwoPartID(&projectID, &protectedEnvironment.Name))
+	data.Id = types.StringValue(utils.BuildTwoPartID(&groupID, &protectedEnvironment.Name))
 
 	// persist API response in state model
-	r.protectedEnvironmentToStateModel(ctx, resp.Diagnostics, projectID, protectedEnvironment, data)
+	r.protectedEnvironmentToStateModel(ctx, resp.Diagnostics, groupID, protectedEnvironment, data)
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
 // Read refreshes the Terraform state with the latest data.
-func (r *gitlabProjectProtectedEnvironmentResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var data *gitlabProjectProtectedEnvironmentResourceModel
+func (r *gitlabGroupProtectedEnvironmentResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var data *gitlabGroupProtectedEnvironmentResourceModel
 
 	// Read Terraform prior state data into the model
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
@@ -387,65 +396,61 @@ func (r *gitlabProjectProtectedEnvironmentResource) Read(ctx context.Context, re
 	}
 
 	// read all information for refresh from resource id
-	projectID, environmentName, err := utils.ParseTwoPartID(data.Id.ValueString())
+	groupID, environmentName, err := utils.ParseTwoPartID(data.Id.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Invalid resource ID format",
-			fmt.Sprintf("The resource ID '%s' has an invalid format. It should be '<project>:<environment-name>'. Error: %s", data.Id.ValueString(), err.Error()),
+			fmt.Sprintf("The resource ID '%s' has an invalid format. It should be '<group>:<environment-name>'. Error: %s", data.Id.ValueString(), err.Error()),
 		)
 		return
 	}
 
 	// Read environment protection
-	protectedEnvironment, _, err := r.client.ProtectedEnvironments.GetProtectedEnvironment(projectID, environmentName, gitlab.WithContext(ctx))
+	protectedEnvironment, _, err := r.client.GroupProtectedEnvironments.GetGroupProtectedEnvironment(groupID, environmentName, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
 			tflog.Debug(ctx, "protected environment does not exist, removing from state", map[string]interface{}{
-				"project": projectID, "environment": environmentName,
+				"group": groupID, "environment": environmentName,
 			})
 			resp.State.RemoveResource(ctx)
 			return
 		}
-		resp.Diagnostics.AddError("GitLab API error occured", fmt.Sprintf("Unable to read protected environment details: %s", err.Error()))
+		resp.Diagnostics.AddError("GitLab API error occured", fmt.Sprintf("Unable to read group protected environment details: %s", err.Error()))
 		return
 	}
 
 	// persist API response in state model
-	r.protectedEnvironmentToStateModel(ctx, resp.Diagnostics, projectID, protectedEnvironment, data)
+	r.protectedEnvironmentToStateModel(ctx, resp.Diagnostics, groupID, protectedEnvironment, data)
 
 	tflog.Debug(ctx, "Protected Environment when state is being read", map[string]interface{}{
-		"project": projectID,
-		"name":    environmentName,
-		"data":    data,
+		"group": groupID,
+		"name":  environmentName,
+		"data":  data,
 	})
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-// Updates updates the resource in-place.
-func (r *gitlabProjectProtectedEnvironmentResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var data *gitlabProjectProtectedEnvironmentResourceModel
+// Update updates the resource in-place.
+func (r *gitlabGroupProtectedEnvironmentResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var data *gitlabGroupProtectedEnvironmentResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
-
-	rules := make([]*gitlabProjectProtectedEnvironmentApprovalRuleModel, len(data.ApprovalRules.Elements()))
-	data.ApprovalRules.ElementsAs(ctx, &rules, true)
-
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// local copies of plan arguments
-	projectID := data.Project.ValueString()
+	groupID := data.Group.ValueString()
 	environmentName := data.Environment.ValueString()
 
 	// Retrieve the protected environment (to know which deploy/approval rules to remove)
-	protectedEnvironment, _, err := r.client.ProtectedEnvironments.GetProtectedEnvironment(projectID, environmentName, gitlab.WithContext(ctx))
+	protectedEnvironment, _, err := r.client.GroupProtectedEnvironments.GetGroupProtectedEnvironment(groupID, environmentName, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
 			resp.Diagnostics.AddError(
 				"GitLab Feature not available",
-				fmt.Sprintf("The protected environment feature is not available on this project. Make sure it's part of an enterprise plan. Error: %s", err.Error()),
+				fmt.Sprintf("The protected environment feature is not available on this group. Make sure it's part of an enterprise plan. Error: %s", err.Error()),
 			)
 			return
 		}
@@ -454,7 +459,7 @@ func (r *gitlabProjectProtectedEnvironmentResource) Update(ctx context.Context, 
 	}
 
 	// configure GitLab API call
-	options := &gitlab.UpdateProtectedEnvironmentsOptions{
+	options := &gitlab.UpdateGroupProtectedEnvironmentOptions{
 		Name: gitlab.String(environmentName),
 	}
 
@@ -463,14 +468,14 @@ func (r *gitlabProjectProtectedEnvironmentResource) Update(ctx context.Context, 
 	}
 
 	// deploy access levels
-	deployAccessLevels := make([]*gitlabProjectProtectedEnvironmentDeployAccessLevelModel, 0, len(data.DeployAccessLevels.Elements()))
+	deployAccessLevels := make([]*gitlabGroupProtectedEnvironmentDeployAccessLevelModel, 0, len(data.DeployAccessLevels.Elements()))
 	resp.Diagnostics.Append(data.DeployAccessLevels.ElementsAs(ctx, &deployAccessLevels, false)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	deployAccessLevelsOption := make([]*gitlab.UpdateEnvironmentAccessOptions, 0)
+	deployAccessLevelsOption := make([]*gitlab.UpdateGroupEnvironmentAccessOptions, 0)
 	for _, v := range deployAccessLevels {
-		deployAccessLevelOptions := &gitlab.UpdateEnvironmentAccessOptions{}
+		deployAccessLevelOptions := &gitlab.UpdateGroupEnvironmentAccessOptions{}
 
 		// the ID will be null when adding a new deploy rule via update
 		if !v.ID.IsNull() && v.ID.ValueInt64() != 0 {
@@ -502,13 +507,13 @@ func (r *gitlabProjectProtectedEnvironmentResource) Update(ctx context.Context, 
 
 		// If the existing deploy isn't present, add it to the values to remove it
 		if !isPresent {
-			deployAccessLevelOptions := &gitlab.UpdateEnvironmentAccessOptions{
+			deployAccessLevelOptions := &gitlab.UpdateGroupEnvironmentAccessOptions{
 				ID:      gitlab.Int(v.ID),
 				Destroy: gitlab.Bool(true),
 			}
 
 			// Seems weird, but the API does validate that these values are present even
-			// when destroyin
+			// when destroying
 			if v.AccessLevel != 0 {
 				deployAccessLevelOptions.AccessLevel = &v.AccessLevel
 			}
@@ -526,9 +531,14 @@ func (r *gitlabProjectProtectedEnvironmentResource) Update(ctx context.Context, 
 	options.DeployAccessLevels = &deployAccessLevelsOption
 
 	// approval rules
-	approvalRulesOptionSlice := make([]*gitlab.UpdateEnvironmentApprovalRuleOptions, 0)
-	for _, v := range rules {
-		approvalRuleOptions := &gitlab.UpdateEnvironmentApprovalRuleOptions{}
+	approvalRules := make([]*gitlabGroupProtectedEnvironmentApprovalRuleModel, 0, len(data.ApprovalRules.Elements()))
+	resp.Diagnostics.Append(data.ApprovalRules.ElementsAs(ctx, &approvalRules, true)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	approvalRulesOptionSlice := make([]*gitlab.UpdateGroupEnvironmentApprovalRuleOptions, 0)
+	for _, v := range approvalRules {
+		approvalRuleOptions := &gitlab.UpdateGroupEnvironmentApprovalRuleOptions{}
 
 		// the ID will be null when adding a new approval rule via update
 		if !v.ID.IsNull() && v.ID.ValueInt64() != 0 {
@@ -554,7 +564,7 @@ func (r *gitlabProjectProtectedEnvironmentResource) Update(ctx context.Context, 
 	// Remove approval levels that aren't present in the config
 	for _, v := range protectedEnvironment.ApprovalRules {
 		isPresent := false
-		for _, j := range rules {
+		for _, j := range approvalRules {
 			if v.ID == int(j.ID.ValueInt64()) {
 				isPresent = true
 				break
@@ -563,7 +573,7 @@ func (r *gitlabProjectProtectedEnvironmentResource) Update(ctx context.Context, 
 
 		// If the existing deploy isn't present, add it to the values to remove it
 		if !isPresent {
-			approvalRuleOptions := &gitlab.UpdateEnvironmentApprovalRuleOptions{
+			approvalRuleOptions := &gitlab.UpdateGroupEnvironmentApprovalRuleOptions{
 				ID:      gitlab.Int(v.ID),
 				Destroy: gitlab.Bool(true),
 			}
@@ -584,18 +594,18 @@ func (r *gitlabProjectProtectedEnvironmentResource) Update(ctx context.Context, 
 	}
 	options.ApprovalRules = &approvalRulesOptionSlice
 
-	tflog.Debug(ctx, "Updating protected environment with options", map[string]interface{}{
-		"project":          projectID,
+	tflog.Debug(ctx, "Updating group protected environment with options", map[string]interface{}{
+		"group":            groupID,
 		"options":          options,
 		"environment_name": environmentName,
 	})
 
-	protectedEnvironment, _, err = r.client.ProtectedEnvironments.UpdateProtectedEnvironments(projectID, environmentName, options, gitlab.WithContext(ctx))
+	protectedEnvironment, _, err = r.client.GroupProtectedEnvironments.UpdateGroupProtectedEnvironment(groupID, environmentName, options, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
 			resp.Diagnostics.AddError(
 				"GitLab Feature not available",
-				fmt.Sprintf("The protected environment feature is not available on this project. Make sure it's part of an enterprise plan. Error: %s", err.Error()),
+				fmt.Sprintf("The protected environment feature is not available on this group. Make sure it's part of an enterprise plan. Error: %s", err.Error()),
 			)
 			return
 		}
@@ -603,20 +613,20 @@ func (r *gitlabProjectProtectedEnvironmentResource) Update(ctx context.Context, 
 		return
 	}
 
-	tflog.Debug(ctx, "Updating protected environment completed with options", map[string]interface{}{
-		"project":          projectID,
+	tflog.Debug(ctx, "Updating group protected environment completed with options", map[string]interface{}{
+		"group":            groupID,
 		"environment_name": environmentName,
 		"result":           protectedEnvironment,
 	})
 
 	// Add data to state
-	r.protectedEnvironmentToStateModel(ctx, resp.Diagnostics, projectID, protectedEnvironment, data)
+	r.protectedEnvironmentToStateModel(ctx, resp.Diagnostics, groupID, protectedEnvironment, data)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-// Deletes removes the resource.
-func (r *gitlabProjectProtectedEnvironmentResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var data *gitlabProjectProtectedEnvironmentResourceModel
+// Delete removes the resource.
+func (r *gitlabGroupProtectedEnvironmentResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var data *gitlabGroupProtectedEnvironmentResourceModel
 
 	// Read Terraform prior state data into the model
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
@@ -626,16 +636,16 @@ func (r *gitlabProjectProtectedEnvironmentResource) Delete(ctx context.Context, 
 	}
 
 	// read all information for refresh from resource id
-	projectID, environmentName, err := utils.ParseTwoPartID(data.Id.ValueString())
+	groupID, environmentName, err := utils.ParseTwoPartID(data.Id.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Invalid resource ID format",
-			fmt.Sprintf("The resource ID '%s' has an invalid format. It should be '<project>:<environment-name>'. Error: %s", data.Id.ValueString(), err.Error()),
+			fmt.Sprintf("The resource ID '%s' has an invalid format. It should be '<group>:<environment-name>'. Error: %s", data.Id.ValueString(), err.Error()),
 		)
 		return
 	}
 
-	if _, err = r.client.ProtectedEnvironments.UnprotectEnvironment(projectID, environmentName, gitlab.WithContext(ctx)); err != nil {
+	if _, err = r.client.GroupProtectedEnvironments.UnprotectGroupEnvironment(groupID, environmentName, gitlab.WithContext(ctx)); err != nil {
 		resp.Diagnostics.AddError(
 			"GitLab API Error occurred",
 			fmt.Sprintf("Unable to delete protected environment: %s", err.Error()),
@@ -644,19 +654,19 @@ func (r *gitlabProjectProtectedEnvironmentResource) Delete(ctx context.Context, 
 }
 
 // ImportState imports the resource into the Terraform state.
-func (r *gitlabProjectProtectedEnvironmentResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *gitlabGroupProtectedEnvironmentResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
-func (r *gitlabProjectProtectedEnvironmentResource) protectedEnvironmentToStateModel(ctx context.Context, existingDiag diag.Diagnostics, projectID string, protectedEnvironment *gitlab.ProtectedEnvironment, data *gitlabProjectProtectedEnvironmentResourceModel) {
-	data.Project = types.StringValue(projectID)
+func (r *gitlabGroupProtectedEnvironmentResource) protectedEnvironmentToStateModel(ctx context.Context, existingDiag diag.Diagnostics, groupID string, protectedEnvironment *gitlab.GroupProtectedEnvironment, data *gitlabGroupProtectedEnvironmentResourceModel) {
+	data.Group = types.StringValue(groupID)
 	data.Environment = types.StringValue(protectedEnvironment.Name)
 	data.RequiredApprovalCount = types.Int64Value(int64(protectedEnvironment.RequiredApprovalCount))
 
-	deployAccessLevelsData := make([]gitlabProjectProtectedEnvironmentDeployAccessLevelModel, 0)
+	deployAccessLevelsData := make([]gitlabGroupProtectedEnvironmentDeployAccessLevelModel, 0)
 	for _, v := range protectedEnvironment.DeployAccessLevels {
 		obj := *v
-		deployAccessLevelData := gitlabProjectProtectedEnvironmentDeployAccessLevelModel{
+		deployAccessLevelData := gitlabGroupProtectedEnvironmentDeployAccessLevelModel{
 			ID:                     types.Int64Value(int64(obj.ID)),
 			AccessLevelDescription: types.StringValue(obj.AccessLevelDescription),
 		}
@@ -672,14 +682,14 @@ func (r *gitlabProjectProtectedEnvironmentResource) protectedEnvironmentToStateM
 
 		deployAccessLevelsData = append(deployAccessLevelsData, deployAccessLevelData)
 	}
-	dalSetType, newDiag := types.SetValueFrom(ctx, deployAccessLevelSchema().NestedObject.Type(), deployAccessLevelsData)
+	accessLevelSetType, newDiag := types.SetValueFrom(ctx, groupDeployAccessLevelSchema().NestedObject.Type(), deployAccessLevelsData)
 	existingDiag.Append(newDiag...)
-	data.DeployAccessLevels = dalSetType
+	data.DeployAccessLevels = accessLevelSetType
 
-	approvalRulesData := make([]gitlabProjectProtectedEnvironmentApprovalRuleModel, 0)
+	approvalRulesData := make([]gitlabGroupProtectedEnvironmentApprovalRuleModel, 0)
 	for _, v := range protectedEnvironment.ApprovalRules {
 		obj := *v
-		approvalRuleData := gitlabProjectProtectedEnvironmentApprovalRuleModel{
+		approvalRuleData := gitlabGroupProtectedEnvironmentApprovalRuleModel{
 			ID:                     types.Int64Value(int64(obj.ID)),
 			AccessLevelDescription: types.StringValue(obj.AccessLevelDescription),
 		}
@@ -697,7 +707,7 @@ func (r *gitlabProjectProtectedEnvironmentResource) protectedEnvironmentToStateM
 		}
 		approvalRulesData = append(approvalRulesData, approvalRuleData)
 	}
-	arSetType, newDiag := types.ListValueFrom(ctx, approvalRuleSchema().NestedObject.Type(), approvalRulesData)
+	approvalRulesSetType, newDiag := types.SetValueFrom(ctx, groupApprovalRuleSchema().NestedObject.Type(), approvalRulesData)
 	existingDiag.Append(newDiag...)
-	data.ApprovalRules = arSetType
+	data.ApprovalRules = approvalRulesSetType
 }

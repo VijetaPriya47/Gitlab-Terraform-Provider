@@ -586,15 +586,22 @@ func CreateProjectLabels(t *testing.T, pid interface{}, n int) []*gitlab.Label {
 	return labels
 }
 
-// AddGroupMembers is a test helper for adding users as members of a group.
+// AddGroupMembers is a test helper for adding users as members of a group with Developer level access.
 // It assumes the group will be destroyed at the end of the test and will not cleanup members.
 func AddGroupMembers(t *testing.T, gid interface{}, users []*gitlab.User) {
+	t.Helper()
+
+	AddGroupMembersWithAccessLevel(t, gid, users, gitlab.DeveloperPermissions)
+}
+
+// AddGroupMembersWithAccessLevel is a test helper for adding users as members of a group with a given access level.
+func AddGroupMembersWithAccessLevel(t *testing.T, gid interface{}, users []*gitlab.User, accessLevel gitlab.AccessLevelValue) {
 	t.Helper()
 
 	for _, user := range users {
 		_, _, err := TestGitlabClient.GroupMembers.AddGroupMember(gid, &gitlab.AddGroupMemberOptions{
 			UserID:      gitlab.Int(user.ID),
-			AccessLevel: gitlab.AccessLevel(gitlab.DeveloperPermissions),
+			AccessLevel: gitlab.AccessLevel(accessLevel),
 		})
 		if err != nil {
 			t.Fatalf("could not add test group member: %v", err)
