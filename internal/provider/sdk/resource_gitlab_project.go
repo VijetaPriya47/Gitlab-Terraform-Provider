@@ -246,6 +246,11 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 		Elem:        &schema.Schema{Type: schema.TypeString},
 		Set:         schema.HashString,
 	},
+	"empty_repo": {
+		Description: "Whether the project is empty.",
+		Type:        schema.TypeBool,
+		Computed:    true,
+	},
 	"archived": {
 		Description: "Whether the project is in read-only mode (archived). Repositories can be archived/unarchived by toggling this parameter.",
 		Type:        schema.TypeBool,
@@ -847,6 +852,7 @@ func resourceGitlabProjectSetToState(ctx context.Context, client *gitlab.Client,
 	if err := d.Set("tags", project.TagList); err != nil {
 		return err
 	}
+	d.Set("empty_repo", project.EmptyRepo)
 	d.Set("archived", project.Archived)
 	if supportsSquashOption, err := api.IsGitLabVersionAtLeast(ctx, client, "14.1")(); err != nil {
 		return err
