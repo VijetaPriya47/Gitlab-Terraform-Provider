@@ -131,6 +131,11 @@ var _ = registerDataSource("gitlab_project", func() *schema.Resource {
 				Computed:    true,
 				Sensitive:   true,
 			},
+			"empty_repo": {
+				Description: "Whether the project is empty.",
+				Type:        schema.TypeBool,
+				Computed:    true,
+			},
 			"archived": {
 				Description: "Whether the project is in read-only mode (archived).",
 				Type:        schema.TypeBool,
@@ -510,6 +515,7 @@ func dataSourceGitlabProjectRead(ctx context.Context, d *schema.ResourceData, me
 	d.Set("http_url_to_repo", found.HTTPURLToRepo)
 	d.Set("web_url", found.WebURL)
 	d.Set("runners_token", found.RunnersToken)
+	d.Set("empty_repo", found.EmptyRepo)
 	d.Set("archived", found.Archived)
 	d.Set("remove_source_branch_after_merge", found.RemoveSourceBranchAfterMerge)
 	d.Set("restrict_user_defined_variables", found.RestrictUserDefinedVariables)

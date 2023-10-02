@@ -139,6 +139,7 @@ func flattenProjects(projects []*gitlab.Project) (values []map[string]interface{
 				"import_status":                     project.ImportStatus,
 				"import_error":                      project.ImportError,
 				"permissions":                       flattenProjectPermissions(project.Permissions),
+				"empty_repo":                        project.EmptyRepo,
 				"archived":                          project.Archived,
 				"avatar_url":                        project.AvatarURL,
 				"shared_runners_enabled":            project.SharedRunnersEnabled,
@@ -629,6 +630,11 @@ var _ = registerDataSource("gitlab_projects", func() *schema.Resource {
 									},
 								},
 							},
+						},
+						"empty_repo": {
+							Description: "Whether the project is empty.",
+							Type:        schema.TypeBool,
+							Computed:    true,
 						},
 						"archived": {
 							Description: "Whether the project is archived.",

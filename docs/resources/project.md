@@ -232,6 +232,7 @@ This attribute is only used during resource creation, thus changes are suppresse
 ### Read-Only
 
 - `avatar_url` (String) The URL of the avatar image.
+- `empty_repo` (Boolean) Whether the project is empty.
 - `http_url_to_repo` (String) URL that can be provided to `git clone` to clone the
 - `id` (String) The ID of this resource.
 - `path_with_namespace` (String) The path of the repository with namespace.
