@@ -317,7 +317,7 @@ The GitHub Actions test against the three latest GitLab releases.
 
 This option is the easiest and requires [docker-compose](https://docs.docker.com/compose/install/) (version 1.13+) to be installed on your machine.
 
-Note that the you need an up-to-date version of GNU make and an up-to-date version of openssl / libressl.
+Note that you need an up-to-date version of GNU make and an up-to-date version of openssl / libressl.
 
 1. Start the Gitlab container. It will take about 5 minutes for the container to become healthy.
 

@@ -21,6 +21,14 @@ var defaultBranchProtectionValues = []int{0, 1, 2, 3, 4}
 var visibilityLevelValues = []string{"private", "internal", "public"}
 var projectCreationLevelValues = []string{"noone", "maintainer", "developer"}
 var subGroupCreationLevelValues = []string{"owner", "maintainer"}
+var validSharedRunnersSettings = []string{
+	"enabled",
+	"disabled_and_overridable",
+	"disabled_and_unoverridable",
+
+	// Deprecated
+	"disabled_with_override",
+}
 
 var _ = registerResource("gitlab_group", func() *schema.Resource {
 	return &schema.Resource{
@@ -193,6 +201,13 @@ var _ = registerResource("gitlab_group", func() *schema.Resource {
 				Computed:     true,
 				ValidateFunc: validation.StringInSlice(validWikiAccessLevels, true),
 			},
+			"shared_runners_setting": {
+				Description:  fmt.Sprintf("Enable or disable shared runners for a group’s subgroups and projects. Valid values are: %s.", utils.RenderValueListForDocs(validSharedRunnersSettings)),
+				Type:         schema.TypeString,
+				Optional:     true,
+				Computed:     true,
+				ValidateFunc: validation.StringInSlice(validSharedRunnersSettings, false),
+			},
 		}, avatarableSchema()),
 		CustomizeDiff: avatarableDiff,
 	}
@@ -317,7 +332,7 @@ func resourceGitlabGroupCreate(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	// Wait for the Group to return properly before we update it
-	// Groups are created asyncronously, so we want to ensure the create operation
+	// Groups are created asynchronously, so we want to ensure the create operation
 	// completely finishes before we act on the group, or we can get an error.
 	// see: https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/issues/692
 	stateConf := &retry.StateChangeConf{
@@ -363,6 +378,10 @@ func resourceGitlabGroupCreate(ctx context.Context, d *schema.ResourceData, meta
 	// IP Restriction can only be set on update.
 	if v, ok := d.GetOk("ip_restriction_ranges"); ok {
 		updateOptions.IPRestrictionRanges = stringListToCommaSeparatedString(v.([]interface{}))
+	}
+
+	if v, ok := d.GetOk("shared_runners_setting"); ok {
+		updateOptions.SharedRunnersSetting = stringToSharedRunnersSetting(v.(string))
 	}
 
 	if (updateOptions != gitlab.UpdateGroupOptions{}) {
@@ -427,6 +446,7 @@ func resourceGitlabGroupRead(ctx context.Context, d *schema.ResourceData, meta i
 	d.Set("shared_runners_minutes_limit", group.SharedRunnersMinutesLimit)
 	d.Set("avatar_url", group.AvatarURL)
 	d.Set("wiki_access_level", group.WikiAccessLevel)
+	d.Set("shared_runners_setting", group.SharedRunnersSetting)
 
 	// The value comes back from the API as a comma separated string, and stores in TF as a set.
 	// We need to set the value only if it's "", otherwise the split gives up [""] which will result
@@ -544,6 +564,10 @@ func resourceGitlabGroupUpdate(ctx context.Context, d *schema.ResourceData, meta
 
 	if d.HasChange("wiki_access_level") {
 		options.WikiAccessLevel = stringToAccessControlValue(d.Get("wiki_access_level").(string))
+	}
+
+	if d.HasChange("shared_runners_setting") {
+		options.SharedRunnersSetting = stringToSharedRunnersSetting(d.Get("shared_runners_setting").(string))
 	}
 
 	tflog.Debug(ctx, "update gitlab group", map[string]interface{}{

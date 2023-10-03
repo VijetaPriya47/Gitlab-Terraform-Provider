@@ -64,6 +64,22 @@ func stringToProjectCreationLevel(s string) *gitlab.ProjectCreationLevelValue {
 	return &value
 }
 
+func stringToSharedRunnersSetting(s string) *gitlab.SharedRunnersSettingValue {
+	lookup := map[string]gitlab.SharedRunnersSettingValue{
+		"enabled":                    gitlab.EnabledSharedRunnersSettingValue,
+		"disabled_and_overridable":   gitlab.DisabledAndOverridableSharedRunnersSettingValue,
+		"disabled_and_unoverridable": gitlab.DisabledAndUnoverridableSharedRunnersSettingValue,
+		// nolint:staticcheck // SA1019 ignore deprecated DisabledWithOverrideSharedRunnersSettingValue
+		"disabled_with_override": gitlab.DisabledWithOverrideSharedRunnersSettingValue,
+	}
+
+	value, ok := lookup[s]
+	if !ok {
+		return nil
+	}
+	return &value
+}
+
 func stringToSubGroupCreationLevel(s string) *gitlab.SubGroupCreationLevelValue {
 	lookup := map[string]gitlab.SubGroupCreationLevelValue{
 		"owner":      gitlab.OwnerSubGroupCreationLevelValue,
