@@ -462,6 +462,57 @@ func TestAccGitlabGroup_WithAvatar(t *testing.T) {
 	resource.Test(t, testCase)
 }
 
+func TestAccGitlabGroup_sharedRunnersSetting(t *testing.T) {
+	rInt := acctest.RandInt()
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabGroupDestroy,
+		Steps: []resource.TestStep{
+			// Create a group
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_group" "foo" {
+					  name = "foo-name-%d"
+					  path = "foo-path-%d"
+					  description = "Terraform acceptance tests"
+					  shared_runners_setting = "disabled_and_unoverridable"
+					
+					  # So that acceptance tests can be run in a gitlab organization
+					  # with no billing
+					  visibility_level = "public"
+					}`, rInt, rInt),
+			},
+			// Verify Import
+			{
+				ResourceName:      "gitlab_group.foo",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Update the group to change the shared_runners_setting
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_group" "foo" {
+					  name = "foo-name-%d"
+					  path = "foo-path-%d"
+					  description = "Terraform acceptance tests"
+					  shared_runners_setting = "enabled"
+			
+					  # So that acceptance tests can be run in a gitlab organization
+					  # with no billing
+					  visibility_level = "public"
+					}`, rInt, rInt),
+			},
+			// Verify Import
+			{
+				ResourceName:      "gitlab_group.foo",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 func testAccCheckGitlabGroupExists(n string, group *gitlab.Group) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]

@@ -61,6 +61,7 @@ resource "gitlab_project" "example" {
 - `require_two_factor_authentication` (Boolean) Require all users in this group to setup Two-factor authentication.
 - `share_with_group_lock` (Boolean) Prevent sharing a project with another group within this group.
 - `shared_runners_minutes_limit` (Number) Can be set by administrators only. Maximum number of monthly CI/CD minutes for this group. Can be nil (default; inherit system default), 0 (unlimited), or > 0.
+- `shared_runners_setting` (String) Enable or disable shared runners for a group’s subgroups and projects. Valid values are: `enabled`, `disabled_and_overridable`, `disabled_and_unoverridable`, `disabled_with_override`.
 - `subgroup_creation_level` (String) Allowed to create subgroups. Valid values are: `owner`, `maintainer`.
 - `two_factor_grace_period` (Number) Defaults to 48. Time before Two-factor authentication is enforced (in hours).
 - `visibility_level` (String) The group's visibility. Can be `private`, `internal`, or `public`. Valid values are: `private`, `internal`, `public`.
