@@ -167,6 +167,12 @@ func gitlabGroupSchema() map[string]*schema.Schema {
 			Computed:    true,
 			Optional:    true,
 		},
+		"shared_runners_setting": {
+			Description: "",
+			Type:        schema.TypeString,
+			Computed:    true,
+			Optional:    true,
+		},
 	}
 }
 
@@ -198,6 +204,7 @@ func gitlabGroupToStateMap(group *gitlab.Group) map[string]interface{} {
 	stateMap["visibility"] = group.Visibility
 	stateMap["web_url"] = group.WebURL
 	stateMap["wiki_access_level"] = group.WikiAccessLevel
+	stateMap["shared_runners_setting"] = group.SharedRunnersSetting
 	return stateMap
 }
 
