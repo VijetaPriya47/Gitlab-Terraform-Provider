@@ -119,6 +119,11 @@ var _ = registerDataSource("gitlab_group", func() *schema.Resource {
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
+			"shared_runners_setting": {
+				Description: fmt.Sprintf("Enable or disable shared runners for a group’s subgroups and projects. Valid values are: %s.", utils.RenderValueListForDocs(validSharedRunnersSettings)),
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
 		},
 	}
 })
@@ -168,6 +173,7 @@ func dataSourceGitlabGroupRead(ctx context.Context, d *schema.ResourceData, meta
 	d.Set("extra_shared_runners_minutes_limit", group.ExtraSharedRunnersMinutesLimit)
 	d.Set("shared_runners_minutes_limit", group.SharedRunnersMinutesLimit)
 	d.Set("wiki_access_level", group.WikiAccessLevel)
+	d.Set("shared_runners_setting", group.SharedRunnersSetting)
 
 	d.SetId(fmt.Sprintf("%d", group.ID))
 

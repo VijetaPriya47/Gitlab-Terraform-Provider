@@ -135,6 +135,11 @@ var _ = registerDataSource("gitlab_groups", func() *schema.Resource {
 							Type:        schema.TypeString,
 							Computed:    true,
 						},
+						"shared_runners_setting": {
+							Description: fmt.Sprintf("Enable or disable shared runners for a group’s subgroups and projects. Valid values are: %s.", utils.RenderValueListForDocs(validSharedRunnersSettings)),
+							Type:        schema.TypeString,
+							Computed:    true,
+						},
 					},
 				},
 			},
@@ -192,6 +197,7 @@ func flattenGitlabGroups(groups []*gitlab.Group) []interface{} {
 			"default_branch_protection":     group.DefaultBranchProtection,
 			"prevent_forking_outside_group": group.PreventForkingOutsideGroup,
 			"wiki_access_level":             group.WikiAccessLevel,
+			"shared_runners_setting":        group.SharedRunnersSetting,
 		}
 
 		groupsList = append(groupsList, values)

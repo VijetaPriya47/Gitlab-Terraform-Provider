@@ -59,6 +59,7 @@ func testAccDataSourceGitlabGroup(src, n string) resource.TestCheckFunc {
 			"parent_id",
 			"default_branch_protection",
 			"prevent_forking_outside_group",
+			"shared_runners_setting",
 		}
 
 		for _, attribute := range testAttributes {

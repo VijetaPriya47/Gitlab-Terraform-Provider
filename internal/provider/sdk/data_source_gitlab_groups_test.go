@@ -45,6 +45,7 @@ func TestAccDataSourceGitlabGroups_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("data.gitlab_groups.foos", "groups.0.runners_token", groupsFoo[0].RunnersToken),
 					resource.TestCheckResourceAttr("data.gitlab_groups.foos", "groups.0.default_branch_protection", fmt.Sprint(groupsFoo[0].DefaultBranchProtection)),
 					resource.TestCheckResourceAttr("data.gitlab_groups.foos", "groups.0.prevent_forking_outside_group", strconv.FormatBool(groupsFoo[0].PreventForkingOutsideGroup)),
+					resource.TestCheckResourceAttr("data.gitlab_groups.foos", "groups.0.shared_runners_setting", fmt.Sprint(groupsFoo[0].SharedRunnersSetting)),
 				),
 			},
 			{
