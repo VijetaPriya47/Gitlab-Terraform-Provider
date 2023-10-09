@@ -14,7 +14,7 @@ require (
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.29.0
 	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/onsi/gomega v1.28.0
-	github.com/xanzy/go-gitlab v0.93.0
+	github.com/xanzy/go-gitlab v0.93.1
 )
 
 require (
