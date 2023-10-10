@@ -226,7 +226,7 @@ You'll first need [Go](http://www.golang.org) installed on your machine (version
 1. Clone the git repository.
 
    ```sh
-   git clone git@github.com:gitlabhq/terraform-provider-gitlab
+   git clone git@gitlab.com:gitlab-org/terraform-provider-gitlab
    cd terraform-provider-gitlab
    ```
 
@@ -284,7 +284,7 @@ provider until this issue is resolved. If you manage to get a mac environment wo
 ### Use a Remote Environment via GitPod
 
 You can choose to use your own development environment if desired, however a `.gitpod.yml` file is included within the repository to allow the use of [GitPod](https://gitpod.io/) easily.
-This will allow you to use GitPod's integration with GitHub to quickly start a web-based development environment including Go and Docker, which are necessary
+This will allow you to use GitPod's integration with GitLab to quickly start a web-based development environment including Go and Docker, which are necessary
 for running tests. To use GitPod's integration, you have two different options described below. After you've completed one of the two options, your development environment
 will be ready within a minute or two. As part of starting up, your development environment will automatically start up the `gitlab-ce` container necessary for running
 tests, as described in the "Running Tests/Option 1" section below.
@@ -295,23 +295,28 @@ You can manually sign in and open your workspace within GitPod by following thes
 
 1. Navigate to [GitPod](https://gitpod.io/)
 1. Click [Login](https://gitpod.io/login/) if you have an account, or [Sign Up](https://www.gitpod.io/#get-started) if you do not.
-1. Click on "Continue with GitHub" and authorize GitPod to access your account.
+1. Click on "Continue with GitLab" and authorize GitPod to access your account.
 1. After you've signed in, select "Projects" along the top menu, click on your forked `terraform-provider-gitlab` project
 1. Hover over either the main branch for your fork or the branch you created for your fork, and click "New Workspace"
 
 #### Option 2: Open your GitPod Workspace directly via URL
 
-1. Navigate to your fork of the `terraform-provider-gitlab` project in GitHub
+1. Navigate to your fork of the `terraform-provider-gitlab` project in GitLab
 1. Select the branch you want to develop
 1. Add `https://gitpod.io/#` to the front of your URL
 
-Your workspace will automatically open the repository and branch that you selected in GitHub.
+Your workspace will automatically open the repository and branch that you selected in GitLab.
+
+#### Option 3: Use the GitLab integration for GitPod
+
+1. [Enable](https://docs.gitlab.com/ee/integration/gitpod.html#enable-gitpod-in-your-user-settings) the GitPod integration in your user settings.
+1. [Launch](https://docs.gitlab.com/ee/integration/gitpod.html#launch-gitpod-in-gitlab) GitPod from the `terraform-provider-gitlab` fork you want to use.
 
 ### Running Tests
 
 The acceptance tests can run against a Gitlab instance where you have a token with administrator permissions (likely not gitlab.com).
 
-The GitHub Actions test against the three latest GitLab releases.
+The GitLab CI pipeline test against the three latest GitLab releases.
 
 #### Option 1: Run tests against a local Gitlab container with docker-compose
 
@@ -446,7 +451,7 @@ The GitLab Terraform Provider is naturally hosted on GitLab.com, thus we are not
 ### Setup
 
 As outlined in the [Rational](#Retional) only GitHub is supported to publish to the Terraform Registry.
-Given that limitation, we still use the old GitHub repository at <https://gitlab.com/gitlab-org/terraform-provider-gitlab> as a proxy to release the provider.
+Given that limitation, we still use the old GitHub repository at <https://github.com/gitlabhq/terraform-provider-gitlab> as a proxy to release the provider.
 The setup looks like this:
 
 <div class="center">
