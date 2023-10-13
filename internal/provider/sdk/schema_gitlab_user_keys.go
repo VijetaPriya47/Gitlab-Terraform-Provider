@@ -12,10 +12,11 @@ import (
 func gitlabUserSSHKeySchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"user_id": {
-			Description: "The ID or username of the user.",
+			Description: "The ID or username of the user. If this field is omitted, this resource manages a SSH key for the current user. Otherwise, this resource manages a SSH key for the specified user, and an admin token is required.",
 			Type:        schema.TypeInt,
 			ForceNew:    true,
-			Required:    true,
+			Optional:    true,
+			Computed:    true,
 		},
 		"title": {
 			Description: "The title of the ssh key.",
