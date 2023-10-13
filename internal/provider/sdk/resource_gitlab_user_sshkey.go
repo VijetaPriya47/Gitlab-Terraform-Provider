@@ -31,7 +31,7 @@ var _ = registerResource("gitlab_user_sshkey", func() *schema.Resource {
 
 func resourceGitlabUserSSHKeyCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
-	userID := d.Get("user_id").(int)
+	userID, userIDOk := d.GetOk("user_id")
 
 	options := &gitlab.AddSSHKeyOptions{
 		Title: gitlab.String(d.Get("title").(string)),
@@ -47,12 +47,42 @@ func resourceGitlabUserSSHKeyCreate(ctx context.Context, d *schema.ResourceData,
 		options.ExpiresAt = &gitlabExpiresAt
 	}
 
-	key, _, err := client.Users.AddSSHKeyForUser(userID, options, gitlab.WithContext(ctx))
+	var isAdmin bool
+	var key *gitlab.SSHKey
+	var err error
+
+	if userIDOk {
+		isAdmin, err = isCurrentUserAdmin(ctx, client)
+		if err != nil {
+			return diag.Errorf("failed to check if user is admin for configuring ssh keys for a user")
+		}
+		if !isAdmin {
+			return diag.Errorf("current user needs to be admin for configuring ssh keys for a user")
+		}
+
+		key, _, err = client.Users.AddSSHKeyForUser(userID.(int), options, gitlab.WithContext(ctx))
+
+	} else {
+		key, _, err = client.Users.AddSSHKey(options, gitlab.WithContext(ctx))
+	}
+
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	userIDForID := fmt.Sprintf("%d", userID)
+	var userIDForID string
+	if userIDOk {
+		userIDForID = fmt.Sprintf("%d", userID.(int))
+
+	} else {
+		user, _, err := client.Users.CurrentUser(gitlab.WithContext(ctx))
+		if err != nil {
+			return diag.Errorf("failed to get current user: %s", err)
+		}
+
+		userIDForID = fmt.Sprintf("%d", user.ID)
+	}
+
 	keyIDForID := fmt.Sprintf("%d", key.ID)
 	d.SetId(utils.BuildTwoPartID(&userIDForID, &keyIDForID))
 	return resourceGitlabUserSSHKeyRead(ctx, d, meta)
@@ -110,12 +140,28 @@ func resourceGitlabUserSSHKeyRead(ctx context.Context, d *schema.ResourceData, m
 func resourceGitlabUserSSHKeyDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
-	userID, keyID, err := resourceGitlabUserSSHKeyParseID(d.Id())
+	_, keyID, err := resourceGitlabUserSSHKeyParseID(d.Id())
 	if err != nil {
 		return diag.Errorf("unable to parse user ssh key resource id: %s: %v", d.Id(), err)
 	}
 
-	if _, err := client.Users.DeleteSSHKeyForUser(userID, keyID, gitlab.WithContext(ctx)); err != nil {
+	var isAdmin bool
+
+	isAdmin, err = isCurrentUserAdmin(ctx, client)
+	if err != nil {
+		return diag.Errorf("failed to check if user is admin for configuring ssh keys for a user")
+	}
+
+	userID := d.Get("user_id").(int)
+
+	if isAdmin {
+		_, err = client.Users.DeleteSSHKeyForUser(userID, keyID, gitlab.WithContext(ctx))
+
+	} else {
+		_, err = client.Users.DeleteSSHKey(keyID, gitlab.WithContext(ctx))
+	}
+
+	if err != nil {
 		return diag.FromErr(err)
 	}
 
