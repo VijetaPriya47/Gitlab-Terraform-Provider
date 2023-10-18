@@ -54,6 +54,7 @@ func gitlabGroupLDAPLinkSchema() map[string]*schema.Schema {
 			Type:          schema.TypeString,
 			Optional:      true,
 			Computed:      true,
+			ForceNew:      true,
 			ConflictsWith: []string{"filter"},
 		},
 		"filter": {
@@ -61,6 +62,7 @@ func gitlabGroupLDAPLinkSchema() map[string]*schema.Schema {
 			Type:          schema.TypeString,
 			Optional:      true,
 			Computed:      true,
+			ForceNew:      true,
 			ConflictsWith: []string{"cn"},
 		},
 		"access_level": {
