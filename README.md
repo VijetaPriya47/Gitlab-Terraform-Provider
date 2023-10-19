@@ -17,6 +17,9 @@ GitLab resources, like users, groups and projects.
 Check out the [CONTRIBUTING.md](/CONTRIBUTING.md) guide for tips on how to contribute and develop the provider.
 
 
-## Note this Provider is not supported by the GitLab Support team
+## Troubleshooting support
 
-If you are a customer who has a GitLab License, **support for this provider is not covered by that license agreement as this is not part of the GitLab Product**. Feel free to open an issue in this project and the maintainers may be able to help.
+This is a community maintained project. If you have a paid GitLab subscription, please note that GitLab Terraform Provider is not packaged as a part of GitLab, and falls outside of the scope of support. For more information, see GitLab's [Statement of Support](https://about.gitlab.com/support/statement-of-support.html).
+
+Please [fill out an issue](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/issues) in this project's issue tracker and someone from the community will respond as soon as they are available to help you.
+
