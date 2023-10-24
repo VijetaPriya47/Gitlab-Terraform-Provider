@@ -161,7 +161,6 @@ go:test:
 
 .testacc:
   stage: acceptance-test
-  retry: 1
   services:
     - docker:24.0.6-dind
   variables:
@@ -214,6 +213,29 @@ testacc:ce:
   variables:
     GITLAB_EDITION: ce
 
+testacc:ce:flakey:
+  extends:
+    - .testacc
+    - .run-for-supported-versions
+  rules:
+    - if: $CI_MERGE_REQUEST_IID
+      changes:
+        - "**/*.go"
+        - go.mod
+        - go.sum
+        - .gitlab-ci.yml
+        - docker-compose.yml
+        - GNUmakefile
+        - scripts/await-healthy.sh
+        - scripts/healthcheck-and-setup.sh
+        - scripts/gitlab.rb
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_TAG
+  retry: 2
+  variables:
+    GITLAB_EDITION: ce
+  script: make testacc-flakey
+
 testacc:ee:
   extends:
     - .testacc
@@ -237,6 +259,31 @@ testacc:ee:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $ENABLE_EE_ACCEPTANCE_TESTS == "true"
     - if: $CI_COMMIT_TAG && $ENABLE_EE_ACCEPTANCE_TESTS == "true"
 
+testacc:ee:flakey:
+  extends:
+    - .testacc
+    - .run-for-supported-versions
+  variables:
+    GITLAB_EDITION: ee
+  retry: 2
+  rules:
+    # If we're on a merge request, only run the tests if go files have changed.
+    # Otherwise, run them on the default branch as long as EE is enabled.
+    - if: $CI_MERGE_REQUEST_IID && $ENABLE_EE_ACCEPTANCE_TESTS == "true"
+      changes:
+        - "**/*.go"
+        - go.mod
+        - go.sum
+        - .gitlab-ci.yml
+        - docker-compose.yml
+        - GNUmakefile
+        - scripts/await-healthy.sh
+        - scripts/healthcheck-and-setup.sh
+        - scripts/gitlab.rb
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $ENABLE_EE_ACCEPTANCE_TESTS == "true"
+    - if: $CI_COMMIT_TAG && $ENABLE_EE_ACCEPTANCE_TESTS == "true"
+  script: make testacc-flakey
+
 testacc:ce:nightly:
   extends: .testacc
   rules:
@@ -252,6 +299,26 @@ testacc:ee:nightly:
   variables:
     GITLAB_EDITION: ee
     GITLAB_VERSION: nightly
+
+testacc:ce:nightly:flakey:
+  extends: .testacc
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "schedule"
+  retry: 2
+  variables:
+    GITLAB_EDITION: ce
+    GITLAB_VERSION: nightly
+  script: make testacc-flakey
+
+testacc:ee:nightly:flakey:
+  extends: .testacc
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $ENABLE_EE_ACCEPTANCE_TESTS == "true" && $CI_PIPELINE_SOURCE == "schedule"
+  retry: 2
+  variables:
+    GITLAB_EDITION: ee
+    GITLAB_VERSION: nightly
+  script: make testacc-flakey
 
 testacc:nightly:failure:
   image: alpine:latest

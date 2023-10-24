@@ -1,5 +1,5 @@
-//go:build acceptance
-// +build acceptance
+//go:build acceptance || flakey
+// +build acceptance flakey
 
 package testutil
 

@@ -77,6 +77,9 @@ testacc-down: ## Teardown a GitLab instance.
 testacc: ## Run acceptance tests against a GitLab instance.
 	TF_ACC=1 GITLAB_TOKEN=$(GITLAB_TOKEN) GITLAB_BASE_URL=$(GITLAB_BASE_URL) GITLAB_EARLY_AUTH_CHECK=$(GITLAB_EARLY_AUTH_CHECK) go test --tags acceptance -v $(PROVIDER_SRC_DIR) $(TESTARGS) -timeout 40m
 
+testacc-flakey: ## Run flakey acceptance tests against a GitLab instance.
+	TF_ACC=1 GITLAB_TOKEN=$(GITLAB_TOKEN) GITLAB_BASE_URL=$(GITLAB_BASE_URL) GITLAB_EARLY_AUTH_CHECK=$(GITLAB_EARLY_AUTH_CHECK) go test --tags flakey -v $(PROVIDER_SRC_DIR) $(TESTARGS) -timeout 40m
+
 certs: ## Generate certs for the GitLab container registry
 	mkdir -p certs
 	openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes -keyout certs/gitlab-registry.key -out certs/gitlab-registry.crt -subj "/CN=gitlab-registry.com" -addext "subjectAltName=DNS:IP:127.0.0.1"

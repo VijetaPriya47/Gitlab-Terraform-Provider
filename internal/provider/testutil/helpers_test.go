@@ -1,11 +1,12 @@
-//go:build acceptance
-// +build acceptance
+//go:build acceptance || flakey
+// +build acceptance flakey
 
 package testutil
 
 import (
-	"github.com/xanzy/go-gitlab"
 	"testing"
+
+	"github.com/xanzy/go-gitlab"
 )
 
 func TestIsRunningInEE(t *testing.T) {
