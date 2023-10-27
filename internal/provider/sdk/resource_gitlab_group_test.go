@@ -6,6 +6,8 @@ package sdk
 import (
 	"context"
 	"fmt"
+	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
@@ -140,6 +142,326 @@ func TestAccGitlabGroup_basic(t *testing.T) {
 				ResourceName:      "gitlab_group.foo",
 				ImportState:       true,
 				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccGitlabGroup_basicPushRulesEE(t *testing.T) {
+	testutil.SkipIfCE(t)
+
+	var group gitlab.Group
+	rInt := acctest.RandInt()
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabGroupDestroy,
+		Steps: []resource.TestStep{
+			// Create a group
+			{
+				Config: testAccGitlabGroupConfig(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabGroupExists("gitlab_group.foo", &group),
+					testAccCheckGitlabGroupAttributes(&group, &testAccGitlabGroupExpectedAttributes{
+						Name:                 fmt.Sprintf("foo-name-%d", rInt),
+						Path:                 fmt.Sprintf("foo-path-%d", rInt),
+						Description:          "Terraform acceptance tests",
+						ProjectCreationLevel: "developer",
+					}),
+				),
+			},
+			// Verify Import
+			{
+				ResourceName:      "gitlab_group.foo",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Add all push rules to an existing group, setting 'commit_committer_check' & 'reject_unsigned_commits' to true
+			// these attributes are not returned on GitLab versions < 16.4 so skip test if not running >= 16.4
+			{
+				SkipFunc: api.IsGitLabVersionLessThan(context.TODO(), testutil.TestGitlabClient, "16.4"),
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "foo-name-%d"
+				  path = "foo-path-%d"
+				  description = "Terraform acceptance tests"
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				
+				  push_rules {
+				    author_email_regex = "foo_author"
+				    branch_name_regex = "foo_branch"
+				    commit_message_regex = "foo_commit"
+				    commit_message_negative_regex = "foo_not_commit"
+				    file_name_regex = "foo_file"
+				    commit_committer_check = true
+				    deny_delete_tag = true
+				    member_check = true
+				    prevent_secrets = true
+				    reject_unsigned_commits = true
+				    max_file_size = 123
+				  }
+				}
+					`, rInt, rInt),
+
+				Check: testAccCheckGitlabGroupPushRules("gitlab_group.foo", &testAccGitlabGroupPushRuleExpectedAttributes{
+					AuthorEmailRegex:           "foo_author",
+					BranchNameRegex:            "foo_branch",
+					CommitMessageRegex:         "foo_commit",
+					CommitMessageNegativeRegex: "foo_not_commit",
+					FileNameRegex:              "foo_file",
+					CommitCommitterCheck:       gitlab.Bool(true),
+					DenyDeleteTag:              gitlab.Bool(true),
+					MemberCheck:                gitlab.Bool(true),
+					PreventSecrets:             gitlab.Bool(true),
+					RejectUnsignedCommits:      gitlab.Bool(true),
+					MaxFileSize:                gitlab.Int(123),
+				}),
+			},
+			// Test import with a all push rules defined (checks read function)
+			{
+				SkipFunc:          api.IsGitLabVersionLessThan(context.TODO(), testutil.TestGitlabClient, "16.4"),
+				ResourceName:      "gitlab_group.foo",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Update some push rules but not others, setting 'commit_committer_check' & 'reject_unsigned_commits' to true
+			// these attributes are not returned on GitLab versions < 16.4 so skip test if not running >= 16.4
+			{
+				SkipFunc: api.IsGitLabVersionLessThan(context.TODO(), testutil.TestGitlabClient, "16.4"),
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "foo-name-%d"
+				  path = "foo-path-%d"
+				  description = "Terraform acceptance tests"
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				
+				  push_rules {
+				    author_email_regex = "foo_author"
+				    branch_name_regex = "foo_branch"
+				    commit_message_regex = "foo_commit"
+				    commit_message_negative_regex = "foo_not_commit"
+				    file_name_regex = "foo_file_2"
+				    commit_committer_check = true
+				    deny_delete_tag = true
+				    member_check = false
+				    prevent_secrets = true
+				    reject_unsigned_commits = true
+				    max_file_size = 1234
+				  }
+				}
+					`, rInt, rInt),
+
+				Check: testAccCheckGitlabGroupPushRules("gitlab_group.foo", &testAccGitlabGroupPushRuleExpectedAttributes{
+					AuthorEmailRegex:           "foo_author",
+					BranchNameRegex:            "foo_branch",
+					CommitMessageRegex:         "foo_commit",
+					CommitMessageNegativeRegex: "foo_not_commit",
+					FileNameRegex:              "foo_file_2",
+					CommitCommitterCheck:       gitlab.Bool(true),
+					DenyDeleteTag:              gitlab.Bool(true),
+					MemberCheck:                gitlab.Bool(false),
+					PreventSecrets:             gitlab.Bool(true),
+					RejectUnsignedCommits:      gitlab.Bool(true),
+					MaxFileSize:                gitlab.Int(1234),
+				}),
+			},
+			// Add all push rules to an existing group, 'commit_committer_check' & 'reject_unsigned_commits' set to false
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "foo-name-%d"
+				  path = "foo-path-%d"
+				  description = "Terraform acceptance tests"
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				
+				  push_rules {
+				    author_email_regex = "foo_author"
+				    branch_name_regex = "foo_branch"
+				    commit_message_regex = "foo_commit"
+				    commit_message_negative_regex = "foo_not_commit"
+				    file_name_regex = "foo_file"
+				    commit_committer_check = false
+				    deny_delete_tag = true
+				    member_check = true
+				    prevent_secrets = true
+				    reject_unsigned_commits = false
+				    max_file_size = 123
+				  }
+				}
+					`, rInt, rInt),
+
+				Check: testAccCheckGitlabGroupPushRules("gitlab_group.foo", &testAccGitlabGroupPushRuleExpectedAttributes{
+					AuthorEmailRegex:           "foo_author",
+					BranchNameRegex:            "foo_branch",
+					CommitMessageRegex:         "foo_commit",
+					CommitMessageNegativeRegex: "foo_not_commit",
+					FileNameRegex:              "foo_file",
+					CommitCommitterCheck:       gitlab.Bool(false),
+					DenyDeleteTag:              gitlab.Bool(true),
+					MemberCheck:                gitlab.Bool(true),
+					PreventSecrets:             gitlab.Bool(true),
+					RejectUnsignedCommits:      gitlab.Bool(false),
+					MaxFileSize:                gitlab.Int(123),
+				}),
+			},
+			// Test import with a all push rules defined (checks read function)
+			{
+				ResourceName:      "gitlab_group.foo",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Update some push rules but not others, 'commit_committer_check' & 'reject_unsigned_commits' set to false
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "foo-name-%d"
+				  path = "foo-path-%d"
+				  description = "Terraform acceptance tests"
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				
+				  push_rules {
+				    author_email_regex = "foo_author"
+				    branch_name_regex = "foo_branch"
+				    commit_message_regex = "foo_commit"
+				    commit_message_negative_regex = "foo_not_commit"
+				    file_name_regex = "foo_file_2"
+				    commit_committer_check = false
+				    deny_delete_tag = true
+				    member_check = false
+				    prevent_secrets = true
+				    reject_unsigned_commits = false
+				    max_file_size = 1234
+				  }
+				}
+					`, rInt, rInt),
+
+				Check: testAccCheckGitlabGroupPushRules("gitlab_group.foo", &testAccGitlabGroupPushRuleExpectedAttributes{
+					AuthorEmailRegex:           "foo_author",
+					BranchNameRegex:            "foo_branch",
+					CommitMessageRegex:         "foo_commit",
+					CommitMessageNegativeRegex: "foo_not_commit",
+					FileNameRegex:              "foo_file_2",
+					CommitCommitterCheck:       gitlab.Bool(false),
+					DenyDeleteTag:              gitlab.Bool(true),
+					MemberCheck:                gitlab.Bool(false),
+					PreventSecrets:             gitlab.Bool(true),
+					RejectUnsignedCommits:      gitlab.Bool(false),
+					MaxFileSize:                gitlab.Int(1234),
+				}),
+			},
+			// Update push rules
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "foo-name-%d"
+				  path = "foo-path-%d"
+				  description = "Terraform acceptance tests"
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				
+				  push_rules {
+				    author_email_regex = "foo_author"
+				  }
+				}
+					`, rInt, rInt),
+				Check: testAccCheckGitlabGroupPushRules("gitlab_group.foo", &testAccGitlabGroupPushRuleExpectedAttributes{
+					AuthorEmailRegex: "foo_author",
+				}),
+			},
+			// Remove the push_rules block entirely.
+			// NOTE: The push rules will still exist upstream because the push_rules block is computed.
+			{
+				Config: testAccGitlabGroupConfig(rInt),
+				Check: testAccCheckGitlabGroupPushRules("gitlab_group.foo", &testAccGitlabGroupPushRuleExpectedAttributes{
+					AuthorEmailRegex: "foo_author",
+				}),
+			},
+			// Add different push rules after the block was removed previously
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "foo-name-%d"
+				  path = "foo-path-%d"
+				  description = "Terraform acceptance tests"
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				
+				  push_rules {
+				    branch_name_regex = "(feature|hotfix)\\/*"
+				  }
+				}
+					`, rInt, rInt),
+				Check: testAccCheckGitlabGroupPushRules("gitlab_group.foo", &testAccGitlabGroupPushRuleExpectedAttributes{
+					BranchNameRegex: `(feature|hotfix)\/*`,
+				}),
+			},
+		},
+	})
+}
+
+func TestAccGitlabGroup_basicPushRulesCE(t *testing.T) {
+	testutil.SkipIfEE(t)
+
+	var group gitlab.Group
+	rInt := acctest.RandInt()
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabGroupDestroy,
+		Steps: []resource.TestStep{
+			// Create a group
+			{
+				Config: testAccGitlabGroupConfig(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabGroupExists("gitlab_group.foo", &group),
+					testAccCheckGitlabGroupAttributes(&group, &testAccGitlabGroupExpectedAttributes{
+						Name:                 fmt.Sprintf("foo-name-%d", rInt),
+						Path:                 fmt.Sprintf("foo-path-%d", rInt),
+						Description:          "Terraform acceptance tests",
+						ProjectCreationLevel: "developer",
+					}),
+				),
+			},
+			// Verify Import
+			{
+				ResourceName:      "gitlab_group.foo",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Try to add push rules to an existing group in CE
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "foo-name-%d"
+				  path = "foo-path-%d"
+				  description = "Terraform acceptance tests"
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				
+				  push_rules {
+				    author_email_regex = "foo_author"
+				  }
+				}
+					`, rInt, rInt),
+				ExpectError: regexp.MustCompile(regexp.QuoteMeta("Group push rules are not supported in your version of GitLab")),
 			},
 		},
 	})
@@ -654,6 +976,97 @@ func testAccCheckGitlabGroupDestroy(s *terraform.State) error {
 		return nil
 	}
 	return nil
+}
+
+type testAccGitlabGroupPushRuleExpectedAttributes struct {
+	CommitMessageRegex         string
+	CommitMessageNegativeRegex string
+	BranchNameRegex            string
+	DenyDeleteTag              *bool
+	MemberCheck                *bool
+	PreventSecrets             *bool
+	AuthorEmailRegex           string
+	FileNameRegex              string
+	MaxFileSize                *int
+	CommitCommitterCheck       *bool
+	RejectUnsignedCommits      *bool
+}
+
+func testAccCheckGitlabGroupPushRules(name string, wantPushRules *testAccGitlabGroupPushRuleExpectedAttributes) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		rs, ok := state.RootModule().Resources[name]
+		if !ok {
+			return fmt.Errorf("Not Found: %s", name)
+		}
+
+		gotPushRules, _, err := testutil.TestGitlabClient.Groups.GetGroupPushRules(rs.Primary.ID, nil)
+		if err != nil {
+			return err
+		}
+
+		var messages []string
+
+		if wantPushRules.AuthorEmailRegex != "" && gotPushRules.AuthorEmailRegex != wantPushRules.AuthorEmailRegex {
+			messages = append(messages, fmt.Sprintf("author_email_regex (got: %q, wanted: %q)",
+				gotPushRules.AuthorEmailRegex, wantPushRules.AuthorEmailRegex))
+		}
+
+		if wantPushRules.BranchNameRegex != "" && gotPushRules.BranchNameRegex != wantPushRules.BranchNameRegex {
+			messages = append(messages, fmt.Sprintf("branch_name_regex (got: %q, wanted: %q)",
+				gotPushRules.BranchNameRegex, wantPushRules.BranchNameRegex))
+		}
+
+		if wantPushRules.CommitMessageRegex != "" && gotPushRules.CommitMessageRegex != wantPushRules.CommitMessageRegex {
+			messages = append(messages, fmt.Sprintf("commit_message_regex (got: %q, wanted: %q)",
+				gotPushRules.CommitMessageRegex, wantPushRules.CommitMessageRegex))
+		}
+
+		if wantPushRules.CommitMessageNegativeRegex != "" && gotPushRules.CommitMessageNegativeRegex != wantPushRules.CommitMessageNegativeRegex {
+			messages = append(messages, fmt.Sprintf("commit_message_negative_regex (got: %q, wanted: %q)",
+				gotPushRules.CommitMessageNegativeRegex, wantPushRules.CommitMessageNegativeRegex))
+		}
+
+		if wantPushRules.FileNameRegex != "" && gotPushRules.FileNameRegex != wantPushRules.FileNameRegex {
+			messages = append(messages, fmt.Sprintf("file_name_regex (got: %q, wanted: %q)",
+				gotPushRules.FileNameRegex, wantPushRules.FileNameRegex))
+		}
+
+		if wantPushRules.CommitCommitterCheck != nil && gotPushRules.CommitCommitterCheck != *wantPushRules.CommitCommitterCheck {
+			messages = append(messages, fmt.Sprintf("commit_committer_check (got: %t, wanted: %t)",
+				gotPushRules.CommitCommitterCheck, *wantPushRules.CommitCommitterCheck))
+		}
+
+		if wantPushRules.DenyDeleteTag != nil && gotPushRules.DenyDeleteTag != *wantPushRules.DenyDeleteTag {
+			messages = append(messages, fmt.Sprintf("deny_delete_tag (got: %t, wanted: %t)",
+				gotPushRules.DenyDeleteTag, *wantPushRules.DenyDeleteTag))
+		}
+
+		if wantPushRules.MemberCheck != nil && gotPushRules.MemberCheck != *wantPushRules.MemberCheck {
+			messages = append(messages, fmt.Sprintf("member_check (got: %t, wanted: %t)",
+				gotPushRules.MemberCheck, *wantPushRules.MemberCheck))
+		}
+
+		if wantPushRules.PreventSecrets != nil && gotPushRules.PreventSecrets != *wantPushRules.PreventSecrets {
+			messages = append(messages, fmt.Sprintf("prevent_secrets (got: %t, wanted: %t)",
+				gotPushRules.PreventSecrets, *wantPushRules.PreventSecrets))
+		}
+
+		if wantPushRules.RejectUnsignedCommits != nil && gotPushRules.RejectUnsignedCommits != *wantPushRules.RejectUnsignedCommits {
+			messages = append(messages, fmt.Sprintf("reject_unsigned_commits (got: %t, wanted: %t)",
+				gotPushRules.RejectUnsignedCommits, *wantPushRules.RejectUnsignedCommits))
+		}
+
+		if wantPushRules.MaxFileSize != nil && gotPushRules.MaxFileSize != *wantPushRules.MaxFileSize {
+			messages = append(messages, fmt.Sprintf("max_file_size (got: %d, wanted: %d)",
+				gotPushRules.MaxFileSize, *wantPushRules.MaxFileSize))
+		}
+
+		if len(messages) > 0 {
+			return fmt.Errorf("unexpected push_rules:\n\t- %s", strings.Join(messages, "\n\t- "))
+		}
+
+		return nil
+	}
 }
 
 func testAccGitlabGroupConfig(rInt int) string {
