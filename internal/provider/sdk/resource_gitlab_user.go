@@ -300,7 +300,7 @@ func resourceGitlabUserDelete(ctx context.Context, d *schema.ResourceData, meta 
 	}
 
 	stateConf := &retry.StateChangeConf{
-		Timeout: 5 * time.Minute,
+		Timeout: 10 * time.Minute,
 		Target:  []string{"Deleted"},
 		Refresh: func() (interface{}, string, error) {
 			user, resp, err := client.Users.GetUser(id, gitlab.GetUsersOptions{}, gitlab.WithContext(ctx))

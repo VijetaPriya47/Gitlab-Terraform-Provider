@@ -208,6 +208,84 @@ var _ = registerResource("gitlab_group", func() *schema.Resource {
 				Computed:     true,
 				ValidateFunc: validation.StringInSlice(validSharedRunnersSettings, false),
 			},
+			"push_rules": {
+				Description: "Push rules for the group.",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Computed:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"author_email_regex": {
+							Description: "All commit author emails must match this regex, e.g. `@my-company.com$`.",
+							Type:        schema.TypeString,
+							Optional:    true,
+							Computed:    true,
+						},
+						"branch_name_regex": {
+							Description: "All branch names must match this regex, e.g. `(feature|hotfix)\\/*`.",
+							Type:        schema.TypeString,
+							Optional:    true,
+							Computed:    true,
+						},
+						"commit_message_regex": {
+							Description: "All commit messages must match this regex, e.g. `Fixed \\d+\\..*`.",
+							Type:        schema.TypeString,
+							Optional:    true,
+							Computed:    true,
+						},
+						"commit_message_negative_regex": {
+							Description: "No commit message is allowed to match this regex, for example `ssh\\:\\/\\/`.",
+							Type:        schema.TypeString,
+							Optional:    true,
+							Computed:    true,
+						},
+						"file_name_regex": {
+							Description: "Filenames matching the regular expression provided in this attribute are not allowed, for example, `(jar|exe)$`.",
+							Type:        schema.TypeString,
+							Optional:    true,
+							Computed:    true,
+						},
+						"commit_committer_check": {
+							Description: "Only commits pushed using verified emails are allowed.  **Note** This attribute is only supported in GitLab versions >= 16.4.",
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Computed:    true,
+						},
+						"deny_delete_tag": {
+							Description: "Deny deleting a tag.",
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Computed:    true,
+						},
+						"member_check": {
+							Description: "Allows only GitLab users to author commits.",
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Computed:    true,
+						},
+						"prevent_secrets": {
+							Description: "GitLab will reject any files that are likely to contain secrets.",
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Computed:    true,
+						},
+						"reject_unsigned_commits": {
+							Description: "Only commits signed through GPG are allowed.  **Note** This attribute is only supported in GitLab versions >= 16.4.",
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Computed:    true,
+						},
+						"max_file_size": {
+							Description:  "Maximum file size (MB) allowed.",
+							Type:         schema.TypeInt,
+							Optional:     true,
+							Computed:     true,
+							ValidateFunc: validation.IntAtLeast(0),
+						},
+					},
+				},
+			},
 		}, avatarableSchema()),
 		CustomizeDiff: avatarableDiff,
 	}
@@ -367,6 +445,20 @@ func resourceGitlabGroupCreate(ctx context.Context, d *schema.ResourceData, meta
 
 	d.SetId(fmt.Sprintf("%d", group.ID))
 
+	if _, ok := d.GetOk("push_rules"); ok {
+		err := editOrAddGroupPushRules(ctx, client, d.Id(), d)
+		if err != nil {
+			if api.Is404(err) {
+				tflog.Error(ctx, "[ERROR] Failed to edit push rules for group", map[string]interface{}{
+					"group_id": d.Id(),
+					"error":    err,
+				})
+				return diag.Errorf("Group push rules are not supported in your version of GitLab")
+			}
+			return diag.Errorf("Failed to edit push rules for group %q: %s", d.Id(), err)
+		}
+	}
+
 	var updateOptions gitlab.UpdateGroupOptions
 
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
@@ -458,6 +550,26 @@ func resourceGitlabGroupRead(ctx context.Context, d *schema.ResourceData, meta i
 
 	if err := d.Set("ip_restriction_ranges", IPValue); err != nil {
 		tflog.Error(ctx, "Error setting ip_restriction_ranges.")
+		return diag.FromErr(err)
+	}
+
+	tflog.Debug(ctx, "[DEBUG] read gitlab group push rules", map[string]interface{}{"id": d.Id()})
+
+	pushRules, _, err := client.Groups.GetGroupPushRules(d.Id(), gitlab.WithContext(ctx))
+	if api.Is404(err) {
+		tflog.Error(ctx, "[ERROR] Failed to get push rules for group", map[string]interface{}{
+			"group_id": d.Id(),
+			"error":    err,
+		})
+	} else if err != nil {
+		return diag.Errorf("Failed to get push rules for group %q: %s", d.Id(), err)
+	}
+
+	pushRuleValues, err := flattenGroupPushRules(ctx, client, pushRules)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("push_rules", pushRuleValues); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -587,6 +699,20 @@ func resourceGitlabGroupUpdate(ctx context.Context, d *schema.ResourceData, meta
 		}
 	}
 
+	if d.HasChange("push_rules") {
+		err := editOrAddGroupPushRules(ctx, client, d.Id(), d)
+		if err != nil {
+			if api.Is404(err) {
+				tflog.Error(ctx, "[ERROR] Failed to edit push rules for group", map[string]interface{}{
+					"group_id": d.Id(),
+					"error":    err,
+				})
+				return diag.Errorf("Group push rules are not supported in your version of GitLab")
+			}
+			return diag.Errorf("Failed to edit push rules for group %q: %s", d.Id(), err)
+		}
+	}
+
 	return resourceGitlabGroupRead(ctx, d, meta)
 }
 
@@ -665,4 +791,211 @@ func resourceGitlabGroupDelete(ctx context.Context, d *schema.ResourceData, meta
 		return diag.Errorf("error waiting for group (%s) to become deleted: %s", d.Id(), err)
 	}
 	return nil
+}
+
+func editOrAddGroupPushRules(ctx context.Context, client *gitlab.Client, groupID string, d *schema.ResourceData) error {
+	tflog.Debug(ctx, "[DEBUG] Editing push rules for group", map[string]interface{}{
+		"group_id": groupID,
+	})
+
+	pushRules, _, err := client.Groups.GetGroupPushRules(d.Id(), gitlab.WithContext(ctx))
+	// NOTE: push rules id `0` indicates that there haven't been any push rules set.
+	if err != nil || pushRules.ID == 0 {
+		addOptions, err := expandAddGroupPushRuleOptions(ctx, client, d)
+		if err != nil {
+			return err
+		}
+		if (gitlab.AddGroupPushRuleOptions{}) != addOptions {
+			tflog.Debug(ctx, "[DEBUG] Creating new push rules for group", map[string]interface{}{
+				"group_id": groupID,
+			})
+			_, _, err = client.Groups.AddGroupPushRule(groupID, &addOptions, gitlab.WithContext(ctx))
+			if err != nil {
+				return err
+			}
+		} else {
+			tflog.Debug(ctx, "[DEBUG] Don't create new push rules for defaults for group", map[string]interface{}{
+				"group_id": groupID,
+			})
+		}
+
+		return nil
+	}
+
+	editOptions, err := expandEditGroupPushRuleOptions(ctx, client, d, pushRules)
+	if err != nil {
+		return err
+	}
+	if (gitlab.EditGroupPushRuleOptions{}) != editOptions {
+		tflog.Debug(ctx, "[DEBUG] Editing existing push rules for group", map[string]interface{}{
+			"group_id": groupID,
+		})
+		_, _, err = client.Groups.EditGroupPushRule(groupID, &editOptions, gitlab.WithContext(ctx))
+		if err != nil {
+			return err
+		}
+	} else {
+		tflog.Debug(ctx, "[DEBUG] Don't edit existing push rules for defaults for group", map[string]interface{}{
+			"group_id": groupID,
+		})
+	}
+
+	return nil
+}
+
+func expandEditGroupPushRuleOptions(ctx context.Context, client *gitlab.Client, d *schema.ResourceData, currentPushRules *gitlab.GroupPushRules) (gitlab.EditGroupPushRuleOptions, error) {
+	options := gitlab.EditGroupPushRuleOptions{}
+
+	// The API does not return 'commit_committer_check' or 'reject_unsigned_commits' if the GitLab version is < 16.4
+	// so do not allow those attributes to be set, otherwise it will result in a perpetual plan
+	// https://gitlab.com/gitlab-org/gitlab/-/issues/422905
+	if apiReturnsCommitterCheck, err := api.IsGitLabVersionAtLeast(ctx, client, "16.4")(); err != nil {
+		return options, err
+	} else if apiReturnsCommitterCheck {
+		if d.HasChange("push_rules.0.commit_committer_check") {
+			options.CommitCommitterCheck = gitlab.Bool(d.Get("push_rules.0.commit_committer_check").(bool))
+		}
+		if d.HasChange("push_rules.0.reject_unsigned_commits") {
+			options.RejectUnsignedCommits = gitlab.Bool(d.Get("push_rules.0.reject_unsigned_commits").(bool))
+		}
+	}
+
+	if d.HasChange("push_rules.0.author_email_regex") {
+		options.AuthorEmailRegex = gitlab.String(d.Get("push_rules.0.author_email_regex").(string))
+	}
+
+	if d.HasChange("push_rules.0.branch_name_regex") {
+		options.BranchNameRegex = gitlab.String(d.Get("push_rules.0.branch_name_regex").(string))
+	}
+
+	if d.HasChange("push_rules.0.commit_message_regex") {
+		options.CommitMessageRegex = gitlab.String(d.Get("push_rules.0.commit_message_regex").(string))
+	}
+
+	if d.HasChange("push_rules.0.commit_message_negative_regex") {
+		options.CommitMessageNegativeRegex = gitlab.String(d.Get("push_rules.0.commit_message_negative_regex").(string))
+	}
+
+	if d.HasChange("push_rules.0.file_name_regex") {
+		options.FileNameRegex = gitlab.String(d.Get("push_rules.0.file_name_regex").(string))
+	}
+
+	if d.HasChange("push_rules.0.deny_delete_tag") {
+		options.DenyDeleteTag = gitlab.Bool(d.Get("push_rules.0.deny_delete_tag").(bool))
+	}
+
+	if d.HasChange("push_rules.0.member_check") {
+		options.MemberCheck = gitlab.Bool(d.Get("push_rules.0.member_check").(bool))
+	}
+
+	if d.HasChange("push_rules.0.prevent_secrets") {
+		options.PreventSecrets = gitlab.Bool(d.Get("push_rules.0.prevent_secrets").(bool))
+	}
+
+	if d.HasChange("push_rules.0.max_file_size") {
+		options.MaxFileSize = gitlab.Int(d.Get("push_rules.0.max_file_size").(int))
+	}
+
+	return options, nil
+}
+
+func expandAddGroupPushRuleOptions(ctx context.Context, client *gitlab.Client, d *schema.ResourceData) (gitlab.AddGroupPushRuleOptions, error) {
+	options := gitlab.AddGroupPushRuleOptions{}
+
+	// The API does not return 'commit_committer_check' or 'reject_unsigned_commits' if the GitLab version is < 16.4
+	// so do not allow those attributes to be set, otherwise it will result in a perpetual plan
+	// https://gitlab.com/gitlab-org/gitlab/-/issues/422905
+	if apiReturnsCommitterCheck, err := api.IsGitLabVersionAtLeast(ctx, client, "16.4")(); err != nil {
+		return options, err
+	} else if apiReturnsCommitterCheck {
+		if v, ok := d.GetOk("push_rules.0.commit_committer_check"); ok {
+			options.CommitCommitterCheck = gitlab.Bool(v.(bool))
+		}
+		if v, ok := d.GetOk("push_rules.0.reject_unsigned_commits"); ok {
+			options.RejectUnsignedCommits = gitlab.Bool(v.(bool))
+		}
+	}
+
+	if v, ok := d.GetOk("push_rules.0.author_email_regex"); ok {
+		options.AuthorEmailRegex = gitlab.String(v.(string))
+	}
+
+	if v, ok := d.GetOk("push_rules.0.branch_name_regex"); ok {
+		options.BranchNameRegex = gitlab.String(v.(string))
+	}
+
+	if v, ok := d.GetOk("push_rules.0.commit_message_regex"); ok {
+		options.CommitMessageRegex = gitlab.String(v.(string))
+	}
+
+	if v, ok := d.GetOk("push_rules.0.commit_message_negative_regex"); ok {
+		options.CommitMessageNegativeRegex = gitlab.String(v.(string))
+	}
+
+	if v, ok := d.GetOk("push_rules.0.file_name_regex"); ok {
+		options.FileNameRegex = gitlab.String(v.(string))
+	}
+
+	if v, ok := d.GetOk("push_rules.0.deny_delete_tag"); ok {
+		options.DenyDeleteTag = gitlab.Bool(v.(bool))
+	}
+
+	if v, ok := d.GetOk("push_rules.0.member_check"); ok {
+		options.MemberCheck = gitlab.Bool(v.(bool))
+	}
+
+	if v, ok := d.GetOk("push_rules.0.prevent_secrets"); ok {
+		options.PreventSecrets = gitlab.Bool(v.(bool))
+	}
+
+	if v, ok := d.GetOk("push_rules.0.max_file_size"); ok {
+		options.MaxFileSize = gitlab.Int(v.(int))
+	}
+
+	return options, nil
+}
+
+func flattenGroupPushRules(ctx context.Context, client *gitlab.Client, pushRules *gitlab.GroupPushRules) (values []map[string]interface{}, err error) {
+	if pushRules == nil {
+		return []map[string]interface{}{}, nil
+	}
+
+	// The API does not return 'commit_committer_check' or 'reject_unsigned_commits' if the GitLab version is < 16.4
+	// so do not allow those attributes to be set, otherwise it will result in a perpetual plan
+	// https://gitlab.com/gitlab-org/gitlab/-/issues/422905
+	if apiReturnsCommitterCheck, err := api.IsGitLabVersionAtLeast(ctx, client, "16.4")(); err != nil {
+		return nil, err
+	} else if apiReturnsCommitterCheck {
+		values = []map[string]interface{}{
+			{
+				"author_email_regex":            pushRules.AuthorEmailRegex,
+				"branch_name_regex":             pushRules.BranchNameRegex,
+				"commit_message_regex":          pushRules.CommitMessageRegex,
+				"commit_message_negative_regex": pushRules.CommitMessageNegativeRegex,
+				"file_name_regex":               pushRules.FileNameRegex,
+				"commit_committer_check":        pushRules.CommitCommitterCheck,
+				"deny_delete_tag":               pushRules.DenyDeleteTag,
+				"member_check":                  pushRules.MemberCheck,
+				"prevent_secrets":               pushRules.PreventSecrets,
+				"reject_unsigned_commits":       pushRules.RejectUnsignedCommits,
+				"max_file_size":                 pushRules.MaxFileSize,
+			},
+		}
+	} else {
+		values = []map[string]interface{}{
+			{
+				"author_email_regex":            pushRules.AuthorEmailRegex,
+				"branch_name_regex":             pushRules.BranchNameRegex,
+				"commit_message_regex":          pushRules.CommitMessageRegex,
+				"commit_message_negative_regex": pushRules.CommitMessageNegativeRegex,
+				"file_name_regex":               pushRules.FileNameRegex,
+				"deny_delete_tag":               pushRules.DenyDeleteTag,
+				"member_check":                  pushRules.MemberCheck,
+				"prevent_secrets":               pushRules.PreventSecrets,
+				"max_file_size":                 pushRules.MaxFileSize,
+			},
+		}
+	}
+
+	return values, nil
 }
