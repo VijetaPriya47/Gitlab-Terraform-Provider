@@ -434,15 +434,23 @@ func CreateReleases(t *testing.T, project *gitlab.Project, n int) []*gitlab.Rele
 	return releases
 }
 
-// AddProjectMembers is a test helper for adding users as members of a project.
+// AddProjectMembers is a test helper for adding users as members of a project with Developer access level.
 // It assumes the project will be destroyed at the end of the test and will not cleanup members.
 func AddProjectMembers(t *testing.T, pid interface{}, users []*gitlab.User) {
+	t.Helper()
+
+	AddProjectMembersWithAccessLevel(t, pid, users, gitlab.DeveloperPermissions)
+}
+
+// AddProjectMembersWithAccessLevel is a test helper for adding users as members of a project with a given access level.
+// It assumes the project will be destroyed at the end of the test and will not cleanup members.
+func AddProjectMembersWithAccessLevel(t *testing.T, pid interface{}, users []*gitlab.User, accessLevel gitlab.AccessLevelValue) {
 	t.Helper()
 
 	for _, user := range users {
 		_, _, err := TestGitlabClient.ProjectMembers.AddProjectMember(pid, &gitlab.AddProjectMemberOptions{
 			UserID:      user.ID,
-			AccessLevel: gitlab.AccessLevel(gitlab.DeveloperPermissions),
+			AccessLevel: gitlab.AccessLevel(accessLevel),
 		})
 		if err != nil {
 			t.Fatalf("could not add test project member: %v", err)

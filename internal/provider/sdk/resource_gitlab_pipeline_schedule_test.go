@@ -250,6 +250,70 @@ func testAccCheckGitlabPipelineScheduleDestroy(s *terraform.State) error {
 	return nil
 }
 
+func TestAccGitlabPipelineSchedule_takeOwnership(t *testing.T) {
+	var schedule gitlab.PipelineSchedule
+
+	// Set up project, user, role mapping and personal access token.
+	project := testutil.CreateProject(t)
+	user := testutil.CreateUsers(t, 1)[0]
+	testutil.AddProjectMembersWithAccessLevel(t, project.ID, []*gitlab.User{user}, gitlab.MaintainerPermissions)
+	userPAT := testutil.CreatePersonalAccessToken(t, user)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabPipelineScheduleDestroy,
+		Steps: []resource.TestStep{
+			// Import the Pipeline Schedule
+			{
+				// lintignore:AT004  // we need the provider configuration here to create the schedule with a different user
+				Config: fmt.Sprintf(`
+				provider "gitlab" {
+					token = "%s"
+				}
+				
+				resource "gitlab_pipeline_schedule" "schedule" {
+					project = "%d"
+					description = "Schedule"
+					ref = "main"
+					cron = "0 4 * * *"
+					active = false
+				}
+				`, userPAT.Token, project.ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabPipelineScheduleExists("gitlab_pipeline_schedule.schedule", &schedule),
+					resource.TestCheckResourceAttr("gitlab_pipeline_schedule.schedule", "owner", fmt.Sprintf("%d", user.ID)),
+				),
+			},
+			// Update the Pipeline Schedule with Take Ownership
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_pipeline_schedule" "schedule" {
+					project = "%d"
+					description = "Schedule"
+					ref = "main"
+					cron = "0 4 * * *"
+					active = false
+					take_ownership = true
+				}
+					`, project.ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabPipelineScheduleExists("gitlab_pipeline_schedule.schedule", &schedule),
+					resource.TestCheckResourceAttr("gitlab_pipeline_schedule.schedule", "owner", "1"),
+				),
+			},
+			// Verify upstream attributes with an import.
+			{
+				ResourceName:      "gitlab_pipeline_schedule.schedule",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"take_ownership",
+				},
+			},
+		},
+	})
+}
+
 func testAccGitlabPipelineScheduleConfig(rInt int) string {
 	return fmt.Sprintf(`
 resource "gitlab_project" "foo" {
