@@ -79,6 +79,16 @@ func gitlabPipelineScheduleSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Default:     true,
 		},
+		"take_ownership": {
+			Description: "When set to `true`, the user represented by the token running Terraform will take ownership of the scheduled pipeline prior to editing it. This can help when managing scheduled pipeline drift when other users are making changes outside Terraform.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+		},
+		"owner": {
+			Description: "The ID of the user that owns the pipeline schedule.",
+			Type:        schema.TypeInt,
+			Computed:    true,
+		},
 	}
 }
 
@@ -174,6 +184,7 @@ func resourceGitlabPipelineScheduleRead(ctx context.Context, d *schema.ResourceD
 	d.Set("cron", pipelineSchedule.Cron)
 	d.Set("cron_timezone", pipelineSchedule.CronTimezone)
 	d.Set("active", pipelineSchedule.Active)
+	d.Set("owner", pipelineSchedule.Owner.ID)
 	return nil
 }
 
@@ -212,8 +223,16 @@ func resourceGitlabPipelineScheduleUpdate(ctx context.Context, d *schema.Resourc
 		options.Active = gitlab.Bool(d.Get("active").(bool))
 	}
 
-	log.Printf("[DEBUG] update gitlab PipelineSchedule %s", d.Id())
+	if _, ok := d.GetOk("take_ownership"); ok {
+		tflog.Debug(ctx, "[DEBUG] Taking ownership of gitlab PipelineSchedule.", map[string]interface{}{"scheduledPipeline": d.Id()})
 
+		_, _, err := client.PipelineSchedules.TakeOwnershipOfPipelineSchedule(project, pipelineScheduleId, nil, gitlab.WithContext(ctx))
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	tflog.Debug(ctx, "[DEBUG] Updating gitlab PipelineSchedule", map[string]interface{}{"scheduledPipeline": d.Id()})
 	_, _, err = client.PipelineSchedules.EditPipelineSchedule(project, pipelineScheduleId, options, gitlab.WithContext(ctx))
 	if err != nil {
 		return diag.FromErr(err)
