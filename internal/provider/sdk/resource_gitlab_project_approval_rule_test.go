@@ -84,6 +84,36 @@ func TestAccGitLabProjectApprovalRule_Basic(t *testing.T) {
 					"disable_importing_default_any_approver_rule_on_create",
 				},
 			},
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_approval_rule" "bar" {
+				  project              = %d
+				  name                 = "bar"
+				  approvals_required   = %d
+				  user_ids             = [%d]
+				  group_ids            = [%d]
+				  applies_to_all_protected_branches = true
+				}`, project.ID, 3, projectUsers[0].ID, groups[0].ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabProjectApprovalRuleExists("gitlab_project_approval_rule.bar", &projectApprovalRule),
+					testAccCheckGitlabProjectApprovalRuleAttributes_Basic(&projectApprovalRule, &testAccGitlabProjectApprovalRuleExpectedAttributes_Basic{
+						Name:                          "bar",
+						ApprovalsRequired:             3,
+						EligibleApproverIDs:           []int{currentUser.ID, projectUsers[0].ID, group0Users[0].ID},
+						GroupIDs:                      []int{groups[0].ID},
+						AppliesToAllProtectedBranches: true,
+					}),
+				),
+			},
+			// Verify import
+			{
+				ResourceName:      "gitlab_project_approval_rule.bar",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"disable_importing_default_any_approver_rule_on_create",
+				},
+			},
 		},
 	})
 }
@@ -284,12 +314,43 @@ func TestAccGitLabProjectApprovalRule_AnyApproverDisableAutoImport(t *testing.T)
 	})
 }
 
+// Test checks to make sure an error occurs if both applies_to_all_protected_branches and
+// protected_branch_ids are configured
+func TestAccGitLabProjectApprovalRule_AppliesAllProtectedBranchesConflictBranchIds(t *testing.T) {
+	// Set up project and branches to use in the test.
+
+	testutil.SkipIfCE(t)
+
+	project := testutil.CreateProject(t)
+	branches := testutil.CreateProtectedBranches(t, project, 2)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabProjectApprovalRuleDestroy(project.ID),
+		Steps: []resource.TestStep{
+			// Create rule
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_approval_rule" "bar" {
+				  project              = %d
+				  name                 = "bar"
+				  approvals_required   = %d
+				  protected_branch_ids = [%d]
+				  applies_to_all_protected_branches = true
+				}`, project.ID, 3, branches[0].ID),
+				ExpectError: regexp.MustCompile("Conflicting configuration arguments"),
+			},
+		},
+	})
+}
+
 type testAccGitlabProjectApprovalRuleExpectedAttributes_Basic struct {
-	Name                string
-	ApprovalsRequired   int
-	EligibleApproverIDs []int
-	GroupIDs            []int
-	ProtectedBranchIDs  []int
+	Name                          string
+	ApprovalsRequired             int
+	EligibleApproverIDs           []int
+	GroupIDs                      []int
+	ProtectedBranchIDs            []int
+	AppliesToAllProtectedBranches bool
 }
 
 type testAccGitlabProjectApprovalRuleExpectedAttributes_AnyApprover struct {
@@ -316,11 +377,15 @@ func testAccCheckGitlabProjectApprovalRuleAttributes_Basic(got *gitlab.ProjectAp
 			}
 			Expect(groupIDs).To(ConsistOf(want.GroupIDs), "groups")
 
-			var protectedBranchIDs []int
-			for _, branch := range got.ProtectedBranches {
-				protectedBranchIDs = append(protectedBranchIDs, branch.ID)
+			if want.ProtectedBranchIDs != nil {
+				var protectedBranchIDs []int
+				for _, branch := range got.ProtectedBranches {
+					protectedBranchIDs = append(protectedBranchIDs, branch.ID)
+				}
+				Expect(protectedBranchIDs).To(ConsistOf(want.ProtectedBranchIDs), "protected_branches")
 			}
-			Expect(protectedBranchIDs).To(ConsistOf(want.ProtectedBranchIDs), "protected_branches")
+
+			Expect(got.AppliesToAllProtectedBranches).To(Equal(want.AppliesToAllProtectedBranches), "applies_to_all_protected_branches")
 		})
 	}
 }

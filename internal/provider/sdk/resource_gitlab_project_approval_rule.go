@@ -85,12 +85,24 @@ var _ = registerResource("gitlab_project_approval_rule", func() *schema.Resource
 				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeInt},
 				Set:         schema.HashInt,
+				ConflictsWith: []string{
+					"applies_to_all_protected_branches",
+				},
 			},
 			"disable_importing_default_any_approver_rule_on_create": {
 				Description: "When this flag is set, the default `any_approver` rule will not be imported if present.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
+			},
+			"applies_to_all_protected_branches": {
+				Description: "Whether the rule is applied to all protected branches. If set to 'true', the value of `protected_branch_ids` is ignored. Default is 'false'.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+				ConflictsWith: []string{
+					"protected_branch_ids",
+				},
 			},
 		},
 	}
@@ -126,11 +138,12 @@ func resourceGitlabProjectApprovalRuleCreate(ctx context.Context, d *schema.Reso
 	if anyApproverRuleId == 0 {
 
 		options := gitlab.CreateProjectLevelRuleOptions{
-			Name:               gitlab.String(d.Get("name").(string)),
-			ApprovalsRequired:  gitlab.Int(d.Get("approvals_required").(int)),
-			UserIDs:            expandApproverIds(d.Get("user_ids")),
-			GroupIDs:           expandApproverIds(d.Get("group_ids")),
-			ProtectedBranchIDs: expandProtectedBranchIDs(d.Get("protected_branch_ids")),
+			Name:                          gitlab.String(d.Get("name").(string)),
+			ApprovalsRequired:             gitlab.Int(d.Get("approvals_required").(int)),
+			UserIDs:                       expandApproverIds(d.Get("user_ids")),
+			GroupIDs:                      expandApproverIds(d.Get("group_ids")),
+			ProtectedBranchIDs:            expandProtectedBranchIDs(d.Get("protected_branch_ids")),
+			AppliesToAllProtectedBranches: gitlab.Bool(d.Get("applies_to_all_protected_branches").(bool)),
 		}
 
 		if v, ok := d.GetOk("rule_type"); ok {
@@ -151,11 +164,12 @@ func resourceGitlabProjectApprovalRuleCreate(ctx context.Context, d *schema.Reso
 
 		// We don't need to set "rule_type" because it's already implied in updating the "any_approver" rule.
 		options := gitlab.UpdateProjectLevelRuleOptions{
-			Name:               gitlab.String(d.Get("name").(string)),
-			ApprovalsRequired:  gitlab.Int(d.Get("approvals_required").(int)),
-			UserIDs:            expandApproverIds(d.Get("user_ids")),
-			GroupIDs:           expandApproverIds(d.Get("group_ids")),
-			ProtectedBranchIDs: expandProtectedBranchIDs(d.Get("protected_branch_ids")),
+			Name:                          gitlab.String(d.Get("name").(string)),
+			ApprovalsRequired:             gitlab.Int(d.Get("approvals_required").(int)),
+			UserIDs:                       expandApproverIds(d.Get("user_ids")),
+			GroupIDs:                      expandApproverIds(d.Get("group_ids")),
+			ProtectedBranchIDs:            expandProtectedBranchIDs(d.Get("protected_branch_ids")),
+			AppliesToAllProtectedBranches: gitlab.Bool(d.Get("applies_to_all_protected_branches").(bool)),
 		}
 		tflog.Debug(ctx, `Updating project level approval rule for "any_approver"`, map[string]interface{}{
 			"Project": project, "RuleID": anyApproverRuleId, "Options": options,
@@ -201,6 +215,7 @@ func resourceGitlabProjectApprovalRuleRead(ctx context.Context, d *schema.Resour
 	d.Set("name", rule.Name)
 	d.Set("approvals_required", rule.ApprovalsRequired)
 	d.Set("rule_type", rule.RuleType)
+	d.Set("applies_to_all_protected_branches", rule.AppliesToAllProtectedBranches)
 
 	if err := d.Set("group_ids", flattenApprovalRuleGroupIDs(rule.Groups)); err != nil {
 		return diag.FromErr(err)
@@ -210,8 +225,12 @@ func resourceGitlabProjectApprovalRuleRead(ctx context.Context, d *schema.Resour
 		return diag.FromErr(err)
 	}
 
-	if err := d.Set("protected_branch_ids", flattenProtectedBranchIDs(rule.ProtectedBranches)); err != nil {
-		return diag.FromErr(err)
+	// The API returns all the protected branch ids when 'applies_to_all_protected_branches' is true
+	// so skip setting 'protected_branch_ids' in the state in that scenario
+	if !rule.AppliesToAllProtectedBranches {
+		if err := d.Set("protected_branch_ids", flattenProtectedBranchIDs(rule.ProtectedBranches)); err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	return nil
@@ -229,11 +248,12 @@ func resourceGitlabProjectApprovalRuleUpdate(ctx context.Context, d *schema.Reso
 	}
 
 	options := gitlab.UpdateProjectLevelRuleOptions{
-		Name:               gitlab.String(d.Get("name").(string)),
-		ApprovalsRequired:  gitlab.Int(d.Get("approvals_required").(int)),
-		UserIDs:            expandApproverIds(d.Get("user_ids")),
-		GroupIDs:           expandApproverIds(d.Get("group_ids")),
-		ProtectedBranchIDs: expandProtectedBranchIDs(d.Get("protected_branch_ids")),
+		Name:                          gitlab.String(d.Get("name").(string)),
+		ApprovalsRequired:             gitlab.Int(d.Get("approvals_required").(int)),
+		UserIDs:                       expandApproverIds(d.Get("user_ids")),
+		GroupIDs:                      expandApproverIds(d.Get("group_ids")),
+		ProtectedBranchIDs:            expandProtectedBranchIDs(d.Get("protected_branch_ids")),
+		AppliesToAllProtectedBranches: gitlab.Bool(d.Get("applies_to_all_protected_branches").(bool)),
 	}
 
 	tflog.Debug(ctx, `Updating gitlab project-level rule`, map[string]interface{}{"project": projectID, "options": options})
