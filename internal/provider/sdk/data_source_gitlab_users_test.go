@@ -24,6 +24,12 @@ func TestAccDataSourceGitlabUsers_basic(t *testing.T) {
 		ProtoV6ProviderFactories: providerFactoriesV6,
 		Steps: []resource.TestStep{
 			{
+				SkipFunc: func() (bool, error) {
+					// We currently need to skip this test, because there is an issue in 16.6 where
+					// any use of the `search` API ignores sort. It will be fixed in 16.6.1
+					// https://gitlab.com/gitlab-org/gitlab/-/merge_requests/135917#note_1648447414
+					return true, nil
+				},
 				Config: fmt.Sprintf(`
 					data "gitlab_users" "test" {
 					  search = "ds-%d-acctest-"

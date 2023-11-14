@@ -716,10 +716,6 @@ func TestAccGitlabProject_transfer(t *testing.T) {
 // lintignore: AT002 // not a Terraform import test
 func TestAccGitlabProject_importURL(t *testing.T) {
 
-	// TODO: Waiting for https://gitlab.com/gitlab-org/gitlab/-/issues/428649#note_1612867121
-	// to be resolved, then we will stop skipping this test.
-	t.Skip()
-
 	rInt := acctest.RandInt()
 
 	// Create a base project for importing.
@@ -769,10 +765,6 @@ func TestAccGitlabProject_importURL(t *testing.T) {
 
 // lintignore: AT002 // specialized import test
 func TestAccGitlabProject_importURLWithPassword(t *testing.T) {
-
-	// TODO: Waiting for https://gitlab.com/gitlab-org/gitlab/-/issues/428649#note_1612867121
-	// to be resolved, then we will stop skipping this test.
-	t.Skip()
 
 	rInt := acctest.RandInt()
 
@@ -851,10 +843,6 @@ func TestAccGitlabProject_importURLWithPassword(t *testing.T) {
 // lintignore: AT002 // specialized import test
 func TestAccGitlabProject_importURL_publicRepository(t *testing.T) {
 
-	// TODO: Waiting for https://gitlab.com/gitlab-org/gitlab/-/issues/428649#note_1612867121
-	// to be resolved, then we will stop skipping this test.
-	t.Skip()
-
 	testImportedProjectName := acctest.RandomWithPrefix("acctest")
 	testProject := testutil.CreateProject(t)
 
@@ -890,10 +878,6 @@ func TestAccGitlabProject_importURL_publicRepository(t *testing.T) {
 
 // lintignore: AT002 // specialized import test
 func TestAccGitlabProject_importURL_privateRepository(t *testing.T) {
-
-	// TODO: Waiting for https://gitlab.com/gitlab-org/gitlab/-/issues/428649#note_1612867121
-	// to be resolved, then we will stop skipping this test.
-	t.Skip()
 
 	testutil.SkipIfCE(t)
 
@@ -1307,10 +1291,6 @@ func testAccCheckGitlabProjectMirroredAttributes(project *gitlab.Project, want *
 
 // lintignore: AT002 // not a Terraform import test
 func TestAccGitlabProject_ImportURLMirrored(t *testing.T) {
-
-	// TODO: Waiting for https://gitlab.com/gitlab-org/gitlab/-/issues/428649#note_1612867121
-	// to be resolved, then we will stop skipping this test.
-	t.Skip()
 
 	var mirror gitlab.Project
 	rInt := acctest.RandInt()
@@ -1870,10 +1850,6 @@ func TestAccGitlabProject_ForkProject(t *testing.T) {
 
 func TestAccGitlabProject_ForkProjectAndConfigurePullMirror(t *testing.T) {
 	testutil.SkipIfCE(t)
-
-	// TODO: Waiting for https://gitlab.com/gitlab-org/gitlab/-/issues/428649#note_1612867121
-	// to be resolved, then we will stop skipping this test.
-	t.Skip()
 
 	// Create project to fork
 	testProjectToFork := testutil.CreateProject(t)
