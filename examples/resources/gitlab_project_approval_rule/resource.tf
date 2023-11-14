@@ -44,3 +44,13 @@ resource "gitlab_project_approval_rule" "any_approver" {
   rule_type          = "any_approver"
   approvals_required = 1
 }
+
+# Example using `applies_to_all_protected_branches`
+resource "gitlab_project_approval_rule" "example-four" {
+  project                           = 5
+  name                              = "Example Rule 4"
+  approvals_required                = 3
+  user_ids                          = [50, 500]
+  group_ids                         = [51]
+  applies_to_all_protected_branches = true
+}
