@@ -6,6 +6,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/xanzy/go-gitlab"
@@ -16,6 +17,9 @@ var _ = registerDataSource("gitlab_user", func() *schema.Resource {
 		Description: `The ` + "`gitlab_user`" + ` data source allows details of a user to be retrieved by either the user ID, username or email address.
 
 -> Some attributes might not be returned depending on if you're an admin or not.
+
+~> When using the ` + "`email`" + ` attribute, an exact match is not guaranteed. The most related match will be returned. Starting with GitLab 16.6,
+the most related match will prioritize an exact match if one is available.
 
 **Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/users.html#single-user)`,
 
@@ -209,6 +213,9 @@ func dataSourceGitlabUserRead(ctx context.Context, d *schema.ResourceData, meta 
 			listUsersOptions.Username = gitlab.String(username)
 		} else {
 			// Get user by email
+			// Note: Search can return multiple users potentially, but as of GitLab 16.6,
+			// useing Search without "sort" will prioritize an exact match at the top
+			// of the list.
 			listUsersOptions.Search = gitlab.String(email)
 		}
 
@@ -220,11 +227,15 @@ func dataSourceGitlabUserRead(ctx context.Context, d *schema.ResourceData, meta 
 
 		if len(users) == 0 {
 			return diag.Errorf("couldn't find a user matching: %s%s", username, email)
-		} else if len(users) != 1 {
-			return diag.Errorf("more than one user found matching: %s%s", username, email)
+		} else {
+			if len(users) > 1 {
+				tflog.Info(ctx, "more than one user found matching. Will return the first user, since this can only happen when using `search`", map[string]interface{}{
+					"username": username,
+					"email":    email,
+				})
+			}
+			user = users[0]
 		}
-
-		user = users[0]
 	} else {
 		return diag.Errorf("one and only one of user_id, username or email must be set")
 	}
