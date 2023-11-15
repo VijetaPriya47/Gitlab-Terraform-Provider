@@ -208,7 +208,10 @@ func (r *gitlabUserRunnerResource) Create(ctx context.Context, req resource.Crea
 	if !data.AccessLevel.IsNull() && !data.AccessLevel.IsUnknown() {
 		options.AccessLevel = data.AccessLevel.ValueStringPointer()
 	}
-	if !data.MaximumTimeout.IsNull() && !data.MaximumTimeout.IsUnknown() {
+
+	// Attempting to create with a timeout of 0 causes an error, so we validate that the value is
+	// greater than 0 before including it within create.
+	if !data.MaximumTimeout.IsNull() && !data.MaximumTimeout.IsUnknown() && data.MaximumTimeout.ValueInt64() > 0 {
 		options.MaximumTimeout = gitlab.Int(int(data.MaximumTimeout.ValueInt64()))
 	}
 
@@ -302,7 +305,7 @@ func (r *gitlabUserRunnerResource) Update(ctx context.Context, req resource.Upda
 	if !data.AccessLevel.IsNull() && !data.AccessLevel.IsUnknown() {
 		options.AccessLevel = data.AccessLevel.ValueStringPointer()
 	}
-	if !data.MaximumTimeout.IsNull() && !data.MaximumTimeout.IsUnknown() {
+	if !data.MaximumTimeout.IsNull() && !data.MaximumTimeout.IsUnknown() && data.MaximumTimeout.ValueInt64() > 0 {
 		options.MaximumTimeout = gitlab.Int(int(data.MaximumTimeout.ValueInt64()))
 	}
 
@@ -404,6 +407,13 @@ func (r *gitlabUserRunnerResource) ValidateConfig(ctx context.Context, req resou
 		resp.Diagnostics.AddAttributeError(path.Root("runner_type"),
 			`Runner Type was set to "instance_type", but a project or group ID was provided`,
 			`When creating an Instance Runner, a Project ID or Group ID was provided. Those attributes are invalid for an Instance Runner, and should be removed.`,
+		)
+	}
+
+	if !data.MaximumTimeout.IsNull() && !data.MaximumTimeout.IsUnknown() && data.MaximumTimeout.ValueInt64() == 0 {
+		resp.Diagnostics.AddAttributeError(path.Root("maximum_timeout"),
+			`"maximum_timeout" cannot have a value of 0 configured. Please configure a value greater than 0.`,
+			`"maximum_timeout" cannot have a value of 0 configured. Please configure a value greater than 0.`,
 		)
 	}
 }
