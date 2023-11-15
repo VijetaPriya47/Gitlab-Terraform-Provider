@@ -228,6 +228,55 @@ func TestAcc_GitlabUserRunner_basicGroupRunner(t *testing.T) {
 	})
 }
 
+func TestAcc_GitlabUserRunner_createWithMaxTimeoutErrors(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             userRunnerCheckDestroy,
+		Steps: []resource.TestStep{
+			{
+				// test that we get an error with a maximum_timeout of 0
+				Config: `
+				resource "gitlab_user_runner" "this" {
+					runner_type = "instance_type"
+					maximum_timeout = 0
+				 }
+				`,
+				ExpectError: regexp.MustCompile(`"maximum_timeout" cannot have a value of 0 configured. Please configure a value greater than 0.`),
+			},
+			{
+				// Ensure we can create a runner with a nil maximum_timeout
+				Config: `
+				resource "gitlab_user_runner" "this" {
+					runner_type = "instance_type"
+				 }
+				`,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("gitlab_user_runner.this", "token"),
+				),
+			},
+			{
+				// Ensure we can update a runner to have an optional attribute without setting maximum_timeout
+				Config: `
+				resource "gitlab_user_runner" "this" {
+					runner_type = "instance_type"
+					paused = true
+				 }
+				`,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("gitlab_user_runner.this", "token"),
+				),
+			},
+			// Verify Import
+			{
+				ResourceName:            "gitlab_user_runner.this",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"token"}, // doesn't import
+			},
+		},
+	})
+}
+
 func TestAcc_GitlabUserRunner_createWithOptions(t *testing.T) {
 
 	group := testutil.CreateGroups(t, 1)[0]
