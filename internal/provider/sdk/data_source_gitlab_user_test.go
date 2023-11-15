@@ -95,6 +95,29 @@ data "gitlab_user" "foo" {
 `, rString, rString, password, rString, rString, rString, password, rString)
 }
 
+func testAccDataGitlabUserSameSuffixEmail(rString string, password string) string {
+	return fmt.Sprintf(`
+resource "gitlab_user" "foo" {
+  name     = "foo%s"
+  username = "listest%s"
+  password = "%s"
+  email    = "listest@ssss.com"
+  is_admin = false
+}
+
+resource "gitlab_user" "foo2" {
+  name     = "foo2%s"
+  username = "listest2%s"
+  password = "%s"
+  email    = "%slistest@ssss.com"
+}
+
+data "gitlab_user" "foo" {
+  email = "${gitlab_user.foo.email}"
+}
+`, rString, rString, password, rString, rString, password, rString)
+}
+
 func testAccDataGitlabUserConfigUserID(rString string, password string) string {
 	return fmt.Sprintf(`
 resource "gitlab_user" "foo" {
@@ -139,4 +162,22 @@ data "gitlab_user" "foo" {
   username = "${gitlab_user.foo.username}"
 }
 `, rString, rString, password, rString, rString, rString, password, rString)
+}
+
+func TestAccDataSourceGitlabUser_ExactEmail(t *testing.T) {
+	rString := acctest.RandString(5)
+	password := acctest.RandString(16)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		Steps: []resource.TestStep{
+			// Get user using its email
+			{
+				Config: testAccDataGitlabUserSameSuffixEmail(rString, password),
+				Check: resource.ComposeTestCheckFunc(
+					testAccDataSourceGitlabUser("gitlab_user.foo", "data.gitlab_user.foo"),
+				),
+			},
+		},
+	})
 }
