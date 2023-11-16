@@ -94,6 +94,7 @@ func TestAccGitlabProject_basic(t *testing.T) {
 						ContainerRegistryEnabled:         false,
 						LFSEnabled:                       false,
 						SharedRunnersEnabled:             false,
+						GroupRunnersEnabled:              false,
 						Visibility:                       gitlab.PublicVisibility,
 						MergeMethod:                      gitlab.FastForwardMerge,
 						PrintingMergeRequestLinkEnabled:  true,
@@ -672,6 +673,7 @@ func TestAccGitlabProject_transfer(t *testing.T) {
 		ContainerRegistryEnabled:         true,
 		LFSEnabled:                       true,
 		SharedRunnersEnabled:             true,
+		GroupRunnersEnabled:              true,
 		Visibility:                       gitlab.PublicVisibility,
 		MergeMethod:                      gitlab.NoFastForwardMerge,
 		OnlyAllowMergeIfPipelineSucceeds: false,
@@ -1672,6 +1674,7 @@ func TestAccGitlabProject_SetDefaultFalseBooleansOnCreate(t *testing.T) {
 						merge_pipelines_enabled             = false
 						merge_trains_enabled                = false
 						ci_forward_deployment_enabled       = false
+						group_runners_enabled               = false
 					}`, rInt),
 			},
 			{
@@ -2429,6 +2432,7 @@ resource "gitlab_project" "foo" {
   container_registry_enabled = false
   lfs_enabled = false
   shared_runners_enabled = false
+  group_runners_enabled = false
   archived = true
   packages_enabled = false
   pages_access_level = "disabled"
@@ -2831,6 +2835,7 @@ func testProjectDefaults(rInt int) gitlab.Project {
 		ContainerRegistryEnabled:         true,
 		LFSEnabled:                       true,
 		SharedRunnersEnabled:             true,
+		GroupRunnersEnabled:              true,
 		Visibility:                       gitlab.PublicVisibility,
 		MergeMethod:                      gitlab.FastForwardMerge,
 		OnlyAllowMergeIfPipelineSucceeds: true,

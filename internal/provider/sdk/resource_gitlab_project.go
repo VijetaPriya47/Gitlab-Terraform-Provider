@@ -237,6 +237,12 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 		Optional:    true,
 		Computed:    true,
 	},
+	"group_runners_enabled": {
+		Description: "Enable group runners for this project.",
+		Type:        schema.TypeBool,
+		Optional:    true,
+		Computed:    true,
+	},
 	"tags": {
 		Description: "The list of tags for a project; put array of tags, that should be finally assigned to a project. Use topics instead.",
 		Type:        schema.TypeSet,
@@ -849,6 +855,7 @@ func resourceGitlabProjectSetToState(ctx context.Context, client *gitlab.Client,
 	d.Set("web_url", project.WebURL)
 	d.Set("runners_token", project.RunnersToken)
 	d.Set("shared_runners_enabled", project.SharedRunnersEnabled)
+	d.Set("group_runners_enabled", project.GroupRunnersEnabled)
 	if err := d.Set("tags", project.TagList); err != nil {
 		return err
 	}
@@ -1225,6 +1232,11 @@ func resourceGitlabProjectCreate(ctx context.Context, d *schema.ResourceData, me
 		}
 		// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
 		// lintignore: XR001 // TODO: replace with alternative for GetOkExists
+		if v, ok := d.GetOkExists("group_runners_enabled"); ok {
+			options.GroupRunnersEnabled = gitlab.Bool(v.(bool))
+		}
+		// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
+		// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 		if v, ok := d.GetOkExists("remove_source_branch_after_merge"); ok {
 			options.RemoveSourceBranchAfterMerge = gitlab.Bool(v.(bool))
 		}
@@ -1575,6 +1587,12 @@ func resourceGitlabProjectCreate(ctx context.Context, d *schema.ResourceData, me
 		// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 		if v, ok := d.GetOkExists("shared_runners_enabled"); ok {
 			editProjectOptions.SharedRunnersEnabled = gitlab.Bool(v.(bool))
+		}
+
+		// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
+		// lintignore: XR001 // TODO: replace with alternative for GetOkExists
+		if v, ok := d.GetOkExists("group_runners_enabled"); ok {
+			editProjectOptions.GroupRunnersEnabled = gitlab.Bool(v.(bool))
 		}
 
 		if v, ok := d.GetOk("tags"); ok {
@@ -1953,6 +1971,10 @@ func resourceGitlabProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 
 	if d.HasChange("shared_runners_enabled") {
 		options.SharedRunnersEnabled = gitlab.Bool(d.Get("shared_runners_enabled").(bool))
+	}
+
+	if d.HasChange("group_runners_enabled") {
+		options.GroupRunnersEnabled = gitlab.Bool(d.Get("group_runners_enabled").(bool))
 	}
 
 	if d.HasChange("tags") {

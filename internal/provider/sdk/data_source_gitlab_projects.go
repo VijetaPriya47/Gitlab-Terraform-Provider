@@ -143,6 +143,7 @@ func flattenProjects(projects []*gitlab.Project) (values []map[string]interface{
 				"archived":                          project.Archived,
 				"avatar_url":                        project.AvatarURL,
 				"shared_runners_enabled":            project.SharedRunnersEnabled,
+				"group_runners_enabled":             project.GroupRunnersEnabled,
 				"forks_count":                       project.ForksCount,
 				"star_count":                        project.StarCount,
 				"runners_token":                     project.RunnersToken,
@@ -648,6 +649,11 @@ var _ = registerDataSource("gitlab_projects", func() *schema.Resource {
 						},
 						"shared_runners_enabled": {
 							Description: "Whether shared runners are enabled for the project.",
+							Type:        schema.TypeBool,
+							Computed:    true,
+						},
+						"group_runners_enabled": {
+							Description: "Whether group runners are enabled for the project.",
 							Type:        schema.TypeBool,
 							Computed:    true,
 						},
