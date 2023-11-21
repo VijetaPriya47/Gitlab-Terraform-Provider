@@ -66,8 +66,8 @@ func resourceGitlabGroupSamlLinkCreate(ctx context.Context, d *schema.ResourceDa
 	accessLevel := api.AccessLevelNameToValue[d.Get("access_level").(string)]
 
 	options := &gitlab.AddGroupSAMLLinkOptions{
-		SAMLGroupName: gitlab.String(samlGroupName),
-		AccessLevel:   gitlab.AccessLevel(accessLevel),
+		SAMLGroupName: gitlab.Ptr(samlGroupName),
+		AccessLevel:   gitlab.Ptr(accessLevel),
 	}
 
 	log.Printf("[DEBUG] Create GitLab Group SAML Link for group %q with name %q", group, samlGroupName)

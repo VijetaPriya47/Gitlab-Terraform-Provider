@@ -22,9 +22,9 @@ func TestAccGitlabDeployKeyEnable_basic(t *testing.T) {
 	key := "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDblguSWgpqiXIjHPSas4+N3Dten7MTLJMlGQXxGpaqN9nGPdNmuRB2YXyjT/nrryoY/qrtuVkPnis5WVo8N/s3hAnJbeJPUS2WKEGjpBlL34AQ+ANnlmGY8L6zr82Hp2Ommb7XGGtlq5D3yLCgTfcXLjC51tgcdwHsdH1U+RisgLwaTSrP/HF4G7IAr5ATsyYjtCwQRQ8ijdf5A34+XN6h8J6TLXKab5eZDuH38s9LxJuS7MRxx/P2UTOsqfjtrZWoQgE5adEGvnDxKyruex9PzNbCNVahzsma7tdikDbzxlHLIZ1aht6rKuai3iyLgcZfGIYtkq4xvg/bnNXxSsGf worker@kg.getwifi.com"
 
 	canPushDeployKeyOptions := gitlab.AddDeployKeyOptions{
-		Title:   gitlab.String("main"),
-		Key:     gitlab.String(key),
-		CanPush: gitlab.Bool(true),
+		Title:   gitlab.Ptr("main"),
+		Key:     gitlab.Ptr(key),
+		CanPush: gitlab.Ptr(true),
 	}
 
 	parentProjectDeployKey := testutil.CreateDeployKey(t, testProjectParent.ID, &canPushDeployKeyOptions)

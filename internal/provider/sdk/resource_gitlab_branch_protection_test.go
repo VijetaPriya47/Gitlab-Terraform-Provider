@@ -837,7 +837,7 @@ func testAccCheckGitlabBranchProtectionAttributes(pb *gitlab.ProtectedBranch, wa
 		remainingWantedUserIDsAllowedToPush := map[int]struct{}{}
 		for _, v := range want.UsersAllowedToPush {
 			users, _, err := testutil.TestGitlabClient.Users.ListUsers(&gitlab.ListUsersOptions{
-				Username: gitlab.String(v),
+				Username: gitlab.Ptr(v),
 			})
 			if err != nil {
 				return fmt.Errorf("error looking up user by path %v: %v", v, err)
@@ -878,7 +878,7 @@ func testAccCheckGitlabBranchProtectionAttributes(pb *gitlab.ProtectedBranch, wa
 		remainingWantedUserIDsAllowedToMerge := map[int]struct{}{}
 		for _, v := range want.UsersAllowedToMerge {
 			users, _, err := testutil.TestGitlabClient.Users.ListUsers(&gitlab.ListUsersOptions{
-				Username: gitlab.String(v),
+				Username: gitlab.Ptr(v),
 			})
 			if err != nil {
 				return fmt.Errorf("error looking up user by path %v: %v", v, err)
@@ -919,7 +919,7 @@ func testAccCheckGitlabBranchProtectionAttributes(pb *gitlab.ProtectedBranch, wa
 		remainingWantedUserIDsAllowedToUnprotect := map[int]struct{}{}
 		for _, v := range want.UsersAllowedToUnprotect {
 			users, _, err := testutil.TestGitlabClient.Users.ListUsers(&gitlab.ListUsersOptions{
-				Username: gitlab.String(v),
+				Username: gitlab.Ptr(v),
 			})
 			if err != nil {
 				return fmt.Errorf("error looking up user by path %v: %v", v, err)

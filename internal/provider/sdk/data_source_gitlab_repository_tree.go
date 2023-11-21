@@ -85,9 +85,9 @@ func dataSourceGitlabRepositoryTreeRead(ctx context.Context, d *schema.ResourceD
 			PerPage: 20,
 			Page:    1,
 		},
-		Path:      gitlab.String(d.Get("path").(string)),
-		Ref:       gitlab.String(d.Get("ref").(string)),
-		Recursive: gitlab.Bool(d.Get("recursive").(bool)),
+		Path:      gitlab.Ptr(d.Get("path").(string)),
+		Ref:       gitlab.Ptr(d.Get("ref").(string)),
+		Recursive: gitlab.Ptr(d.Get("recursive").(bool)),
 	}
 
 	var nodes []*gitlab.TreeNode

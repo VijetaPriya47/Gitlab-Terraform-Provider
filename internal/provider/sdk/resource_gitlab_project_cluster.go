@@ -134,39 +134,39 @@ func resourceGitlabProjectClusterCreate(ctx context.Context, d *schema.ResourceD
 	project := d.Get("project").(string)
 
 	pk := gitlab.AddPlatformKubernetesOptions{
-		APIURL: gitlab.String(d.Get("kubernetes_api_url").(string)),
-		Token:  gitlab.String(d.Get("kubernetes_token").(string)),
+		APIURL: gitlab.Ptr(d.Get("kubernetes_api_url").(string)),
+		Token:  gitlab.Ptr(d.Get("kubernetes_token").(string)),
 	}
 
 	if v, ok := d.GetOk("kubernetes_ca_cert"); ok {
-		pk.CaCert = gitlab.String(v.(string))
+		pk.CaCert = gitlab.Ptr(v.(string))
 	}
 
 	if v, ok := d.GetOk("kubernetes_namespace"); ok {
-		pk.Namespace = gitlab.String(v.(string))
+		pk.Namespace = gitlab.Ptr(v.(string))
 	}
 
 	if v, ok := d.GetOk("kubernetes_authorization_type"); ok {
-		pk.AuthorizationType = gitlab.String(v.(string))
+		pk.AuthorizationType = gitlab.Ptr(v.(string))
 	}
 
 	options := &gitlab.AddClusterOptions{
-		Name:               gitlab.String(d.Get("name").(string)),
-		Enabled:            gitlab.Bool(d.Get("enabled").(bool)),
-		Managed:            gitlab.Bool(d.Get("managed").(bool)),
+		Name:               gitlab.Ptr(d.Get("name").(string)),
+		Enabled:            gitlab.Ptr(d.Get("enabled").(bool)),
+		Managed:            gitlab.Ptr(d.Get("managed").(bool)),
 		PlatformKubernetes: &pk,
 	}
 
 	if v, ok := d.GetOk("domain"); ok {
-		options.Domain = gitlab.String(v.(string))
+		options.Domain = gitlab.Ptr(v.(string))
 	}
 
 	if v, ok := d.GetOk("environment_scope"); ok {
-		options.EnvironmentScope = gitlab.String(v.(string))
+		options.EnvironmentScope = gitlab.Ptr(v.(string))
 	}
 
 	if v, ok := d.GetOk("management_project_id"); ok {
-		options.ManagementProjectID = gitlab.String(v.(string))
+		options.ManagementProjectID = gitlab.Ptr(v.(string))
 	}
 
 	log.Printf("[DEBUG] create gitlab project cluster %q/%q", project, *options.Name)
@@ -237,33 +237,33 @@ func resourceGitlabProjectClusterUpdate(ctx context.Context, d *schema.ResourceD
 	options := &gitlab.EditClusterOptions{}
 
 	if d.HasChange("name") {
-		options.Name = gitlab.String(d.Get("name").(string))
+		options.Name = gitlab.Ptr(d.Get("name").(string))
 	}
 
 	if d.HasChange("domain") {
-		options.Domain = gitlab.String(d.Get("domain").(string))
+		options.Domain = gitlab.Ptr(d.Get("domain").(string))
 	}
 
 	if d.HasChange("environment_scope") {
-		options.EnvironmentScope = gitlab.String(d.Get("environment_scope").(string))
+		options.EnvironmentScope = gitlab.Ptr(d.Get("environment_scope").(string))
 	}
 
 	pk := &gitlab.EditPlatformKubernetesOptions{}
 
 	if d.HasChange("kubernetes_api_url") {
-		pk.APIURL = gitlab.String(d.Get("kubernetes_api_url").(string))
+		pk.APIURL = gitlab.Ptr(d.Get("kubernetes_api_url").(string))
 	}
 
 	if d.HasChange("kubernetes_token") {
-		pk.Token = gitlab.String(d.Get("kubernetes_token").(string))
+		pk.Token = gitlab.Ptr(d.Get("kubernetes_token").(string))
 	}
 
 	if d.HasChange("kubernetes_ca_cert") {
-		pk.CaCert = gitlab.String(d.Get("kubernetes_ca_cert").(string))
+		pk.CaCert = gitlab.Ptr(d.Get("kubernetes_ca_cert").(string))
 	}
 
 	if d.HasChange("kubernetes_namespace") {
-		pk.Namespace = gitlab.String(d.Get("kubernetes_namespace").(string))
+		pk.Namespace = gitlab.Ptr(d.Get("kubernetes_namespace").(string))
 	}
 
 	if *pk != (gitlab.EditPlatformKubernetesOptions{}) {
@@ -271,7 +271,7 @@ func resourceGitlabProjectClusterUpdate(ctx context.Context, d *schema.ResourceD
 	}
 
 	if d.HasChange("management_project_id") {
-		options.ManagementProjectID = gitlab.String(d.Get("management_project_id").(string))
+		options.ManagementProjectID = gitlab.Ptr(d.Get("management_project_id").(string))
 	}
 
 	if *options != (gitlab.EditClusterOptions{}) {

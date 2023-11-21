@@ -124,22 +124,22 @@ func resourceGitlabIntegrationEmailsOnPushCreate(ctx context.Context, d *schema.
 	client := meta.(*gitlab.Client)
 
 	options := &gitlab.SetEmailsOnPushServiceOptions{
-		Recipients: gitlab.String(d.Get("recipients").(string)),
+		Recipients: gitlab.Ptr(d.Get("recipients").(string)),
 	}
 	if v, ok := d.GetOk("disable_diffs"); ok {
-		options.DisableDiffs = gitlab.Bool(v.(bool))
+		options.DisableDiffs = gitlab.Ptr(v.(bool))
 	}
 	if v, ok := d.GetOk("send_from_committer_email"); ok {
-		options.SendFromCommitterEmail = gitlab.Bool(v.(bool))
+		options.SendFromCommitterEmail = gitlab.Ptr(v.(bool))
 	}
 	if v, ok := d.GetOk("push_events"); ok {
-		options.PushEvents = gitlab.Bool(v.(bool))
+		options.PushEvents = gitlab.Ptr(v.(bool))
 	}
 	if v, ok := d.GetOk("tag_push_events"); ok {
-		options.TagPushEvents = gitlab.Bool(v.(bool))
+		options.TagPushEvents = gitlab.Ptr(v.(bool))
 	}
 	if v, ok := d.GetOk("branches_to_be_notified"); ok {
-		options.BranchesToBeNotified = gitlab.String(v.(string))
+		options.BranchesToBeNotified = gitlab.Ptr(v.(string))
 	}
 
 	project := d.Get("project").(string)

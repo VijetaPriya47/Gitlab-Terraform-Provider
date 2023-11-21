@@ -217,45 +217,45 @@ func resourceGitlabIntegrationSlackCreate(ctx context.Context, d *schema.Resourc
 	log.Printf("[DEBUG] create gitlab slack integration for project %s", project)
 
 	opts := &gitlab.SetSlackServiceOptions{
-		WebHook: gitlab.String(d.Get("webhook").(string)),
+		WebHook: gitlab.Ptr(d.Get("webhook").(string)),
 	}
 
-	opts.Username = gitlab.String(d.Get("username").(string))
-	opts.NotifyOnlyBrokenPipelines = gitlab.Bool(d.Get("notify_only_broken_pipelines").(bool))
-	opts.NotifyOnlyDefaultBranch = gitlab.Bool(d.Get("notify_only_default_branch").(bool))
-	opts.BranchesToBeNotified = gitlab.String(d.Get("branches_to_be_notified").(string))
+	opts.Username = gitlab.Ptr(d.Get("username").(string))
+	opts.NotifyOnlyBrokenPipelines = gitlab.Ptr(d.Get("notify_only_broken_pipelines").(bool))
+	opts.NotifyOnlyDefaultBranch = gitlab.Ptr(d.Get("notify_only_default_branch").(bool))
+	opts.BranchesToBeNotified = gitlab.Ptr(d.Get("branches_to_be_notified").(string))
 	// TODO: Currently, go-gitlab doesn't implement this option yet.
 	//       see https://github.com/xanzy/go-gitlab/issues/1354
-	// opts.CommitEvents = gitlab.Bool(d.Get("commit_events").(bool))
-	opts.ConfidentialIssueChannel = gitlab.String(d.Get("confidential_issue_channel").(string))
-	opts.ConfidentialIssuesEvents = gitlab.Bool(d.Get("confidential_issues_events").(bool))
+	// opts.CommitEvents = gitlab.Ptr(d.Get("commit_events").(bool))
+	opts.ConfidentialIssueChannel = gitlab.Ptr(d.Get("confidential_issue_channel").(string))
+	opts.ConfidentialIssuesEvents = gitlab.Ptr(d.Get("confidential_issues_events").(bool))
 	// TODO: Currently, GitLab ignores this option (not implemented yet?), so
 	// there is no way to set it. Uncomment when this is fixed.
 	// See: https://gitlab.com/gitlab-org/gitlab-ce/issues/49730
-	// opts.ConfidentialNoteChannel = gitlab.String(d.Get("confidential_note_channel").(string))
-	opts.ConfidentialNoteEvents = gitlab.Bool(d.Get("confidential_note_events").(bool))
+	// opts.ConfidentialNoteChannel = gitlab.Ptr(d.Get("confidential_note_channel").(string))
+	opts.ConfidentialNoteEvents = gitlab.Ptr(d.Get("confidential_note_events").(bool))
 	// TODO: Currently, GitLab doesn't correctly implement the API, so this is
 	//       impossible to implement here at the moment.
 	//       see https://gitlab.com/gitlab-org/gitlab/-/issues/28903
-	// opts.DeploymentChannel = gitlab.String(d.Get("deployment_channel").(string))
-	// opts.DeploymentEvents = gitlab.Bool(d.Get("deployment_events").(bool))
-	opts.IssueChannel = gitlab.String(d.Get("issue_channel").(string))
-	opts.IssuesEvents = gitlab.Bool(d.Get("issues_events").(bool))
+	// opts.DeploymentChannel = gitlab.Ptr(d.Get("deployment_channel").(string))
+	// opts.DeploymentEvents = gitlab.Ptr(d.Get("deployment_events").(bool))
+	opts.IssueChannel = gitlab.Ptr(d.Get("issue_channel").(string))
+	opts.IssuesEvents = gitlab.Ptr(d.Get("issues_events").(bool))
 	// TODO: Currently, go-gitlab doesn't implement this option yet.
 	//       see https://github.com/xanzy/go-gitlab/issues/1354
-	// opts.JobEvents = gitlab.Bool(d.Get("job_events").(bool))
-	opts.MergeRequestChannel = gitlab.String(d.Get("merge_request_channel").(string))
-	opts.MergeRequestsEvents = gitlab.Bool(d.Get("merge_requests_events").(bool))
-	opts.NoteChannel = gitlab.String(d.Get("note_channel").(string))
-	opts.NoteEvents = gitlab.Bool(d.Get("note_events").(bool))
-	opts.PipelineChannel = gitlab.String(d.Get("pipeline_channel").(string))
-	opts.PipelineEvents = gitlab.Bool(d.Get("pipeline_events").(bool))
-	opts.PushChannel = gitlab.String(d.Get("push_channel").(string))
-	opts.PushEvents = gitlab.Bool(d.Get("push_events").(bool))
-	opts.TagPushChannel = gitlab.String(d.Get("tag_push_channel").(string))
-	opts.TagPushEvents = gitlab.Bool(d.Get("tag_push_events").(bool))
-	opts.WikiPageChannel = gitlab.String(d.Get("wiki_page_channel").(string))
-	opts.WikiPageEvents = gitlab.Bool(d.Get("wiki_page_events").(bool))
+	// opts.JobEvents = gitlab.Ptr(d.Get("job_events").(bool))
+	opts.MergeRequestChannel = gitlab.Ptr(d.Get("merge_request_channel").(string))
+	opts.MergeRequestsEvents = gitlab.Ptr(d.Get("merge_requests_events").(bool))
+	opts.NoteChannel = gitlab.Ptr(d.Get("note_channel").(string))
+	opts.NoteEvents = gitlab.Ptr(d.Get("note_events").(bool))
+	opts.PipelineChannel = gitlab.Ptr(d.Get("pipeline_channel").(string))
+	opts.PipelineEvents = gitlab.Ptr(d.Get("pipeline_events").(bool))
+	opts.PushChannel = gitlab.Ptr(d.Get("push_channel").(string))
+	opts.PushEvents = gitlab.Ptr(d.Get("push_events").(bool))
+	opts.TagPushChannel = gitlab.Ptr(d.Get("tag_push_channel").(string))
+	opts.TagPushEvents = gitlab.Ptr(d.Get("tag_push_events").(bool))
+	opts.WikiPageChannel = gitlab.Ptr(d.Get("wiki_page_channel").(string))
+	opts.WikiPageEvents = gitlab.Ptr(d.Get("wiki_page_events").(bool))
 
 	_, err := client.Services.SetSlackService(project, opts, gitlab.WithContext(ctx))
 	if err != nil {

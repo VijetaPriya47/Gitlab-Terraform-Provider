@@ -210,13 +210,13 @@ func dataSourceGitlabUserRead(ctx context.Context, d *schema.ResourceData, meta 
 		listUsersOptions := &gitlab.ListUsersOptions{}
 		if usernameOk {
 			// Get user by username
-			listUsersOptions.Username = gitlab.String(username)
+			listUsersOptions.Username = gitlab.Ptr(username)
 		} else {
 			// Get user by email
 			// Note: Search can return multiple users potentially, but as of GitLab 16.6,
 			// useing Search without "sort" will prioritize an exact match at the top
 			// of the list.
-			listUsersOptions.Search = gitlab.String(email)
+			listUsersOptions.Search = gitlab.Ptr(email)
 		}
 
 		var users []*gitlab.User

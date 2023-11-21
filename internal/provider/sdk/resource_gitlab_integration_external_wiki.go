@@ -91,7 +91,7 @@ func resourceGitlabIntegrationExternalWikiCreate(ctx context.Context, d *schema.
 	d.SetId(project)
 
 	options := &gitlab.SetExternalWikiServiceOptions{
-		ExternalWikiURL: gitlab.String(d.Get("external_wiki_url").(string)),
+		ExternalWikiURL: gitlab.Ptr(d.Get("external_wiki_url").(string)),
 	}
 
 	log.Printf("[DEBUG] create gitlab external wiki service for project %s", project)

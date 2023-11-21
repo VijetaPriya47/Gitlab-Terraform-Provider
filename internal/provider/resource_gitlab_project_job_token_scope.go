@@ -108,7 +108,7 @@ func (r *gitlabProjectJobTokenScopeResource) Create(ctx context.Context, req res
 	targetProjectID := int(data.TargetProjectID.ValueInt64())
 
 	options := &gitlab.JobTokenInboundAllowOptions{
-		TargetProjectID: gitlab.Int(targetProjectID),
+		TargetProjectID: gitlab.Ptr(targetProjectID),
 	}
 
 	addTokenResponse, _, err := r.client.JobTokenScope.AddProjectToJobScopeAllowList(projectID, options, gitlab.WithContext(ctx))

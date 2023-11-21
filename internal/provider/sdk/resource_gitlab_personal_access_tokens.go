@@ -110,7 +110,7 @@ func resourceGitlabPersonalAccessTokenCreate(ctx context.Context, d *schema.Reso
 	}
 
 	options := &gitlab.CreatePersonalAccessTokenOptions{
-		Name:   gitlab.String(d.Get("name").(string)),
+		Name:   gitlab.Ptr(d.Get("name").(string)),
 		Scopes: stringSetToStringSlice(d.Get("scopes").(*schema.Set)),
 	}
 

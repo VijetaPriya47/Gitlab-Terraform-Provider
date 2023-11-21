@@ -63,15 +63,15 @@ func dataSourceGitlabProjectTagsRead(ctx context.Context, d *schema.ResourceData
 	}
 
 	if v, ok := d.GetOk("order_by"); ok {
-		options.OrderBy = gitlab.String(v.(string))
+		options.OrderBy = gitlab.Ptr(v.(string))
 	}
 
 	if v, ok := d.GetOk("sort"); ok {
-		options.Sort = gitlab.String(v.(string))
+		options.Sort = gitlab.Ptr(v.(string))
 	}
 
 	if v, ok := d.GetOk("search"); ok {
-		options.Search = gitlab.String(v.(string))
+		options.Search = gitlab.Ptr(v.(string))
 	}
 
 	optionsHash, err := hashstructure.Hash(&options, hashstructure.FormatV1, nil)

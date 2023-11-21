@@ -131,18 +131,18 @@ func resourceGitlabIntegrationMicrosoftTeamsCreate(ctx context.Context, d *schem
 	d.SetId(project)
 
 	options := &gitlab.SetMicrosoftTeamsServiceOptions{
-		WebHook:                   gitlab.String(d.Get("webhook").(string)),
-		NotifyOnlyBrokenPipelines: gitlab.Bool(d.Get("notify_only_broken_pipelines").(bool)),
-		BranchesToBeNotified:      gitlab.String(d.Get("branches_to_be_notified").(string)),
-		PushEvents:                gitlab.Bool(d.Get("push_events").(bool)),
-		IssuesEvents:              gitlab.Bool(d.Get("issues_events").(bool)),
-		ConfidentialIssuesEvents:  gitlab.Bool(d.Get("confidential_issues_events").(bool)),
-		MergeRequestsEvents:       gitlab.Bool(d.Get("merge_requests_events").(bool)),
-		TagPushEvents:             gitlab.Bool(d.Get("tag_push_events").(bool)),
-		NoteEvents:                gitlab.Bool(d.Get("note_events").(bool)),
-		ConfidentialNoteEvents:    gitlab.Bool(d.Get("confidential_note_events").(bool)),
-		PipelineEvents:            gitlab.Bool(d.Get("pipeline_events").(bool)),
-		WikiPageEvents:            gitlab.Bool(d.Get("wiki_page_events").(bool)),
+		WebHook:                   gitlab.Ptr(d.Get("webhook").(string)),
+		NotifyOnlyBrokenPipelines: gitlab.Ptr(d.Get("notify_only_broken_pipelines").(bool)),
+		BranchesToBeNotified:      gitlab.Ptr(d.Get("branches_to_be_notified").(string)),
+		PushEvents:                gitlab.Ptr(d.Get("push_events").(bool)),
+		IssuesEvents:              gitlab.Ptr(d.Get("issues_events").(bool)),
+		ConfidentialIssuesEvents:  gitlab.Ptr(d.Get("confidential_issues_events").(bool)),
+		MergeRequestsEvents:       gitlab.Ptr(d.Get("merge_requests_events").(bool)),
+		TagPushEvents:             gitlab.Ptr(d.Get("tag_push_events").(bool)),
+		NoteEvents:                gitlab.Ptr(d.Get("note_events").(bool)),
+		ConfidentialNoteEvents:    gitlab.Ptr(d.Get("confidential_note_events").(bool)),
+		PipelineEvents:            gitlab.Ptr(d.Get("pipeline_events").(bool)),
+		WikiPageEvents:            gitlab.Ptr(d.Get("wiki_page_events").(bool)),
 	}
 
 	log.Printf("[DEBUG] Create Gitlab Microsoft Teams integration")

@@ -143,16 +143,16 @@ func (d *gitlabPagesDomainResource) Create(ctx context.Context, req resource.Cre
 
 	// Create our resource
 	options := &gitlab.CreatePagesDomainOptions{
-		Domain: gitlab.String(data.Domain.ValueString()),
+		Domain: gitlab.Ptr(data.Domain.ValueString()),
 	}
 	if !data.AutoSslEnabled.IsNull() && !data.AutoSslEnabled.IsUnknown() {
-		options.AutoSslEnabled = gitlab.Bool(data.AutoSslEnabled.ValueBool())
+		options.AutoSslEnabled = gitlab.Ptr(data.AutoSslEnabled.ValueBool())
 	}
 	if !data.Certificate.IsNull() && !data.Certificate.IsUnknown() {
-		options.Certificate = gitlab.String(data.Certificate.ValueString())
+		options.Certificate = gitlab.Ptr(data.Certificate.ValueString())
 	}
 	if !data.Key.IsNull() && !data.Key.IsUnknown() {
-		options.Key = gitlab.String(data.Key.ValueString())
+		options.Key = gitlab.Ptr(data.Key.ValueString())
 	}
 
 	pagesDomain, _, err := d.client.PagesDomains.CreatePagesDomain(projectID, options)
@@ -167,7 +167,7 @@ func (d *gitlabPagesDomainResource) Create(ctx context.Context, req resource.Cre
 	data.pagesDomainToStateModel(pagesDomain, projectID)
 
 	// Create the ID attribute (used for imports, among other things)
-	data.ID = types.StringValue(utils.BuildTwoPartID(&projectID, gitlab.String(data.Domain.ValueString())))
+	data.ID = types.StringValue(utils.BuildTwoPartID(&projectID, gitlab.Ptr(data.Domain.ValueString())))
 
 	tflog.Debug(ctx, "created pages domain", map[string]interface{}{
 		"url": data.URL, "project": data.Project,
@@ -224,13 +224,13 @@ func (d *gitlabPagesDomainResource) Update(ctx context.Context, req resource.Upd
 	// Update our resource
 	options := &gitlab.UpdatePagesDomainOptions{}
 	if !data.AutoSslEnabled.IsNull() && !data.AutoSslEnabled.IsUnknown() {
-		options.AutoSslEnabled = gitlab.Bool(data.AutoSslEnabled.ValueBool())
+		options.AutoSslEnabled = gitlab.Ptr(data.AutoSslEnabled.ValueBool())
 	}
 	if !data.Certificate.IsNull() && !data.Certificate.IsUnknown() {
-		options.Certificate = gitlab.String(data.Certificate.ValueString())
+		options.Certificate = gitlab.Ptr(data.Certificate.ValueString())
 	}
 	if !data.Key.IsNull() && !data.Key.IsUnknown() {
-		options.Key = gitlab.String(data.Key.ValueString())
+		options.Key = gitlab.Ptr(data.Key.ValueString())
 	}
 
 	projectID := data.Project.ValueString()
@@ -246,7 +246,7 @@ func (d *gitlabPagesDomainResource) Update(ctx context.Context, req resource.Upd
 	data.pagesDomainToStateModel(pagesDomain, projectID)
 
 	// Create the ID attribute (used for imports, among other things)
-	data.ID = types.StringValue(utils.BuildTwoPartID(gitlab.String(data.Project.ValueString()), gitlab.String(data.Domain.ValueString())))
+	data.ID = types.StringValue(utils.BuildTwoPartID(gitlab.Ptr(data.Project.ValueString()), gitlab.Ptr(data.Domain.ValueString())))
 
 	tflog.Debug(ctx, "updated pages domain", map[string]interface{}{
 		"url": data.URL, "project": data.Project,

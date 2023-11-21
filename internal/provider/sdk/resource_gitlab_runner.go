@@ -109,30 +109,30 @@ func resourceGitLabRunnerCreate(ctx context.Context, d *schema.ResourceData, met
 	client := meta.(*gitlab.Client)
 
 	options := &gitlab.RegisterNewRunnerOptions{
-		Token: gitlab.String(d.Get("registration_token").(string)),
+		Token: gitlab.Ptr(d.Get("registration_token").(string)),
 	}
 
 	if v, ok := d.GetOk("description"); ok {
-		options.Description = gitlab.String(v.(string))
+		options.Description = gitlab.Ptr(v.(string))
 	}
 
 	// GetOK skips the block if the value is "false", so need to use GetOkExists even though it's deprecated.
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 	if v, ok := d.GetOkExists("paused"); ok {
-		options.Paused = gitlab.Bool(v.(bool))
+		options.Paused = gitlab.Ptr(v.(bool))
 	}
 
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExist
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 	if v, ok := d.GetOkExists("locked"); ok {
-		options.Locked = gitlab.Bool(v.(bool))
+		options.Locked = gitlab.Ptr(v.(bool))
 	}
 
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 	if v, ok := d.GetOkExists("run_untagged"); ok {
-		options.RunUntagged = gitlab.Bool(v.(bool))
+		options.RunUntagged = gitlab.Ptr(v.(bool))
 	}
 
 	if v, ok := d.GetOk("tag_list"); ok {
@@ -140,11 +140,11 @@ func resourceGitLabRunnerCreate(ctx context.Context, d *schema.ResourceData, met
 	}
 
 	if v, ok := d.GetOk("access_level"); ok {
-		options.AccessLevel = gitlab.String(v.(string))
+		options.AccessLevel = gitlab.Ptr(v.(string))
 	}
 
 	if v, ok := d.GetOk("maximum_timeout"); ok {
-		options.MaximumTimeout = gitlab.Int(v.(int))
+		options.MaximumTimeout = gitlab.Ptr(v.(int))
 	}
 
 	// Explicitly not printing the registration token here, even though it may make debugging a bit trickier, since it's a secret
@@ -196,26 +196,26 @@ func resourceGitLabRunnerUpdate(ctx context.Context, d *schema.ResourceData, met
 
 	options := &gitlab.UpdateRunnerDetailsOptions{}
 	if v, ok := d.GetOk("description"); ok {
-		options.Description = gitlab.String(v.(string))
+		options.Description = gitlab.Ptr(v.(string))
 	}
 
 	// GetOK skips the block if the value is "false", so need to use GetOkExists even though it's deprecated.
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 	if v, ok := d.GetOkExists("paused"); ok {
-		options.Paused = gitlab.Bool(v.(bool))
+		options.Paused = gitlab.Ptr(v.(bool))
 	}
 
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 	if v, ok := d.GetOkExists("locked"); ok {
-		options.Locked = gitlab.Bool(v.(bool))
+		options.Locked = gitlab.Ptr(v.(bool))
 	}
 
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 	if v, ok := d.GetOkExists("run_untagged"); ok {
-		options.RunUntagged = gitlab.Bool(v.(bool))
+		options.RunUntagged = gitlab.Ptr(v.(bool))
 	}
 
 	if v, ok := d.GetOk("tag_list"); ok {
@@ -223,11 +223,11 @@ func resourceGitLabRunnerUpdate(ctx context.Context, d *schema.ResourceData, met
 	}
 
 	if v, ok := d.GetOk("access_level"); ok {
-		options.AccessLevel = gitlab.String(v.(string))
+		options.AccessLevel = gitlab.Ptr(v.(string))
 	}
 
 	if v, ok := d.GetOk("maximum_timeout"); ok {
-		options.MaximumTimeout = gitlab.Int(v.(int))
+		options.MaximumTimeout = gitlab.Ptr(v.(int))
 	}
 
 	log.Printf("[DEBUG] Update GitLab Runner %s", d.Id())

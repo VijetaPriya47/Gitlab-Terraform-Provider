@@ -319,10 +319,10 @@ func expandBranchPermissionOptions(allowedTo []interface{}) []*gitlab.BranchPerm
 	for _, v := range allowedTo {
 		opt := &gitlab.BranchPermissionOptions{}
 		if userID, ok := v.(map[string]interface{})["user_id"]; ok && userID != 0 {
-			opt.UserID = gitlab.Int(userID.(int))
+			opt.UserID = gitlab.Ptr(userID.(int))
 		}
 		if groupID, ok := v.(map[string]interface{})["group_id"]; ok && groupID != 0 {
-			opt.GroupID = gitlab.Int(groupID.(int))
+			opt.GroupID = gitlab.Ptr(groupID.(int))
 		}
 		result = append(result, opt)
 	}

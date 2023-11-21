@@ -1095,7 +1095,7 @@ func dataSourceGitlabProjectsRead(ctx context.Context, d *schema.ResourceData, m
 		membershipPtr = &d
 	}
 	if data, ok := d.GetOk("min_access_level"); ok {
-		minAccessLevelPtr = gitlab.AccessLevel(gitlab.AccessLevelValue(data.(int)))
+		minAccessLevelPtr = gitlab.Ptr(gitlab.AccessLevelValue(data.(int)))
 	}
 	if data, ok := d.GetOk("order_by"); ok {
 		d := data.(string)
@@ -1143,7 +1143,7 @@ func dataSourceGitlabProjectsRead(ctx context.Context, d *schema.ResourceData, m
 		statisticsPtr = &d
 	}
 	if data, ok := d.GetOk("visibility"); ok {
-		visibilityPtr = gitlab.Visibility(gitlab.VisibilityValue(data.(string)))
+		visibilityPtr = gitlab.Ptr(gitlab.VisibilityValue(data.(string)))
 	}
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists

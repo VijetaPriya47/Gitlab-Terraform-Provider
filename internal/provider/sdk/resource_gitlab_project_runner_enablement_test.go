@@ -26,7 +26,7 @@ func TestAccGitlabProjectRunnerEnablement_basic(t *testing.T) {
 
 	opts := gitlab.RegisterNewRunnerOptions{
 		Token:       &projectA.RunnersToken,
-		Description: gitlab.String(name),
+		Description: gitlab.Ptr(name),
 	}
 
 	// Create runner in project A

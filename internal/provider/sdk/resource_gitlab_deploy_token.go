@@ -197,8 +197,8 @@ func resourceGitlabDeployTokenCreate(ctx context.Context, d *schema.ResourceData
 		deployTokenType = "project"
 		typeId = project.(string)
 		options := &gitlab.CreateProjectDeployTokenOptions{
-			Name:      gitlab.String(d.Get("name").(string)),
-			Username:  gitlab.String(d.Get("username").(string)),
+			Name:      gitlab.Ptr(d.Get("name").(string)),
+			Username:  gitlab.Ptr(d.Get("username").(string)),
 			ExpiresAt: expiresAt,
 			Scopes:    scopes,
 		}
@@ -210,8 +210,8 @@ func resourceGitlabDeployTokenCreate(ctx context.Context, d *schema.ResourceData
 		deployTokenType = "group"
 		typeId = group.(string)
 		options := &gitlab.CreateGroupDeployTokenOptions{
-			Name:      gitlab.String(d.Get("name").(string)),
-			Username:  gitlab.String(d.Get("username").(string)),
+			Name:      gitlab.Ptr(d.Get("name").(string)),
+			Username:  gitlab.Ptr(d.Get("username").(string)),
 			ExpiresAt: expiresAt,
 			Scopes:    scopes,
 		}

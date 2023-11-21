@@ -218,11 +218,11 @@ func (r *gitlabGroupIssueBoardResource) Update(ctx context.Context, req resource
 	boardName := data.Name.ValueString()
 
 	optionsUpdate := &gitlab.UpdateGroupIssueBoardOptions{
-		Name: gitlab.String(boardName),
+		Name: gitlab.Ptr(boardName),
 	}
 
 	if !data.MilestoneId.IsNull() && !data.MilestoneId.IsUnknown() {
-		optionsUpdate.MilestoneID = gitlab.Int(int(data.MilestoneId.ValueInt64()))
+		optionsUpdate.MilestoneID = gitlab.Ptr(int(data.MilestoneId.ValueInt64()))
 	}
 
 	issueBoard, _, err := r.client.GroupIssueBoards.UpdateIssueBoard(groupID, boardId, optionsUpdate, gitlab.WithContext(ctx))
@@ -259,7 +259,7 @@ func (r *gitlabGroupIssueBoardResource) Update(ctx context.Context, req resource
 	listsData := make([]*gitlab.BoardList, len(data.Lists))
 	for i, v := range data.Lists {
 		listOptions := &gitlab.CreateGroupIssueBoardListOptions{}
-		listOptions.LabelID = gitlab.Int(int(v.LabelId.ValueInt64()))
+		listOptions.LabelID = gitlab.Ptr(int(v.LabelId.ValueInt64()))
 		issueBoardList, _, err := r.client.GroupIssueBoards.CreateGroupIssueBoardList(groupID, issueBoard.ID, listOptions, gitlab.WithContext(ctx))
 		if err != nil {
 			if api.Is404(err) {
@@ -354,15 +354,15 @@ func (r *gitlabGroupIssueBoardResource) Create(ctx context.Context, req resource
 
 	// configure GitLab API call
 	options := &gitlab.CreateGroupIssueBoardOptions{
-		Name: gitlab.String(boardName),
+		Name: gitlab.Ptr(boardName),
 	}
 
 	optionsUpdate := &gitlab.UpdateGroupIssueBoardOptions{
-		Name: gitlab.String(boardName),
+		Name: gitlab.Ptr(boardName),
 	}
 
 	if !data.MilestoneId.IsNull() && !data.MilestoneId.IsUnknown() {
-		optionsUpdate.MilestoneID = gitlab.Int(int(data.MilestoneId.ValueInt64()))
+		optionsUpdate.MilestoneID = gitlab.Ptr(int(data.MilestoneId.ValueInt64()))
 	}
 
 	issueBoard, _, err := r.client.GroupIssueBoards.CreateGroupIssueBoard(groupID, options, gitlab.WithContext(ctx))
@@ -406,7 +406,7 @@ func (r *gitlabGroupIssueBoardResource) Create(ctx context.Context, req resource
 	listsData := make([]*gitlab.BoardList, len(data.Lists))
 	for i, v := range data.Lists {
 		listOptions := &gitlab.CreateGroupIssueBoardListOptions{}
-		listOptions.LabelID = gitlab.Int(int(v.LabelId.ValueInt64()))
+		listOptions.LabelID = gitlab.Ptr(int(v.LabelId.ValueInt64()))
 		issueBoardList, _, err := r.client.GroupIssueBoards.CreateGroupIssueBoardList(groupID, issueBoard.ID, listOptions, gitlab.WithContext(ctx))
 		if err != nil {
 			if api.Is404(err) {

@@ -112,9 +112,9 @@ func resourceGitlabIntegrationGithubCreate(ctx context.Context, d *schema.Resour
 	log.Printf("[DEBUG] create gitlab github service for project %s", project)
 
 	opts := &gitlab.SetGithubServiceOptions{
-		Token:         gitlab.String(d.Get("token").(string)),
-		RepositoryURL: gitlab.String(d.Get("repository_url").(string)),
-		StaticContext: gitlab.Bool(d.Get("static_context").(bool)),
+		Token:         gitlab.Ptr(d.Get("token").(string)),
+		RepositoryURL: gitlab.Ptr(d.Get("repository_url").(string)),
+		StaticContext: gitlab.Ptr(d.Get("static_context").(bool)),
 	}
 
 	_, err := client.Services.SetGithubService(project, opts, gitlab.WithContext(ctx))

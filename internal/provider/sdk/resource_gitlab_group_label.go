@@ -102,12 +102,12 @@ func resourceGitlabGroupLabelCreate(ctx context.Context, d *schema.ResourceData,
 	client := meta.(*gitlab.Client)
 	group := d.Get("group").(string)
 	options := &gitlab.CreateGroupLabelOptions{
-		Name:  gitlab.String(d.Get("name").(string)),
-		Color: gitlab.String(d.Get("color").(string)),
+		Name:  gitlab.Ptr(d.Get("name").(string)),
+		Color: gitlab.Ptr(d.Get("color").(string)),
 	}
 
 	if v, ok := d.GetOk("description"); ok {
-		options.Description = gitlab.String(v.(string))
+		options.Description = gitlab.Ptr(v.(string))
 	}
 
 	log.Printf("[DEBUG] create gitlab group label %s", *options.Name)
@@ -156,12 +156,12 @@ func resourceGitlabGroupLabelUpdate(ctx context.Context, d *schema.ResourceData,
 	}
 
 	options := &gitlab.UpdateGroupLabelOptions{
-		Name:  gitlab.String(d.Get("name").(string)),
-		Color: gitlab.String(d.Get("color").(string)),
+		Name:  gitlab.Ptr(d.Get("name").(string)),
+		Color: gitlab.Ptr(d.Get("color").(string)),
 	}
 
 	if d.HasChange("description") {
-		options.Description = gitlab.String(d.Get("description").(string))
+		options.Description = gitlab.Ptr(d.Get("description").(string))
 	}
 
 	log.Printf("[DEBUG] update gitlab group label %s", d.Id())
@@ -184,7 +184,7 @@ func resourceGitlabGroupLabelDelete(ctx context.Context, d *schema.ResourceData,
 
 	log.Printf("[DEBUG] Delete gitlab group label %s", d.Id())
 	options := &gitlab.DeleteGroupLabelOptions{
-		Name: gitlab.String(labelName),
+		Name: gitlab.Ptr(labelName),
 	}
 
 	_, err = client.GroupLabels.DeleteGroupLabel(group, options, gitlab.WithContext(ctx))

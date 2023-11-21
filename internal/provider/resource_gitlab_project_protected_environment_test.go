@@ -23,11 +23,11 @@ func TestAcc_GitlabProjectProtectedEnvironment_basic(t *testing.T) {
 	// Set up project environment.
 	project := testutil.CreateProject(t)
 	environment := testutil.CreateProjectEnvironment(t, project.ID, &gitlab.CreateEnvironmentOptions{
-		Name: gitlab.String(acctest.RandomWithPrefix("test-protected-environment")),
+		Name: gitlab.Ptr(acctest.RandomWithPrefix("test-protected-environment")),
 	})
 
 	updateEnvironment := testutil.CreateProjectEnvironment(t, project.ID, &gitlab.CreateEnvironmentOptions{
-		Name: gitlab.String(acctest.RandomWithPrefix("test-protected-environment-update")),
+		Name: gitlab.Ptr(acctest.RandomWithPrefix("test-protected-environment-update")),
 	})
 
 	// Set up project user.
@@ -38,7 +38,7 @@ func TestAcc_GitlabProjectProtectedEnvironment_basic(t *testing.T) {
 	group := testutil.CreateGroups(t, 1)[0]
 	if _, err := testutil.TestGitlabClient.Projects.ShareProjectWithGroup(project.ID, &gitlab.ShareWithGroupOptions{
 		GroupID:     &group.ID,
-		GroupAccess: gitlab.AccessLevel(gitlab.MaintainerPermissions),
+		GroupAccess: gitlab.Ptr(gitlab.MaintainerPermissions),
 	}); err != nil {
 		t.Fatalf("unable to share project %d with group %d", project.ID, group.ID)
 	}
@@ -93,7 +93,7 @@ func TestAcc_GitlabProjectProtectedEnvironment_deployAccessLevels_userIdAndGroup
 	// Set up project environment.
 	project := testutil.CreateProject(t)
 	environment := testutil.CreateProjectEnvironment(t, project.ID, &gitlab.CreateEnvironmentOptions{
-		Name: gitlab.String(acctest.RandomWithPrefix("test-protected-environment")),
+		Name: gitlab.Ptr(acctest.RandomWithPrefix("test-protected-environment")),
 	})
 
 	// Set up project user.
@@ -104,7 +104,7 @@ func TestAcc_GitlabProjectProtectedEnvironment_deployAccessLevels_userIdAndGroup
 	group := testutil.CreateGroups(t, 1)[0]
 	if _, err := testutil.TestGitlabClient.Projects.ShareProjectWithGroup(project.ID, &gitlab.ShareWithGroupOptions{
 		GroupID:     &group.ID,
-		GroupAccess: gitlab.AccessLevel(gitlab.MaintainerPermissions),
+		GroupAccess: gitlab.Ptr(gitlab.MaintainerPermissions),
 	}); err != nil {
 		t.Fatalf("unable to share project %d with group %d", project.ID, group.ID)
 	}
@@ -135,7 +135,7 @@ func TestAcc_GitlabProjectProtectedEnvironment_approvalRules_userIdAndGroupIdAre
 	// Set up project environment.
 	project := testutil.CreateProject(t)
 	environment := testutil.CreateProjectEnvironment(t, project.ID, &gitlab.CreateEnvironmentOptions{
-		Name: gitlab.String(acctest.RandomWithPrefix("test-protected-environment")),
+		Name: gitlab.Ptr(acctest.RandomWithPrefix("test-protected-environment")),
 	})
 
 	// Set up project user.
@@ -146,7 +146,7 @@ func TestAcc_GitlabProjectProtectedEnvironment_approvalRules_userIdAndGroupIdAre
 	group := testutil.CreateGroups(t, 1)[0]
 	if _, err := testutil.TestGitlabClient.Projects.ShareProjectWithGroup(project.ID, &gitlab.ShareWithGroupOptions{
 		GroupID:     &group.ID,
-		GroupAccess: gitlab.AccessLevel(gitlab.MaintainerPermissions),
+		GroupAccess: gitlab.Ptr(gitlab.MaintainerPermissions),
 	}); err != nil {
 		t.Fatalf("unable to share project %d with group %d", project.ID, group.ID)
 	}
@@ -181,7 +181,7 @@ func TestAcc_GitlabProjectProtectedEnvironment_approvalRules_userIdAndRequiredAp
 	// Set up project environment.
 	project := testutil.CreateProject(t)
 	environment := testutil.CreateProjectEnvironment(t, project.ID, &gitlab.CreateEnvironmentOptions{
-		Name: gitlab.String(acctest.RandomWithPrefix("test-protected-environment")),
+		Name: gitlab.Ptr(acctest.RandomWithPrefix("test-protected-environment")),
 	})
 
 	// Set up project user.
@@ -192,7 +192,7 @@ func TestAcc_GitlabProjectProtectedEnvironment_approvalRules_userIdAndRequiredAp
 	group := testutil.CreateGroups(t, 1)[0]
 	if _, err := testutil.TestGitlabClient.Projects.ShareProjectWithGroup(project.ID, &gitlab.ShareWithGroupOptions{
 		GroupID:     &group.ID,
-		GroupAccess: gitlab.AccessLevel(gitlab.MaintainerPermissions),
+		GroupAccess: gitlab.Ptr(gitlab.MaintainerPermissions),
 	}); err != nil {
 		t.Fatalf("unable to share project %d with group %d", project.ID, group.ID)
 	}
@@ -229,7 +229,7 @@ func TestAcc_GitlabProjectProtectedEnvironment_regressionIssue1132(t *testing.T)
 	// Set up project environment.
 	project := testutil.CreateProject(t)
 	environment := testutil.CreateProjectEnvironment(t, project.ID, &gitlab.CreateEnvironmentOptions{
-		Name: gitlab.String(acctest.RandomWithPrefix("test-protected-environment")),
+		Name: gitlab.Ptr(acctest.RandomWithPrefix("test-protected-environment")),
 	})
 
 	// Set up project user.
@@ -240,7 +240,7 @@ func TestAcc_GitlabProjectProtectedEnvironment_regressionIssue1132(t *testing.T)
 	group := testutil.CreateGroups(t, 1)[0]
 	if _, err := testutil.TestGitlabClient.Projects.ShareProjectWithGroup(project.ID, &gitlab.ShareWithGroupOptions{
 		GroupID:     &group.ID,
-		GroupAccess: gitlab.AccessLevel(gitlab.MaintainerPermissions),
+		GroupAccess: gitlab.Ptr(gitlab.MaintainerPermissions),
 	}); err != nil {
 		t.Fatalf("unable to share project %d with group %d", project.ID, group.ID)
 	}
@@ -248,7 +248,7 @@ func TestAcc_GitlabProjectProtectedEnvironment_regressionIssue1132(t *testing.T)
 	additionalGroup := testutil.CreateGroups(t, 1)[0]
 	if _, err := testutil.TestGitlabClient.Projects.ShareProjectWithGroup(project.ID, &gitlab.ShareWithGroupOptions{
 		GroupID:     &additionalGroup.ID,
-		GroupAccess: gitlab.AccessLevel(gitlab.MaintainerPermissions),
+		GroupAccess: gitlab.Ptr(gitlab.MaintainerPermissions),
 	}); err != nil {
 		t.Fatalf("unable to share project %d with group %d", project.ID, additionalGroup.ID)
 	}
@@ -283,7 +283,7 @@ func TestAcc_GitlabProjectProtectedEnvironment_regressionIssue6104(t *testing.T)
 	// Set up project environment.
 	project := testutil.CreateProject(t)
 	environment := testutil.CreateProjectEnvironment(t, project.ID, &gitlab.CreateEnvironmentOptions{
-		Name: gitlab.String(acctest.RandomWithPrefix("test-protected-environment")),
+		Name: gitlab.Ptr(acctest.RandomWithPrefix("test-protected-environment")),
 	})
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -336,7 +336,7 @@ func TestAcc_GitlabProjectProtectedEnvironment_EnsureDeployAccessLevelsAreUnorde
 	// Set up project environment.
 	project := testutil.CreateProject(t)
 	environment := testutil.CreateProjectEnvironment(t, project.ID, &gitlab.CreateEnvironmentOptions{
-		Name: gitlab.String(acctest.RandomWithPrefix("test-protected-environment")),
+		Name: gitlab.Ptr(acctest.RandomWithPrefix("test-protected-environment")),
 	})
 
 	// Set up project user.
@@ -347,7 +347,7 @@ func TestAcc_GitlabProjectProtectedEnvironment_EnsureDeployAccessLevelsAreUnorde
 	group := testutil.CreateGroups(t, 1)[0]
 	if _, err := testutil.TestGitlabClient.Projects.ShareProjectWithGroup(project.ID, &gitlab.ShareWithGroupOptions{
 		GroupID:     &group.ID,
-		GroupAccess: gitlab.AccessLevel(gitlab.MaintainerPermissions),
+		GroupAccess: gitlab.Ptr(gitlab.MaintainerPermissions),
 	}); err != nil {
 		t.Fatalf("unable to share project %d with group %d", project.ID, group.ID)
 	}

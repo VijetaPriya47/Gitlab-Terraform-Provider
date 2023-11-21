@@ -67,9 +67,9 @@ func resourceGitlabProjectBadgeCreate(ctx context.Context, d *schema.ResourceDat
 	client := meta.(*gitlab.Client)
 	projectID := d.Get("project").(string)
 	options := &gitlab.AddProjectBadgeOptions{
-		LinkURL:  gitlab.String(d.Get("link_url").(string)),
-		ImageURL: gitlab.String(d.Get("image_url").(string)),
-		Name:     gitlab.String(d.Get("name").(string)),
+		LinkURL:  gitlab.Ptr(d.Get("link_url").(string)),
+		ImageURL: gitlab.Ptr(d.Get("image_url").(string)),
+		Name:     gitlab.Ptr(d.Get("name").(string)),
 	}
 
 	log.Printf("[DEBUG] create gitlab project badge %q / %q", *options.LinkURL, *options.ImageURL)
@@ -117,9 +117,9 @@ func resourceGitlabProjectBadgeUpdate(ctx context.Context, d *schema.ResourceDat
 	}
 
 	options := &gitlab.EditProjectBadgeOptions{
-		LinkURL:  gitlab.String(d.Get("link_url").(string)),
-		ImageURL: gitlab.String(d.Get("image_url").(string)),
-		Name:     gitlab.String(d.Get("name").(string)),
+		LinkURL:  gitlab.Ptr(d.Get("link_url").(string)),
+		ImageURL: gitlab.Ptr(d.Get("image_url").(string)),
+		Name:     gitlab.Ptr(d.Get("name").(string)),
 	}
 
 	log.Printf("[DEBUG] update gitlab project badge %s/%d", projectID, badgeID)

@@ -66,12 +66,12 @@ func resourceGitlabGroupBadgeCreate(ctx context.Context, d *schema.ResourceData,
 	client := meta.(*gitlab.Client)
 	groupID := d.Get("group").(string)
 	options := &gitlab.AddGroupBadgeOptions{
-		LinkURL:  gitlab.String(d.Get("link_url").(string)),
-		ImageURL: gitlab.String(d.Get("image_url").(string)),
+		LinkURL:  gitlab.Ptr(d.Get("link_url").(string)),
+		ImageURL: gitlab.Ptr(d.Get("image_url").(string)),
 	}
 
 	if v, ok := d.GetOk("name"); ok {
-		options.Name = gitlab.String(v.(string))
+		options.Name = gitlab.Ptr(v.(string))
 	}
 
 	log.Printf("[DEBUG] create gitlab group variable %s/%s", *options.LinkURL, *options.ImageURL)
@@ -123,12 +123,12 @@ func resourceGitlabGroupBadgeUpdate(ctx context.Context, d *schema.ResourceData,
 	}
 
 	options := &gitlab.EditGroupBadgeOptions{
-		LinkURL:  gitlab.String(d.Get("link_url").(string)),
-		ImageURL: gitlab.String(d.Get("image_url").(string)),
+		LinkURL:  gitlab.Ptr(d.Get("link_url").(string)),
+		ImageURL: gitlab.Ptr(d.Get("image_url").(string)),
 	}
 
 	if d.HasChange("name") {
-		options.Name = gitlab.String(d.Get("name").(string))
+		options.Name = gitlab.Ptr(d.Get("name").(string))
 	}
 
 	log.Printf("[DEBUG] update gitlab group badge %s/%d", groupID, badgeID)

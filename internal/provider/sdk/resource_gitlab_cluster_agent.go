@@ -44,7 +44,7 @@ func resourceGitlabClusterAgentCreate(ctx context.Context, d *schema.ResourceDat
 
 	project := d.Get("project").(string)
 	options := gitlab.RegisterAgentOptions{
-		Name: gitlab.String(d.Get("name").(string)),
+		Name: gitlab.Ptr(d.Get("name").(string)),
 	}
 
 	log.Printf("[DEBUG] create GitLab Agent for Kubernetes in project %s with name '%v'", project, options.Name)

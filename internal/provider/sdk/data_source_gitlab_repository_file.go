@@ -35,7 +35,7 @@ func dataSourceGitlabRepositoryFileRead(ctx context.Context, d *schema.ResourceD
 	filePath := d.Get("file_path").(string)
 
 	options := &gitlab.GetFileOptions{
-		Ref: gitlab.String(d.Get("ref").(string)),
+		Ref: gitlab.Ptr(d.Get("ref").(string)),
 	}
 
 	repositoryFile, resp, err := client.RepositoryFiles.GetFile(project, filePath, options, gitlab.WithContext(ctx))

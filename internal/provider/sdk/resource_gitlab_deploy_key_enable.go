@@ -79,7 +79,7 @@ func resourceGitlabDeployKeyEnableCreate(ctx context.Context, d *schema.Resource
 	}
 
 	options := &gitlab.UpdateDeployKeyOptions{
-		CanPush: gitlab.Bool(d.Get("can_push").(bool)),
+		CanPush: gitlab.Ptr(d.Get("can_push").(bool)),
 	}
 	_, _, err = client.DeployKeys.UpdateDeployKey(project, key_id, options)
 	if err != nil {

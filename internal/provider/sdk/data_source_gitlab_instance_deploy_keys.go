@@ -117,7 +117,7 @@ func dataSourceGitlabInstanceDeployKeysRead(ctx context.Context, d *schema.Resou
 			PerPage: 20,
 			Page:    1,
 		},
-		Public: gitlab.Bool(d.Get("public").(bool)),
+		Public: gitlab.Ptr(d.Get("public").(bool)),
 	}
 
 	log.Printf("[INFO] Reading Instance Deploy Keys, with: %v", options)

@@ -285,11 +285,11 @@ func (r *gitlabProjectProtectedEnvironmentResource) Create(ctx context.Context, 
 
 	// configure GitLab API call
 	options := &gitlab.ProtectRepositoryEnvironmentsOptions{
-		Name: gitlab.String(environmentName),
+		Name: gitlab.Ptr(environmentName),
 	}
 
 	if !data.RequiredApprovalCount.IsNull() {
-		options.RequiredApprovalCount = gitlab.Int(int(data.RequiredApprovalCount.ValueInt64()))
+		options.RequiredApprovalCount = gitlab.Ptr(int(data.RequiredApprovalCount.ValueInt64()))
 	}
 
 	// deploy access levels
@@ -303,13 +303,13 @@ func (r *gitlabProjectProtectedEnvironmentResource) Create(ctx context.Context, 
 		deployAccessLevelOptions := &gitlab.EnvironmentAccessOptions{}
 
 		if !v.AccessLevel.IsNull() && v.AccessLevel.ValueString() != "" {
-			deployAccessLevelOptions.AccessLevel = gitlab.AccessLevel(api.AccessLevelNameToValue[v.AccessLevel.ValueString()])
+			deployAccessLevelOptions.AccessLevel = gitlab.Ptr(api.AccessLevelNameToValue[v.AccessLevel.ValueString()])
 		}
 		if !v.UserId.IsNull() && v.UserId.ValueInt64() != 0 {
-			deployAccessLevelOptions.UserID = gitlab.Int(int(v.UserId.ValueInt64()))
+			deployAccessLevelOptions.UserID = gitlab.Ptr(int(v.UserId.ValueInt64()))
 		}
 		if !v.GroupId.IsNull() && v.GroupId.ValueInt64() != 0 {
-			deployAccessLevelOptions.GroupID = gitlab.Int(int(v.GroupId.ValueInt64()))
+			deployAccessLevelOptions.GroupID = gitlab.Ptr(int(v.GroupId.ValueInt64()))
 		}
 		deployAccessLevelsOption[i] = deployAccessLevelOptions
 	}
@@ -321,16 +321,16 @@ func (r *gitlabProjectProtectedEnvironmentResource) Create(ctx context.Context, 
 		approvalRuleOptions := &gitlab.EnvironmentApprovalRuleOptions{}
 
 		if !v.AccessLevel.IsNull() && v.AccessLevel.ValueString() != "" {
-			approvalRuleOptions.AccessLevel = gitlab.AccessLevel(api.AccessLevelNameToValue[v.AccessLevel.ValueString()])
+			approvalRuleOptions.AccessLevel = gitlab.Ptr(api.AccessLevelNameToValue[v.AccessLevel.ValueString()])
 		}
 		if !v.UserId.IsNull() && v.UserId.ValueInt64() != 0 {
-			approvalRuleOptions.UserID = gitlab.Int(int(v.UserId.ValueInt64()))
+			approvalRuleOptions.UserID = gitlab.Ptr(int(v.UserId.ValueInt64()))
 		}
 		if !v.GroupId.IsNull() && v.GroupId.ValueInt64() != 0 {
-			approvalRuleOptions.GroupID = gitlab.Int(int(v.GroupId.ValueInt64()))
+			approvalRuleOptions.GroupID = gitlab.Ptr(int(v.GroupId.ValueInt64()))
 		}
 		if !v.RequiredApprovals.IsNull() && v.RequiredApprovals.ValueInt64() != 0 {
-			approvalRuleOptions.RequiredApprovalCount = gitlab.Int(int(v.RequiredApprovals.ValueInt64()))
+			approvalRuleOptions.RequiredApprovalCount = gitlab.Ptr(int(v.RequiredApprovals.ValueInt64()))
 		}
 
 		approvalRulesOption[i] = approvalRuleOptions
@@ -455,11 +455,11 @@ func (r *gitlabProjectProtectedEnvironmentResource) Update(ctx context.Context, 
 
 	// configure GitLab API call
 	options := &gitlab.UpdateProtectedEnvironmentsOptions{
-		Name: gitlab.String(environmentName),
+		Name: gitlab.Ptr(environmentName),
 	}
 
 	if !data.RequiredApprovalCount.IsNull() {
-		options.RequiredApprovalCount = gitlab.Int(int(data.RequiredApprovalCount.ValueInt64()))
+		options.RequiredApprovalCount = gitlab.Ptr(int(data.RequiredApprovalCount.ValueInt64()))
 	}
 
 	// deploy access levels
@@ -474,17 +474,17 @@ func (r *gitlabProjectProtectedEnvironmentResource) Update(ctx context.Context, 
 
 		// the ID will be null when adding a new deploy rule via update
 		if !v.ID.IsNull() && v.ID.ValueInt64() != 0 {
-			deployAccessLevelOptions.ID = gitlab.Int(int(v.ID.ValueInt64()))
+			deployAccessLevelOptions.ID = gitlab.Ptr(int(v.ID.ValueInt64()))
 		}
 
 		if !v.AccessLevel.IsNull() && v.AccessLevel.ValueString() != "" {
-			deployAccessLevelOptions.AccessLevel = gitlab.AccessLevel(api.AccessLevelNameToValue[v.AccessLevel.ValueString()])
+			deployAccessLevelOptions.AccessLevel = gitlab.Ptr(api.AccessLevelNameToValue[v.AccessLevel.ValueString()])
 		}
 		if !v.UserId.IsNull() && v.UserId.ValueInt64() != 0 {
-			deployAccessLevelOptions.UserID = gitlab.Int(int(v.UserId.ValueInt64()))
+			deployAccessLevelOptions.UserID = gitlab.Ptr(int(v.UserId.ValueInt64()))
 		}
 		if !v.GroupId.IsNull() && v.GroupId.ValueInt64() != 0 {
-			deployAccessLevelOptions.GroupID = gitlab.Int(int(v.GroupId.ValueInt64()))
+			deployAccessLevelOptions.GroupID = gitlab.Ptr(int(v.GroupId.ValueInt64()))
 		}
 
 		deployAccessLevelsOption = append(deployAccessLevelsOption, deployAccessLevelOptions)
@@ -503,8 +503,8 @@ func (r *gitlabProjectProtectedEnvironmentResource) Update(ctx context.Context, 
 		// If the existing deploy isn't present, add it to the values to remove it
 		if !isPresent {
 			deployAccessLevelOptions := &gitlab.UpdateEnvironmentAccessOptions{
-				ID:      gitlab.Int(v.ID),
-				Destroy: gitlab.Bool(true),
+				ID:      gitlab.Ptr(v.ID),
+				Destroy: gitlab.Ptr(true),
 			}
 
 			// Seems weird, but the API does validate that these values are present even
@@ -532,20 +532,20 @@ func (r *gitlabProjectProtectedEnvironmentResource) Update(ctx context.Context, 
 
 		// the ID will be null when adding a new approval rule via update
 		if !v.ID.IsNull() && v.ID.ValueInt64() != 0 {
-			approvalRuleOptions.ID = gitlab.Int(int(v.ID.ValueInt64()))
+			approvalRuleOptions.ID = gitlab.Ptr(int(v.ID.ValueInt64()))
 		}
 
 		if !v.AccessLevel.IsNull() && v.AccessLevel.ValueString() != "" {
-			approvalRuleOptions.AccessLevel = gitlab.AccessLevel(api.AccessLevelNameToValue[v.AccessLevel.ValueString()])
+			approvalRuleOptions.AccessLevel = gitlab.Ptr(api.AccessLevelNameToValue[v.AccessLevel.ValueString()])
 		}
 		if !v.UserId.IsNull() && v.UserId.ValueInt64() != 0 {
-			approvalRuleOptions.UserID = gitlab.Int(int(v.UserId.ValueInt64()))
+			approvalRuleOptions.UserID = gitlab.Ptr(int(v.UserId.ValueInt64()))
 		}
 		if !v.GroupId.IsNull() && v.GroupId.ValueInt64() != 0 {
-			approvalRuleOptions.GroupID = gitlab.Int(int(v.GroupId.ValueInt64()))
+			approvalRuleOptions.GroupID = gitlab.Ptr(int(v.GroupId.ValueInt64()))
 		}
 		if !v.RequiredApprovals.IsNull() && v.RequiredApprovals.ValueInt64() != 0 {
-			approvalRuleOptions.RequiredApprovalCount = gitlab.Int(int(v.RequiredApprovals.ValueInt64()))
+			approvalRuleOptions.RequiredApprovalCount = gitlab.Ptr(int(v.RequiredApprovals.ValueInt64()))
 		}
 
 		approvalRulesOptionSlice = append(approvalRulesOptionSlice, approvalRuleOptions)
@@ -564,8 +564,8 @@ func (r *gitlabProjectProtectedEnvironmentResource) Update(ctx context.Context, 
 		// If the existing deploy isn't present, add it to the values to remove it
 		if !isPresent {
 			approvalRuleOptions := &gitlab.UpdateEnvironmentApprovalRuleOptions{
-				ID:      gitlab.Int(v.ID),
-				Destroy: gitlab.Bool(true),
+				ID:      gitlab.Ptr(v.ID),
+				Destroy: gitlab.Ptr(true),
 			}
 
 			// Seems weird, but the API does validate that these values are present even

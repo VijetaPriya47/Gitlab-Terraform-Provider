@@ -113,9 +113,9 @@ func resourceGitlabProjectFreezePeriodCreate(ctx context.Context, d *schema.Reso
 	project := d.Get("project").(string)
 
 	options := gitlab.CreateFreezePeriodOptions{
-		FreezeStart:  gitlab.String(d.Get("freeze_start").(string)),
-		FreezeEnd:    gitlab.String(d.Get("freeze_end").(string)),
-		CronTimezone: gitlab.String(d.Get("cron_timezone").(string)),
+		FreezeStart:  gitlab.Ptr(d.Get("freeze_start").(string)),
+		FreezeEnd:    gitlab.Ptr(d.Get("freeze_end").(string)),
+		CronTimezone: gitlab.Ptr(d.Get("cron_timezone").(string)),
 	}
 
 	log.Printf("[DEBUG] Project %s create gitlab project-level freeze period %+v", project, options)
@@ -169,15 +169,15 @@ func resourceGitlabProjectFreezePeriodUpdate(ctx context.Context, d *schema.Reso
 	}
 
 	if d.HasChange("freeze_start") {
-		options.FreezeStart = gitlab.String(d.Get("freeze_start").(string))
+		options.FreezeStart = gitlab.Ptr(d.Get("freeze_start").(string))
 	}
 
 	if d.HasChange("freeze_end") {
-		options.FreezeEnd = gitlab.String(d.Get("freeze_end").(string))
+		options.FreezeEnd = gitlab.Ptr(d.Get("freeze_end").(string))
 	}
 
 	if d.HasChange("cron_timezone") {
-		options.CronTimezone = gitlab.String(d.Get("cron_timezone").(string))
+		options.CronTimezone = gitlab.Ptr(d.Get("cron_timezone").(string))
 	}
 
 	log.Printf("[DEBUG] update gitlab FreezePeriod %s", d.Id())

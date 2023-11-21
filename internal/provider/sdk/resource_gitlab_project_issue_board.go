@@ -38,7 +38,7 @@ func resourceGitlabProjectIssueBoardCreate(ctx context.Context, d *schema.Resour
 
 	project := d.Get("project").(string)
 	options := gitlab.CreateIssueBoardOptions{
-		Name: gitlab.String(d.Get("name").(string)),
+		Name: gitlab.Ptr(d.Get("name").(string)),
 	}
 
 	log.Printf("[DEBUG] create Project Issue Board %q in project %q", *options.Name, project)
@@ -51,17 +51,17 @@ func resourceGitlabProjectIssueBoardCreate(ctx context.Context, d *schema.Resour
 
 	updateOptions := gitlab.UpdateIssueBoardOptions{}
 	if v, ok := d.GetOk("milestone_id"); ok {
-		updateOptions.MilestoneID = gitlab.Int(v.(int))
+		updateOptions.MilestoneID = gitlab.Ptr(v.(int))
 	}
 	if v, ok := d.GetOk("assignee_id"); ok {
-		updateOptions.AssigneeID = gitlab.Int(v.(int))
+		updateOptions.AssigneeID = gitlab.Ptr(v.(int))
 	}
 	if v, ok := d.GetOk("labels"); ok {
 		gitlabLabels := gitlab.Labels(*stringSetToStringSlice(v.(*schema.Set)))
 		updateOptions.Labels = &gitlabLabels
 	}
 	if v, ok := d.GetOk("weight"); ok {
-		updateOptions.Weight = gitlab.Int(v.(int))
+		updateOptions.Weight = gitlab.Ptr(v.(int))
 	}
 
 	if (gitlab.UpdateIssueBoardOptions{}) != updateOptions {
@@ -115,20 +115,20 @@ func resourceGitlabProjectIssueBoardUpdate(ctx context.Context, d *schema.Resour
 
 	options := &gitlab.UpdateIssueBoardOptions{}
 	if d.HasChange("name") {
-		options.Name = gitlab.String(d.Get("name").(string))
+		options.Name = gitlab.Ptr(d.Get("name").(string))
 	}
 	if d.HasChange("milestone_id") {
-		options.MilestoneID = gitlab.Int(d.Get("milestone_id").(int))
+		options.MilestoneID = gitlab.Ptr(d.Get("milestone_id").(int))
 	}
 	if d.HasChange("assignee_id") {
-		options.AssigneeID = gitlab.Int(d.Get("assignee_id").(int))
+		options.AssigneeID = gitlab.Ptr(d.Get("assignee_id").(int))
 	}
 	if d.HasChange("labels") {
 		gitlabLabels := gitlab.Labels(*stringSetToStringSlice(d.Get("labels").(*schema.Set)))
 		options.Labels = &gitlabLabels
 	}
 	if d.HasChange("weight") {
-		options.Weight = gitlab.Int(d.Get("weight").(int))
+		options.Weight = gitlab.Ptr(d.Get("weight").(int))
 	}
 
 	log.Printf("[DEBUG] update Project Issue Board %q in project %q", issueBoardID, project)
@@ -200,13 +200,13 @@ func resourceGitlabProjectIssueBoardCreateLists(ctx context.Context, client *git
 		if listData != nil {
 			l := listData.(map[string]interface{})
 			if v, ok := l["label_id"]; ok && v != 0 {
-				listOptions.LabelID = gitlab.Int(v.(int))
+				listOptions.LabelID = gitlab.Ptr(v.(int))
 			}
 			if v, ok := l["assignee_id"]; ok && v != 0 {
-				listOptions.AssigneeID = gitlab.Int(v.(int))
+				listOptions.AssigneeID = gitlab.Ptr(v.(int))
 			}
 			if v, ok := l["milestone_id"]; ok && v != 0 {
-				listOptions.MilestoneID = gitlab.Int(v.(int))
+				listOptions.MilestoneID = gitlab.Ptr(v.(int))
 			}
 		}
 

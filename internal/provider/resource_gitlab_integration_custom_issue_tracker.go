@@ -177,11 +177,11 @@ func (r *gitlabIntegrationCustomIssueTrackerResource) update(ctx context.Context
 	projectId := data.Project.ValueString()
 
 	options := &gitlab.SetCustomIssueTrackerServiceOptions{
-		ProjectURL: gitlab.String(data.ProjectURL.ValueString()),
-		IssuesURL:  gitlab.String(data.IssuesURL.ValueString()),
+		ProjectURL: gitlab.Ptr(data.ProjectURL.ValueString()),
+		IssuesURL:  gitlab.Ptr(data.IssuesURL.ValueString()),
 		// According to [Custom Issue Tracker documentation](https://docs.gitlab.com/ee/user/project/integrations/custom_issue_tracker.html#enable-a-custom-issue-tracker)
 		// new_issue_url isn't used, but required by API and have to be a valid URL.
-		NewIssueURL: gitlab.String(data.ProjectURL.ValueString()),
+		NewIssueURL: gitlab.Ptr(data.ProjectURL.ValueString()),
 	}
 
 	if _, err := r.client.Services.SetCustomIssueTrackerService(projectId, options, gitlab.WithContext(ctx)); err != nil {

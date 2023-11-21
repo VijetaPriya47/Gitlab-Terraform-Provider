@@ -66,7 +66,7 @@ func resourceGitlabUserGPGKeyCreate(ctx context.Context, d *schema.ResourceData,
 	client := meta.(*gitlab.Client)
 
 	options := &gitlab.AddGPGKeyOptions{
-		Key: gitlab.String(strings.TrimSpace(d.Get("key").(string))),
+		Key: gitlab.Ptr(strings.TrimSpace(d.Get("key").(string))),
 	}
 
 	var isAdmin bool

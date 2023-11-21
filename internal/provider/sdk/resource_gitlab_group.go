@@ -294,15 +294,15 @@ var _ = registerResource("gitlab_group", func() *schema.Resource {
 func resourceGitlabGroupCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	options := &gitlab.CreateGroupOptions{
-		Name: gitlab.String(d.Get("name").(string)),
+		Name: gitlab.Ptr(d.Get("name").(string)),
 	}
 
 	if v, ok := d.GetOk("path"); ok {
-		options.Path = gitlab.String(v.(string))
+		options.Path = gitlab.Ptr(v.(string))
 	}
 
 	if v, ok := d.GetOk("description"); ok {
-		options.Description = gitlab.String(v.(string))
+		options.Description = gitlab.Ptr(v.(string))
 	}
 
 	if v, ok := d.GetOk("visibility_level"); ok {
@@ -310,29 +310,29 @@ func resourceGitlabGroupCreate(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	if v, ok := d.GetOk("share_with_group_lock"); ok {
-		options.ShareWithGroupLock = gitlab.Bool(v.(bool))
+		options.ShareWithGroupLock = gitlab.Ptr(v.(bool))
 	}
 
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 	if v, ok := d.GetOkExists("lfs_enabled"); ok {
-		options.LFSEnabled = gitlab.Bool(v.(bool))
+		options.LFSEnabled = gitlab.Ptr(v.(bool))
 	}
 
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 	if v, ok := d.GetOkExists("request_access_enabled"); ok {
-		options.RequestAccessEnabled = gitlab.Bool(v.(bool))
+		options.RequestAccessEnabled = gitlab.Ptr(v.(bool))
 	}
 
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 	if v, ok := d.GetOkExists("require_two_factor_authentication"); ok {
-		options.RequireTwoFactorAuth = gitlab.Bool(v.(bool))
+		options.RequireTwoFactorAuth = gitlab.Ptr(v.(bool))
 	}
 
 	if v, ok := d.GetOk("two_factor_grace_period"); ok {
-		options.TwoFactorGracePeriod = gitlab.Int(v.(int))
+		options.TwoFactorGracePeriod = gitlab.Ptr(v.(int))
 	}
 
 	if v, ok := d.GetOk("project_creation_level"); ok {
@@ -342,7 +342,7 @@ func resourceGitlabGroupCreate(ctx context.Context, d *schema.ResourceData, meta
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 	if v, ok := d.GetOkExists("auto_devops_enabled"); ok {
-		options.AutoDevopsEnabled = gitlab.Bool(v.(bool))
+		options.AutoDevopsEnabled = gitlab.Ptr(v.(bool))
 	}
 
 	if v, ok := d.GetOk("subgroup_creation_level"); ok {
@@ -352,37 +352,37 @@ func resourceGitlabGroupCreate(ctx context.Context, d *schema.ResourceData, meta
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 	if v, ok := d.GetOkExists("emails_disabled"); ok {
-		options.EmailsDisabled = gitlab.Bool(v.(bool))
+		options.EmailsDisabled = gitlab.Ptr(v.(bool))
 	}
 
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 	if v, ok := d.GetOkExists("mentions_disabled"); ok {
-		options.MentionsDisabled = gitlab.Bool(v.(bool))
+		options.MentionsDisabled = gitlab.Ptr(v.(bool))
 	}
 
 	if v, ok := d.GetOk("parent_id"); ok {
-		options.ParentID = gitlab.Int(v.(int))
+		options.ParentID = gitlab.Ptr(v.(int))
 	}
 
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 	if v, ok := d.GetOkExists("default_branch_protection"); ok {
-		options.DefaultBranchProtection = gitlab.Int(v.(int))
+		options.DefaultBranchProtection = gitlab.Ptr(v.(int))
 	}
 
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 	if v, ok := d.GetOkExists("membership_lock"); ok {
-		options.MembershipLock = gitlab.Bool(v.(bool))
+		options.MembershipLock = gitlab.Ptr(v.(bool))
 	}
 
 	if v, ok := d.GetOk("extra_shared_runners_minutes_limit"); ok {
-		options.ExtraSharedRunnersMinutesLimit = gitlab.Int(v.(int))
+		options.ExtraSharedRunnersMinutesLimit = gitlab.Ptr(v.(int))
 	}
 
 	if v, ok := d.GetOk("shared_runners_minutes_limit"); ok {
-		options.SharedRunnersMinutesLimit = gitlab.Int(v.(int))
+		options.SharedRunnersMinutesLimit = gitlab.Ptr(v.(int))
 	}
 
 	avatar, err := handleAvatarOnCreate(d)
@@ -464,7 +464,7 @@ func resourceGitlabGroupCreate(ctx context.Context, d *schema.ResourceData, meta
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 	if v, ok := d.GetOkExists("prevent_forking_outside_group"); ok {
-		updateOptions.PreventForkingOutsideGroup = gitlab.Bool(v.(bool))
+		updateOptions.PreventForkingOutsideGroup = gitlab.Ptr(v.(bool))
 	}
 
 	// IP Restriction can only be set on update.
@@ -582,23 +582,23 @@ func resourceGitlabGroupUpdate(ctx context.Context, d *schema.ResourceData, meta
 	options := &gitlab.UpdateGroupOptions{}
 
 	if d.HasChange("name") {
-		options.Name = gitlab.String(d.Get("name").(string))
+		options.Name = gitlab.Ptr(d.Get("name").(string))
 	}
 
 	if d.HasChange("path") {
-		options.Path = gitlab.String(d.Get("path").(string))
+		options.Path = gitlab.Ptr(d.Get("path").(string))
 	}
 
 	if d.HasChange("description") {
-		options.Description = gitlab.String(d.Get("description").(string))
+		options.Description = gitlab.Ptr(d.Get("description").(string))
 	}
 
 	if d.HasChange("lfs_enabled") {
-		options.LFSEnabled = gitlab.Bool(d.Get("lfs_enabled").(bool))
+		options.LFSEnabled = gitlab.Ptr(d.Get("lfs_enabled").(bool))
 	}
 
 	if d.HasChange("request_access_enabled") {
-		options.RequestAccessEnabled = gitlab.Bool(d.Get("request_access_enabled").(bool))
+		options.RequestAccessEnabled = gitlab.Ptr(d.Get("request_access_enabled").(bool))
 	}
 
 	// Always set visibility ; workaround for
@@ -616,47 +616,47 @@ func resourceGitlabGroupUpdate(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	if d.HasChange("require_two_factor_authentication") {
-		options.RequireTwoFactorAuth = gitlab.Bool(d.Get("require_two_factor_authentication").(bool))
+		options.RequireTwoFactorAuth = gitlab.Ptr(d.Get("require_two_factor_authentication").(bool))
 	}
 
 	if d.HasChange("two_factor_grace_period") {
-		options.TwoFactorGracePeriod = gitlab.Int(d.Get("two_factor_grace_period").(int))
+		options.TwoFactorGracePeriod = gitlab.Ptr(d.Get("two_factor_grace_period").(int))
 	}
 
 	if d.HasChange("auto_devops_enabled") {
-		options.AutoDevopsEnabled = gitlab.Bool(d.Get("auto_devops_enabled").(bool))
+		options.AutoDevopsEnabled = gitlab.Ptr(d.Get("auto_devops_enabled").(bool))
 	}
 
 	if d.HasChange("emails_disabled") {
-		options.EmailsDisabled = gitlab.Bool(d.Get("emails_disabled").(bool))
+		options.EmailsDisabled = gitlab.Ptr(d.Get("emails_disabled").(bool))
 	}
 
 	if d.HasChange("mentions_disabled") {
-		options.MentionsDisabled = gitlab.Bool(d.Get("mentions_disabled").(bool))
+		options.MentionsDisabled = gitlab.Ptr(d.Get("mentions_disabled").(bool))
 	}
 
 	if d.HasChange("share_with_group_lock") {
-		options.ShareWithGroupLock = gitlab.Bool(d.Get("share_with_group_lock").(bool))
+		options.ShareWithGroupLock = gitlab.Ptr(d.Get("share_with_group_lock").(bool))
 	}
 
 	if d.HasChange("default_branch_protection") {
-		options.DefaultBranchProtection = gitlab.Int(d.Get("default_branch_protection").(int))
+		options.DefaultBranchProtection = gitlab.Ptr(d.Get("default_branch_protection").(int))
 	}
 
 	if d.HasChange("prevent_forking_outside_group") {
-		options.PreventForkingOutsideGroup = gitlab.Bool(d.Get("prevent_forking_outside_group").(bool))
+		options.PreventForkingOutsideGroup = gitlab.Ptr(d.Get("prevent_forking_outside_group").(bool))
 	}
 
 	if d.HasChange("membership_lock") {
-		options.MembershipLock = gitlab.Bool(d.Get("membership_lock").(bool))
+		options.MembershipLock = gitlab.Ptr(d.Get("membership_lock").(bool))
 	}
 
 	if d.HasChange("extra_shared_runners_minutes_limit") {
-		options.ExtraSharedRunnersMinutesLimit = gitlab.Int(d.Get("extra_shared_runners_minutes_limit").(int))
+		options.ExtraSharedRunnersMinutesLimit = gitlab.Ptr(d.Get("extra_shared_runners_minutes_limit").(int))
 	}
 
 	if d.HasChange("shared_runners_minutes_limit") {
-		options.SharedRunnersMinutesLimit = gitlab.Int(d.Get("shared_runners_minutes_limit").(int))
+		options.SharedRunnersMinutesLimit = gitlab.Ptr(d.Get("shared_runners_minutes_limit").(int))
 	}
 
 	if d.HasChange("ip_restriction_ranges") {
@@ -731,7 +731,7 @@ func transferSubGroup(ctx context.Context, d *schema.ResourceData, client *gitla
 			"new_group": parentId,
 		})
 
-		opt.GroupID = gitlab.Int(parentId)
+		opt.GroupID = gitlab.Ptr(parentId)
 	} else {
 		tflog.Debug(ctx, "turn gitlab group into a new top-level group", map[string]interface{}{
 			"group_id":  d.Id(),
@@ -853,47 +853,47 @@ func expandEditGroupPushRuleOptions(ctx context.Context, client *gitlab.Client, 
 		return options, err
 	} else if apiReturnsCommitterCheck {
 		if d.HasChange("push_rules.0.commit_committer_check") {
-			options.CommitCommitterCheck = gitlab.Bool(d.Get("push_rules.0.commit_committer_check").(bool))
+			options.CommitCommitterCheck = gitlab.Ptr(d.Get("push_rules.0.commit_committer_check").(bool))
 		}
 		if d.HasChange("push_rules.0.reject_unsigned_commits") {
-			options.RejectUnsignedCommits = gitlab.Bool(d.Get("push_rules.0.reject_unsigned_commits").(bool))
+			options.RejectUnsignedCommits = gitlab.Ptr(d.Get("push_rules.0.reject_unsigned_commits").(bool))
 		}
 	}
 
 	if d.HasChange("push_rules.0.author_email_regex") {
-		options.AuthorEmailRegex = gitlab.String(d.Get("push_rules.0.author_email_regex").(string))
+		options.AuthorEmailRegex = gitlab.Ptr(d.Get("push_rules.0.author_email_regex").(string))
 	}
 
 	if d.HasChange("push_rules.0.branch_name_regex") {
-		options.BranchNameRegex = gitlab.String(d.Get("push_rules.0.branch_name_regex").(string))
+		options.BranchNameRegex = gitlab.Ptr(d.Get("push_rules.0.branch_name_regex").(string))
 	}
 
 	if d.HasChange("push_rules.0.commit_message_regex") {
-		options.CommitMessageRegex = gitlab.String(d.Get("push_rules.0.commit_message_regex").(string))
+		options.CommitMessageRegex = gitlab.Ptr(d.Get("push_rules.0.commit_message_regex").(string))
 	}
 
 	if d.HasChange("push_rules.0.commit_message_negative_regex") {
-		options.CommitMessageNegativeRegex = gitlab.String(d.Get("push_rules.0.commit_message_negative_regex").(string))
+		options.CommitMessageNegativeRegex = gitlab.Ptr(d.Get("push_rules.0.commit_message_negative_regex").(string))
 	}
 
 	if d.HasChange("push_rules.0.file_name_regex") {
-		options.FileNameRegex = gitlab.String(d.Get("push_rules.0.file_name_regex").(string))
+		options.FileNameRegex = gitlab.Ptr(d.Get("push_rules.0.file_name_regex").(string))
 	}
 
 	if d.HasChange("push_rules.0.deny_delete_tag") {
-		options.DenyDeleteTag = gitlab.Bool(d.Get("push_rules.0.deny_delete_tag").(bool))
+		options.DenyDeleteTag = gitlab.Ptr(d.Get("push_rules.0.deny_delete_tag").(bool))
 	}
 
 	if d.HasChange("push_rules.0.member_check") {
-		options.MemberCheck = gitlab.Bool(d.Get("push_rules.0.member_check").(bool))
+		options.MemberCheck = gitlab.Ptr(d.Get("push_rules.0.member_check").(bool))
 	}
 
 	if d.HasChange("push_rules.0.prevent_secrets") {
-		options.PreventSecrets = gitlab.Bool(d.Get("push_rules.0.prevent_secrets").(bool))
+		options.PreventSecrets = gitlab.Ptr(d.Get("push_rules.0.prevent_secrets").(bool))
 	}
 
 	if d.HasChange("push_rules.0.max_file_size") {
-		options.MaxFileSize = gitlab.Int(d.Get("push_rules.0.max_file_size").(int))
+		options.MaxFileSize = gitlab.Ptr(d.Get("push_rules.0.max_file_size").(int))
 	}
 
 	return options, nil
@@ -909,47 +909,47 @@ func expandAddGroupPushRuleOptions(ctx context.Context, client *gitlab.Client, d
 		return options, err
 	} else if apiReturnsCommitterCheck {
 		if v, ok := d.GetOk("push_rules.0.commit_committer_check"); ok {
-			options.CommitCommitterCheck = gitlab.Bool(v.(bool))
+			options.CommitCommitterCheck = gitlab.Ptr(v.(bool))
 		}
 		if v, ok := d.GetOk("push_rules.0.reject_unsigned_commits"); ok {
-			options.RejectUnsignedCommits = gitlab.Bool(v.(bool))
+			options.RejectUnsignedCommits = gitlab.Ptr(v.(bool))
 		}
 	}
 
 	if v, ok := d.GetOk("push_rules.0.author_email_regex"); ok {
-		options.AuthorEmailRegex = gitlab.String(v.(string))
+		options.AuthorEmailRegex = gitlab.Ptr(v.(string))
 	}
 
 	if v, ok := d.GetOk("push_rules.0.branch_name_regex"); ok {
-		options.BranchNameRegex = gitlab.String(v.(string))
+		options.BranchNameRegex = gitlab.Ptr(v.(string))
 	}
 
 	if v, ok := d.GetOk("push_rules.0.commit_message_regex"); ok {
-		options.CommitMessageRegex = gitlab.String(v.(string))
+		options.CommitMessageRegex = gitlab.Ptr(v.(string))
 	}
 
 	if v, ok := d.GetOk("push_rules.0.commit_message_negative_regex"); ok {
-		options.CommitMessageNegativeRegex = gitlab.String(v.(string))
+		options.CommitMessageNegativeRegex = gitlab.Ptr(v.(string))
 	}
 
 	if v, ok := d.GetOk("push_rules.0.file_name_regex"); ok {
-		options.FileNameRegex = gitlab.String(v.(string))
+		options.FileNameRegex = gitlab.Ptr(v.(string))
 	}
 
 	if v, ok := d.GetOk("push_rules.0.deny_delete_tag"); ok {
-		options.DenyDeleteTag = gitlab.Bool(v.(bool))
+		options.DenyDeleteTag = gitlab.Ptr(v.(bool))
 	}
 
 	if v, ok := d.GetOk("push_rules.0.member_check"); ok {
-		options.MemberCheck = gitlab.Bool(v.(bool))
+		options.MemberCheck = gitlab.Ptr(v.(bool))
 	}
 
 	if v, ok := d.GetOk("push_rules.0.prevent_secrets"); ok {
-		options.PreventSecrets = gitlab.Bool(v.(bool))
+		options.PreventSecrets = gitlab.Ptr(v.(bool))
 	}
 
 	if v, ok := d.GetOk("push_rules.0.max_file_size"); ok {
-		options.MaxFileSize = gitlab.Int(v.(int))
+		options.MaxFileSize = gitlab.Ptr(v.(int))
 	}
 
 	return options, nil

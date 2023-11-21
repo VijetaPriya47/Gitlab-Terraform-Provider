@@ -171,33 +171,33 @@ func resourceGitlabIntegrationMattermostCreate(ctx context.Context, d *schema.Re
 	log.Printf("[DEBUG] create gitlab mattermost integration for project %s", project)
 
 	opts := &gitlab.SetMattermostServiceOptions{
-		WebHook: gitlab.String(d.Get("webhook").(string)),
+		WebHook: gitlab.Ptr(d.Get("webhook").(string)),
 	}
 
-	opts.Username = gitlab.String(d.Get("username").(string))
+	opts.Username = gitlab.Ptr(d.Get("username").(string))
 	// Channel is not yet implemented by GitLab, contrary to what the documentation states
 	// See https://gitlab.com/gitlab-org/gitlab/-/blob/902aaf4b412dc61a165b588611885cd60afb7a69/app/models/integrations/base_chat_notification.rb#L170
-	//opts.Channel = gitlab.String(d.Get("channel").(string))
-	opts.NotifyOnlyBrokenPipelines = gitlab.Bool(d.Get("notify_only_broken_pipelines").(bool))
-	opts.BranchesToBeNotified = gitlab.String(d.Get("branches_to_be_notified").(string))
-	opts.PushEvents = gitlab.Bool(d.Get("push_events").(bool))
-	opts.IssuesEvents = gitlab.Bool(d.Get("issues_events").(bool))
-	opts.ConfidentialIssuesEvents = gitlab.Bool(d.Get("confidential_issues_events").(bool))
-	opts.MergeRequestsEvents = gitlab.Bool(d.Get("merge_requests_events").(bool))
-	opts.TagPushEvents = gitlab.Bool(d.Get("tag_push_events").(bool))
-	opts.NoteEvents = gitlab.Bool(d.Get("note_events").(bool))
-	opts.ConfidentialNoteEvents = gitlab.Bool(d.Get("confidential_note_events").(bool))
-	opts.PipelineEvents = gitlab.Bool(d.Get("pipeline_events").(bool))
-	opts.WikiPageEvents = gitlab.Bool(d.Get("wiki_page_events").(bool))
-	opts.PushChannel = gitlab.String(d.Get("push_channel").(string))
-	opts.IssueChannel = gitlab.String(d.Get("issue_channel").(string))
-	opts.ConfidentialIssueChannel = gitlab.String(d.Get("confidential_issue_channel").(string))
-	opts.MergeRequestChannel = gitlab.String(d.Get("merge_request_channel").(string))
-	opts.NoteChannel = gitlab.String(d.Get("note_channel").(string))
-	opts.ConfidentialNoteChannel = gitlab.String(d.Get("confidential_note_channel").(string))
-	opts.TagPushChannel = gitlab.String(d.Get("tag_push_channel").(string))
-	opts.PipelineChannel = gitlab.String(d.Get("pipeline_channel").(string))
-	opts.WikiPageChannel = gitlab.String(d.Get("wiki_page_channel").(string))
+	//opts.Channel = gitlab.Ptr(d.Get("channel").(string))
+	opts.NotifyOnlyBrokenPipelines = gitlab.Ptr(d.Get("notify_only_broken_pipelines").(bool))
+	opts.BranchesToBeNotified = gitlab.Ptr(d.Get("branches_to_be_notified").(string))
+	opts.PushEvents = gitlab.Ptr(d.Get("push_events").(bool))
+	opts.IssuesEvents = gitlab.Ptr(d.Get("issues_events").(bool))
+	opts.ConfidentialIssuesEvents = gitlab.Ptr(d.Get("confidential_issues_events").(bool))
+	opts.MergeRequestsEvents = gitlab.Ptr(d.Get("merge_requests_events").(bool))
+	opts.TagPushEvents = gitlab.Ptr(d.Get("tag_push_events").(bool))
+	opts.NoteEvents = gitlab.Ptr(d.Get("note_events").(bool))
+	opts.ConfidentialNoteEvents = gitlab.Ptr(d.Get("confidential_note_events").(bool))
+	opts.PipelineEvents = gitlab.Ptr(d.Get("pipeline_events").(bool))
+	opts.WikiPageEvents = gitlab.Ptr(d.Get("wiki_page_events").(bool))
+	opts.PushChannel = gitlab.Ptr(d.Get("push_channel").(string))
+	opts.IssueChannel = gitlab.Ptr(d.Get("issue_channel").(string))
+	opts.ConfidentialIssueChannel = gitlab.Ptr(d.Get("confidential_issue_channel").(string))
+	opts.MergeRequestChannel = gitlab.Ptr(d.Get("merge_request_channel").(string))
+	opts.NoteChannel = gitlab.Ptr(d.Get("note_channel").(string))
+	opts.ConfidentialNoteChannel = gitlab.Ptr(d.Get("confidential_note_channel").(string))
+	opts.TagPushChannel = gitlab.Ptr(d.Get("tag_push_channel").(string))
+	opts.PipelineChannel = gitlab.Ptr(d.Get("pipeline_channel").(string))
+	opts.WikiPageChannel = gitlab.Ptr(d.Get("wiki_page_channel").(string))
 
 	_, err := client.Services.SetMattermostService(project, opts, gitlab.WithContext(ctx))
 	if err != nil {

@@ -145,17 +145,17 @@ func resourceGitlabUserSetToState(d *schema.ResourceData, user *gitlab.User) {
 func resourceGitlabUserCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	options := &gitlab.CreateUserOptions{
-		Email:            gitlab.String(d.Get("email").(string)),
-		Password:         gitlab.String(d.Get("password").(string)),
-		Username:         gitlab.String(d.Get("username").(string)),
-		Name:             gitlab.String(d.Get("name").(string)),
-		ProjectsLimit:    gitlab.Int(d.Get("projects_limit").(int)),
-		Admin:            gitlab.Bool(d.Get("is_admin").(bool)),
-		CanCreateGroup:   gitlab.Bool(d.Get("can_create_group").(bool)),
-		SkipConfirmation: gitlab.Bool(d.Get("skip_confirmation").(bool)),
-		External:         gitlab.Bool(d.Get("is_external").(bool)),
-		ResetPassword:    gitlab.Bool(d.Get("reset_password").(bool)),
-		Note:             gitlab.String(d.Get("note").(string)),
+		Email:            gitlab.Ptr(d.Get("email").(string)),
+		Password:         gitlab.Ptr(d.Get("password").(string)),
+		Username:         gitlab.Ptr(d.Get("username").(string)),
+		Name:             gitlab.Ptr(d.Get("name").(string)),
+		ProjectsLimit:    gitlab.Ptr(d.Get("projects_limit").(int)),
+		Admin:            gitlab.Ptr(d.Get("is_admin").(bool)),
+		CanCreateGroup:   gitlab.Ptr(d.Get("can_create_group").(bool)),
+		SkipConfirmation: gitlab.Ptr(d.Get("skip_confirmation").(bool)),
+		External:         gitlab.Ptr(d.Get("is_external").(bool)),
+		ResetPassword:    gitlab.Ptr(d.Get("reset_password").(bool)),
+		Note:             gitlab.Ptr(d.Get("note").(string)),
 	}
 
 	if *options.Password == "" && !*options.ResetPassword {
@@ -214,36 +214,36 @@ func resourceGitlabUserUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	options := &gitlab.ModifyUserOptions{}
 
 	if d.HasChange("name") {
-		options.Name = gitlab.String(d.Get("name").(string))
+		options.Name = gitlab.Ptr(d.Get("name").(string))
 	}
 
 	if d.HasChange("username") {
-		options.Username = gitlab.String(d.Get("username").(string))
+		options.Username = gitlab.Ptr(d.Get("username").(string))
 	}
 
 	if d.HasChange("email") {
-		options.Email = gitlab.String(d.Get("email").(string))
-		options.SkipReconfirmation = gitlab.Bool(true)
+		options.Email = gitlab.Ptr(d.Get("email").(string))
+		options.SkipReconfirmation = gitlab.Ptr(true)
 	}
 
 	if d.HasChange("is_admin") {
-		options.Admin = gitlab.Bool(d.Get("is_admin").(bool))
+		options.Admin = gitlab.Ptr(d.Get("is_admin").(bool))
 	}
 
 	if d.HasChange("can_create_group") {
-		options.CanCreateGroup = gitlab.Bool(d.Get("can_create_group").(bool))
+		options.CanCreateGroup = gitlab.Ptr(d.Get("can_create_group").(bool))
 	}
 
 	if d.HasChange("projects_limit") {
-		options.ProjectsLimit = gitlab.Int(d.Get("projects_limit").(int))
+		options.ProjectsLimit = gitlab.Ptr(d.Get("projects_limit").(int))
 	}
 
 	if d.HasChange("is_external") {
-		options.External = gitlab.Bool(d.Get("is_external").(bool))
+		options.External = gitlab.Ptr(d.Get("is_external").(bool))
 	}
 
 	if d.HasChange("note") {
-		options.Note = gitlab.String(d.Get("note").(string))
+		options.Note = gitlab.Ptr(d.Get("note").(string))
 	}
 
 	log.Printf("[DEBUG] update gitlab user %s", d.Id())

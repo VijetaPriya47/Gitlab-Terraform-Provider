@@ -81,9 +81,9 @@ func resourceGitlabIntegrationPipelinesEmailCreate(ctx context.Context, d *schem
 	project := d.Get("project").(string)
 	d.SetId(project)
 	options := &gitlab.SetPipelinesEmailServiceOptions{
-		Recipients:                gitlab.String(strings.Join(*stringSetToStringSlice(d.Get("recipients").(*schema.Set)), ",")),
-		NotifyOnlyBrokenPipelines: gitlab.Bool(d.Get("notify_only_broken_pipelines").(bool)),
-		BranchesToBeNotified:      gitlab.String(d.Get("branches_to_be_notified").(string)),
+		Recipients:                gitlab.Ptr(strings.Join(*stringSetToStringSlice(d.Get("recipients").(*schema.Set)), ",")),
+		NotifyOnlyBrokenPipelines: gitlab.Ptr(d.Get("notify_only_broken_pipelines").(bool)),
+		BranchesToBeNotified:      gitlab.Ptr(d.Get("branches_to_be_notified").(string)),
 	}
 
 	log.Printf("[DEBUG] create gitlab pipelines emails integration for project %s", project)

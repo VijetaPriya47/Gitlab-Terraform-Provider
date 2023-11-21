@@ -79,25 +79,25 @@ func resourceGitlabProjectHookCreate(ctx context.Context, d *schema.ResourceData
 	client := meta.(*gitlab.Client)
 	project := d.Get("project").(string)
 	options := &gitlab.AddProjectHookOptions{
-		URL:                      gitlab.String(d.Get("url").(string)),
-		PushEvents:               gitlab.Bool(d.Get("push_events").(bool)),
-		PushEventsBranchFilter:   gitlab.String(d.Get("push_events_branch_filter").(string)),
-		IssuesEvents:             gitlab.Bool(d.Get("issues_events").(bool)),
-		ConfidentialIssuesEvents: gitlab.Bool(d.Get("confidential_issues_events").(bool)),
-		MergeRequestsEvents:      gitlab.Bool(d.Get("merge_requests_events").(bool)),
-		TagPushEvents:            gitlab.Bool(d.Get("tag_push_events").(bool)),
-		NoteEvents:               gitlab.Bool(d.Get("note_events").(bool)),
-		ConfidentialNoteEvents:   gitlab.Bool(d.Get("confidential_note_events").(bool)),
-		JobEvents:                gitlab.Bool(d.Get("job_events").(bool)),
-		PipelineEvents:           gitlab.Bool(d.Get("pipeline_events").(bool)),
-		WikiPageEvents:           gitlab.Bool(d.Get("wiki_page_events").(bool)),
-		DeploymentEvents:         gitlab.Bool(d.Get("deployment_events").(bool)),
-		ReleasesEvents:           gitlab.Bool(d.Get("releases_events").(bool)),
-		EnableSSLVerification:    gitlab.Bool(d.Get("enable_ssl_verification").(bool)),
+		URL:                      gitlab.Ptr(d.Get("url").(string)),
+		PushEvents:               gitlab.Ptr(d.Get("push_events").(bool)),
+		PushEventsBranchFilter:   gitlab.Ptr(d.Get("push_events_branch_filter").(string)),
+		IssuesEvents:             gitlab.Ptr(d.Get("issues_events").(bool)),
+		ConfidentialIssuesEvents: gitlab.Ptr(d.Get("confidential_issues_events").(bool)),
+		MergeRequestsEvents:      gitlab.Ptr(d.Get("merge_requests_events").(bool)),
+		TagPushEvents:            gitlab.Ptr(d.Get("tag_push_events").(bool)),
+		NoteEvents:               gitlab.Ptr(d.Get("note_events").(bool)),
+		ConfidentialNoteEvents:   gitlab.Ptr(d.Get("confidential_note_events").(bool)),
+		JobEvents:                gitlab.Ptr(d.Get("job_events").(bool)),
+		PipelineEvents:           gitlab.Ptr(d.Get("pipeline_events").(bool)),
+		WikiPageEvents:           gitlab.Ptr(d.Get("wiki_page_events").(bool)),
+		DeploymentEvents:         gitlab.Ptr(d.Get("deployment_events").(bool)),
+		ReleasesEvents:           gitlab.Ptr(d.Get("releases_events").(bool)),
+		EnableSSLVerification:    gitlab.Ptr(d.Get("enable_ssl_verification").(bool)),
 	}
 
 	if v, ok := d.GetOk("token"); ok {
-		options.Token = gitlab.String(v.(string))
+		options.Token = gitlab.Ptr(v.(string))
 	}
 
 	log.Printf("[DEBUG] create gitlab project hook %q", *options.URL)
@@ -145,25 +145,25 @@ func resourceGitlabProjectHookUpdate(ctx context.Context, d *schema.ResourceData
 		return diag.FromErr(err)
 	}
 	options := &gitlab.EditProjectHookOptions{
-		URL:                      gitlab.String(d.Get("url").(string)),
-		PushEvents:               gitlab.Bool(d.Get("push_events").(bool)),
-		PushEventsBranchFilter:   gitlab.String(d.Get("push_events_branch_filter").(string)),
-		IssuesEvents:             gitlab.Bool(d.Get("issues_events").(bool)),
-		ConfidentialIssuesEvents: gitlab.Bool(d.Get("confidential_issues_events").(bool)),
-		MergeRequestsEvents:      gitlab.Bool(d.Get("merge_requests_events").(bool)),
-		TagPushEvents:            gitlab.Bool(d.Get("tag_push_events").(bool)),
-		NoteEvents:               gitlab.Bool(d.Get("note_events").(bool)),
-		ConfidentialNoteEvents:   gitlab.Bool(d.Get("confidential_note_events").(bool)),
-		JobEvents:                gitlab.Bool(d.Get("job_events").(bool)),
-		PipelineEvents:           gitlab.Bool(d.Get("pipeline_events").(bool)),
-		WikiPageEvents:           gitlab.Bool(d.Get("wiki_page_events").(bool)),
-		DeploymentEvents:         gitlab.Bool(d.Get("deployment_events").(bool)),
-		ReleasesEvents:           gitlab.Bool(d.Get("releases_events").(bool)),
-		EnableSSLVerification:    gitlab.Bool(d.Get("enable_ssl_verification").(bool)),
+		URL:                      gitlab.Ptr(d.Get("url").(string)),
+		PushEvents:               gitlab.Ptr(d.Get("push_events").(bool)),
+		PushEventsBranchFilter:   gitlab.Ptr(d.Get("push_events_branch_filter").(string)),
+		IssuesEvents:             gitlab.Ptr(d.Get("issues_events").(bool)),
+		ConfidentialIssuesEvents: gitlab.Ptr(d.Get("confidential_issues_events").(bool)),
+		MergeRequestsEvents:      gitlab.Ptr(d.Get("merge_requests_events").(bool)),
+		TagPushEvents:            gitlab.Ptr(d.Get("tag_push_events").(bool)),
+		NoteEvents:               gitlab.Ptr(d.Get("note_events").(bool)),
+		ConfidentialNoteEvents:   gitlab.Ptr(d.Get("confidential_note_events").(bool)),
+		JobEvents:                gitlab.Ptr(d.Get("job_events").(bool)),
+		PipelineEvents:           gitlab.Ptr(d.Get("pipeline_events").(bool)),
+		WikiPageEvents:           gitlab.Ptr(d.Get("wiki_page_events").(bool)),
+		DeploymentEvents:         gitlab.Ptr(d.Get("deployment_events").(bool)),
+		ReleasesEvents:           gitlab.Ptr(d.Get("releases_events").(bool)),
+		EnableSSLVerification:    gitlab.Ptr(d.Get("enable_ssl_verification").(bool)),
 	}
 
 	if d.HasChange("token") {
-		options.Token = gitlab.String(d.Get("token").(string))
+		options.Token = gitlab.Ptr(d.Get("token").(string))
 	}
 
 	log.Printf("[DEBUG] update gitlab project hook %s", d.Id())

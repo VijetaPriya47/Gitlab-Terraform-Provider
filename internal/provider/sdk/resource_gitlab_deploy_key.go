@@ -119,9 +119,9 @@ func resourceGitlabDeployKeyCreate(ctx context.Context, d *schema.ResourceData, 
 	client := meta.(*gitlab.Client)
 	project := d.Get("project").(string)
 	options := &gitlab.AddDeployKeyOptions{
-		Title:   gitlab.String(d.Get("title").(string)),
-		Key:     gitlab.String(strings.TrimSpace(d.Get("key").(string))),
-		CanPush: gitlab.Bool(d.Get("can_push").(bool)),
+		Title:   gitlab.Ptr(d.Get("title").(string)),
+		Key:     gitlab.Ptr(strings.TrimSpace(d.Get("key").(string))),
+		CanPush: gitlab.Ptr(d.Get("can_push").(bool)),
 	}
 
 	log.Printf("[DEBUG] create gitlab deployment key %s", *options.Title)

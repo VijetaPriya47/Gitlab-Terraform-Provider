@@ -44,7 +44,7 @@ func resourceGitlabProjectMilestoneCreate(ctx context.Context, d *schema.Resourc
 		Title: &title,
 	}
 	if description, ok := d.GetOk("description"); ok {
-		options.Description = gitlab.String(description.(string))
+		options.Description = gitlab.Ptr(description.(string))
 	}
 	if startDate, ok := d.GetOk("start_date"); ok {
 		parsedStartDate, err := parseISO8601Date(startDate.(string))
@@ -71,7 +71,7 @@ func resourceGitlabProjectMilestoneCreate(ctx context.Context, d *schema.Resourc
 
 	updateOptions := gitlab.UpdateMilestoneOptions{}
 	if stateEvent, ok := d.GetOk("state"); ok {
-		updateOptions.StateEvent = gitlab.String(milestoneStateToStateEvent[stateEvent.(string)])
+		updateOptions.StateEvent = gitlab.Ptr(milestoneStateToStateEvent[stateEvent.(string)])
 	}
 	if updateOptions != (gitlab.UpdateMilestoneOptions{}) {
 		_, _, err := client.Milestones.UpdateMilestone(project, milestone.ID, &updateOptions, gitlab.WithContext(ctx))
@@ -118,10 +118,10 @@ func resourceGitlabProjectMilestoneUpdate(ctx context.Context, d *schema.Resourc
 
 	options := &gitlab.UpdateMilestoneOptions{}
 	if d.HasChange("title") {
-		options.Title = gitlab.String(d.Get("title").(string))
+		options.Title = gitlab.Ptr(d.Get("title").(string))
 	}
 	if d.HasChange("description") {
-		options.Description = gitlab.String(d.Get("description").(string))
+		options.Description = gitlab.Ptr(d.Get("description").(string))
 	}
 	if d.HasChange("start_date") {
 		startDate := d.Get("start_date").(string)
@@ -140,7 +140,7 @@ func resourceGitlabProjectMilestoneUpdate(ctx context.Context, d *schema.Resourc
 		options.DueDate = parsedDueDate
 	}
 	if d.HasChange("state") {
-		options.StateEvent = gitlab.String(milestoneStateToStateEvent[d.Get("state").(string)])
+		options.StateEvent = gitlab.Ptr(milestoneStateToStateEvent[d.Get("state").(string)])
 	}
 
 	log.Printf("[DEBUG] update gitlab milestone in project %s with ID %d", project, milestoneID)

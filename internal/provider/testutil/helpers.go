@@ -59,7 +59,7 @@ func IsRunningInEE() (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	isEE = gitlab.Bool(isEnterpriseInstance(metadata))
+	isEE = gitlab.Ptr(isEnterpriseInstance(metadata))
 	return *isEE, err
 }
 
@@ -164,17 +164,17 @@ func CreateProjectWithNamespace(t *testing.T, namespaceID int) *gitlab.Project {
 	t.Helper()
 
 	options := &gitlab.CreateProjectOptions{
-		Name:        gitlab.String(acctest.RandomWithPrefix("acctest")),
-		Description: gitlab.String("Terraform acceptance tests"),
+		Name:        gitlab.Ptr(acctest.RandomWithPrefix("acctest")),
+		Description: gitlab.Ptr("Terraform acceptance tests"),
 		// So that acceptance tests can be run in a gitlab organization with no billing.
-		Visibility: gitlab.Visibility(gitlab.PublicVisibility),
+		Visibility: gitlab.Ptr(gitlab.PublicVisibility),
 		// So that a branch is created.
-		InitializeWithReadme: gitlab.Bool(true),
+		InitializeWithReadme: gitlab.Ptr(true),
 	}
 
 	//Apply a namespace if one is passed in.
 	if namespaceID != 0 {
-		options.NamespaceID = gitlab.Int(namespaceID)
+		options.NamespaceID = gitlab.Ptr(namespaceID)
 	}
 
 	return CreateProjectWithOptions(t, options)
@@ -202,7 +202,7 @@ func CreateProjectWithOptions(t *testing.T, opts *gitlab.CreateProjectOptions) *
 func CreateTopic(t *testing.T) *gitlab.Topic {
 	t.Helper()
 
-	name := gitlab.String(acctest.RandomWithPrefix("acctest"))
+	name := gitlab.Ptr(acctest.RandomWithPrefix("acctest"))
 	options := &gitlab.CreateTopicOptions{
 		Name:  name,
 		Title: name,
@@ -236,11 +236,11 @@ func CreateUsersWithPrefix(t *testing.T, n int, prefix string) []*gitlab.User {
 		var err error
 		username := acctest.RandomWithPrefix(prefix)
 		users[i], _, err = TestGitlabClient.Users.CreateUser(&gitlab.CreateUserOptions{
-			Name:             gitlab.String(username),
-			Username:         gitlab.String(username),
-			Email:            gitlab.String(username + "@example.com"),
-			Password:         gitlab.String(acctest.RandString(16)),
-			SkipConfirmation: gitlab.Bool(true),
+			Name:             gitlab.Ptr(username),
+			Username:         gitlab.Ptr(username),
+			Email:            gitlab.Ptr(username + "@example.com"),
+			Password:         gitlab.Ptr(acctest.RandString(16)),
+			SkipConfirmation: gitlab.Ptr(true),
 		})
 		if err != nil {
 			t.Fatalf("could not create test user (username=%q): %v", username, err)
@@ -261,7 +261,7 @@ func CreateUsersWithPrefix(t *testing.T, n int, prefix string) []*gitlab.User {
 func CreatePersonalAccessToken(t *testing.T, user *gitlab.User) *gitlab.PersonalAccessToken {
 	t.Helper()
 
-	token, _, err := TestGitlabClient.Users.CreatePersonalAccessToken(user.ID, &gitlab.CreatePersonalAccessTokenOptions{Name: gitlab.String(acctest.RandomWithPrefix("acctest")), Scopes: &[]string{"api"}})
+	token, _, err := TestGitlabClient.Users.CreatePersonalAccessToken(user.ID, &gitlab.CreatePersonalAccessTokenOptions{Name: gitlab.Ptr(acctest.RandomWithPrefix("acctest")), Scopes: &[]string{"api"}})
 	if err != nil {
 		t.Fatalf("could not create Personal Access Token for user %d", user.ID)
 	}
@@ -286,10 +286,10 @@ func CreateGroupsWithPrefix(t *testing.T, n int, prefix string) []*gitlab.Group 
 		var err error
 		name := acctest.RandomWithPrefix(prefix)
 		groups[i], _, err = TestGitlabClient.Groups.CreateGroup(&gitlab.CreateGroupOptions{
-			Name: gitlab.String(name),
-			Path: gitlab.String(name),
+			Name: gitlab.Ptr(name),
+			Path: gitlab.Ptr(name),
 			// So that acceptance tests can be run in a gitlab organization with no billing.
-			Visibility: gitlab.Visibility(gitlab.PublicVisibility),
+			Visibility: gitlab.Ptr(gitlab.PublicVisibility),
 		})
 		if err != nil {
 			t.Fatalf("could not create test group: %v", err)
@@ -316,11 +316,11 @@ func CreateSubGroupsWithPrefix(t *testing.T, parentGroup *gitlab.Group, n int, p
 		var err error
 		name := acctest.RandomWithPrefix(prefix)
 		groups[i], _, err = TestGitlabClient.Groups.CreateGroup(&gitlab.CreateGroupOptions{
-			Name: gitlab.String(name),
-			Path: gitlab.String(name),
+			Name: gitlab.Ptr(name),
+			Path: gitlab.Ptr(name),
 			// So that acceptance tests can be run in a gitlab organization with no billing.
-			Visibility: gitlab.Visibility(gitlab.PublicVisibility),
-			ParentID:   gitlab.Int(parentGroup.ID),
+			Visibility: gitlab.Ptr(gitlab.PublicVisibility),
+			ParentID:   gitlab.Ptr(parentGroup.ID),
 		})
 		if err != nil {
 			t.Fatalf("could not create test subgroup: %v", err)
@@ -343,7 +343,7 @@ func CreateGroupHooks(t *testing.T, gid interface{}, n int) []*gitlab.GroupHook 
 	var hooks []*gitlab.GroupHook
 	for i := 0; i < n; i++ {
 		hook, _, err := TestGitlabClient.Groups.AddGroupHook(gid, &gitlab.AddGroupHookOptions{
-			URL: gitlab.String(fmt.Sprintf("https://%s.com", acctest.RandomWithPrefix("acctest"))),
+			URL: gitlab.Ptr(fmt.Sprintf("https://%s.com", acctest.RandomWithPrefix("acctest"))),
 		})
 		if err != nil {
 			t.Fatalf("could not create group hook: %v", err)
@@ -363,8 +363,8 @@ func CreateBranches(t *testing.T, project *gitlab.Project, n int) []*gitlab.Bran
 	for i := range branches {
 		var err error
 		branches[i], _, err = TestGitlabClient.Branches.CreateBranch(project.ID, &gitlab.CreateBranchOptions{
-			Branch: gitlab.String(acctest.RandomWithPrefix("acctest")),
-			Ref:    gitlab.String(project.DefaultBranch),
+			Branch: gitlab.Ptr(acctest.RandomWithPrefix("acctest")),
+			Ref:    gitlab.Ptr(project.DefaultBranch),
 		})
 		if err != nil {
 			t.Fatalf("could not create test branches: %v", err)
@@ -385,7 +385,7 @@ func CreateProtectedBranches(t *testing.T, project *gitlab.Project, n int) []*gi
 	for i := range make([]int, n) {
 		var err error
 		protectedBranches[i], _, err = TestGitlabClient.ProtectedBranches.ProtectRepositoryBranches(project.ID, &gitlab.ProtectRepositoryBranchesOptions{
-			Name: gitlab.String(branches[i].Name),
+			Name: gitlab.Ptr(branches[i].Name),
 		})
 		if err != nil {
 			t.Fatalf("could not protect test branches: %v", err)
@@ -402,24 +402,24 @@ func CreateReleases(t *testing.T, project *gitlab.Project, n int) []*gitlab.Rele
 
 	releases := make([]*gitlab.Release, n)
 	linkType := gitlab.LinkTypeValue("other")
-	linkURL1 := fmt.Sprintf("https://test/%v", *gitlab.String(acctest.RandomWithPrefix("acctest")))
-	linkURL2 := fmt.Sprintf("https://test/%v", *gitlab.String(acctest.RandomWithPrefix("acctest")))
+	linkURL1 := fmt.Sprintf("https://test/%v", *gitlab.Ptr(acctest.RandomWithPrefix("acctest")))
+	linkURL2 := fmt.Sprintf("https://test/%v", *gitlab.Ptr(acctest.RandomWithPrefix("acctest")))
 
 	for i := range releases {
 		var err error
 		releases[i], _, err = TestGitlabClient.Releases.CreateRelease(project.ID, &gitlab.CreateReleaseOptions{
-			Name:    gitlab.String(acctest.RandomWithPrefix("acctest")),
-			TagName: gitlab.String(acctest.RandomWithPrefix("acctest")),
+			Name:    gitlab.Ptr(acctest.RandomWithPrefix("acctest")),
+			TagName: gitlab.Ptr(acctest.RandomWithPrefix("acctest")),
 			Ref:     &project.DefaultBranch,
 			Assets: &gitlab.ReleaseAssetsOptions{
 				Links: []*gitlab.ReleaseAssetLinkOptions{
 					{
-						Name:     gitlab.String(acctest.RandomWithPrefix("acctest")),
+						Name:     gitlab.Ptr(acctest.RandomWithPrefix("acctest")),
 						URL:      &linkURL1,
 						LinkType: &linkType,
 					},
 					{
-						Name:     gitlab.String(acctest.RandomWithPrefix("acctest")),
+						Name:     gitlab.Ptr(acctest.RandomWithPrefix("acctest")),
 						URL:      &linkURL2,
 						LinkType: &linkType,
 					},
@@ -450,7 +450,7 @@ func AddProjectMembersWithAccessLevel(t *testing.T, pid interface{}, users []*gi
 	for _, user := range users {
 		_, _, err := TestGitlabClient.ProjectMembers.AddProjectMember(pid, &gitlab.AddProjectMemberOptions{
 			UserID:      user.ID,
-			AccessLevel: gitlab.AccessLevel(accessLevel),
+			AccessLevel: gitlab.Ptr(accessLevel),
 		})
 		if err != nil {
 			t.Fatalf("could not add test project member: %v", err)
@@ -464,7 +464,7 @@ func CreateProjectHooks(t *testing.T, pid interface{}, n int) []*gitlab.ProjectH
 	var hooks []*gitlab.ProjectHook
 	for i := 0; i < n; i++ {
 		hook, _, err := TestGitlabClient.Projects.AddProjectHook(pid, &gitlab.AddProjectHookOptions{
-			URL: gitlab.String(fmt.Sprintf("https://%s.com", acctest.RandomWithPrefix("acctest"))),
+			URL: gitlab.Ptr(fmt.Sprintf("https://%s.com", acctest.RandomWithPrefix("acctest"))),
 		})
 		if err != nil {
 			t.Fatalf("could not create project hook: %v", err)
@@ -480,7 +480,7 @@ func CreateClusterAgents(t *testing.T, pid interface{}, n int) []*gitlab.Agent {
 	var clusterAgents []*gitlab.Agent
 	for i := 0; i < n; i++ {
 		clusterAgent, _, err := TestGitlabClient.ClusterAgents.RegisterAgent(pid, &gitlab.RegisterAgentOptions{
-			Name: gitlab.String(fmt.Sprintf("agent-%d", i)),
+			Name: gitlab.Ptr(fmt.Sprintf("agent-%d", i)),
 		})
 		if err != nil {
 			t.Fatalf("could not create test cluster agent: %v", err)
@@ -503,8 +503,8 @@ func CreateProjectIssues(t *testing.T, pid interface{}, n int) []*gitlab.Issue {
 	var issues []*gitlab.Issue
 	for i := 0; i < n; i++ {
 		issue, _, err := TestGitlabClient.Issues.CreateIssue(pid, &gitlab.CreateIssueOptions{
-			Title:       gitlab.String(fmt.Sprintf("Issue %d", i)),
-			Description: gitlab.String(fmt.Sprintf("Description %d", i)),
+			Title:       gitlab.Ptr(fmt.Sprintf("Issue %d", i)),
+			Description: gitlab.Ptr(fmt.Sprintf("Description %d", i)),
 			DueDate:     &dueDate,
 		})
 		if err != nil {
@@ -545,7 +545,7 @@ func CreateGroupEpicBoard(t *testing.T, path string) {
 func CreateGroupIssueBoard(t *testing.T, pid interface{}) *gitlab.GroupIssueBoard {
 	t.Helper()
 
-	issueBoard, _, err := TestGitlabClient.GroupIssueBoards.CreateGroupIssueBoard(pid, &gitlab.CreateGroupIssueBoardOptions{Name: gitlab.String(acctest.RandomWithPrefix("acctest"))})
+	issueBoard, _, err := TestGitlabClient.GroupIssueBoards.CreateGroupIssueBoard(pid, &gitlab.CreateGroupIssueBoardOptions{Name: gitlab.Ptr(acctest.RandomWithPrefix("acctest"))})
 	if err != nil {
 		t.Fatalf("could not create test group issue board: %v", err)
 	}
@@ -556,7 +556,7 @@ func CreateGroupIssueBoard(t *testing.T, pid interface{}) *gitlab.GroupIssueBoar
 func CreateProjectIssueBoard(t *testing.T, pid interface{}) *gitlab.IssueBoard {
 	t.Helper()
 
-	issueBoard, _, err := TestGitlabClient.Boards.CreateIssueBoard(pid, &gitlab.CreateIssueBoardOptions{Name: gitlab.String(acctest.RandomWithPrefix("acctest"))})
+	issueBoard, _, err := TestGitlabClient.Boards.CreateIssueBoard(pid, &gitlab.CreateIssueBoardOptions{Name: gitlab.Ptr(acctest.RandomWithPrefix("acctest"))})
 	if err != nil {
 		t.Fatalf("could not create test issue board: %v", err)
 	}
@@ -569,7 +569,7 @@ func CreateGroupLabels(t *testing.T, pid interface{}, n int) []*gitlab.GroupLabe
 
 	var labels []*gitlab.GroupLabel
 	for i := 0; i < n; i++ {
-		label, _, err := TestGitlabClient.GroupLabels.CreateGroupLabel(pid, &gitlab.CreateGroupLabelOptions{Name: gitlab.String(acctest.RandomWithPrefix("acctest")), Color: gitlab.String("#000000")})
+		label, _, err := TestGitlabClient.GroupLabels.CreateGroupLabel(pid, &gitlab.CreateGroupLabelOptions{Name: gitlab.Ptr(acctest.RandomWithPrefix("acctest")), Color: gitlab.Ptr("#000000")})
 		if err != nil {
 			t.Fatalf("could not create test group label: %v", err)
 		}
@@ -584,7 +584,7 @@ func CreateProjectLabels(t *testing.T, pid interface{}, n int) []*gitlab.Label {
 
 	var labels []*gitlab.Label
 	for i := 0; i < n; i++ {
-		label, _, err := TestGitlabClient.Labels.CreateLabel(pid, &gitlab.CreateLabelOptions{Name: gitlab.String(acctest.RandomWithPrefix("acctest")), Color: gitlab.String("#000000")})
+		label, _, err := TestGitlabClient.Labels.CreateLabel(pid, &gitlab.CreateLabelOptions{Name: gitlab.Ptr(acctest.RandomWithPrefix("acctest")), Color: gitlab.Ptr("#000000")})
 		if err != nil {
 			t.Fatalf("could not create test label: %v", err)
 		}
@@ -608,8 +608,8 @@ func AddGroupMembersWithAccessLevel(t *testing.T, gid interface{}, users []*gitl
 
 	for _, user := range users {
 		_, _, err := TestGitlabClient.GroupMembers.AddGroupMember(gid, &gitlab.AddGroupMemberOptions{
-			UserID:      gitlab.Int(user.ID),
-			AccessLevel: gitlab.AccessLevel(accessLevel),
+			UserID:      gitlab.Ptr(user.ID),
+			AccessLevel: gitlab.Ptr(accessLevel),
 		})
 		if err != nil {
 			t.Fatalf("could not add test group member: %v", err)
@@ -622,8 +622,8 @@ func ProjectShareGroup(t *testing.T, pid interface{}, gid int) {
 	t.Helper()
 
 	_, err := TestGitlabClient.Projects.ShareProjectWithGroup(pid, &gitlab.ShareWithGroupOptions{
-		GroupID:     gitlab.Int(gid),
-		GroupAccess: gitlab.AccessLevel(gitlab.DeveloperPermissions),
+		GroupID:     gitlab.Ptr(gid),
+		GroupAccess: gitlab.Ptr(gitlab.DeveloperPermissions),
 	})
 	if err != nil {
 		t.Fatalf("could not share project %v with group %d: %v", pid, gid, err)
@@ -640,8 +640,8 @@ func AddProjectMilestones(t *testing.T, project *gitlab.Project, n int) []*gitla
 	for i := range milestones {
 		var err error
 		milestones[i], _, err = TestGitlabClient.Milestones.CreateMilestone(project.ID, &gitlab.CreateMilestoneOptions{
-			Title:       gitlab.String(fmt.Sprintf("Milestone %d", i)),
-			Description: gitlab.String(fmt.Sprintf("Description %d", i)),
+			Title:       gitlab.Ptr(fmt.Sprintf("Milestone %d", i)),
+			Description: gitlab.Ptr(fmt.Sprintf("Description %d", i)),
 		})
 		if err != nil {
 			t.Fatalf("Could not create test milestones: %v", err)
@@ -663,8 +663,8 @@ func AddGroupMilestones(t *testing.T, group *gitlab.Group, n int) []*gitlab.Grou
 		endDate := time.Date(2023, 9, 1, 0, 0, 0, 0, time.UTC)
 		y := gitlab.ISOTime(endDate)
 		milestones[i], _, err = TestGitlabClient.GroupMilestones.CreateGroupMilestone(group.ID, &gitlab.CreateGroupMilestoneOptions{
-			Title:       gitlab.String(fmt.Sprintf("Milestone %d", i)),
-			Description: gitlab.String(fmt.Sprintf("Description %d", i)),
+			Title:       gitlab.Ptr(fmt.Sprintf("Milestone %d", i)),
+			Description: gitlab.Ptr(fmt.Sprintf("Description %d", i)),
 			StartDate:   &x,
 			DueDate:     &y,
 		})
@@ -717,8 +717,8 @@ func CreateProjectEnvironment(t *testing.T, projectID int, options *gitlab.Creat
 
 func CreateProjectVariable(t *testing.T, projectID int) *gitlab.ProjectVariable {
 	variable, _, err := TestGitlabClient.ProjectVariables.CreateVariable(projectID, &gitlab.CreateProjectVariableOptions{
-		Key:   gitlab.String(fmt.Sprintf("test_key_%d", acctest.RandInt())),
-		Value: gitlab.String("test_value"),
+		Key:   gitlab.Ptr(fmt.Sprintf("test_key_%d", acctest.RandInt())),
+		Value: gitlab.Ptr("test_value"),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -735,8 +735,8 @@ func CreateProjectVariable(t *testing.T, projectID int) *gitlab.ProjectVariable 
 
 func CreateGroupVariable(t *testing.T, groupID int) *gitlab.GroupVariable {
 	variable, _, err := TestGitlabClient.GroupVariables.CreateVariable(groupID, &gitlab.CreateGroupVariableOptions{
-		Key:   gitlab.String(fmt.Sprintf("test_key_%d", acctest.RandInt())),
-		Value: gitlab.String("test_value"),
+		Key:   gitlab.Ptr(fmt.Sprintf("test_key_%d", acctest.RandInt())),
+		Value: gitlab.Ptr("test_value"),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -753,8 +753,8 @@ func CreateGroupVariable(t *testing.T, groupID int) *gitlab.GroupVariable {
 
 func CreateInstanceVariable(t *testing.T) *gitlab.InstanceVariable {
 	variable, _, err := TestGitlabClient.InstanceVariables.CreateVariable(&gitlab.CreateInstanceVariableOptions{
-		Key:   gitlab.String(fmt.Sprintf("test_key_%d", acctest.RandInt())),
-		Value: gitlab.String("test_value"),
+		Key:   gitlab.Ptr(fmt.Sprintf("test_key_%d", acctest.RandInt())),
+		Value: gitlab.Ptr("test_value"),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -773,9 +773,9 @@ func CreateProjectFile(t *testing.T, projectID int, fileContent string, filePath
 
 	file, _, err := TestGitlabClient.RepositoryFiles.CreateFile(projectID, filePath, &gitlab.CreateFileOptions{
 		Branch:        &branch,
-		Encoding:      gitlab.String("base64"),
+		Encoding:      gitlab.Ptr("base64"),
 		Content:       &fileContent,
-		CommitMessage: gitlab.String(fmt.Sprintf("Random_Commit_Message_%d", acctest.RandInt())),
+		CommitMessage: gitlab.Ptr(fmt.Sprintf("Random_Commit_Message_%d", acctest.RandInt())),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -784,7 +784,7 @@ func CreateProjectFile(t *testing.T, projectID int, fileContent string, filePath
 	t.Cleanup(func() {
 		if _, err := TestGitlabClient.RepositoryFiles.DeleteFile(projectID, filePath, &gitlab.DeleteFileOptions{
 			Branch:        &branch,
-			CommitMessage: gitlab.String(fmt.Sprintf("Delete_Random_Commit_Message_%d", acctest.RandInt())),
+			CommitMessage: gitlab.Ptr(fmt.Sprintf("Delete_Random_Commit_Message_%d", acctest.RandInt())),
 		}); err != nil {
 			t.Fatal(err)
 		}

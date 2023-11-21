@@ -38,11 +38,11 @@ func resourceGitlabReleaseLinkCreate(ctx context.Context, d *schema.ResourceData
 	url := d.Get("url").(string)
 
 	options := &gitlab.CreateReleaseLinkOptions{
-		Name: gitlab.String(name),
-		URL:  gitlab.String(url),
+		Name: gitlab.Ptr(name),
+		URL:  gitlab.Ptr(url),
 	}
 	if filePath, ok := d.GetOk("filepath"); ok {
-		options.FilePath = gitlab.String(filePath.(string))
+		options.FilePath = gitlab.Ptr(filePath.(string))
 	}
 	if linkType, ok := d.GetOk("link_type"); ok {
 		linkTypeValue := gitlab.LinkTypeValue(linkType.(string))
@@ -95,13 +95,13 @@ func resourceGitlabReleaseLinkUpdate(ctx context.Context, d *schema.ResourceData
 
 	options := &gitlab.UpdateReleaseLinkOptions{}
 	if d.HasChange("name") {
-		options.Name = gitlab.String(d.Get("name").(string))
+		options.Name = gitlab.Ptr(d.Get("name").(string))
 	}
 	if d.HasChange("url") {
-		options.URL = gitlab.String(d.Get("url").(string))
+		options.URL = gitlab.Ptr(d.Get("url").(string))
 	}
 	if d.HasChange("filepath") {
-		options.FilePath = gitlab.String(d.Get("filepath").(string))
+		options.FilePath = gitlab.Ptr(d.Get("filepath").(string))
 	}
 	if d.HasChange("link_type") {
 		linkTypeValue := gitlab.LinkTypeValue(d.Get("link_type").(string))
