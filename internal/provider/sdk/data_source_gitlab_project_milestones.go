@@ -83,19 +83,19 @@ func dataSourceGitlabProjectMilestonesRead(ctx context.Context, d *schema.Resour
 	}
 
 	if v, ok := d.GetOk("title"); ok {
-		options.Title = gitlab.String(v.(string))
+		options.Title = gitlab.Ptr(v.(string))
 	}
 
 	if v, ok := d.GetOk("state"); ok {
-		options.State = gitlab.String(v.(string))
+		options.State = gitlab.Ptr(v.(string))
 	}
 
 	if v, ok := d.GetOk("search"); ok {
-		options.Search = gitlab.String(v.(string))
+		options.Search = gitlab.Ptr(v.(string))
 	}
 
 	if v, ok := d.GetOk("include_parent_milestones"); ok {
-		options.IncludeParentMilestones = gitlab.Bool(v.(bool))
+		options.IncludeParentMilestones = gitlab.Ptr(v.(bool))
 	}
 
 	optionsHash, err := hashstructure.Hash(&options, hashstructure.FormatV1, nil)

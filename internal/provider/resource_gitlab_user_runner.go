@@ -181,13 +181,13 @@ func (r *gitlabUserRunnerResource) Create(ctx context.Context, req resource.Crea
 	}
 
 	if !data.GroupID.IsNull() {
-		options.GroupID = gitlab.Int(int(data.GroupID.ValueInt64()))
+		options.GroupID = gitlab.Ptr(int(data.GroupID.ValueInt64()))
 	}
 	if !data.ProjectID.IsNull() {
-		options.ProjectID = gitlab.Int(int(data.ProjectID.ValueInt64()))
+		options.ProjectID = gitlab.Ptr(int(data.ProjectID.ValueInt64()))
 	}
 	if !data.Description.IsNull() && !data.Description.IsUnknown() {
-		options.Description = gitlab.String(data.Description.ValueString())
+		options.Description = gitlab.Ptr(data.Description.ValueString())
 	}
 	if !data.Paused.IsNull() && !data.Paused.IsUnknown() {
 		options.Paused = data.Paused.ValueBoolPointer()
@@ -212,7 +212,7 @@ func (r *gitlabUserRunnerResource) Create(ctx context.Context, req resource.Crea
 	// Attempting to create with a timeout of 0 causes an error, so we validate that the value is
 	// greater than 0 before including it within create.
 	if !data.MaximumTimeout.IsNull() && !data.MaximumTimeout.IsUnknown() && data.MaximumTimeout.ValueInt64() > 0 {
-		options.MaximumTimeout = gitlab.Int(int(data.MaximumTimeout.ValueInt64()))
+		options.MaximumTimeout = gitlab.Ptr(int(data.MaximumTimeout.ValueInt64()))
 	}
 
 	tflog.Debug(ctx, "Creating new GitLab Runner", map[string]interface{}{
@@ -284,7 +284,7 @@ func (r *gitlabUserRunnerResource) Update(ctx context.Context, req resource.Upda
 	options := &gitlab.UpdateRunnerDetailsOptions{}
 
 	if !data.Description.IsNull() && !data.Description.IsUnknown() {
-		options.Description = gitlab.String(data.Description.ValueString())
+		options.Description = gitlab.Ptr(data.Description.ValueString())
 	}
 	if !data.Paused.IsNull() && !data.Paused.IsUnknown() {
 		options.Paused = data.Paused.ValueBoolPointer()
@@ -306,7 +306,7 @@ func (r *gitlabUserRunnerResource) Update(ctx context.Context, req resource.Upda
 		options.AccessLevel = data.AccessLevel.ValueStringPointer()
 	}
 	if !data.MaximumTimeout.IsNull() && !data.MaximumTimeout.IsUnknown() && data.MaximumTimeout.ValueInt64() > 0 {
-		options.MaximumTimeout = gitlab.Int(int(data.MaximumTimeout.ValueInt64()))
+		options.MaximumTimeout = gitlab.Ptr(int(data.MaximumTimeout.ValueInt64()))
 	}
 
 	tflog.Debug(ctx, "Updating GitLab Runner ID", map[string]interface{}{

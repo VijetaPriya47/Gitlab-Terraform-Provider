@@ -21,10 +21,10 @@ func TestAcc_GitLabApplication_DataSource_Basic(t *testing.T) {
 	confidential := false
 
 	options := &gitlab.CreateApplicationOptions{
-		Name:         gitlab.String(name),
-		RedirectURI:  gitlab.String(url),
-		Scopes:       gitlab.String(scopes),
-		Confidential: gitlab.Bool(confidential),
+		Name:         gitlab.Ptr(name),
+		RedirectURI:  gitlab.Ptr(url),
+		Scopes:       gitlab.Ptr(scopes),
+		Confidential: gitlab.Ptr(confidential),
 	}
 
 	application, _, err := testutil.TestGitlabClient.Applications.CreateApplication(options)

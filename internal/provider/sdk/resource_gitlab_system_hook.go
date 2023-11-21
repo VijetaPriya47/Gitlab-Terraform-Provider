@@ -85,7 +85,7 @@ func resourceGitlabSystemHookCreate(ctx context.Context, d *schema.ResourceData,
 	client := meta.(*gitlab.Client)
 
 	options := &gitlab.AddHookOptions{
-		URL: gitlab.String(d.Get("url").(string)),
+		URL: gitlab.Ptr(d.Get("url").(string)),
 	}
 	// NOTE: `GetOkExists()` is deprecated, but until there is a replacement we need to use it.
 	//       see https://github.com/hashicorp/terraform-plugin-sdk/pull/350#issuecomment-597888969
@@ -93,32 +93,32 @@ func resourceGitlabSystemHookCreate(ctx context.Context, d *schema.ResourceData,
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 	if v, ok := d.GetOkExists("token"); ok {
-		options.Token = gitlab.String(v.(string))
+		options.Token = gitlab.Ptr(v.(string))
 	}
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 	if v, ok := d.GetOkExists("push_events"); ok {
-		options.PushEvents = gitlab.Bool(v.(bool))
+		options.PushEvents = gitlab.Ptr(v.(bool))
 	}
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 	if v, ok := d.GetOkExists("tag_push_events"); ok {
-		options.TagPushEvents = gitlab.Bool(v.(bool))
+		options.TagPushEvents = gitlab.Ptr(v.(bool))
 	}
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 	if v, ok := d.GetOkExists("merge_requests_events"); ok {
-		options.MergeRequestsEvents = gitlab.Bool(v.(bool))
+		options.MergeRequestsEvents = gitlab.Ptr(v.(bool))
 	}
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 	if v, ok := d.GetOkExists("repository_update_events"); ok {
-		options.RepositoryUpdateEvents = gitlab.Bool(v.(bool))
+		options.RepositoryUpdateEvents = gitlab.Ptr(v.(bool))
 	}
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 	if v, ok := d.GetOkExists("enable_ssl_verification"); ok {
-		options.EnableSSLVerification = gitlab.Bool(v.(bool))
+		options.EnableSSLVerification = gitlab.Ptr(v.(bool))
 	}
 
 	log.Printf("[DEBUG] create gitlab system hook %q", *options.URL)

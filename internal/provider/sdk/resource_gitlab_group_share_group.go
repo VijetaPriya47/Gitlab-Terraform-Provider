@@ -66,7 +66,7 @@ func resourceGitlabGroupShareGroupCreate(ctx context.Context, d *schema.Resource
 	options := &gitlab.ShareWithGroupOptions{
 		GroupID:     &shareGroupId,
 		GroupAccess: &groupAccess,
-		ExpiresAt:   gitlab.String(d.Get("expires_at").(string)),
+		ExpiresAt:   gitlab.Ptr(d.Get("expires_at").(string)),
 	}
 
 	client := meta.(*gitlab.Client)

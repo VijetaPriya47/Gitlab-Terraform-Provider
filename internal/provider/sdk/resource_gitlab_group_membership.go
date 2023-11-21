@@ -165,8 +165,8 @@ func resourceGitlabGroupMembershipDelete(ctx context.Context, d *schema.Resource
 	}
 
 	options := gitlab.RemoveGroupMemberOptions{
-		SkipSubresources:  gitlab.Bool(d.Get("skip_subresources_on_destroy").(bool)),
-		UnassignIssuables: gitlab.Bool(d.Get("unassign_issuables_on_destroy").(bool)),
+		SkipSubresources:  gitlab.Ptr(d.Get("skip_subresources_on_destroy").(bool)),
+		UnassignIssuables: gitlab.Ptr(d.Get("unassign_issuables_on_destroy").(bool)),
 	}
 
 	log.Printf("[DEBUG] Delete gitlab group membership %v for %s with options: %+v", userId, groupId, options)

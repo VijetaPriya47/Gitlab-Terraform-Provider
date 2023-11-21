@@ -40,11 +40,11 @@ func resourceGitlabClusterAgentTokenCreate(ctx context.Context, d *schema.Resour
 	project := d.Get("project").(string)
 	agentID := d.Get("agent_id").(int)
 	options := gitlab.CreateAgentTokenOptions{
-		Name: gitlab.String(d.Get("name").(string)),
+		Name: gitlab.Ptr(d.Get("name").(string)),
 	}
 
 	if v, ok := d.GetOk("description"); ok {
-		options.Description = gitlab.String(v.(string))
+		options.Description = gitlab.Ptr(v.(string))
 	}
 
 	log.Printf("[DEBUG] create token for GitLab Agent for Kubernetes %d in project %s with name '%v'", agentID, project, options.Name)

@@ -229,7 +229,7 @@ func dataSourceGitlabProjectIssuesRead(ctx context.Context, d *schema.ResourceDa
 	}
 
 	if v, ok := d.GetOk("state"); ok {
-		options.State = gitlab.String(v.(string))
+		options.State = gitlab.Ptr(v.(string))
 	}
 
 	if v, ok := d.GetOk("labels"); ok {
@@ -243,23 +243,23 @@ func dataSourceGitlabProjectIssuesRead(ctx context.Context, d *schema.ResourceDa
 	}
 
 	if v, ok := d.GetOk("with_labels_details"); ok {
-		options.WithLabelDetails = gitlab.Bool(v.(bool))
+		options.WithLabelDetails = gitlab.Ptr(v.(bool))
 	}
 
 	if v, ok := d.GetOk("milestone"); ok {
-		options.Milestone = gitlab.String(v.(string))
+		options.Milestone = gitlab.Ptr(v.(string))
 	}
 
 	if v, ok := d.GetOk("not_milestone"); ok {
-		options.NotMilestone = gitlab.String(v.(string))
+		options.NotMilestone = gitlab.Ptr(v.(string))
 	}
 
 	if v, ok := d.GetOk("scope"); ok {
-		options.Scope = gitlab.String(v.(string))
+		options.Scope = gitlab.Ptr(v.(string))
 	}
 
 	if v, ok := d.GetOk("author_id"); ok {
-		options.AuthorID = gitlab.Int(v.(int))
+		options.AuthorID = gitlab.Ptr(v.(int))
 	}
 
 	if v, ok := d.GetOk("not_author_id"); ok {
@@ -275,11 +275,11 @@ func dataSourceGitlabProjectIssuesRead(ctx context.Context, d *schema.ResourceDa
 	}
 
 	if v, ok := d.GetOk("assignee_username"); ok {
-		options.AssigneeUsername = gitlab.String(v.(string))
+		options.AssigneeUsername = gitlab.Ptr(v.(string))
 	}
 
 	if v, ok := d.GetOk("my_reaction_emoji"); ok {
-		options.MyReactionEmoji = gitlab.String(v.(string))
+		options.MyReactionEmoji = gitlab.Ptr(v.(string))
 	}
 
 	if v, ok := d.GetOk("not_my_reaction_emoji"); ok {
@@ -287,19 +287,19 @@ func dataSourceGitlabProjectIssuesRead(ctx context.Context, d *schema.ResourceDa
 	}
 
 	if v, ok := d.GetOk("order_by"); ok {
-		options.OrderBy = gitlab.String(v.(string))
+		options.OrderBy = gitlab.Ptr(v.(string))
 	}
 
 	if v, ok := d.GetOk("sort"); ok {
-		options.Sort = gitlab.String(v.(string))
+		options.Sort = gitlab.Ptr(v.(string))
 	}
 
 	if v, ok := d.GetOk("search"); ok {
-		options.Search = gitlab.String(v.(string))
+		options.Search = gitlab.Ptr(v.(string))
 	}
 
 	if v, ok := d.GetOk("in"); ok {
-		options.In = gitlab.String(v.(string))
+		options.In = gitlab.Ptr(v.(string))
 	}
 
 	if v, ok := d.GetOk("created_after"); ok {
@@ -307,7 +307,7 @@ func dataSourceGitlabProjectIssuesRead(ctx context.Context, d *schema.ResourceDa
 		if err != nil {
 			return diag.Errorf("failed to parse created_after: %s. It must be in valid RFC3339 format.", err)
 		}
-		options.CreatedAfter = gitlab.Time(parsedCreatedAfter)
+		options.CreatedAfter = gitlab.Ptr(parsedCreatedAfter)
 	}
 
 	if v, ok := d.GetOk("created_before"); ok {
@@ -315,11 +315,11 @@ func dataSourceGitlabProjectIssuesRead(ctx context.Context, d *schema.ResourceDa
 		if err != nil {
 			return diag.Errorf("failed to parse created_before: %s. It must be in valid RFC3339 format.", err)
 		}
-		options.CreatedBefore = gitlab.Time(parsedCreatedBefore)
+		options.CreatedBefore = gitlab.Ptr(parsedCreatedBefore)
 	}
 
 	if v, ok := d.GetOk("due_date"); ok {
-		options.DueDate = gitlab.String(v.(string))
+		options.DueDate = gitlab.Ptr(v.(string))
 	}
 
 	if v, ok := d.GetOk("updated_after"); ok {
@@ -327,7 +327,7 @@ func dataSourceGitlabProjectIssuesRead(ctx context.Context, d *schema.ResourceDa
 		if err != nil {
 			return diag.Errorf("failed to parse updated_after: %s. It must be in valid RFC3339 format.", err)
 		}
-		options.UpdatedAfter = gitlab.Time(parsedUpdatedAfter)
+		options.UpdatedAfter = gitlab.Ptr(parsedUpdatedAfter)
 	}
 
 	if v, ok := d.GetOk("updated_before"); ok {
@@ -335,15 +335,15 @@ func dataSourceGitlabProjectIssuesRead(ctx context.Context, d *schema.ResourceDa
 		if err != nil {
 			return diag.Errorf("failed to parse updated_before: %s. It must be in valid RFC3339 format.", err)
 		}
-		options.UpdatedBefore = gitlab.Time(parsedUpdatedBefore)
+		options.UpdatedBefore = gitlab.Ptr(parsedUpdatedBefore)
 	}
 
 	if v, ok := d.GetOk("confidential"); ok {
-		options.Confidential = gitlab.Bool(v.(bool))
+		options.Confidential = gitlab.Ptr(v.(bool))
 	}
 
 	if v, ok := d.GetOk("issue_type"); ok {
-		options.IssueType = gitlab.String(v.(string))
+		options.IssueType = gitlab.Ptr(v.(string))
 	}
 
 	var issues []*gitlab.Issue

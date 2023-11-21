@@ -113,7 +113,7 @@ func resourceGitlabPipelineTriggerCreate(ctx context.Context, d *schema.Resource
 	client := meta.(*gitlab.Client)
 	project := d.Get("project").(string)
 	options := &gitlab.AddPipelineTriggerOptions{
-		Description: gitlab.String(d.Get("description").(string)),
+		Description: gitlab.Ptr(d.Get("description").(string)),
 	}
 
 	log.Printf("[DEBUG] create gitlab PipelineTrigger %s", *options.Description)
@@ -162,11 +162,11 @@ func resourceGitlabPipelineTriggerUpdate(ctx context.Context, d *schema.Resource
 	}
 
 	options := &gitlab.EditPipelineTriggerOptions{
-		Description: gitlab.String(d.Get("description").(string)),
+		Description: gitlab.Ptr(d.Get("description").(string)),
 	}
 
 	if d.HasChange("description") {
-		options.Description = gitlab.String(d.Get("description").(string))
+		options.Description = gitlab.Ptr(d.Get("description").(string))
 	}
 
 	log.Printf("[DEBUG] update gitlab PipelineTrigger %s", d.Id())

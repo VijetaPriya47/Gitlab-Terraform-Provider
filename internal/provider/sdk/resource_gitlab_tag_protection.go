@@ -95,7 +95,7 @@ func schemaAllowedToCreate() *schema.Schema {
 func resourceGitlabTagProtectionCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Get("project").(string)
-	tag := gitlab.String(d.Get("tag").(string))
+	tag := gitlab.Ptr(d.Get("tag").(string))
 	createAccessLevel := tagProtectionAccessLevelID[d.Get("create_access_level").(string)]
 
 	allowedToCreate, err := expandTagPermissionOptions(d.Get("allowed_to_create").(*schema.Set).List())
@@ -210,10 +210,10 @@ func expandTagPermissionOptions(allowedTo []interface{}) ([]*gitlab.TagsPermissi
 	for _, v := range allowedTo {
 		opt := &gitlab.TagsPermissionOptions{}
 		if userID, ok := v.(map[string]interface{})["user_id"]; ok && userID != 0 {
-			opt.UserID = gitlab.Int(userID.(int))
+			opt.UserID = gitlab.Ptr(userID.(int))
 		}
 		if groupID, ok := v.(map[string]interface{})["group_id"]; ok && groupID != 0 {
-			opt.GroupID = gitlab.Int(groupID.(int))
+			opt.GroupID = gitlab.Ptr(groupID.(int))
 		}
 		if opt.UserID != nil && opt.GroupID != nil {
 			return nil, fmt.Errorf("both user_id and group_id cannot be present in the same allowed_to_create")

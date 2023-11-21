@@ -90,7 +90,7 @@ func resourceGitlabProjectEnvironmentCreate(ctx context.Context, d *schema.Resou
 		Name: &name,
 	}
 	if externalURL, ok := d.GetOk("external_url"); ok {
-		options.ExternalURL = gitlab.String(externalURL.(string))
+		options.ExternalURL = gitlab.Ptr(externalURL.(string))
 	}
 
 	project := d.Get("project").(string)
@@ -155,11 +155,11 @@ func resourceGitlabProjectEnvironmentUpdate(ctx context.Context, d *schema.Resou
 	}
 
 	options := &gitlab.EditEnvironmentOptions{
-		Name: gitlab.String(d.Get("name").(string)),
+		Name: gitlab.Ptr(d.Get("name").(string)),
 	}
 
 	if d.HasChange("external_url") {
-		options.ExternalURL = gitlab.String(d.Get("external_url").(string))
+		options.ExternalURL = gitlab.Ptr(d.Get("external_url").(string))
 	}
 
 	log.Printf("[DEBUG] Project %s update gitlab environment %d", project, environmentID)

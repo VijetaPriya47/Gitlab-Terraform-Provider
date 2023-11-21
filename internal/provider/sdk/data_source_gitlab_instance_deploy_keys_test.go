@@ -18,14 +18,14 @@ func TestAccDataSourceGitlabInstanceDeployKeys_basic(t *testing.T) {
 	testProjectTwoKeys := testutil.CreateProject(t)
 	testProjectOneKey := testutil.CreateProject(t)
 	canPushDeployKeyOptions := gitlab.AddDeployKeyOptions{
-		Title:   gitlab.String("Can Push"),
-		Key:     gitlab.String(testKey),
-		CanPush: gitlab.Bool(true),
+		Title:   gitlab.Ptr("Can Push"),
+		Key:     gitlab.Ptr(testKey),
+		CanPush: gitlab.Ptr(true),
 	}
 	canNotPushDeployKeyOptions := gitlab.AddDeployKeyOptions{
-		Title:   gitlab.String("Can Not Push"),
-		Key:     gitlab.String(testKey2),
-		CanPush: gitlab.Bool(false),
+		Title:   gitlab.Ptr("Can Not Push"),
+		Key:     gitlab.Ptr(testKey2),
+		CanPush: gitlab.Ptr(false),
 	}
 
 	testutil.CreateDeployKey(t, testProjectTwoKeys.ID, &canPushDeployKeyOptions)

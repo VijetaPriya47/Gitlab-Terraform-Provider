@@ -120,7 +120,7 @@ func resourceGitlabGroupAccessTokenCreate(ctx context.Context, d *schema.Resourc
 
 	group := d.Get("group").(string)
 	options := &gitlab.CreateGroupAccessTokenOptions{
-		Name:   gitlab.String(d.Get("name").(string)),
+		Name:   gitlab.Ptr(d.Get("name").(string)),
 		Scopes: stringSetToStringSlice(d.Get("scopes").(*schema.Set)),
 	}
 	if v, ok := d.GetOk("access_level"); ok {

@@ -114,7 +114,7 @@ func resourceGitlabProjectAccessTokenCreate(ctx context.Context, d *schema.Resou
 	project := d.Get("project").(string)
 
 	options := &gitlab.CreateProjectAccessTokenOptions{
-		Name:        gitlab.String(d.Get("name").(string)),
+		Name:        gitlab.Ptr(d.Get("name").(string)),
 		Scopes:      stringSetToStringSlice(d.Get("scopes").(*schema.Set)),
 		AccessLevel: &accessLevelId,
 	}

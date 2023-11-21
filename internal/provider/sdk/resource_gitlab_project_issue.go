@@ -57,29 +57,29 @@ func resourceGitlabProjectIssueCreate(ctx context.Context, d *schema.ResourceDat
 	project := d.Get("project").(string)
 
 	options := &gitlab.CreateIssueOptions{
-		Title: gitlab.String(d.Get("title").(string)),
+		Title: gitlab.Ptr(d.Get("title").(string)),
 	}
 	if iid, ok := d.GetOk("iid"); ok {
-		options.IID = gitlab.Int(iid.(int))
+		options.IID = gitlab.Ptr(iid.(int))
 	}
 	if assigneeIDs, ok := d.GetOk("assignee_ids"); ok {
 		options.AssigneeIDs = intSetToIntSlice(assigneeIDs.(*schema.Set))
 	}
 	if confidential, ok := d.GetOk("confidential"); ok {
-		options.Confidential = gitlab.Bool(confidential.(bool))
+		options.Confidential = gitlab.Ptr(confidential.(bool))
 	}
 	if createdAt, ok := d.GetOk("created_at"); ok {
 		parsedCreatedAt, err := time.Parse(time.RFC3339, createdAt.(string))
 		if err != nil {
 			return diag.Errorf("failed to parse created_at: %s. It must be in valid RFC3339 format.", err)
 		}
-		options.CreatedAt = gitlab.Time(parsedCreatedAt)
+		options.CreatedAt = gitlab.Ptr(parsedCreatedAt)
 	}
 	if description, ok := d.GetOk("description"); ok {
-		options.Description = gitlab.String(description.(string))
+		options.Description = gitlab.Ptr(description.(string))
 	}
 	if discussionToResolve, ok := d.GetOk("discussion_to_resolve"); ok {
-		options.DiscussionToResolve = gitlab.String(discussionToResolve.(string))
+		options.DiscussionToResolve = gitlab.Ptr(discussionToResolve.(string))
 	}
 	if dueDate, ok := d.GetOk("due_date"); ok {
 		parsedDueDate, err := parseISO8601Date(dueDate.(string))
@@ -89,20 +89,20 @@ func resourceGitlabProjectIssueCreate(ctx context.Context, d *schema.ResourceDat
 		options.DueDate = parsedDueDate
 	}
 	if issueType, ok := d.GetOk("issue_type"); ok {
-		options.IssueType = gitlab.String(issueType.(string))
+		options.IssueType = gitlab.Ptr(issueType.(string))
 	}
 	if labels, ok := d.GetOk("labels"); ok {
 		gitlabLabels := gitlab.Labels(*stringSetToStringSlice(labels.(*schema.Set)))
 		options.Labels = &gitlabLabels
 	}
 	if mergeRequestToResolveDiscussionsOf, ok := d.GetOk("merge_request_to_resolve_discussions_of"); ok {
-		options.MergeRequestToResolveDiscussionsOf = gitlab.Int(mergeRequestToResolveDiscussionsOf.(int))
+		options.MergeRequestToResolveDiscussionsOf = gitlab.Ptr(mergeRequestToResolveDiscussionsOf.(int))
 	}
 	if milestoneID, ok := d.GetOk("milestone_id"); ok {
-		options.MilestoneID = gitlab.Int(milestoneID.(int))
+		options.MilestoneID = gitlab.Ptr(milestoneID.(int))
 	}
 	if weight, ok := d.GetOk("weight"); ok {
-		options.Weight = gitlab.Int(weight.(int))
+		options.Weight = gitlab.Ptr(weight.(int))
 	}
 
 	issue, _, err := client.Issues.CreateIssue(project, options, gitlab.WithContext(ctx))
@@ -113,10 +113,10 @@ func resourceGitlabProjectIssueCreate(ctx context.Context, d *schema.ResourceDat
 
 	updateOptions := gitlab.UpdateIssueOptions{}
 	if discussionLocked, ok := d.GetOk("discussion_locked"); ok {
-		updateOptions.DiscussionLocked = gitlab.Bool(discussionLocked.(bool))
+		updateOptions.DiscussionLocked = gitlab.Ptr(discussionLocked.(bool))
 	}
 	if stateEvent, ok := d.GetOk("state"); ok {
-		updateOptions.StateEvent = gitlab.String(issueStateToStateEvent[stateEvent.(string)])
+		updateOptions.StateEvent = gitlab.Ptr(issueStateToStateEvent[stateEvent.(string)])
 	}
 	if updateOptions != (gitlab.UpdateIssueOptions{}) {
 		_, _, err := client.Issues.UpdateIssue(project, issue.IID, &updateOptions, gitlab.WithContext(ctx))
@@ -161,16 +161,16 @@ func resourceGitlabProjectIssueUpdate(ctx context.Context, d *schema.ResourceDat
 
 	options := &gitlab.UpdateIssueOptions{}
 	if d.HasChange("title") {
-		options.Title = gitlab.String(d.Get("title").(string))
+		options.Title = gitlab.Ptr(d.Get("title").(string))
 	}
 	if d.HasChange("assignee_ids") {
 		options.AssigneeIDs = intSetToIntSlice(d.Get("assignee_ids").(*schema.Set))
 	}
 	if d.HasChange("confidential") {
-		options.Confidential = gitlab.Bool(d.Get("confidential").(bool))
+		options.Confidential = gitlab.Ptr(d.Get("confidential").(bool))
 	}
 	if d.HasChange("description") {
-		options.Description = gitlab.String(d.Get("description").(string))
+		options.Description = gitlab.Ptr(d.Get("description").(string))
 	}
 	if d.HasChange("due_date") {
 		dueDate := d.Get("due_date").(string)
@@ -182,23 +182,23 @@ func resourceGitlabProjectIssueUpdate(ctx context.Context, d *schema.ResourceDat
 		options.DueDate = parsedDueDate
 	}
 	if d.HasChange("issue_type") {
-		options.IssueType = gitlab.String(d.Get("issue_type").(string))
+		options.IssueType = gitlab.Ptr(d.Get("issue_type").(string))
 	}
 	if d.HasChange("labels") {
 		gitlabLabels := gitlab.Labels(*stringSetToStringSlice(d.Get("labels").(*schema.Set)))
 		options.Labels = &gitlabLabels
 	}
 	if d.HasChange("milestone_id") {
-		options.MilestoneID = gitlab.Int(d.Get("milestone_id").(int))
+		options.MilestoneID = gitlab.Ptr(d.Get("milestone_id").(int))
 	}
 	if d.HasChange("weight") {
-		options.Weight = gitlab.Int(d.Get("weight").(int))
+		options.Weight = gitlab.Ptr(d.Get("weight").(int))
 	}
 	if d.HasChange("state") {
-		options.StateEvent = gitlab.String(issueStateToStateEvent[d.Get("state").(string)])
+		options.StateEvent = gitlab.Ptr(issueStateToStateEvent[d.Get("state").(string)])
 	}
 	if d.HasChange("discussion_locked") {
-		options.DiscussionLocked = gitlab.Bool(d.Get("discussion_locked").(bool))
+		options.DiscussionLocked = gitlab.Ptr(d.Get("discussion_locked").(bool))
 	}
 
 	_, _, err = client.Issues.UpdateIssue(project, issueIID, options, gitlab.WithContext(ctx))
@@ -226,7 +226,7 @@ func resourceGitlabProjectIssueDelete(ctx context.Context, d *schema.ResourceDat
 		}
 	} else {
 		log.Printf("[DEBUG] Closing issue %d in project %s for destroy", issueIID, project)
-		_, resp, err := client.Issues.UpdateIssue(project, issueIID, &gitlab.UpdateIssueOptions{StateEvent: gitlab.String("close")}, gitlab.WithContext(ctx))
+		_, resp, err := client.Issues.UpdateIssue(project, issueIID, &gitlab.UpdateIssueOptions{StateEvent: gitlab.Ptr("close")}, gitlab.WithContext(ctx))
 		if err != nil {
 			return diag.Errorf("%s failed to delete issue %d in project %s: (%s) %v", d.Id(), issueIID, project, resp.Status, err)
 		}

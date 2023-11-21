@@ -216,11 +216,11 @@ func (d *gitlabProjectLevelMrApprovalsResource) Delete(ctx context.Context, req 
 
 	// Reset to default values (this is what we did on the SDK resource)
 	options := &gitlab.ChangeApprovalConfigurationOptions{
-		ResetApprovalsOnPush:                      gitlab.Bool(true),
-		DisableOverridingApproversPerMergeRequest: gitlab.Bool(false),
-		MergeRequestsAuthorApproval:               gitlab.Bool(false),
-		MergeRequestsDisableCommittersApproval:    gitlab.Bool(false),
-		RequirePasswordToApprove:                  gitlab.Bool(false),
+		ResetApprovalsOnPush:                      gitlab.Ptr(true),
+		DisableOverridingApproversPerMergeRequest: gitlab.Ptr(false),
+		MergeRequestsAuthorApproval:               gitlab.Ptr(false),
+		MergeRequestsDisableCommittersApproval:    gitlab.Ptr(false),
+		RequirePasswordToApprove:                  gitlab.Ptr(false),
 	}
 
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Resetting approval configuration for project %s:", project))
@@ -410,7 +410,7 @@ func (d *gitlabProjectLevelMrApprovalsModel) modelToStateModel(a *gitlab.Project
 
 func (d *gitlabProjectLevelMrApprovalsResource) applySelectiveCodeOwnerRemovals(data gitlabProjectLevelMrApprovalsModel, ctx context.Context) (*gitlab.ProjectApprovals, diag.Diagnostic) {
 	option := &gitlab.ChangeApprovalConfigurationOptions{
-		SelectiveCodeOwnerRemovals: gitlab.Bool(data.SelectiveCodeOwnerRemovals.ValueBool()),
+		SelectiveCodeOwnerRemovals: gitlab.Ptr(data.SelectiveCodeOwnerRemovals.ValueBool()),
 	}
 	approval, _, err := d.client.Projects.ChangeApprovalConfiguration(data.Project.ValueString(), option, gitlab.WithContext(ctx))
 	if err != nil {

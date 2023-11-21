@@ -34,8 +34,8 @@ func resourceGitlabUserSSHKeyCreate(ctx context.Context, d *schema.ResourceData,
 	userID, userIDOk := d.GetOk("user_id")
 
 	options := &gitlab.AddSSHKeyOptions{
-		Title: gitlab.String(d.Get("title").(string)),
-		Key:   gitlab.String(d.Get("key").(string)),
+		Title: gitlab.Ptr(d.Get("title").(string)),
+		Key:   gitlab.Ptr(d.Get("key").(string)),
 	}
 
 	if expiresAt, ok := d.GetOk("expires_at"); ok {

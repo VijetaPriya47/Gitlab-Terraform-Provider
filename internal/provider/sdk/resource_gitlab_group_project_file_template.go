@@ -83,7 +83,7 @@ func resourceGitLabGroupProjectFileTemplateCreateOrUpdate(ctx context.Context, d
 	client := meta.(*gitlab.Client)
 
 	groupID := d.Get("group_id").(int)
-	projectID := gitlab.Int(d.Get("file_template_project_id").(int))
+	projectID := gitlab.Ptr(d.Get("file_template_project_id").(int))
 
 	// Creating the resource means updating the existing group to link the project to the group.
 	options := &gitlab.UpdateGroupOptions{}

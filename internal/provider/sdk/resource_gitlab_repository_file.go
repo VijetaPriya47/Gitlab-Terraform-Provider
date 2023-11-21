@@ -146,31 +146,31 @@ func resourceGitlabRepositoryFileCreate(ctx context.Context, d *schema.ResourceD
 	content := d.Get("content").(string)
 
 	options := &gitlab.CreateFileOptions{
-		Branch:      gitlab.String(d.Get("branch").(string)),
-		AuthorEmail: gitlab.String(d.Get("author_email").(string)),
-		AuthorName:  gitlab.String(d.Get("author_name").(string)),
-		Content:     gitlab.String(content),
+		Branch:      gitlab.Ptr(d.Get("branch").(string)),
+		AuthorEmail: gitlab.Ptr(d.Get("author_email").(string)),
+		AuthorName:  gitlab.Ptr(d.Get("author_name").(string)),
+		Content:     gitlab.Ptr(content),
 	}
 	if startBranch, ok := d.GetOk("start_branch"); ok {
-		options.StartBranch = gitlab.String(startBranch.(string))
+		options.StartBranch = gitlab.Ptr(startBranch.(string))
 	}
 	if executeFilemode, ok := d.GetOk("execute_filemode"); ok {
-		options.ExecuteFilemode = gitlab.Bool(executeFilemode.(bool))
+		options.ExecuteFilemode = gitlab.Ptr(executeFilemode.(bool))
 	}
 	if commitMessage, ok := d.GetOk("commit_message"); ok {
-		options.CommitMessage = gitlab.String(commitMessage.(string))
+		options.CommitMessage = gitlab.Ptr(commitMessage.(string))
 	} else {
-		options.CommitMessage = gitlab.String(d.Get("create_commit_message").(string))
+		options.CommitMessage = gitlab.Ptr(d.Get("create_commit_message").(string))
 	}
 
 	// check if the encoding value is provided
 	if encoding, ok := d.GetOk("encoding"); ok {
-		options.Encoding = gitlab.String(encoding.(string))
+		options.Encoding = gitlab.Ptr(encoding.(string))
 	}
 
 	if overwriteOnCreate, ok := d.GetOk("overwrite_on_create"); ok && overwriteOnCreate.(bool) {
 		readOptions := &gitlab.GetFileOptions{
-			Ref: gitlab.String(*options.Branch),
+			Ref: gitlab.Ptr(*options.Branch),
 		}
 		var existingRepositoryFile *gitlab.File
 		// Try to get the file to check if it exists
@@ -190,30 +190,30 @@ func resourceGitlabRepositoryFileCreate(ctx context.Context, d *schema.ResourceD
 				log.Printf("[DEBUG] %s already exists and overwrite_on_create is true. File will be overwritten.", filePath)
 
 				updateOptions := &gitlab.UpdateFileOptions{
-					Branch:      gitlab.String(*options.Branch),
-					AuthorEmail: gitlab.String(d.Get("author_email").(string)),
-					AuthorName:  gitlab.String(d.Get("author_name").(string)),
-					Content:     gitlab.String(content),
+					Branch:      gitlab.Ptr(*options.Branch),
+					AuthorEmail: gitlab.Ptr(d.Get("author_email").(string)),
+					AuthorName:  gitlab.Ptr(d.Get("author_name").(string)),
+					Content:     gitlab.Ptr(content),
 				}
 
 				// check if the encoding value is provided
 				if encoding, ok := d.GetOk("encoding"); ok {
-					updateOptions.Encoding = gitlab.String(encoding.(string))
+					updateOptions.Encoding = gitlab.Ptr(encoding.(string))
 				}
 
 				if startBranch, ok := d.GetOk("start_branch"); ok {
-					updateOptions.StartBranch = gitlab.String(startBranch.(string))
+					updateOptions.StartBranch = gitlab.Ptr(startBranch.(string))
 				}
 				if executeFilemode, ok := d.GetOk("execute_filemode"); ok {
-					updateOptions.ExecuteFilemode = gitlab.Bool(executeFilemode.(bool))
+					updateOptions.ExecuteFilemode = gitlab.Ptr(executeFilemode.(bool))
 				}
 				if commitMessage, ok := d.GetOk("commit_message"); ok {
-					updateOptions.CommitMessage = gitlab.String(commitMessage.(string))
+					updateOptions.CommitMessage = gitlab.Ptr(commitMessage.(string))
 				} else {
-					updateOptions.CommitMessage = gitlab.String(d.Get("update_commit_message").(string))
+					updateOptions.CommitMessage = gitlab.Ptr(d.Get("update_commit_message").(string))
 				}
 
-				updateOptions.LastCommitID = gitlab.String(existingRepositoryFile.LastCommitID)
+				updateOptions.LastCommitID = gitlab.Ptr(existingRepositoryFile.LastCommitID)
 				_, _, err := client.RepositoryFiles.UpdateFile(project, filePath, updateOptions, gitlab.WithContext(ctx))
 				if err != nil {
 					if isRefreshError(err) {
@@ -263,7 +263,7 @@ func resourceGitlabRepositoryFileRead(ctx context.Context, d *schema.ResourceDat
 	}
 
 	options := &gitlab.GetFileOptions{
-		Ref: gitlab.String(branch),
+		Ref: gitlab.Ptr(branch),
 	}
 
 	repositoryFile, _, err := client.RepositoryFiles.GetFile(project, filePath, options, gitlab.WithContext(ctx))
@@ -282,7 +282,7 @@ func resourceGitlabRepositoryFileRead(ctx context.Context, d *schema.ResourceDat
 	// check what our encoding is to determine if we need to decode the content for checking.
 	var configEncoding *string
 	if encoding, ok := d.GetOk("encoding"); ok {
-		configEncoding = gitlab.String(encoding.(string))
+		configEncoding = gitlab.Ptr(encoding.(string))
 	}
 
 	// If we are storing the value in plaintext, we need to decode the response from the API to store in the config
@@ -319,32 +319,32 @@ func resourceGitlabRepositoryFileUpdate(ctx context.Context, d *schema.ResourceD
 	client := meta.(*gitlab.Client)
 
 	readOptions := &gitlab.GetFileOptions{
-		Ref: gitlab.String(branch),
+		Ref: gitlab.Ptr(branch),
 	}
 
 	content := d.Get("content").(string)
 	updateOptions := &gitlab.UpdateFileOptions{
-		Branch:      gitlab.String(branch),
-		AuthorEmail: gitlab.String(d.Get("author_email").(string)),
-		AuthorName:  gitlab.String(d.Get("author_name").(string)),
-		Content:     gitlab.String(content),
+		Branch:      gitlab.Ptr(branch),
+		AuthorEmail: gitlab.Ptr(d.Get("author_email").(string)),
+		AuthorName:  gitlab.Ptr(d.Get("author_name").(string)),
+		Content:     gitlab.Ptr(content),
 	}
 
 	// check if the encoding value is provided
 	if encoding, ok := d.GetOk("encoding"); ok {
-		updateOptions.Encoding = gitlab.String(encoding.(string))
+		updateOptions.Encoding = gitlab.Ptr(encoding.(string))
 	}
 
 	if startBranch, ok := d.GetOk("start_branch"); ok {
-		updateOptions.StartBranch = gitlab.String(startBranch.(string))
+		updateOptions.StartBranch = gitlab.Ptr(startBranch.(string))
 	}
 	if executeFilemode, ok := d.GetOk("execute_filemode"); ok {
-		updateOptions.ExecuteFilemode = gitlab.Bool(executeFilemode.(bool))
+		updateOptions.ExecuteFilemode = gitlab.Ptr(executeFilemode.(bool))
 	}
 	if commitMessage, ok := d.GetOk("commit_message"); ok {
-		updateOptions.CommitMessage = gitlab.String(commitMessage.(string))
+		updateOptions.CommitMessage = gitlab.Ptr(commitMessage.(string))
 	} else {
-		updateOptions.CommitMessage = gitlab.String(d.Get("update_commit_message").(string))
+		updateOptions.CommitMessage = gitlab.Ptr(d.Get("update_commit_message").(string))
 	}
 
 	err = retry.RetryContext(ctx, d.Timeout(schema.TimeoutUpdate), func() *retry.RetryError {
@@ -354,7 +354,7 @@ func resourceGitlabRepositoryFileUpdate(ctx context.Context, d *schema.ResourceD
 			return retry.NonRetryableError(err)
 		}
 
-		updateOptions.LastCommitID = gitlab.String(existingRepositoryFile.LastCommitID)
+		updateOptions.LastCommitID = gitlab.Ptr(existingRepositoryFile.LastCommitID)
 		_, _, err = client.RepositoryFiles.UpdateFile(project, filePath, updateOptions, gitlab.WithContext(ctx))
 		if err != nil {
 			if isRefreshError(err) {
@@ -388,17 +388,17 @@ func resourceGitlabRepositoryFileDelete(ctx context.Context, d *schema.ResourceD
 	client := meta.(*gitlab.Client)
 
 	readOptions := &gitlab.GetFileOptions{
-		Ref: gitlab.String(branch),
+		Ref: gitlab.Ptr(branch),
 	}
 	deleteOptions := &gitlab.DeleteFileOptions{
-		Branch:      gitlab.String(d.Get("branch").(string)),
-		AuthorEmail: gitlab.String(d.Get("author_email").(string)),
-		AuthorName:  gitlab.String(d.Get("author_name").(string)),
+		Branch:      gitlab.Ptr(d.Get("branch").(string)),
+		AuthorEmail: gitlab.Ptr(d.Get("author_email").(string)),
+		AuthorName:  gitlab.Ptr(d.Get("author_name").(string)),
 	}
 	if commitMessage, ok := d.GetOk("commit_message"); ok {
-		deleteOptions.CommitMessage = gitlab.String(fmt.Sprintf("[DELETE]: %s", commitMessage.(string)))
+		deleteOptions.CommitMessage = gitlab.Ptr(fmt.Sprintf("[DELETE]: %s", commitMessage.(string)))
 	} else {
-		deleteOptions.CommitMessage = gitlab.String(d.Get("delete_commit_message").(string))
+		deleteOptions.CommitMessage = gitlab.Ptr(d.Get("delete_commit_message").(string))
 	}
 
 	err = retry.RetryContext(ctx, d.Timeout(schema.TimeoutDelete), func() *retry.RetryError {
@@ -409,7 +409,7 @@ func resourceGitlabRepositoryFileDelete(ctx context.Context, d *schema.ResourceD
 			return retry.NonRetryableError(err)
 		}
 
-		deleteOptions.LastCommitID = gitlab.String(existingRepositoryFile.LastCommitID)
+		deleteOptions.LastCommitID = gitlab.Ptr(existingRepositoryFile.LastCommitID)
 		resp, err := client.RepositoryFiles.DeleteFile(project, filePath, deleteOptions, gitlab.WithContext(ctx))
 		if err != nil {
 			if isRefreshError(err) {

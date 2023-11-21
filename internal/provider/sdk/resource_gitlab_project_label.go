@@ -129,12 +129,12 @@ func resourceGitlabProjectLabelCreate(ctx context.Context, d *schema.ResourceDat
 	client := meta.(*gitlab.Client)
 	project := d.Get("project").(string)
 	options := &gitlab.CreateLabelOptions{
-		Name:  gitlab.String(d.Get("name").(string)),
-		Color: gitlab.String(d.Get("color").(string)),
+		Name:  gitlab.Ptr(d.Get("name").(string)),
+		Color: gitlab.Ptr(d.Get("color").(string)),
 	}
 
 	if v, ok := d.GetOk("description"); ok {
-		options.Description = gitlab.String(v.(string))
+		options.Description = gitlab.Ptr(v.(string))
 	}
 
 	log.Printf("[DEBUG] create gitlab label %s", *options.Name)
@@ -181,12 +181,12 @@ func resourceGitlabProjectLabelUpdate(ctx context.Context, d *schema.ResourceDat
 		return diag.Errorf("Failed to parse project label id %q: %s", d.Id(), err)
 	}
 	options := &gitlab.UpdateLabelOptions{
-		Name:  gitlab.String(d.Get("name").(string)),
-		Color: gitlab.String(d.Get("color").(string)),
+		Name:  gitlab.Ptr(d.Get("name").(string)),
+		Color: gitlab.Ptr(d.Get("color").(string)),
 	}
 
 	if d.HasChange("description") {
-		options.Description = gitlab.String(d.Get("description").(string))
+		options.Description = gitlab.Ptr(d.Get("description").(string))
 	}
 
 	log.Printf("[DEBUG] update gitlab label %s", d.Id())
@@ -207,7 +207,7 @@ func resourceGitlabProjectLabelDelete(ctx context.Context, d *schema.ResourceDat
 	}
 	log.Printf("[DEBUG] Delete gitlab label %s", d.Id())
 	options := &gitlab.DeleteLabelOptions{
-		Name: gitlab.String(labelName),
+		Name: gitlab.Ptr(labelName),
 	}
 
 	_, err = client.Labels.DeleteLabel(project, options, gitlab.WithContext(ctx))

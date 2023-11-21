@@ -66,15 +66,15 @@ func resourceGitlabTopicCreate(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	options := &gitlab.CreateTopicOptions{
-		Name: gitlab.String(d.Get("name").(string)),
+		Name: gitlab.Ptr(d.Get("name").(string)),
 	}
 
 	if v, ok := d.GetOk("title"); ok {
-		options.Title = gitlab.String(v.(string))
+		options.Title = gitlab.Ptr(v.(string))
 	}
 
 	if v, ok := d.GetOk("description"); ok {
-		options.Description = gitlab.String(v.(string))
+		options.Description = gitlab.Ptr(v.(string))
 	}
 
 	avatar, err := handleAvatarOnCreate(d)
@@ -134,15 +134,15 @@ func resourceGitlabTopicUpdate(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	if d.HasChange("name") {
-		options.Name = gitlab.String(d.Get("name").(string))
+		options.Name = gitlab.Ptr(d.Get("name").(string))
 	}
 
 	if d.HasChange("title") {
-		options.Title = gitlab.String(d.Get("title").(string))
+		options.Title = gitlab.Ptr(d.Get("title").(string))
 	}
 
 	if d.HasChange("description") {
-		options.Description = gitlab.String(d.Get("description").(string))
+		options.Description = gitlab.Ptr(d.Get("description").(string))
 	}
 
 	avatar, err := handleAvatarOnUpdate(d)
@@ -191,7 +191,7 @@ func resourceGitlabTopicDelete(ctx context.Context, d *schema.ResourceData, meta
 		log.Printf("[WARN] Not deleting gitlab topic %s. Instead emptying its description", d.Id())
 
 		options := &gitlab.UpdateTopicOptions{
-			Description: gitlab.String(""),
+			Description: gitlab.Ptr(""),
 		}
 
 		_, _, err = client.Topics.UpdateTopic(topicID, options, gitlab.WithContext(ctx))

@@ -287,7 +287,7 @@ func TestAccGitlabProject_templates(t *testing.T) {
 					func(state *terraform.State) error {
 						projectID := state.RootModule().Resources["gitlab_project.template-name-custom"].Primary.ID
 
-						_, _, err := testutil.TestGitlabClient.RepositoryFiles.GetFile(projectID, templateFileName, &gitlab.GetFileOptions{Ref: gitlab.String(received.DefaultBranch)}, nil)
+						_, _, err := testutil.TestGitlabClient.RepositoryFiles.GetFile(projectID, templateFileName, &gitlab.GetFileOptions{Ref: gitlab.Ptr(received.DefaultBranch)}, nil)
 						if err != nil {
 							return fmt.Errorf("failed to get %s' file from template project: %w", templateFileName, err)
 						}
@@ -305,7 +305,7 @@ func TestAccGitlabProject_templates(t *testing.T) {
 					func(state *terraform.State) error {
 						projectID := state.RootModule().Resources["gitlab_project.template-id"].Primary.ID
 
-						_, _, err := testutil.TestGitlabClient.RepositoryFiles.GetFile(projectID, templateFileName, &gitlab.GetFileOptions{Ref: gitlab.String(received.DefaultBranch)}, nil)
+						_, _, err := testutil.TestGitlabClient.RepositoryFiles.GetFile(projectID, templateFileName, &gitlab.GetFileOptions{Ref: gitlab.Ptr(received.DefaultBranch)}, nil)
 						if err != nil {
 							return fmt.Errorf("failed to get '%s' file from template project: %w", templateFileName, err)
 						}
@@ -380,7 +380,7 @@ func TestAccGitlabProject_initializeWithReadme(t *testing.T) {
 					testAccCheckGitlabProjectExists("gitlab_project.foo", &project),
 					testAccCheckGitlabProjectDefaultBranch(&project, nil),
 					func(state *terraform.State) error {
-						_, _, err := testutil.TestGitlabClient.RepositoryFiles.GetFile(project.ID, "README.md", &gitlab.GetFileOptions{Ref: gitlab.String("main")}, nil)
+						_, _, err := testutil.TestGitlabClient.RepositoryFiles.GetFile(project.ID, "README.md", &gitlab.GetFileOptions{Ref: gitlab.Ptr("main")}, nil)
 						if err != nil {
 							return fmt.Errorf("failed to get 'README.md' file from project: %w", err)
 						}
@@ -722,8 +722,8 @@ func TestAccGitlabProject_importURL(t *testing.T) {
 
 	// Create a base project for importing.
 	baseProject, _, err := testutil.TestGitlabClient.Projects.CreateProject(&gitlab.CreateProjectOptions{
-		Name:       gitlab.String(fmt.Sprintf("base-%d", rInt)),
-		Visibility: gitlab.Visibility(gitlab.PublicVisibility),
+		Name:       gitlab.Ptr(fmt.Sprintf("base-%d", rInt)),
+		Visibility: gitlab.Ptr(gitlab.PublicVisibility),
 	})
 	if err != nil {
 		t.Fatalf("failed to create base project: %v", err)
@@ -733,9 +733,9 @@ func TestAccGitlabProject_importURL(t *testing.T) {
 
 	// Add a file to the base project, for later verifying the import.
 	_, _, err = testutil.TestGitlabClient.RepositoryFiles.CreateFile(baseProject.ID, "foo.txt", &gitlab.CreateFileOptions{
-		Branch:        gitlab.String("main"),
-		CommitMessage: gitlab.String("add file"),
-		Content:       gitlab.String(""),
+		Branch:        gitlab.Ptr("main"),
+		CommitMessage: gitlab.Ptr("add file"),
+		Content:       gitlab.Ptr(""),
 	})
 	if err != nil {
 		t.Fatalf("failed to commit file to base project: %v", err)
@@ -752,7 +752,7 @@ func TestAccGitlabProject_importURL(t *testing.T) {
 					func(state *terraform.State) error {
 						projectID := state.RootModule().Resources["gitlab_project.imported"].Primary.ID
 
-						_, _, err := testutil.TestGitlabClient.RepositoryFiles.GetFile(projectID, "foo.txt", &gitlab.GetFileOptions{Ref: gitlab.String("main")}, nil)
+						_, _, err := testutil.TestGitlabClient.RepositoryFiles.GetFile(projectID, "foo.txt", &gitlab.GetFileOptions{Ref: gitlab.Ptr("main")}, nil)
 						if err != nil {
 							return fmt.Errorf("failed to get file from imported project: %w", err)
 						}
@@ -772,8 +772,8 @@ func TestAccGitlabProject_importURLWithPassword(t *testing.T) {
 
 	// Create a base project for importing.
 	baseProject, _, err := testutil.TestGitlabClient.Projects.CreateProject(&gitlab.CreateProjectOptions{
-		Name:       gitlab.String(fmt.Sprintf("base-%d", rInt)),
-		Visibility: gitlab.Visibility(gitlab.PrivateVisibility),
+		Name:       gitlab.Ptr(fmt.Sprintf("base-%d", rInt)),
+		Visibility: gitlab.Ptr(gitlab.PrivateVisibility),
 	})
 	if err != nil {
 		t.Fatalf("failed to create base project: %v", err)
@@ -783,9 +783,9 @@ func TestAccGitlabProject_importURLWithPassword(t *testing.T) {
 	// The expiration must be greater than 24 hours, or the token will instantly expire.
 	expiration := gitlab.ISOTime(time.Now().Add(time.Hour * 48))
 	token, _, err := testutil.TestGitlabClient.ProjectAccessTokens.CreateProjectAccessToken(baseProject.ID, &gitlab.CreateProjectAccessTokenOptions{
-		Name:        gitlab.String("clone"),
+		Name:        gitlab.Ptr("clone"),
 		Scopes:      &[]string{"api", "read_repository"},
-		AccessLevel: gitlab.AccessLevel(gitlab.MaintainerPermissions),
+		AccessLevel: gitlab.Ptr(gitlab.MaintainerPermissions),
 		ExpiresAt:   &expiration,
 	})
 	if err != nil {
@@ -796,9 +796,9 @@ func TestAccGitlabProject_importURLWithPassword(t *testing.T) {
 
 	// Add a file to the base project, for later verifying the import.
 	_, _, err = testutil.TestGitlabClient.RepositoryFiles.CreateFile(baseProject.ID, "foo.txt", &gitlab.CreateFileOptions{
-		Branch:        gitlab.String("main"),
-		CommitMessage: gitlab.String("add file"),
-		Content:       gitlab.String(""),
+		Branch:        gitlab.Ptr("main"),
+		CommitMessage: gitlab.Ptr("add file"),
+		Content:       gitlab.Ptr(""),
 	})
 	if err != nil {
 		t.Fatalf("failed to commit file to base project: %v", err)
@@ -885,17 +885,17 @@ func TestAccGitlabProject_importURL_privateRepository(t *testing.T) {
 
 	testImportedProjectName := acctest.RandomWithPrefix("acctest")
 	testProject := testutil.CreateProjectWithOptions(t, &gitlab.CreateProjectOptions{
-		Name:                 gitlab.String(testImportedProjectName),
-		Visibility:           gitlab.Visibility(gitlab.PrivateVisibility),
-		InitializeWithReadme: gitlab.Bool(true),
+		Name:                 gitlab.Ptr(testImportedProjectName),
+		Visibility:           gitlab.Ptr(gitlab.PrivateVisibility),
+		InitializeWithReadme: gitlab.Ptr(true),
 	})
 
 	createToken := func() string {
 		expiration := gitlab.ISOTime(time.Now().Add(time.Hour * 48))
 		token, _, err := testutil.TestGitlabClient.ProjectAccessTokens.CreateProjectAccessToken(testProject.ID, &gitlab.CreateProjectAccessTokenOptions{
-			Name:        gitlab.String(acctest.RandomWithPrefix("acctest")),
+			Name:        gitlab.Ptr(acctest.RandomWithPrefix("acctest")),
 			Scopes:      &[]string{"read_api", "read_repository"},
-			AccessLevel: gitlab.AccessLevel(gitlab.MaintainerPermissions),
+			AccessLevel: gitlab.Ptr(gitlab.MaintainerPermissions),
 			ExpiresAt:   &expiration,
 		})
 		if err != nil {
@@ -987,7 +987,7 @@ resource "gitlab_project" "foo" {
 					func(state *terraform.State) error {
 						projectID := state.RootModule().Resources["gitlab_project.foo"].Primary.ID
 
-						_, _, err := testutil.TestGitlabClient.RepositoryFiles.GetFile(projectID, "README.md", &gitlab.GetFileOptions{Ref: gitlab.String("foo")}, nil)
+						_, _, err := testutil.TestGitlabClient.RepositoryFiles.GetFile(projectID, "README.md", &gitlab.GetFileOptions{Ref: gitlab.Ptr("foo")}, nil)
 						if err != nil {
 							return fmt.Errorf("failed to get 'README.md' file from project: %w", err)
 						}
@@ -1115,12 +1115,12 @@ func TestAccGitlabProject_InstanceBranchProtectionDisabled(t *testing.T) {
 						t.Fatalf("failed to get settings: %v", err)
 					}
 					t.Cleanup(func() {
-						if _, _, err := testutil.TestGitlabClient.Settings.UpdateSettings(&gitlab.UpdateSettingsOptions{DefaultBranchProtection: gitlab.Int(settings.DefaultBranchProtection)}); err != nil {
+						if _, _, err := testutil.TestGitlabClient.Settings.UpdateSettings(&gitlab.UpdateSettingsOptions{DefaultBranchProtection: gitlab.Ptr(settings.DefaultBranchProtection)}); err != nil {
 							t.Fatalf("failed to update instance-wide default branch protection setting to default: %v", err)
 						}
 					})
 
-					if _, _, err := testutil.TestGitlabClient.Settings.UpdateSettings(&gitlab.UpdateSettingsOptions{DefaultBranchProtection: gitlab.Int(0)}); err != nil {
+					if _, _, err := testutil.TestGitlabClient.Settings.UpdateSettings(&gitlab.UpdateSettingsOptions{DefaultBranchProtection: gitlab.Ptr(0)}); err != nil {
 						t.Fatalf("failed to update instance-wide default branch protection setting: %v", err)
 					}
 				},
@@ -1299,8 +1299,8 @@ func TestAccGitlabProject_ImportURLMirrored(t *testing.T) {
 
 	// Create a base project for importing.
 	baseProject, _, err := testutil.TestGitlabClient.Projects.CreateProject(&gitlab.CreateProjectOptions{
-		Name:       gitlab.String(fmt.Sprintf("base-%d", rInt)),
-		Visibility: gitlab.Visibility(gitlab.PublicVisibility),
+		Name:       gitlab.Ptr(fmt.Sprintf("base-%d", rInt)),
+		Visibility: gitlab.Ptr(gitlab.PublicVisibility),
 	})
 	if err != nil {
 		t.Fatalf("failed to create base project: %v", err)
@@ -1310,9 +1310,9 @@ func TestAccGitlabProject_ImportURLMirrored(t *testing.T) {
 
 	// Add a file to the base project, for later verifying the import.
 	_, _, err = testutil.TestGitlabClient.RepositoryFiles.CreateFile(baseProject.ID, "foo.txt", &gitlab.CreateFileOptions{
-		Branch:        gitlab.String("main"),
-		CommitMessage: gitlab.String("add file"),
-		Content:       gitlab.String(""),
+		Branch:        gitlab.Ptr("main"),
+		CommitMessage: gitlab.Ptr("add file"),
+		Content:       gitlab.Ptr(""),
 	})
 	if err != nil {
 		t.Fatalf("failed to commit file to base project: %v", err)
@@ -1339,7 +1339,7 @@ func TestAccGitlabProject_ImportURLMirrored(t *testing.T) {
 					func(state *terraform.State) error {
 						projectID := state.RootModule().Resources["gitlab_project.imported"].Primary.ID
 
-						_, _, err := testutil.TestGitlabClient.RepositoryFiles.GetFile(projectID, "foo.txt", &gitlab.GetFileOptions{Ref: gitlab.String("main")}, nil)
+						_, _, err := testutil.TestGitlabClient.RepositoryFiles.GetFile(projectID, "foo.txt", &gitlab.GetFileOptions{Ref: gitlab.Ptr("main")}, nil)
 						if err != nil {
 							return fmt.Errorf("failed to get file from imported project: %w", err)
 						}
@@ -1366,7 +1366,7 @@ func TestAccGitlabProject_ImportURLMirrored(t *testing.T) {
 					func(state *terraform.State) error {
 						projectID := state.RootModule().Resources["gitlab_project.imported"].Primary.ID
 
-						_, _, err := testutil.TestGitlabClient.RepositoryFiles.GetFile(projectID, "foo.txt", &gitlab.GetFileOptions{Ref: gitlab.String("main")}, nil)
+						_, _, err := testutil.TestGitlabClient.RepositoryFiles.GetFile(projectID, "foo.txt", &gitlab.GetFileOptions{Ref: gitlab.Ptr("main")}, nil)
 						if err != nil {
 							return fmt.Errorf("failed to get file from imported project: %w", err)
 						}
@@ -1393,7 +1393,7 @@ func TestAccGitlabProject_ImportURLMirrored(t *testing.T) {
 					func(state *terraform.State) error {
 						projectID := state.RootModule().Resources["gitlab_project.imported"].Primary.ID
 
-						_, _, err := testutil.TestGitlabClient.RepositoryFiles.GetFile(projectID, "foo.txt", &gitlab.GetFileOptions{Ref: gitlab.String("main")}, nil)
+						_, _, err := testutil.TestGitlabClient.RepositoryFiles.GetFile(projectID, "foo.txt", &gitlab.GetFileOptions{Ref: gitlab.Ptr("main")}, nil)
 						if err != nil {
 							return fmt.Errorf("failed to get file from imported project: %w", err)
 						}

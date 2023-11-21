@@ -138,16 +138,16 @@ func resourceGitlabProjectApprovalRuleCreate(ctx context.Context, d *schema.Reso
 	if anyApproverRuleId == 0 {
 
 		options := gitlab.CreateProjectLevelRuleOptions{
-			Name:                          gitlab.String(d.Get("name").(string)),
-			ApprovalsRequired:             gitlab.Int(d.Get("approvals_required").(int)),
+			Name:                          gitlab.Ptr(d.Get("name").(string)),
+			ApprovalsRequired:             gitlab.Ptr(d.Get("approvals_required").(int)),
 			UserIDs:                       expandApproverIds(d.Get("user_ids")),
 			GroupIDs:                      expandApproverIds(d.Get("group_ids")),
 			ProtectedBranchIDs:            expandProtectedBranchIDs(d.Get("protected_branch_ids")),
-			AppliesToAllProtectedBranches: gitlab.Bool(d.Get("applies_to_all_protected_branches").(bool)),
+			AppliesToAllProtectedBranches: gitlab.Ptr(d.Get("applies_to_all_protected_branches").(bool)),
 		}
 
 		if v, ok := d.GetOk("rule_type"); ok {
-			options.RuleType = gitlab.String(v.(string))
+			options.RuleType = gitlab.Ptr(v.(string))
 		}
 
 		tflog.Debug(ctx, `Creating gitlab project-level rule`, map[string]interface{}{
@@ -164,12 +164,12 @@ func resourceGitlabProjectApprovalRuleCreate(ctx context.Context, d *schema.Reso
 
 		// We don't need to set "rule_type" because it's already implied in updating the "any_approver" rule.
 		options := gitlab.UpdateProjectLevelRuleOptions{
-			Name:                          gitlab.String(d.Get("name").(string)),
-			ApprovalsRequired:             gitlab.Int(d.Get("approvals_required").(int)),
+			Name:                          gitlab.Ptr(d.Get("name").(string)),
+			ApprovalsRequired:             gitlab.Ptr(d.Get("approvals_required").(int)),
 			UserIDs:                       expandApproverIds(d.Get("user_ids")),
 			GroupIDs:                      expandApproverIds(d.Get("group_ids")),
 			ProtectedBranchIDs:            expandProtectedBranchIDs(d.Get("protected_branch_ids")),
-			AppliesToAllProtectedBranches: gitlab.Bool(d.Get("applies_to_all_protected_branches").(bool)),
+			AppliesToAllProtectedBranches: gitlab.Ptr(d.Get("applies_to_all_protected_branches").(bool)),
 		}
 		tflog.Debug(ctx, `Updating project level approval rule for "any_approver"`, map[string]interface{}{
 			"Project": project, "RuleID": anyApproverRuleId, "Options": options,
@@ -248,12 +248,12 @@ func resourceGitlabProjectApprovalRuleUpdate(ctx context.Context, d *schema.Reso
 	}
 
 	options := gitlab.UpdateProjectLevelRuleOptions{
-		Name:                          gitlab.String(d.Get("name").(string)),
-		ApprovalsRequired:             gitlab.Int(d.Get("approvals_required").(int)),
+		Name:                          gitlab.Ptr(d.Get("name").(string)),
+		ApprovalsRequired:             gitlab.Ptr(d.Get("approvals_required").(int)),
 		UserIDs:                       expandApproverIds(d.Get("user_ids")),
 		GroupIDs:                      expandApproverIds(d.Get("group_ids")),
 		ProtectedBranchIDs:            expandProtectedBranchIDs(d.Get("protected_branch_ids")),
-		AppliesToAllProtectedBranches: gitlab.Bool(d.Get("applies_to_all_protected_branches").(bool)),
+		AppliesToAllProtectedBranches: gitlab.Ptr(d.Get("applies_to_all_protected_branches").(bool)),
 	}
 
 	tflog.Debug(ctx, `Updating gitlab project-level rule`, map[string]interface{}{"project": projectID, "options": options})

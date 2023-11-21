@@ -140,11 +140,11 @@ func resourceGitlabPipelineScheduleCreate(ctx context.Context, d *schema.Resourc
 	client := meta.(*gitlab.Client)
 	project := d.Get("project").(string)
 	options := &gitlab.CreatePipelineScheduleOptions{
-		Description:  gitlab.String(d.Get("description").(string)),
-		Ref:          gitlab.String(d.Get("ref").(string)),
-		Cron:         gitlab.String(d.Get("cron").(string)),
-		CronTimezone: gitlab.String(d.Get("cron_timezone").(string)),
-		Active:       gitlab.Bool(d.Get("active").(bool)),
+		Description:  gitlab.Ptr(d.Get("description").(string)),
+		Ref:          gitlab.Ptr(d.Get("ref").(string)),
+		Cron:         gitlab.Ptr(d.Get("cron").(string)),
+		CronTimezone: gitlab.Ptr(d.Get("cron_timezone").(string)),
+		Active:       gitlab.Ptr(d.Get("active").(bool)),
 	}
 
 	log.Printf("[DEBUG] create gitlab PipelineSchedule %s", *options.Description)
@@ -196,31 +196,31 @@ func resourceGitlabPipelineScheduleUpdate(ctx context.Context, d *schema.Resourc
 	}
 
 	options := &gitlab.EditPipelineScheduleOptions{
-		Description:  gitlab.String(d.Get("description").(string)),
-		Ref:          gitlab.String(d.Get("ref").(string)),
-		Cron:         gitlab.String(d.Get("cron").(string)),
-		CronTimezone: gitlab.String(d.Get("cron_timezone").(string)),
-		Active:       gitlab.Bool(d.Get("active").(bool)),
+		Description:  gitlab.Ptr(d.Get("description").(string)),
+		Ref:          gitlab.Ptr(d.Get("ref").(string)),
+		Cron:         gitlab.Ptr(d.Get("cron").(string)),
+		CronTimezone: gitlab.Ptr(d.Get("cron_timezone").(string)),
+		Active:       gitlab.Ptr(d.Get("active").(bool)),
 	}
 
 	if d.HasChange("description") {
-		options.Description = gitlab.String(d.Get("description").(string))
+		options.Description = gitlab.Ptr(d.Get("description").(string))
 	}
 
 	if d.HasChange("ref") {
-		options.Ref = gitlab.String(d.Get("ref").(string))
+		options.Ref = gitlab.Ptr(d.Get("ref").(string))
 	}
 
 	if d.HasChange("cron") {
-		options.Cron = gitlab.String(d.Get("cron").(string))
+		options.Cron = gitlab.Ptr(d.Get("cron").(string))
 	}
 
 	if d.HasChange("cron_timezone") {
-		options.CronTimezone = gitlab.String(d.Get("cron_timezone").(string))
+		options.CronTimezone = gitlab.Ptr(d.Get("cron_timezone").(string))
 	}
 
 	if d.HasChange("active") {
-		options.Active = gitlab.Bool(d.Get("active").(bool))
+		options.Active = gitlab.Ptr(d.Get("active").(bool))
 	}
 
 	if _, ok := d.GetOk("take_ownership"); ok {

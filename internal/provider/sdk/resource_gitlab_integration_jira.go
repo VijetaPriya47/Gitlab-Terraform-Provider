@@ -245,15 +245,15 @@ func expandJiraOptions(d *schema.ResourceData) (*gitlab.SetJiraServiceOptions, e
 	setJiraServiceOptions := gitlab.SetJiraServiceOptions{}
 
 	// Set required properties
-	setJiraServiceOptions.URL = gitlab.String(d.Get("url").(string))
-	setJiraServiceOptions.ProjectKey = gitlab.String(d.Get("project_key").(string))
-	setJiraServiceOptions.Username = gitlab.String(d.Get("username").(string))
-	setJiraServiceOptions.Password = gitlab.String(d.Get("password").(string))
-	setJiraServiceOptions.CommitEvents = gitlab.Bool(d.Get("commit_events").(bool))
-	setJiraServiceOptions.MergeRequestsEvents = gitlab.Bool(d.Get("merge_requests_events").(bool))
-	setJiraServiceOptions.CommentOnEventEnabled = gitlab.Bool(d.Get("comment_on_event_enabled").(bool))
-	setJiraServiceOptions.APIURL = gitlab.String(d.Get("api_url").(string))
-	setJiraServiceOptions.JiraIssueTransitionID = gitlab.String(d.Get("jira_issue_transition_id").(string))
+	setJiraServiceOptions.URL = gitlab.Ptr(d.Get("url").(string))
+	setJiraServiceOptions.ProjectKey = gitlab.Ptr(d.Get("project_key").(string))
+	setJiraServiceOptions.Username = gitlab.Ptr(d.Get("username").(string))
+	setJiraServiceOptions.Password = gitlab.Ptr(d.Get("password").(string))
+	setJiraServiceOptions.CommitEvents = gitlab.Ptr(d.Get("commit_events").(bool))
+	setJiraServiceOptions.MergeRequestsEvents = gitlab.Ptr(d.Get("merge_requests_events").(bool))
+	setJiraServiceOptions.CommentOnEventEnabled = gitlab.Ptr(d.Get("comment_on_event_enabled").(bool))
+	setJiraServiceOptions.APIURL = gitlab.Ptr(d.Get("api_url").(string))
+	setJiraServiceOptions.JiraIssueTransitionID = gitlab.Ptr(d.Get("jira_issue_transition_id").(string))
 
 	return &setJiraServiceOptions, nil
 }

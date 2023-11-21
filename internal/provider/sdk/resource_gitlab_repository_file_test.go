@@ -260,12 +260,12 @@ func TestAccGitlabRepositoryFile_overwriteOnCreate(t *testing.T) {
 	var file gitlab.File
 	testProject := testutil.CreateProject(t)
 	options := &gitlab.CreateFileOptions{
-		Branch:        gitlab.String("main"),
-		Encoding:      gitlab.String("base64"),
-		AuthorEmail:   gitlab.String("meow@catnip.com"),
-		AuthorName:    gitlab.String("Meow Meowington"),
-		Content:       gitlab.String("bWVvdyBtZW93IG1lb3c="),
-		CommitMessage: gitlab.String("feature: cat"),
+		Branch:        gitlab.Ptr("main"),
+		Encoding:      gitlab.Ptr("base64"),
+		AuthorEmail:   gitlab.Ptr("meow@catnip.com"),
+		AuthorName:    gitlab.Ptr("Meow Meowington"),
+		Content:       gitlab.Ptr("bWVvdyBtZW93IG1lb3c="),
+		CommitMessage: gitlab.Ptr("feature: cat"),
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -591,7 +591,7 @@ func testAccCheckGitlabRepositoryFileExists(n string, file *gitlab.File) resourc
 			return fmt.Errorf("No branch set")
 		}
 		options := &gitlab.GetFileOptions{
-			Ref: gitlab.String(branch),
+			Ref: gitlab.Ptr(branch),
 		}
 		repoName := rs.Primary.Attributes["project"]
 		if repoName == "" {
@@ -626,7 +626,7 @@ func testAccCheckGitlabRepositoryFileCommitMessage(n string, file *gitlab.File, 
 			return fmt.Errorf("No branch set")
 		}
 		options := &gitlab.GetFileBlameOptions{
-			Ref: gitlab.String(branch),
+			Ref: gitlab.Ptr(branch),
 		}
 		repoName := rs.Primary.Attributes["project"]
 		if repoName == "" {
@@ -664,8 +664,8 @@ func testAccCheckGitlabRepositoryFileDeleteCommitMessage(n string, message strin
 			return fmt.Errorf("No branch set")
 		}
 		options := &gitlab.ListCommitsOptions{
-			RefName: gitlab.String(branch),
-			All:     gitlab.Bool(true),
+			RefName: gitlab.Ptr(branch),
+			All:     gitlab.Ptr(true),
 		}
 		repoName := rs.Primary.Attributes["project"]
 		if repoName == "" {

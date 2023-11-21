@@ -115,8 +115,8 @@ func resourceGitlabPipelineScheduleVariableCreate(ctx context.Context, d *schema
 	scheduleID := d.Get("pipeline_schedule_id").(int)
 
 	options := &gitlab.CreatePipelineScheduleVariableOptions{
-		Key:   gitlab.String(d.Get("key").(string)),
-		Value: gitlab.String(d.Get("value").(string)),
+		Key:   gitlab.Ptr(d.Get("key").(string)),
+		Value: gitlab.Ptr(d.Get("value").(string)),
 	}
 
 	log.Printf("[DEBUG] create gitlab PipelineScheduleVariable %s:%s", *options.Key, *options.Value)
@@ -173,7 +173,7 @@ func resourceGitlabPipelineScheduleVariableUpdate(ctx context.Context, d *schema
 
 	if d.HasChange("value") {
 		options := &gitlab.EditPipelineScheduleVariableOptions{
-			Value: gitlab.String(d.Get("value").(string)),
+			Value: gitlab.Ptr(d.Get("value").(string)),
 		}
 
 		log.Printf("[DEBUG] update gitlab PipelineScheduleVariable %s", d.Id())

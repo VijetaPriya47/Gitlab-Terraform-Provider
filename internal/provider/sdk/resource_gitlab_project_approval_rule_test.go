@@ -193,9 +193,9 @@ func TestAccGitLabProjectApprovalRule_AnyApproverAutoImport(t *testing.T) {
 
 	// pre-create the any_approver rule to ensure it exists
 	_, _, err := testutil.TestGitlabClient.Projects.CreateProjectApprovalRule(project.ID, &gitlab.CreateProjectLevelRuleOptions{
-		Name:              gitlab.String("any_approver"),
-		RuleType:          gitlab.String("any_approver"),
-		ApprovalsRequired: gitlab.Int(0),
+		Name:              gitlab.Ptr("any_approver"),
+		RuleType:          gitlab.Ptr("any_approver"),
+		ApprovalsRequired: gitlab.Ptr(0),
 	})
 	if err != nil {
 		t.Fatal("Failed to create approval rule prior to testing", err)
@@ -243,9 +243,9 @@ func TestAccGitLabProjectApprovalRule_AnyApproverAutoImportWithOneApprover(t *te
 
 	// pre-create the any_approver rule to ensure it exists
 	_, _, err := testutil.TestGitlabClient.Projects.CreateProjectApprovalRule(project.ID, &gitlab.CreateProjectLevelRuleOptions{
-		Name:              gitlab.String("any_approver"),
-		RuleType:          gitlab.String("any_approver"),
-		ApprovalsRequired: gitlab.Int(1),
+		Name:              gitlab.Ptr("any_approver"),
+		RuleType:          gitlab.Ptr("any_approver"),
+		ApprovalsRequired: gitlab.Ptr(1),
 	})
 	if err != nil {
 		t.Fatal("Failed to create approval rule prior to testing", err)
@@ -286,9 +286,9 @@ func TestAccGitLabProjectApprovalRule_AnyApproverDisableAutoImport(t *testing.T)
 
 	// pre-create the any_approver rule to ensure it exists so our apply fails when disabling import
 	_, _, err := testutil.TestGitlabClient.Projects.CreateProjectApprovalRule(project.ID, &gitlab.CreateProjectLevelRuleOptions{
-		Name:              gitlab.String("any_approver"),
-		RuleType:          gitlab.String("any_approver"),
-		ApprovalsRequired: gitlab.Int(0),
+		Name:              gitlab.Ptr("any_approver"),
+		RuleType:          gitlab.Ptr("any_approver"),
+		ApprovalsRequired: gitlab.Ptr(0),
 	})
 	if err != nil {
 		t.Fatal("Failed to create approval rule prior to testing", err)

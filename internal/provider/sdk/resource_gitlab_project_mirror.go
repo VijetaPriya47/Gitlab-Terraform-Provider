@@ -171,7 +171,7 @@ func resourceGitlabProjectMirrorDelete(ctx context.Context, d *schema.ResourceDa
 	} else {
 		// NOTE: this code only exists to support GitLab < 14.10.
 		//       It can be removed once ~ GitLab 15.2 is out and supported.
-		options := gitlab.EditProjectMirrorOptions{Enabled: gitlab.Bool(false)}
+		options := gitlab.EditProjectMirrorOptions{Enabled: gitlab.Ptr(false)}
 		log.Printf("[DEBUG] Disable gitlab project mirror %v for %s", mirrorID, projectID)
 		_, _, err := client.ProjectMirrors.EditProjectMirror(projectID, mirrorID, &options, gitlab.WithContext(ctx))
 		if err != nil {
