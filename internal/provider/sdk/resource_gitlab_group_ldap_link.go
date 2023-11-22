@@ -141,15 +141,15 @@ func resourceGitlabGroupLDAPLinkStateUpgradeV0(ctx context.Context, rawState map
 }
 
 // Builds the 3-part ID for LDAP Link.
-func resourceGitLabGroupLDAPLinkBuildId(groupId string, ldapProvider string, cn string, filter string) string {
-	return fmt.Sprintf("%s:%s:%s:%s", groupId, ldapProvider, cn, filter)
+func resourceGitLabGroupLDAPLinkBuildId(group, ldapProvider, cn, filter string) string {
+	return fmt.Sprintf("%s:%s:%s:%s", group, ldapProvider, cn, filter)
 }
 
 // Parses the GitLabGroupLDAPLink ID, which uses a 3-part ID as opposed to the more "normal" 2 part ID.
 func resourceGitLabGroupLDAPLinkParseId(id string) (string, string, string, string, error) {
 	parts := strings.Split(id, ":")
 	if len(parts) != 4 {
-		return "", "", "", "", errors.New("unexpected ID format: Group LDAP Link ID had fewer than 4 parts. Expected <GroupID>:<LDAPProvider>:<CN>:<filter>")
+		return "", "", "", "", errors.New("unexpected ID format: Group LDAP Link ID had fewer than 4 parts. Expected <group>:<LDAPProvider>:<CN>:<filter>")
 	}
 	return parts[0], parts[1], parts[2], parts[3], nil
 }
@@ -170,24 +170,24 @@ func resourceGitlabGroupLdapLinkCreate(ctx context.Context, d *schema.ResourceDa
 		return diag.Errorf("Neither `group_access` nor `access_level` (deprecated) is set")
 	}
 
-	ldap_provider := d.Get("ldap_provider").(string)
+	ldapProvider := d.Get("ldap_provider").(string)
 	force := d.Get("force").(bool)
+
+	if force {
+		if err := resourceGitlabGroupLdapLinkDeleteWithID(ctx, group, ldapProvider, cn, filter, meta); err != nil {
+			return err
+		}
+	}
 
 	options := &gitlab.AddGroupLDAPLinkOptions{
 		GroupAccess: &groupAccess,
-		Provider:    &ldap_provider,
+		Provider:    &ldapProvider,
 	}
 	if cn != "" {
 		options.CN = &cn
 	}
 	if filter != "" {
 		options.Filter = &filter
-	}
-
-	if force {
-		if err := resourceGitlabGroupLdapLinkDelete(ctx, d, meta); err != nil {
-			return err
-		}
 	}
 
 	log.Printf("[DEBUG] Create GitLab group LdapLink %s", d.Id())
@@ -197,6 +197,7 @@ func resourceGitlabGroupLdapLinkCreate(ctx context.Context, d *schema.ResourceDa
 	}
 
 	d.SetId(resourceGitLabGroupLDAPLinkBuildId(group, ldapLink.Provider, ldapLink.CN, ldapLink.Filter))
+
 	return resourceGitlabGroupLdapLinkRead(ctx, d, meta)
 }
 
@@ -244,15 +245,20 @@ func resourceGitlabGroupLdapLinkRead(ctx context.Context, d *schema.ResourceData
 }
 
 func resourceGitlabGroupLdapLinkDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*gitlab.Client)
-	group, ldap_provider, cn, filter, err := resourceGitLabGroupLDAPLinkParseId(d.Id())
+	group, ldapProvider, cn, filter, err := resourceGitLabGroupLDAPLinkParseId(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] Delete GitLab group LdapLink %s", d.Id())
+	return resourceGitlabGroupLdapLinkDeleteWithID(ctx, group, ldapProvider, cn, filter, meta)
+}
+
+func resourceGitlabGroupLdapLinkDeleteWithID(ctx context.Context, group, ldapProvider, cn, filter string, meta interface{}) diag.Diagnostics {
+	client := meta.(*gitlab.Client)
+
+	log.Printf("[DEBUG] Delete GitLab group LdapLink %s:%s:%s:%s", group, ldapProvider, cn, filter)
 	options := gitlab.DeleteGroupLDAPLinkWithCNOrFilterOptions{
-		Provider: &ldap_provider,
+		Provider: &ldapProvider,
 	}
 	if cn != "" {
 		options.CN = &cn
@@ -261,9 +267,7 @@ func resourceGitlabGroupLdapLinkDelete(ctx context.Context, d *schema.ResourceDa
 		options.Filter = &filter
 	}
 
-	_, err = client.Groups.DeleteGroupLDAPLinkWithCNOrFilter(group, &options, gitlab.WithContext(ctx))
-	if err != nil {
-
+	if _, err := client.Groups.DeleteGroupLDAPLinkWithCNOrFilter(group, &options, gitlab.WithContext(ctx)); err != nil {
 		switch err.(type) { // nolint // TODO: Resolve this golangci-lint issue: S1034: assigning the result of this type assertion to a variable (switch err := err.(type)) could eliminate type assertions in switch cases (gosimple)
 		case *gitlab.ErrorResponse:
 			// Ignore LDAP links that don't exist

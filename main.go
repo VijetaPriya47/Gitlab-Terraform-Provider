@@ -31,7 +31,7 @@ func main() {
 	}
 
 	err = tf6server.Serve(
-		"registry.terraform.io/providers/gitlabhq/gitlab",
+		"registry.terraform.io/gitlabhq/gitlab",
 		serverFactory,
 		serveOpts...,
 	)
