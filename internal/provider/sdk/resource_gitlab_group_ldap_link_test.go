@@ -42,7 +42,6 @@ func TestAccGitlabGroupLdapLink_SchemaMigration0_1(t *testing.T) {
 					cn				= "default"
 					group_access 	= "developer"
 					ldap_provider   = "default"
-				
 				}`, testGroup.ID),
 			},
 			{
@@ -54,7 +53,6 @@ func TestAccGitlabGroupLdapLink_SchemaMigration0_1(t *testing.T) {
 					cn				= "default"
 					group_access 	= "developer"
 					ldap_provider   = "default"
-				
 				}`, testGroup.ID),
 				PlanOnly: true,
 			},
@@ -84,16 +82,17 @@ func TestAccGitlabGroupLdapLink_basicCN(t *testing.T) {
 			{
 				Config: fmt.Sprintf(`
 				resource "gitlab_group" "foo" {
-					name = "foo%d"
-					path = "foo%d"
+					name        = "foo%d"
+					path        = "foo%d"
 					description = "Terraform acceptance test - Group LDAP Links 1"
 				}
 				
 				resource "gitlab_group_ldap_link" "foo" {
 					group 		    = "${gitlab_group.foo.id}"
-					cn				= "%s"
+					cn				    = "%s"
 					group_access 	= "developer"
-					ldap_provider   = "%s"
+					ldap_provider = "%s"
+					force         = true
 				
 				}`, rInt, rInt, testLdapLink.CN, testLdapLink.Provider),
 				Check: resource.ComposeTestCheckFunc(
@@ -117,16 +116,16 @@ func TestAccGitlabGroupLdapLink_basicCN(t *testing.T) {
 			{
 				Config: fmt.Sprintf(`
 				resource "gitlab_group" "foo" {
-					name = "foo%d"
-					path = "foo%d"
+					name        = "foo%d"
+					path        = "foo%d"
 					description = "Terraform acceptance test - Group LDAP Links 2"
 				}
 				
 				resource "gitlab_group_ldap_link" "foo" {
 					group 		    = "${gitlab_group.foo.id}"
-					cn				= "%s"
+					cn				    = "%s"
 					group_access 	= "maintainer"
-					ldap_provider   = "%s"
+					ldap_provider = "%s"
 				}`, rInt, rInt, testLdapLink.CN, testLdapLink.Provider),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabGroupLdapLinkExists(resourceName, &ldapLink),
@@ -192,9 +191,9 @@ func TestAccGitlabGroupLdapLink_updateCnAndFilter(t *testing.T) {
 				Config: fmt.Sprintf(`
 				resource "gitlab_group_ldap_link" "foo" {
 					group 		    = "%d"
-					cn				= "hello-world"
+					cn				    = "hello-world"
 					group_access 	= "developer"
-					ldap_provider   = "default"
+					ldap_provider = "default"
 				}`, group.ID),
 				Check: testAccCheckGitlabGroupLdapLinkExists("gitlab_group_ldap_link.foo", &ldapLink),
 			},
@@ -211,9 +210,9 @@ func TestAccGitlabGroupLdapLink_updateCnAndFilter(t *testing.T) {
 				Config: fmt.Sprintf(`
 				resource "gitlab_group_ldap_link" "foo" {
 					group 		    = "%d"
-					cn				= "new-cn"
+					cn				    = "new-cn"
 					group_access 	= "developer"
-					ldap_provider   = "default"
+					ldap_provider = "default"
 				}`, group.ID),
 				Check: testAccCheckGitlabGroupLdapLinkExists("gitlab_group_ldap_link.foo", &ldapLink),
 			},
@@ -230,9 +229,9 @@ func TestAccGitlabGroupLdapLink_updateCnAndFilter(t *testing.T) {
 				Config: fmt.Sprintf(`
 				resource "gitlab_group_ldap_link" "foo" {
 					group 		    = "%d"
-					filter			= "(givenName=Kitty)"
+					filter			  = "(givenName=Kitty)"
 					group_access 	= "developer"
-					ldap_provider   = "default"
+					ldap_provider = "default"
 				}`, group.ID),
 				Check: testAccCheckGitlabGroupLdapLinkExists("gitlab_group_ldap_link.foo", &ldapLink),
 			},
@@ -249,9 +248,9 @@ func TestAccGitlabGroupLdapLink_updateCnAndFilter(t *testing.T) {
 				Config: fmt.Sprintf(`
 				resource "gitlab_group_ldap_link" "foo" {
 					group 		    = "%d"
-					filter			= "(givenName=Meow)"
+					filter			  = "(givenName=Meow)"
 					group_access 	= "developer"
-					ldap_provider   = "default"
+					ldap_provider = "default"
 				}`, group.ID),
 				Check: testAccCheckGitlabGroupLdapLinkExists("gitlab_group_ldap_link.foo", &ldapLink),
 			},
@@ -282,20 +281,20 @@ func TestAccGitlabGroupLdapLink_conflictingArguments(t *testing.T) {
 			{
 				Config: fmt.Sprintf(`resource "gitlab_group_ldap_link" "foo" {
 					group 		    = "%d"
-					cn              = "default"
-					filter          = "(&(objectClass=person)(objectClass=user))"
+					cn            = "default"
+					filter        = "(&(objectClass=person)(objectClass=user))"
 					group_access 	= "developer"
-					ldap_provider   = "default"
+					ldap_provider = "default"
 				}`, group.ID),
 				ExpectError: regexp.MustCompile(regexp.QuoteMeta(`"cn": conflicts with filter`)),
 			},
 			{
 				Config: fmt.Sprintf(`resource "gitlab_group_ldap_link" "foo" {
 					group 	    	= "%d"
-					cn              = "default"
-					filter          = "(&(objectClass=person)(objectClass=user))"
+					cn            = "default"
+					filter        = "(&(objectClass=person)(objectClass=user))"
 					group_access 	= "developer"
-					ldap_provider   = "default"
+					ldap_provider = "default"
 				}`, group.ID),
 				ExpectError: regexp.MustCompile(regexp.QuoteMeta(`"filter": conflicts with cn`)),
 			},
@@ -369,8 +368,76 @@ func TestAccGitlabGroupLdapLink_recreatedWhenRemoved(t *testing.T) {
           }
           `, testGroup.Path, ldapName),
 			},
+			// Verify Import
+			{
+				ResourceName:      "gitlab_group_ldap_link.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"force",
+				},
+			},
 		},
 	})
+}
+
+func TestAccGitlabGroupLdapLink_forceDeletesWhenExists(t *testing.T) {
+	testutil.SkipIfCE(t)
+
+	// Create a pre-existing LDAP link with the same metadata
+	testGroup := testutil.CreateGroups(t, 1)[0]
+
+	level := gitlab.DeveloperPermissions
+	_, _, err := testutil.TestGitlabClient.Groups.AddGroupLDAPLink(testGroup.ID, &gitlab.AddGroupLDAPLinkOptions{
+		CN:          gitlab.Ptr("default"),
+		GroupAccess: &level,
+		Provider:    gitlab.Ptr("default"),
+	})
+	if err != nil {
+		t.Fatalf("Failed to create testing LDAP group: %v", err)
+	}
+	// Note: No cleanup is required for the LDAP provider because it's deleted when the Group is.
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabGroupLdapLinkDestroy,
+		Steps: []resource.TestStep{
+			// Attempt to create an LDAP Group link without "force", which will receive an error
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_group_ldap_link" "test" {
+						group         = "%[1]d"
+						cn            = "default"
+						group_access  = "developer"
+						ldap_provider = "default"
+					}
+          		`, testGroup.ID),
+				ExpectError: regexp.MustCompile("Cn has already been taken"),
+			},
+			// Attempt to create an LDAP Group link with "force", which should delete/re-create the link
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_group_ldap_link" "test" {
+						group         = "%[1]d"
+						cn            = "default"
+						group_access  = "developer"
+						ldap_provider = "default"
+						force         = true
+					}
+				`, testGroup.ID),
+			},
+			// Verify Import
+			{
+				ResourceName:      "gitlab_group_ldap_link.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"force",
+				},
+			},
+		},
+	})
+
 }
 
 func TestAccGitlabGroupLdapLink_StateUpgradeV0(t *testing.T) {
