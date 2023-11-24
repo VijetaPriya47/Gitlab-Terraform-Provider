@@ -184,7 +184,13 @@ func resourceGitlabPipelineScheduleRead(ctx context.Context, d *schema.ResourceD
 	d.Set("cron", pipelineSchedule.Cron)
 	d.Set("cron_timezone", pipelineSchedule.CronTimezone)
 	d.Set("active", pipelineSchedule.Active)
-	d.Set("owner", pipelineSchedule.Owner.ID)
+
+	ownerId := 0
+	if pipelineSchedule.Owner != nil {
+		ownerId = pipelineSchedule.Owner.ID
+	}
+	d.Set("owner", ownerId)
+
 	return nil
 }
 
