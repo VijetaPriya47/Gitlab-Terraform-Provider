@@ -492,7 +492,11 @@ func resourceGitlabGroupRead(ctx context.Context, d *schema.ResourceData, meta i
 		"group_id": d.Id(),
 	})
 
-	group, _, err := client.Groups.GetGroup(d.Id(), nil, gitlab.WithContext(ctx))
+	group, _, err := client.Groups.GetGroup(
+		d.Id(),
+		&gitlab.GetGroupOptions{WithProjects: gitlab.Ptr(false)},
+		gitlab.WithContext(ctx),
+	)
 	if err != nil {
 		if api.Is404(err) {
 			tflog.Debug(ctx, "[DEBUG] gitlab group not found so removing", map[string]interface{}{
