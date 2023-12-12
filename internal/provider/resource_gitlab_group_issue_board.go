@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strconv"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -41,13 +42,14 @@ type gitlabGroupIssueBoardResourceModel struct {
 	Group       types.String                     `tfsdk:"group"`
 	Name        types.String                     `tfsdk:"name"`
 	MilestoneId types.Int64                      `tfsdk:"milestone_id"`
+	Labels      types.Set                        `tfsdk:"labels"`
 	Lists       []gitlabGroupIssueBoardListModel `tfsdk:"lists"`
 }
 
 type gitlabGroupIssueBoardListModel struct {
 	Id       types.Int64 `tfsdk:"id"`
-	Position types.Int64 `tfsdk:"position"`
 	LabelId  types.Int64 `tfsdk:"label_id"`
+	Position types.Int64 `tfsdk:"position"`
 }
 
 func (r *gitlabGroupIssueBoardResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -83,6 +85,11 @@ func (r *gitlabGroupIssueBoardResource) Schema(ctx context.Context, req resource
 				MarkdownDescription: "The milestone the board should be scoped to.",
 				Optional:            true,
 			},
+			"labels": schema.SetAttribute{
+				MarkdownDescription: "The list of label names which the board should be scoped to.",
+				Optional:            true,
+				ElementType:         types.StringType,
+			},
 		},
 		Blocks: map[string]schema.Block{
 			"lists": schema.SetNestedBlock{
@@ -94,13 +101,14 @@ func (r *gitlabGroupIssueBoardResource) Schema(ctx context.Context, req resource
 							MarkdownDescription: "The ID of the list.",
 							Computed:            true,
 						},
-						"position": schema.Int64Attribute{
-							MarkdownDescription: "The position of the list within the board. The position for the list is based on the its position in the `lists` array.",
-							Computed:            true,
-						},
 						"label_id": schema.Int64Attribute{
 							MarkdownDescription: "The ID of the label the list should be scoped to.",
 							Optional:            true,
+						},
+						"position": schema.Int64Attribute{
+							MarkdownDescription: "The explicit position of the list within the board, zero based.",
+							Optional:            true,
+							Computed:            true,
 						},
 					},
 				},
@@ -125,8 +133,8 @@ func (r *gitlabGroupIssueBoardResource) groupIssueBoardToStateModel(groupID stri
 	for i, v := range groupIssueBoard.Lists {
 		listData := gitlabGroupIssueBoardListModel{}
 		listData.Id = types.Int64Value(int64(v.ID))
-		listData.Position = types.Int64Value(int64(v.Position))
 		listData.LabelId = types.Int64Value(int64(v.Label.ID))
+		listData.Position = types.Int64Value(int64(v.Position))
 
 		listsData[i] = listData
 	}
@@ -225,6 +233,14 @@ func (r *gitlabGroupIssueBoardResource) Update(ctx context.Context, req resource
 		optionsUpdate.MilestoneID = gitlab.Ptr(int(data.MilestoneId.ValueInt64()))
 	}
 
+	if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
+		// convert the Set to a []string and pass it in
+		var labels []string
+		data.Labels.ElementsAs(ctx, &labels, true)
+		gitlabLabels := gitlab.Labels(labels)
+		optionsUpdate.Labels = &gitlabLabels
+	}
+
 	issueBoard, _, err := r.client.GroupIssueBoards.UpdateIssueBoard(groupID, boardId, optionsUpdate, gitlab.WithContext(ctx))
 	if err != nil {
 		// persist API response in state model
@@ -257,6 +273,20 @@ func (r *gitlabGroupIssueBoardResource) Update(ctx context.Context, req resource
 
 	}
 	listsData := make([]*gitlab.BoardList, len(data.Lists))
+	// Sort data.Lists based on list Position
+	sort.Slice(data.Lists, func(i, j int) bool {
+		labelPosI := data.Lists[i].Position
+		labelPosJ := data.Lists[j].Position
+		// Handle nil values
+		if (labelPosI.IsNull() || labelPosI.IsUnknown()) && (labelPosJ.IsNull() || labelPosJ.IsUnknown()) {
+			return false // Treat two nils as equal
+		} else if labelPosI.IsNull() || labelPosI.IsUnknown() {
+			return true // Nil should come after non-nil
+		} else if labelPosJ.IsNull() || labelPosJ.IsUnknown() {
+			return false // Non-nil should come before nil
+		}
+		return labelPosI.ValueInt64() < labelPosJ.ValueInt64()
+	})
 	for i, v := range data.Lists {
 		listOptions := &gitlab.CreateGroupIssueBoardListOptions{}
 		listOptions.LabelID = gitlab.Ptr(int(v.LabelId.ValueInt64()))
@@ -365,6 +395,14 @@ func (r *gitlabGroupIssueBoardResource) Create(ctx context.Context, req resource
 		optionsUpdate.MilestoneID = gitlab.Ptr(int(data.MilestoneId.ValueInt64()))
 	}
 
+	if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
+		// convert the Set to a []string and pass it in
+		var labels []string
+		data.Labels.ElementsAs(ctx, &labels, true)
+		gitlabLabels := gitlab.Labels(labels)
+		optionsUpdate.Labels = &gitlabLabels
+	}
+
 	issueBoard, _, err := r.client.GroupIssueBoards.CreateGroupIssueBoard(groupID, options, gitlab.WithContext(ctx))
 	if err != nil {
 		// persist API response in state model
@@ -404,6 +442,20 @@ func (r *gitlabGroupIssueBoardResource) Create(ctx context.Context, req resource
 	}
 
 	listsData := make([]*gitlab.BoardList, len(data.Lists))
+	// Sort data.Lists based on list Position
+	sort.Slice(data.Lists, func(i, j int) bool {
+		labelPosI := data.Lists[i].Position
+		labelPosJ := data.Lists[j].Position
+		// Handle nil values
+		if (labelPosI.IsNull() || labelPosI.IsUnknown()) && (labelPosJ.IsNull() || labelPosJ.IsUnknown()) {
+			return false // Treat two nils as equal
+		} else if labelPosI.IsNull() || labelPosI.IsUnknown() {
+			return true // Nil should come after non-nil
+		} else if labelPosJ.IsNull() || labelPosJ.IsUnknown() {
+			return false // Non-nil should come before nil
+		}
+		return labelPosI.ValueInt64() < labelPosJ.ValueInt64()
+	})
 	for i, v := range data.Lists {
 		listOptions := &gitlab.CreateGroupIssueBoardListOptions{}
 		listOptions.LabelID = gitlab.Ptr(int(v.LabelId.ValueInt64()))
