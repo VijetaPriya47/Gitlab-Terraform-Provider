@@ -17,7 +17,10 @@ RUN   apt update -qq && \
       chmod +x /bin/docker-compose
 
 # Install Terraform for the builds, pinned to a specific version
-ARG TERRAFORM_VERSION="1.3.4"
+# This version is chosen as the minimum version required for the provider because without
+# https://github.com/hashicorp/terraform/pull/32551 , the provider produces inconsistent 
+# plan operations for many complex objects
+ARG TERRAFORM_VERSION="1.4.0"
 RUN  curl -o terraform.zip https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip && \
      unzip ./terraform.zip && \
      mkdir -p /usr/bin && \
