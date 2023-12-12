@@ -21,6 +21,9 @@ func TestAccGitlabGroupIssueBoard_basic(t *testing.T) {
 
 	testGroup := testutil.CreateGroups(t, 1)[0]
 	testMilestone := testutil.AddGroupMilestones(t, testGroup, 1)[0]
+	//testLabels := testutil.CreateGroupLabels(t, testGroup.ID, 2)
+	//we can't import the scoped labels
+	//see https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/1771#note_1686852496
 	//testUser := testutil.CreateUsers(t, 1)[0]
 
 	// NOTE: there is no way to delete the last issue board, see
@@ -141,10 +144,12 @@ func TestAccGitlabGroupIssueBoard_Lists(t *testing.T) {
 
 						lists {
 							label_id = %d
+							position = 1
 						}
 
 						lists {
 							label_id = %d
+							position = 0
 						}
 						
 					}
@@ -165,10 +170,12 @@ func TestAccGitlabGroupIssueBoard_Lists(t *testing.T) {
 
 						lists {
 							label_id = %d
+							position = 0
 						}
 
 						lists {
 							label_id = %d
+							position = 1
 						}
 					}
 				`, testGroup.ID, testLabels[2].ID, testLabels[3].ID),
@@ -225,6 +232,71 @@ func TestAccGitlabGroupIssueBoard_Lists(t *testing.T) {
 				ResourceName:      "gitlab_group_issue_board.this",
 				ImportState:       true,
 				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccGitlabGroupIssueBoard_LabelPositions(t *testing.T) {
+	testutil.SkipIfCE(t)
+
+	testGroup := testutil.CreateGroups(t, 1)[0]
+	testLabels := testutil.CreateGroupLabels(t, testGroup.ID, 4)
+
+	// NOTE: there is no way to delete the last issue board, see
+	// https://gitlab.com/gitlab-org/gitlab/-/issues/367395
+	testutil.CreateGroupIssueBoard(t, testGroup.ID)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabGroupIssueBoardDestroy,
+		Steps: []resource.TestStep{
+			// Create Board with 2 lists with core features
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_group_issue_board" "this" {
+						group        = "%d"
+						name         = "Test Group Board"
+
+						lists {
+							label_id = %d
+							position = 1
+						}
+
+						lists {
+							label_id = %d
+							position = 0
+						}
+						
+					}
+				`, testGroup.ID, testLabels[0].ID, testLabels[2].ID),
+			},
+			// Verify import
+			{
+				ResourceName:      "gitlab_group_issue_board.this",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Update Board list labels
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_group_issue_board" "this" {
+						group        = "%d"
+						name         = "Test Group Board"
+
+						lists {
+							label_id = %d
+							position = 0
+						}
+
+						lists {
+							label_id = %d
+							position = 1
+						}
+					}
+				`, testGroup.ID, testLabels[0].ID, testLabels[2].ID),
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: true,
 			},
 		},
 	})
