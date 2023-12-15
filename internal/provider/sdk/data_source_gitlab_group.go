@@ -141,13 +141,21 @@ func dataSourceGitlabGroupRead(ctx context.Context, d *schema.ResourceData, meta
 
 	if groupIDOk {
 		// Get group by id
-		group, _, err = client.Groups.GetGroup(groupIDData.(int), nil, gitlab.WithContext(ctx))
+		group, _, err = client.Groups.GetGroup(
+			groupIDData.(int),
+			&gitlab.GetGroupOptions{WithProjects: gitlab.Ptr(false)},
+			gitlab.WithContext(ctx),
+		)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 	} else if fullPathOk {
 		// Get group by full path
-		group, _, err = client.Groups.GetGroup(fullPathData.(string), nil, gitlab.WithContext(ctx))
+		group, _, err = client.Groups.GetGroup(
+			fullPathData.(string),
+			&gitlab.GetGroupOptions{WithProjects: gitlab.Ptr(false)},
+			gitlab.WithContext(ctx),
+		)
 		if err != nil {
 			return diag.FromErr(err)
 		}
