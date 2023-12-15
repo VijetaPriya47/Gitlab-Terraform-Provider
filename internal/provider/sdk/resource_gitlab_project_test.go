@@ -2893,6 +2893,15 @@ func testAccGitLabProjectCreateTemplateProject(t *testing.T, templateFileName st
 		t.Fatalf("Unable to find template group `terraform` - must be a bug when creating it in `scripts/healthcheck-and-setup.sh`: %+v", err)
 	}
 	templateProject := testutil.CreateProjectWithNamespace(t, templateGroup.ID)
+
+	// Explicitly unprotect the main branch of the template project if it's protected so we can push a file
+	// if 404 is returned, the branch wasn't protected
+	_, err = testutil.TestGitlabClient.ProtectedBranches.UnprotectRepositoryBranches(templateProject.ID, templateProject.DefaultBranch, nil)
+	if err != nil && !api.Is404(err) {
+		t.Fatalf("Unable to unprotect the main branch of the template project: %+v", err)
+	}
+
+	// Add a file to the template repository
 	testutil.CreateProjectFile(t, templateProject.ID, "meow", templateFileName, templateProject.DefaultBranch)
 	return templateProject
 }
