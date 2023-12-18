@@ -1,19 +1,21 @@
 //go:build acceptance
 // +build acceptance
 
-package sdk
+package provider
 
 import (
 	"fmt"
 	"regexp"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/xanzy/go-gitlab"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
+	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
@@ -24,7 +26,7 @@ func TestAccGitlabBranchProtection_basic(t *testing.T) {
 	rInt := acctest.RandInt()
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		CheckDestroy:             testAccCheckGitlabBranchProtectionDestroy,
 		Steps: []resource.TestStep{
 			// Create a project and Branch Protection with default options
@@ -242,7 +244,7 @@ func TestAccGitlabBranchProtection_createWithCodeOwnerApproval(t *testing.T) {
 	rInt := acctest.RandInt()
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		CheckDestroy:             testAccCheckGitlabBranchProtectionDestroy,
 		Steps: []resource.TestStep{
 			// Start with code owner approval required disabled
@@ -294,7 +296,7 @@ func TestAccGitlabBranchProtection_createWithCodeOwnerApproval(t *testing.T) {
 			{
 				SkipFunc:    testutil.IsRunningInEE,
 				Config:      testAccGitlabBranchProtectionUpdateConfigCodeOwnerTrue(rInt),
-				ExpectError: regexp.MustCompile("feature unavailable: `code_owner_approval_required`"),
+				ExpectError: regexp.MustCompile("feature unavailable `code_owner_approval_required`"),
 			},
 			// Update the Branch Protection to get back to initial settings
 			{
@@ -333,7 +335,7 @@ func TestAccGitlabBranchProtection_createWithAllowForcePush(t *testing.T) {
 	rInt := acctest.RandInt()
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		CheckDestroy:             testAccCheckGitlabBranchProtectionDestroy,
 		Steps: []resource.TestStep{
 			// Start with allow force push disabled
@@ -416,7 +418,7 @@ func TestAccGitlabBranchProtection_createWithUnprotectAccessLevel(t *testing.T) 
 	rInt := acctest.RandInt()
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		CheckDestroy:             testAccCheckGitlabBranchProtectionDestroy,
 		Steps: []resource.TestStep{
 			// Configure the Branch Protection access levels
@@ -537,7 +539,7 @@ func TestAccGitlabBranchProtection_createWithMultipleAccessLevels(t *testing.T) 
 	var pb gitlab.ProtectedBranch
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		CheckDestroy:             testAccCheckGitlabBranchProtectionDestroy,
 		Steps: []resource.TestStep{
 			// Create a project, groups, users and Branch Protection with advanced allowed_to blocks
@@ -553,35 +555,45 @@ func TestAccGitlabBranchProtection_createWithMultipleAccessLevels(t *testing.T) 
 						allowed_to_push {
 							user_id = %[3]d
 						}
+						
 						allowed_to_push {
 							group_id = %[4]d
 						}
+
 						allowed_to_push {
 							group_id = %[5]d
 						}
 
-						allowed_to_merge {
+
+						allowed_to_merge { 
 							user_id = %[2]d
 						}
-						allowed_to_merge {
+						
+						allowed_to_merge { 
 							group_id = %[4]d
 						}
-						allowed_to_merge {
+						
+						allowed_to_merge { 
 							user_id = %[3]d
 						}
-						allowed_to_merge {
+						
+						allowed_to_merge { 
 							group_id = %[5]d
 						}
+
 
 						allowed_to_unprotect {
 							user_id = %[2]d
 						}
+						
 						allowed_to_unprotect {
-							group_id = %[4]d
+								group_id = %[4]d
 						}
+
 						allowed_to_unprotect {
 							user_id = %[3]d
 						}
+						
 						allowed_to_unprotect {
 							group_id = %[5]d
 						}
@@ -617,20 +629,25 @@ func TestAccGitlabBranchProtection_createWithMultipleAccessLevels(t *testing.T) 
 						allowed_to_push {
 							user_id = %[3]d
 						}
+						
 						allowed_to_push {
 							group_id = %[4]d
 						}
 
+
 						allowed_to_merge {
 							user_id = %[2]d
 						}
+						
 						allowed_to_merge {
 							group_id = %[4]d
 						}
 
+
 						allowed_to_unprotect {
 							user_id = %[2]d
 						}
+						
 						allowed_to_unprotect {
 							group_id = %[5]d
 						}
@@ -657,12 +674,278 @@ func TestAccGitlabBranchProtection_createWithMultipleAccessLevels(t *testing.T) 
 	})
 }
 
+func TestAccGitlabBranchProtection_allowSecificUserAndNoRoleToPush(t *testing.T) {
+	testutil.SkipIfCE(t)
+
+	// Set up the project for the protected branch
+	testProject := testutil.CreateProject(t)
+	// Set up the groups to share the `testProject` with
+	testUsers := testutil.CreateUsers(t, 1)
+
+	// Add users as members to project
+	testutil.AddProjectMembers(t, testProject.ID, testUsers)
+
+	//list existing project members
+	testutil.ListProjectMembers(t, testProject.ID)
+
+	// add a sleep to determine if there is a race condition in group membership for protected
+	// branches
+	t.Log("Sleeping for 10s to wait for membership to be accurate")
+	//nolint // R018 this is part of testing code, not the provider itself.
+	time.Sleep(10 * time.Second)
+
+	var pb gitlab.ProtectedBranch
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		CheckDestroy:             testAccCheckGitlabBranchProtectionDestroy,
+		Steps: []resource.TestStep{
+			// Create a branch protection, with only user and no role allowed to push
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_branch_protection" "test" {
+						project                = %d
+						branch                 = "test-branch"
+						push_access_level      = "maintainer"
+						merge_access_level     = "maintainer"
+						unprotect_access_level = "maintainer"
+
+
+						allowed_to_push {
+							user_id = %[2]d
+						}
+					}
+				`, testProject.ID, testUsers[0].ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabBranchProtectionExists("gitlab_branch_protection.test", &pb),
+					testAccCheckGitlabBranchProtectionPersistsInStateCorrectly("gitlab_branch_protection.test", &pb),
+					testAccCheckGitlabBranchProtectionAttributes(&pb, &testAccGitlabBranchProtectionExpectedAttributes{
+						Name:                 "test-branch",
+						PushAccessLevel:      api.AccessLevelValueToName[gitlab.MaintainerPermissions],
+						MergeAccessLevel:     api.AccessLevelValueToName[gitlab.MaintainerPermissions],
+						UnprotectAccessLevel: api.AccessLevelValueToName[gitlab.MaintainerPermissions],
+						UsersAllowedToPush:   []string{testUsers[0].Username},
+					}),
+				),
+			},
+			{
+				ResourceName:      "gitlab_branch_protection.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Update a branch protection, with only user and no role allowed to push
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_branch_protection" "test" {
+						project                = %d
+						branch                 = "test-branch"
+						push_access_level      = "maintainer"
+						merge_access_level     = "maintainer"
+						unprotect_access_level = "maintainer"
+
+
+						allowed_to_push {
+							user_id = %[2]d
+						}
+					}
+				`, testProject.ID, testUsers[0].ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabBranchProtectionExists("gitlab_branch_protection.test", &pb),
+					testAccCheckGitlabBranchProtectionPersistsInStateCorrectly("gitlab_branch_protection.test", &pb),
+					testAccCheckGitlabBranchProtectionAttributes(&pb, &testAccGitlabBranchProtectionExpectedAttributes{
+						Name:                 "test-branch",
+						PushAccessLevel:      api.AccessLevelValueToName[gitlab.MaintainerPermissions],
+						MergeAccessLevel:     api.AccessLevelValueToName[gitlab.MaintainerPermissions],
+						UnprotectAccessLevel: api.AccessLevelValueToName[gitlab.MaintainerPermissions],
+						UsersAllowedToPush:   []string{testUsers[0].Username},
+					}),
+				),
+			},
+		},
+	})
+}
+
+func TestAccGitlabBranchProtection_removeUsersAndGroupsFromAllowedTo(t *testing.T) {
+	testutil.SkipIfCE(t)
+
+	// Set up the project for the protected branch
+	testProject := testutil.CreateProject(t)
+	// Set up the groups to share the `testProject` with
+	testGroups := testutil.CreateGroups(t, 2)
+	// Set up the users to add as members to the `testProject`
+	testUsers := testutil.CreateUsers(t, 2)
+	// Add users as members to project
+	testutil.AddProjectMembers(t, testProject.ID, testUsers)
+
+	// Add users to groups
+	testutil.AddGroupMembers(t, testGroups[0].ID, []*gitlab.User{testUsers[0]})
+	testutil.AddGroupMembers(t, testGroups[1].ID, []*gitlab.User{testUsers[1]})
+
+	// Share project with groups
+	testutil.ProjectShareGroup(t, testProject.ID, testGroups[0].ID)
+	testutil.ProjectShareGroup(t, testProject.ID, testGroups[1].ID)
+
+	testutil.ListProjectMembers(t, testProject.ID)
+
+	t.Log("Sleeping for 10s to wait for membership to be accurate")
+	//nolint // R018 this is part of testing code, not the provider itself.
+	time.Sleep(10 * time.Second)
+
+	var pb gitlab.ProtectedBranch
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		CheckDestroy:             testAccCheckGitlabBranchProtectionDestroy,
+		Steps: []resource.TestStep{
+			// Create a branch protection, with only user and no role allowed to push
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_branch_protection" "test" {
+						project                = %d
+						branch                 = "test-branch"
+						push_access_level      = "maintainer"
+						merge_access_level     = "maintainer"
+						unprotect_access_level = "maintainer"
+
+
+						allowed_to_push {
+							user_id = %[2]d
+						}
+						
+						allowed_to_push {
+							user_id = %[3]d
+						}
+
+						allowed_to_push {
+							group_id = %[4]d
+						}
+						
+						allowed_to_push {
+							group_id = %[5]d
+						}
+
+
+						allowed_to_merge {
+							user_id = %[2]d
+						}
+					
+						allowed_to_merge {
+							user_id = %[3]d
+						}
+						
+						allowed_to_merge {
+							group_id = %[4]d
+						}
+						
+						allowed_to_merge {
+							group_id = %[5]d
+						}
+
+
+						allowed_to_unprotect {
+							user_id = %[2]d
+						}
+						
+						allowed_to_unprotect {
+							user_id = %[3]d
+						}
+						
+						allowed_to_unprotect {
+							group_id = %[4]d
+						}
+						
+						allowed_to_unprotect {
+							group_id = %[5]d
+						}
+					}
+				`, testProject.ID, testUsers[0].ID, testUsers[1].ID, testGroups[0].ID, testGroups[1].ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabBranchProtectionExists("gitlab_branch_protection.test", &pb),
+					testAccCheckGitlabBranchProtectionPersistsInStateCorrectly("gitlab_branch_protection.test", &pb),
+					testAccCheckGitlabBranchProtectionAttributes(&pb, &testAccGitlabBranchProtectionExpectedAttributes{
+						Name:                     "test-branch",
+						PushAccessLevel:          api.AccessLevelValueToName[gitlab.MaintainerPermissions],
+						MergeAccessLevel:         api.AccessLevelValueToName[gitlab.MaintainerPermissions],
+						UnprotectAccessLevel:     api.AccessLevelValueToName[gitlab.MaintainerPermissions],
+						UsersAllowedToPush:       []string{testUsers[0].Username, testUsers[1].Username},
+						UsersAllowedToMerge:      []string{testUsers[0].Username, testUsers[1].Username},
+						UsersAllowedToUnprotect:  []string{testUsers[0].Username, testUsers[1].Username},
+						GroupsAllowedToPush:      []string{testGroups[0].Name, testGroups[1].Name},
+						GroupsAllowedToMerge:     []string{testGroups[0].Name, testGroups[1].Name},
+						GroupsAllowedToUnprotect: []string{testGroups[0].Name, testGroups[1].Name},
+					}),
+				),
+			},
+			{
+				ResourceName:      "gitlab_branch_protection.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Update a branch protection, with removed user and group allowed to specific action
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_branch_protection" "test" {
+						project                = %d
+						branch                 = "test-branch"
+						push_access_level      = "maintainer"
+						merge_access_level     = "maintainer"
+						unprotect_access_level = "maintainer"
+
+
+						allowed_to_push {
+							user_id = %[2]d
+						}
+
+						allowed_to_push {
+							group_id = %[3]d
+						}
+
+
+						allowed_to_merge {
+							user_id = %[2]d
+						}
+						
+						allowed_to_merge {
+							group_id = %[3]d
+						}
+
+
+						allowed_to_unprotect {
+							user_id = %[2]d
+						}
+						
+						allowed_to_unprotect {
+							group_id = %[3]d
+						}
+					}
+				`, testProject.ID, testUsers[0].ID, testGroups[0].ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabBranchProtectionExists("gitlab_branch_protection.test", &pb),
+					testAccCheckGitlabBranchProtectionPersistsInStateCorrectly("gitlab_branch_protection.test", &pb),
+					testAccCheckGitlabBranchProtectionAttributes(&pb, &testAccGitlabBranchProtectionExpectedAttributes{
+						Name:                     "test-branch",
+						PushAccessLevel:          api.AccessLevelValueToName[gitlab.MaintainerPermissions],
+						MergeAccessLevel:         api.AccessLevelValueToName[gitlab.MaintainerPermissions],
+						UnprotectAccessLevel:     api.AccessLevelValueToName[gitlab.MaintainerPermissions],
+						UsersAllowedToPush:       []string{testUsers[0].Username},
+						UsersAllowedToMerge:      []string{testUsers[0].Username},
+						UsersAllowedToUnprotect:  []string{testUsers[0].Username},
+						GroupsAllowedToPush:      []string{testGroups[0].Name},
+						GroupsAllowedToMerge:     []string{testGroups[0].Name},
+						GroupsAllowedToUnprotect: []string{testGroups[0].Name},
+					}),
+				),
+			},
+		},
+	})
+}
+
 func TestAccGitlabBranchProtection_createForProjectDefaultBranch(t *testing.T) {
 	testProjectName := acctest.RandomWithPrefix("tf-acc-test")
 	var protectedBranch gitlab.ProtectedBranch
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		CheckDestroy:             testAccCheckGitlabBranchProtectionDestroy,
 		Steps: []resource.TestStep{
 			// Create a project and protect its default branch with custom settings
@@ -690,6 +973,259 @@ func TestAccGitlabBranchProtection_createForProjectDefaultBranch(t *testing.T) {
 						return nil
 					},
 				),
+			},
+		},
+	})
+}
+
+// This test actually tests two different things:
+// 1 - it tests that resources created with the old SDK implementation still work in the framework implementation
+// 2 - it tests that the framework state migrator works properly, since 16.4.1 used state v0. That's why the config does not defines `id` attribute added in newer version.
+// This is because the old SDK resource handled a migration, and we can't assume every user has migrated, so we need to maintain that migration in the new
+// framework resource.
+func TestAccGitlabBranchProtection_UpgradeFromSDKToFrameworkForEELicense(t *testing.T) {
+	testutil.SkipIfCE(t)
+
+	// Set up the project for the protected branch
+	testProject := testutil.CreateProject(t)
+	// Set up the users to add as members to the `testProject`
+	testUsers := testutil.CreateUsers(t, 2)
+	// Add users as members to project
+	testutil.AddProjectMembers(t, testProject.ID, testUsers)
+
+	testutil.ListProjectMembers(t, testProject.ID)
+
+	fmt.Printf("USER_ID: %d, USER_ID: %d", testUsers[0].ID, testUsers[1].ID)
+
+	var pb gitlab.ProtectedBranch
+
+	resource.ParallelTest(t, resource.TestCase{
+		CheckDestroy: testAccCheckGitlabProjectLevelMRApprovalsDestroy,
+		Steps: []resource.TestStep{
+			{
+
+				ExternalProviders: map[string]resource.ExternalProvider{
+					"gitlab": {
+						VersionConstraint: "= 16.4.1",
+						Source:            "gitlabhq/gitlab",
+					},
+				},
+				Config: fmt.Sprintf(`
+				resource "gitlab_branch_protection" "default" {
+					project                = "%d"
+					branch                 = "%[2]s"
+					push_access_level      = "maintainer"
+					merge_access_level     = "maintainer"
+					unprotect_access_level = "maintainer"
+
+					allowed_to_push {
+						user_id = %[3]d
+					}
+					
+					allowed_to_push {
+						user_id = %[4]d
+					}
+				  }
+				`, testProject.ID, testProject.DefaultBranch, testUsers[0].ID, testUsers[1].ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabBranchProtectionExists("gitlab_branch_protection.default", &pb),
+					testAccCheckGitlabBranchProtectionPersistsInStateCorrectly("gitlab_branch_protection.default", &pb),
+					testAccCheckGitlabBranchProtectionAttributes(&pb, &testAccGitlabBranchProtectionExpectedAttributes{
+						Name:                 testProject.DefaultBranch,
+						PushAccessLevel:      api.AccessLevelValueToName[gitlab.MaintainerPermissions],
+						MergeAccessLevel:     api.AccessLevelValueToName[gitlab.MaintainerPermissions],
+						UnprotectAccessLevel: api.AccessLevelValueToName[gitlab.MaintainerPermissions],
+						UsersAllowedToPush:   []string{testUsers[0].Username, testUsers[1].Username},
+					}),
+				),
+			},
+			{
+				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+				Config: fmt.Sprintf(`
+				resource "gitlab_branch_protection" "default" {
+					project                = "%d"
+					branch                 = "%[2]s"
+					push_access_level      = "maintainer"
+					merge_access_level     = "maintainer"
+					unprotect_access_level = "maintainer"
+
+					allowed_to_push {
+						user_id = %[3]d
+					}
+					
+					allowed_to_push {
+						user_id = %[4]d
+					}
+				  }
+				`, testProject.ID, testProject.DefaultBranch, testUsers[0].ID, testUsers[1].ID),
+
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabBranchProtectionExists("gitlab_branch_protection.default", &pb),
+					testAccCheckGitlabBranchProtectionPersistsInStateCorrectly("gitlab_branch_protection.default", &pb),
+					testAccCheckGitlabBranchProtectionAttributes(&pb, &testAccGitlabBranchProtectionExpectedAttributes{
+						Name:                 testProject.DefaultBranch,
+						PushAccessLevel:      api.AccessLevelValueToName[gitlab.MaintainerPermissions],
+						MergeAccessLevel:     api.AccessLevelValueToName[gitlab.MaintainerPermissions],
+						UnprotectAccessLevel: api.AccessLevelValueToName[gitlab.MaintainerPermissions],
+						UsersAllowedToPush:   []string{testUsers[0].Username, testUsers[1].Username},
+					}),
+				),
+			},
+		},
+	})
+}
+
+// This test actually tests two different things:
+// 1 - it tests that resources created with the old SDK implementation still work in the framework implementation
+// 2 - it tests that the framework state migrator works properly, since 16.4.1 used state v0. That's why the config does not defines `id` attribute added in newer version.
+// This is because the old SDK resource handled a migration, and we can't assume every user has migrated, so we need to maintain that migration in the new
+// framework resource.
+func TestAccGitlabBranchProtection_UpgradeFromSDKToFrameworkForCELicense(t *testing.T) {
+	testutil.SkipIfEE(t)
+
+	// Set up the project for the protected branch
+	testProject := testutil.CreateProject(t)
+
+	var pb gitlab.ProtectedBranch
+
+	resource.ParallelTest(t, resource.TestCase{
+		CheckDestroy: testAccCheckGitlabProjectLevelMRApprovalsDestroy,
+		Steps: []resource.TestStep{
+			{
+
+				ExternalProviders: map[string]resource.ExternalProvider{
+					"gitlab": {
+						VersionConstraint: "= 16.4.1",
+						Source:            "gitlabhq/gitlab",
+					},
+				},
+				Config: fmt.Sprintf(`
+				resource "gitlab_branch_protection" "default" {
+					project                = "%d"
+					branch                 = "%[2]s"
+					push_access_level      = "developer"
+					merge_access_level     = "developer"
+					unprotect_access_level = "developer"
+				  }
+				`, testProject.ID, testProject.DefaultBranch),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabBranchProtectionExists("gitlab_branch_protection.default", &pb),
+					testAccCheckGitlabBranchProtectionPersistsInStateCorrectly("gitlab_branch_protection.default", &pb),
+					testAccCheckGitlabBranchProtectionAttributes(&pb, &testAccGitlabBranchProtectionExpectedAttributes{
+						Name:                 testProject.DefaultBranch,
+						PushAccessLevel:      api.AccessLevelValueToName[gitlab.DeveloperPermissions],
+						MergeAccessLevel:     api.AccessLevelValueToName[gitlab.DeveloperPermissions],
+						UnprotectAccessLevel: api.AccessLevelValueToName[gitlab.DeveloperPermissions],
+						UsersAllowedToPush:   []string{},
+					}),
+				),
+			},
+			{
+				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+				Config: fmt.Sprintf(`
+				resource "gitlab_branch_protection" "default" {
+					project                = "%d"
+					branch                 = "%[2]s"
+					push_access_level      = "developer"
+					merge_access_level     = "developer"
+					unprotect_access_level = "developer"
+				  }
+				`, testProject.ID, testProject.DefaultBranch),
+
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabBranchProtectionExists("gitlab_branch_protection.default", &pb),
+					testAccCheckGitlabBranchProtectionPersistsInStateCorrectly("gitlab_branch_protection.default", &pb),
+					testAccCheckGitlabBranchProtectionAttributes(&pb, &testAccGitlabBranchProtectionExpectedAttributes{
+						Name:                 testProject.DefaultBranch,
+						PushAccessLevel:      api.AccessLevelValueToName[gitlab.DeveloperPermissions],
+						MergeAccessLevel:     api.AccessLevelValueToName[gitlab.DeveloperPermissions],
+						UnprotectAccessLevel: api.AccessLevelValueToName[gitlab.DeveloperPermissions],
+						UsersAllowedToPush:   []string{},
+					}),
+				),
+			},
+		},
+	})
+}
+
+func TestAccGitlabBranchProtection_FailIfEnterpriseFeaturesUsedForCommunityLicense(t *testing.T) {
+	testutil.SkipIfEE(t)
+
+	// Set up the project for the protected branch
+	testProject := testutil.CreateProject(t)
+	// Set up the groups to share the `testProject` with
+	testUsers := testutil.CreateUsers(t, 1)
+	// Add users as members to project
+	testutil.AddProjectMembers(t, testProject.ID, testUsers)
+
+	resource.ParallelTest(t, resource.TestCase{
+		CheckDestroy: testAccCheckGitlabProjectLevelMRApprovalsDestroy,
+		Steps: []resource.TestStep{
+			{
+				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+				Config: fmt.Sprintf(`
+				resource "gitlab_branch_protection" "default" {
+					project                = "%d"
+					branch                 = "%[2]s"
+					push_access_level      = "maintainer"
+					merge_access_level     = "maintainer"
+					unprotect_access_level = "maintainer"
+
+					allowed_to_push {
+						user_id = %[3]d
+					}
+				  }
+				`, testProject.ID, testProject.DefaultBranch, testUsers[0].ID),
+				ExpectError: regexp.MustCompile("feature unavailable `allowed_to_push`"),
+			},
+			{
+				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+				Config: fmt.Sprintf(`
+				resource "gitlab_branch_protection" "default" {
+					project                = "%d"
+					branch                 = "%[2]s"
+					push_access_level      = "maintainer"
+					merge_access_level     = "maintainer"
+					unprotect_access_level = "maintainer"
+
+					allowed_to_merge {
+						user_id = %[3]d
+					}
+				  }
+				`, testProject.ID, testProject.DefaultBranch, testUsers[0].ID),
+				ExpectError: regexp.MustCompile("feature unavailable `allowed_to_merge`"),
+			},
+			{
+				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+				Config: fmt.Sprintf(`
+				resource "gitlab_branch_protection" "default" {
+					project                = "%d"
+					branch                 = "%[2]s"
+					push_access_level      = "maintainer"
+					merge_access_level     = "maintainer"
+					unprotect_access_level = "maintainer"
+
+					allowed_to_unprotect {
+						user_id = %[3]d
+					}
+				  }
+				`, testProject.ID, testProject.DefaultBranch, testUsers[0].ID),
+				ExpectError: regexp.MustCompile("feature unavailable `allowed_to_unprotect`"),
+			},
+			{
+				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+				Config: fmt.Sprintf(`
+				resource "gitlab_branch_protection" "default" {
+					project                = "%d"
+					branch                 = "%[2]s"
+					push_access_level      = "maintainer"
+					merge_access_level     = "maintainer"
+					unprotect_access_level = "maintainer"
+
+					code_owner_approval_required = true
+				  }
+				`, testProject.ID, testProject.DefaultBranch, testUsers[0].ID),
+				ExpectError: regexp.MustCompile("feature unavailable `code_owner_approval_required`"),
 			},
 		},
 	})
@@ -748,7 +1284,7 @@ func testAccCheckGitlabBranchProtectionExists(n string, pb *gitlab.ProtectedBran
 		if !ok {
 			return fmt.Errorf("Not Found: %s", n)
 		}
-		project, branch, err := projectAndBranchFromID(rs.Primary.ID)
+		project, branch, err := utils.ParseTwoPartID(rs.Primary.ID)
 		if err != nil {
 			return fmt.Errorf("Error in Splitting Project and Branch Ids")
 		}

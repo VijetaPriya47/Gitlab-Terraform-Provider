@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
 	"testing"
 	"time"
 
@@ -17,6 +16,7 @@ import (
 	"github.com/xanzy/go-gitlab"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
+	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
 
 type SkipFunc = func() (bool, error)
@@ -55,26 +55,12 @@ func IsRunningInEE() (bool, error) {
 	if isEE != nil {
 		return *isEE, nil
 	}
-	metadata, _, err := TestGitlabClient.Metadata.GetMetadata()
+	eeContext, err := utils.IsRunningInEEContext(TestGitlabClient)
 	if err != nil {
 		return false, err
 	}
-	isEE = gitlab.Ptr(isEnterpriseInstance(metadata))
+	isEE := gitlab.Ptr(eeContext)
 	return *isEE, err
-}
-
-// isEnterpriseInstance is an auxiliary func so that we can skip
-// TestGitlabClient.Metadata.GetMetadata server calls and unit test it.
-func isEnterpriseInstance(metadata *gitlab.Metadata) bool {
-	if metadata.Enterprise {
-		return true
-	}
-	// This is only to support 15.5. From 15.8 on, we can remove this code
-	// as we won't be supporting 15.5 anymore.
-	if strings.Contains(metadata.Version, "-ee") {
-		return true
-	}
-	return false
 }
 
 // IsRunningInCE returns true if the acceptance test is running Gitlab CE.
@@ -628,6 +614,23 @@ func ProjectShareGroup(t *testing.T, pid interface{}, gid int) {
 	if err != nil {
 		t.Fatalf("could not share project %v with group %d: %v", pid, gid, err)
 	}
+}
+
+// List project members
+func ListProjectMembers(t *testing.T, pid interface{}) {
+	t.Helper()
+
+	members, _, err := TestGitlabClient.ProjectMembers.ListAllProjectMembers(pid, &gitlab.ListProjectMembersOptions{})
+	if err != nil {
+		t.Fatalf("could not get project %d member list: %v", pid, err)
+	}
+
+	t.Log("--------------------------------------------------------")
+	t.Log("Project member list")
+	for _, member := range members {
+		t.Logf("\nUserId: `%d`, accessLevel: `%d`, state: `%s`", member.ID, member.AccessLevel, member.State)
+	}
+	t.Log("\n--------------------------------------------------------")
 }
 
 // AddProjectMilestones is a test helper for adding milestones to project.
