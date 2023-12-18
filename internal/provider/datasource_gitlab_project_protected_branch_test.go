@@ -1,7 +1,7 @@
 //go:build acceptance
 // +build acceptance
 
-package sdk
+package provider
 
 import (
 	"fmt"
@@ -14,8 +14,9 @@ import (
 func TestAccDataGitlabProjectProtectedBranch_search(t *testing.T) {
 	projectName := fmt.Sprintf("tf-%s", acctest.RandString(5))
 
+	//lintignore:AT001 // Data sources don't need check destroy in their tests
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDataGitlabProjectProtectedBranchConfigGetProjectSearch(projectName),

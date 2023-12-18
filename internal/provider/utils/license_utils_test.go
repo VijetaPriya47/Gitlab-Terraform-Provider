@@ -1,15 +1,11 @@
-//go:build acceptance || flakey
-// +build acceptance flakey
-
-package testutil
+package utils
 
 import (
-	"testing"
-
 	"github.com/xanzy/go-gitlab"
+	"testing"
 )
 
-func TestIsRunningInEE(t *testing.T) {
+func TestIsRunningInEEContext(t *testing.T) {
 	cases := []struct {
 		name           string
 		metadata       *gitlab.Metadata
@@ -40,7 +36,7 @@ func TestIsRunningInEE(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		result := isEnterpriseInstance(tc.metadata)
+		result := IsEnterpriseInstance(tc.metadata)
 		if result != tc.expectedResult {
 			t.Fatalf("\"IsRunningInEE()\" FAILED, expected -> %v, got -> %v", tc.expectedResult, result)
 		}
