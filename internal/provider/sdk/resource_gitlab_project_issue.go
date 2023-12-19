@@ -92,7 +92,7 @@ func resourceGitlabProjectIssueCreate(ctx context.Context, d *schema.ResourceDat
 		options.IssueType = gitlab.Ptr(issueType.(string))
 	}
 	if labels, ok := d.GetOk("labels"); ok {
-		gitlabLabels := gitlab.Labels(*stringSetToStringSlice(labels.(*schema.Set)))
+		gitlabLabels := gitlab.LabelOptions(*stringSetToStringSlice(labels.(*schema.Set)))
 		options.Labels = &gitlabLabels
 	}
 	if mergeRequestToResolveDiscussionsOf, ok := d.GetOk("merge_request_to_resolve_discussions_of"); ok {
@@ -185,7 +185,7 @@ func resourceGitlabProjectIssueUpdate(ctx context.Context, d *schema.ResourceDat
 		options.IssueType = gitlab.Ptr(d.Get("issue_type").(string))
 	}
 	if d.HasChange("labels") {
-		gitlabLabels := gitlab.Labels(*stringSetToStringSlice(d.Get("labels").(*schema.Set)))
+		gitlabLabels := gitlab.LabelOptions(*stringSetToStringSlice(d.Get("labels").(*schema.Set)))
 		options.Labels = &gitlabLabels
 	}
 	if d.HasChange("milestone_id") {

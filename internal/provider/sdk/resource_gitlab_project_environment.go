@@ -181,7 +181,7 @@ func resourceGitlabProjectEnvironmentStop(ctx context.Context, d *schema.Resourc
 	}
 
 	log.Printf("[DEBUG] Stopping environment %d for Project %s", environmentID, project)
-	if _, _, err = client.Environments.StopEnvironment(project, environmentID, gitlab.WithContext(ctx)); err != nil {
+	if _, _, err = client.Environments.StopEnvironment(project, environmentID, nil, gitlab.WithContext(ctx)); err != nil {
 		return diag.Errorf("error while stopping gitlab environment %q for project %s: %v", environmentID, project, err)
 	}
 
@@ -193,7 +193,7 @@ func resourceGitlabProjectEnvironmentStop(ctx context.Context, d *schema.Resourc
 		MinTimeout: 3 * time.Second,
 		Delay:      5 * time.Second,
 		Refresh: func() (interface{}, string, error) {
-			env, resp, err := client.Environments.StopEnvironment(project, environmentID, gitlab.WithContext(ctx))
+			env, resp, err := client.Environments.StopEnvironment(project, environmentID, nil, gitlab.WithContext(ctx))
 			// ignore the error here, as we'll be doing this until we succeed or timeout
 			if err != nil {
 				return resp, "unknown", err

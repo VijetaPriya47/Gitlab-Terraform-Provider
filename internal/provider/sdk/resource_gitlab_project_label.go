@@ -205,11 +205,8 @@ func resourceGitlabProjectLabelDelete(ctx context.Context, d *schema.ResourceDat
 	if err != nil {
 		return diag.Errorf("Failed to parse project label id %q: %s", d.Id(), err)
 	}
-	log.Printf("[DEBUG] Delete gitlab label %s", d.Id())
-	options := &gitlab.DeleteLabelOptions{
-		Name: gitlab.Ptr(labelName),
-	}
 
-	_, err = client.Labels.DeleteLabel(project, options, gitlab.WithContext(ctx))
+	log.Printf("[DEBUG] Delete gitlab label %s", d.Id())
+	_, err = client.Labels.DeleteLabel(project, labelName, nil, gitlab.WithContext(ctx))
 	return diag.FromErr(err)
 }
