@@ -237,7 +237,7 @@ func (r *gitlabGroupIssueBoardResource) Update(ctx context.Context, req resource
 		// convert the Set to a []string and pass it in
 		var labels []string
 		data.Labels.ElementsAs(ctx, &labels, true)
-		gitlabLabels := gitlab.Labels(labels)
+		gitlabLabels := gitlab.LabelOptions(labels)
 		optionsUpdate.Labels = &gitlabLabels
 	}
 
@@ -399,7 +399,7 @@ func (r *gitlabGroupIssueBoardResource) Create(ctx context.Context, req resource
 		// convert the Set to a []string and pass it in
 		var labels []string
 		data.Labels.ElementsAs(ctx, &labels, true)
-		gitlabLabels := gitlab.Labels(labels)
+		gitlabLabels := gitlab.LabelOptions(labels)
 		optionsUpdate.Labels = &gitlabLabels
 	}
 

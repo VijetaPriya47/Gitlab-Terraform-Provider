@@ -57,7 +57,7 @@ func resourceGitlabProjectIssueBoardCreate(ctx context.Context, d *schema.Resour
 		updateOptions.AssigneeID = gitlab.Ptr(v.(int))
 	}
 	if v, ok := d.GetOk("labels"); ok {
-		gitlabLabels := gitlab.Labels(*stringSetToStringSlice(v.(*schema.Set)))
+		gitlabLabels := gitlab.LabelOptions(*stringSetToStringSlice(v.(*schema.Set)))
 		updateOptions.Labels = &gitlabLabels
 	}
 	if v, ok := d.GetOk("weight"); ok {
@@ -124,7 +124,7 @@ func resourceGitlabProjectIssueBoardUpdate(ctx context.Context, d *schema.Resour
 		options.AssigneeID = gitlab.Ptr(d.Get("assignee_id").(int))
 	}
 	if d.HasChange("labels") {
-		gitlabLabels := gitlab.Labels(*stringSetToStringSlice(d.Get("labels").(*schema.Set)))
+		gitlabLabels := gitlab.LabelOptions(*stringSetToStringSlice(d.Get("labels").(*schema.Set)))
 		options.Labels = &gitlabLabels
 	}
 	if d.HasChange("weight") {

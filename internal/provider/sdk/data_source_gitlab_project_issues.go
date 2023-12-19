@@ -233,12 +233,12 @@ func dataSourceGitlabProjectIssuesRead(ctx context.Context, d *schema.ResourceDa
 	}
 
 	if v, ok := d.GetOk("labels"); ok {
-		gitlabLabels := gitlab.Labels(*stringSetToStringSlice(v.(*schema.Set)))
+		gitlabLabels := gitlab.LabelOptions(*stringSetToStringSlice(v.(*schema.Set)))
 		options.Labels = &gitlabLabels
 	}
 
 	if v, ok := d.GetOk("not_labels"); ok {
-		gitlabLabels := gitlab.Labels(*stringSetToStringSlice(v.(*schema.Set)))
+		gitlabLabels := gitlab.LabelOptions(*stringSetToStringSlice(v.(*schema.Set)))
 		options.Labels = &gitlabLabels
 	}
 

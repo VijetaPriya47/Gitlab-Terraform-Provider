@@ -183,10 +183,6 @@ func resourceGitlabGroupLabelDelete(ctx context.Context, d *schema.ResourceData,
 	}
 
 	log.Printf("[DEBUG] Delete gitlab group label %s", d.Id())
-	options := &gitlab.DeleteGroupLabelOptions{
-		Name: gitlab.Ptr(labelName),
-	}
-
-	_, err = client.GroupLabels.DeleteGroupLabel(group, options, gitlab.WithContext(ctx))
+	_, err = client.GroupLabels.DeleteGroupLabel(group, labelName, nil, gitlab.WithContext(ctx))
 	return diag.FromErr(err)
 }

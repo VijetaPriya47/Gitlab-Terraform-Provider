@@ -705,7 +705,7 @@ func CreateProjectEnvironment(t *testing.T, projectID int, options *gitlab.Creat
 
 	t.Cleanup(func() {
 		if projectEnvironment.State != "stopped" {
-			_, _, err = TestGitlabClient.Environments.StopEnvironment(projectID, projectEnvironment.ID)
+			_, _, err = TestGitlabClient.Environments.StopEnvironment(projectID, projectEnvironment.ID, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
