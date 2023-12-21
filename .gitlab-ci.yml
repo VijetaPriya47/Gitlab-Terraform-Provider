@@ -49,9 +49,9 @@ cache:
   parallel:
     matrix:
       - GITLAB_VERSION:
-          - "16.4.2-${GITLAB_EDITION}.0"
-          - "16.5.2-${GITLAB_EDITION}.0"
-          - "16.6.0-${GITLAB_EDITION}.0"
+          - "16.5.4-${GITLAB_EDITION}.0"
+          - "16.6.2-${GITLAB_EDITION}.0"
+          - "16.7.0-${GITLAB_EDITION}.0"
 # Disabling code navigatino with LSIF, until the upload issue is solved.
 # see https://gitlab.com/gitlab-org/gitlab/-/issues/365885#note_1219840952
 # code_navigation:
