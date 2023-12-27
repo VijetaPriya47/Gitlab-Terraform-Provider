@@ -161,10 +161,13 @@ resource "gitlab_application_settings" "this" {
 - `help_text` (String) GitLab server administrator information.
 - `hide_third_party_offers` (Boolean) Do not display offers from third parties in GitLab.
 - `home_page_url` (String) Redirect to this URL when not logged in.
-- `housekeeping_enabled` (Boolean) (If enabled, requires: housekeeping_bitmaps_enabled, housekeeping_full_repack_period, housekeeping_gc_period, and housekeeping_incremental_repack_period) Enable or disable Git housekeeping.
-- `housekeeping_full_repack_period` (Number) Number of Git pushes after which an incremental git repack is run.
-- `housekeeping_gc_period` (Number) Number of Git pushes after which git gc is run.
-- `housekeeping_incremental_repack_period` (Number) Number of Git pushes after which an incremental git repack is run.
+- `housekeeping_enabled` (Boolean) Enable or disable Git housekeeping.
+				If enabled, requires either housekeeping_optimize_repository_period OR housekeeping_bitmaps_enabled, housekeeping_full_repack_period, housekeeping_gc_period, and housekeeping_incremental_repack_period.
+				Options housekeeping_bitmaps_enabled, housekeeping_full_repack_period, housekeeping_gc_period, and housekeeping_incremental_repack_period are deprecated. Use housekeeping_optimize_repository_period instead.
+- `housekeeping_full_repack_period` (Number, Deprecated) Number of Git pushes after which an incremental git repack is run.
+- `housekeeping_gc_period` (Number, Deprecated) Number of Git pushes after which git gc is run.
+- `housekeeping_incremental_repack_period` (Number, Deprecated) Number of Git pushes after which an incremental git repack is run.
+- `housekeeping_optimize_repository_period` (Number) Number of Git pushes after which an incremental git repack is run.
 - `html_emails_enabled` (Boolean) Enable HTML emails.
 - `import_sources` (List of String) Sources to allow project import from. Valid values are: `github`, `bitbucket`, `bitbucket_server`, `fogbugz`, `git`, `gitlab_project`, `gitea`, `manifest`
 - `in_product_marketing_emails_enabled` (Boolean) Enable in-product marketing emails.

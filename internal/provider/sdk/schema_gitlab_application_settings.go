@@ -818,31 +818,49 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 		},
 
 		"housekeeping_enabled": {
-			Description: "(If enabled, requires: housekeeping_bitmaps_enabled, housekeeping_full_repack_period, housekeeping_gc_period, and housekeeping_incremental_repack_period) Enable or disable Git housekeeping.",
-			Type:        schema.TypeBool,
-			Optional:    true,
-			Computed:    true,
+			Description: `
+				Enable or disable Git housekeeping.
+				If enabled, requires either housekeeping_optimize_repository_period OR housekeeping_bitmaps_enabled, housekeeping_full_repack_period, housekeeping_gc_period, and housekeeping_incremental_repack_period.
+				Options housekeeping_bitmaps_enabled, housekeeping_full_repack_period, housekeeping_gc_period, and housekeeping_incremental_repack_period are deprecated. Use housekeeping_optimize_repository_period instead.
+			`,
+			Type:     schema.TypeBool,
+			Optional: true,
+			Computed: true,
 		},
 
 		"housekeeping_full_repack_period": {
-			Description: "Number of Git pushes after which an incremental git repack is run.",
-			Type:        schema.TypeInt,
-			Optional:    true,
-			Computed:    true,
+			Description:   "Number of Git pushes after which an incremental git repack is run.",
+			Type:          schema.TypeInt,
+			Deprecated:    "housekeeping_full_repack_period is deprecated. Use housekeeping_optimize_repository_period instead.",
+			ConflictsWith: []string{"housekeeping_optimize_repository_period"},
+			Optional:      true,
+			Computed:      true,
 		},
 
 		"housekeeping_gc_period": {
-			Description: "Number of Git pushes after which git gc is run.",
-			Type:        schema.TypeInt,
-			Optional:    true,
-			Computed:    true,
+			Description:   "Number of Git pushes after which git gc is run.",
+			Type:          schema.TypeInt,
+			Deprecated:    "housekeeping_gc_period is deprecated. Use housekeeping_optimize_repository_period instead.",
+			ConflictsWith: []string{"housekeeping_optimize_repository_period"},
+			Optional:      true,
+			Computed:      true,
 		},
 
 		"housekeeping_incremental_repack_period": {
-			Description: "Number of Git pushes after which an incremental git repack is run.",
-			Type:        schema.TypeInt,
-			Optional:    true,
-			Computed:    true,
+			Description:   "Number of Git pushes after which an incremental git repack is run.",
+			Type:          schema.TypeInt,
+			Deprecated:    "housekeeping_incremental_repack_period is deprecated. Use housekeeping_optimize_repository_period instead.",
+			ConflictsWith: []string{"housekeeping_optimize_repository_period"},
+			Optional:      true,
+			Computed:      true,
+		},
+
+		"housekeeping_optimize_repository_period": {
+			Description:   "Number of Git pushes after which an incremental git repack is run.",
+			Type:          schema.TypeInt,
+			ConflictsWith: []string{"housekeeping_full_repack_period", "housekeeping_gc_period", "housekeeping_incremental_repack_period"},
+			Optional:      true,
+			Computed:      true,
 		},
 
 		"html_emails_enabled": {
@@ -1874,6 +1892,7 @@ func gitlabApplicationSettingsToStateMap(settings *gitlab.Settings) map[string]i
 	stateMap["housekeeping_full_repack_period"] = settings.HousekeepingFullRepackPeriod
 	stateMap["housekeeping_gc_period"] = settings.HousekeepingGcPeriod
 	stateMap["housekeeping_incremental_repack_period"] = settings.HousekeepingIncrementalRepackPeriod
+	stateMap["housekeeping_optimize_repository_period"] = settings.HousekeepingOptimizeRepositoryPeriod
 	stateMap["html_emails_enabled"] = settings.HTMLEmailsEnabled
 	stateMap["import_sources"] = settings.ImportSources
 	stateMap["in_product_marketing_emails_enabled"] = settings.InProductMarketingEmailsEnabled
@@ -2463,6 +2482,10 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 
 	if d.HasChange("housekeeping_incremental_repack_period") {
 		options.HousekeepingIncrementalRepackPeriod = gitlab.Ptr(d.Get("housekeeping_incremental_repack_period").(int))
+	}
+
+	if d.HasChange("housekeeping_optimize_repository_period") {
+		options.HousekeepingOptimizeRepositoryPeriod = gitlab.Ptr(d.Get("housekeeping_optimize_repository_period").(int))
 	}
 
 	if d.HasChange("html_emails_enabled") {
