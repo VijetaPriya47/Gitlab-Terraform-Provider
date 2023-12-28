@@ -20,7 +20,7 @@ The new resources and data sources are located in `internal/provider` and the _l
 in `internal/provider/sdk`.
 
 > If you're just getting started, and looking to create a new resource, check out the ["Creating A New Resource"
-tutorial available here](tutorials/CreatingANewResource.md)!
+tutorial available here](docs/development/CreatingANewResource.md)!
 
 ## Before Committing
 
