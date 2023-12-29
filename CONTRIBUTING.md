@@ -141,11 +141,15 @@ resource "gitlab_pipeline_schedule" "test" {
 }
 ```
 
-The `testGitLabClient` can be used to create a test project. The [`helper_test.go`](internal/provider/helper_test.go) file
-contains many functions to help create test resources. For the example above, a test project you can create the required test project with the following code:
+The `testGitLabClient` can be used to create a test project. The [`testutil`](internal/provider/testutil/helpers.go) package
+contains many functions to help create test resources, and clean them up after test completion. For the example above, you can create the required test project with the following code:
 
 ```go
-testProject := testAccCreateProject(t)
+import (
+  // other imports
+  "gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
+)
+testProject := testutils.CreateProject(t)
 
 // now you can inject the project id using fmt.Sprintf and testProject.ID
 ```
@@ -345,7 +349,7 @@ make testacc-down
 > :memo: Compose v2 and podman-compose are also supported by setting the CONTAINER_ENGINE and CONTAINER_COMPOSE_ENGINE env variables:
 >
 > `CONTAINER_COMPOSE_ENGINE='docker compose' make testacc-up`
-> 
+>
 > `CONTAINER_COMPOSE_ENGINE=podman-compose CONTAINER_ENGINE=podman make testacc-up`
 
 #### Option 2: Run tests against your own Gitlab instance
@@ -490,7 +494,7 @@ It'll auto-close every PR with a comment that we only accept contributions in ou
 
 ## GitLab Ultimate License for testing
 
-The GitLab pipeline tests against an ephemeral GitLab Enterprise omnibus instance 
+The GitLab pipeline tests against an ephemeral GitLab Enterprise omnibus instance
 which requires an Ultimate license.
 This license must be renewed every three months using an Access Request.
 
