@@ -122,12 +122,19 @@ func (r *gitlabGroupIssueBoardResource) ImportState(ctx context.Context, req res
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
-func (r *gitlabGroupIssueBoardResource) groupIssueBoardToStateModel(groupID string, groupIssueBoard *gitlab.GroupIssueBoard, data *gitlabGroupIssueBoardResourceModel) {
+func (r *gitlabGroupIssueBoardResource) groupIssueBoardToStateModel(ctx context.Context, groupID string, groupIssueBoard *gitlab.GroupIssueBoard, data *gitlabGroupIssueBoardResourceModel) {
 	data.Group = types.StringValue(groupID)
 	data.Name = types.StringValue(groupIssueBoard.Name)
 	if groupIssueBoard.Milestone != nil {
 		data.MilestoneId = types.Int64Value(int64(groupIssueBoard.Milestone.ID))
 	}
+
+	var scopedLabels []string
+	for _, scopedLabel := range groupIssueBoard.Labels {
+		scopedLabels = append(scopedLabels, scopedLabel.Name)
+	}
+	labelSetType, _ := types.SetValueFrom(ctx, types.StringType, scopedLabels)
+	data.Labels = labelSetType
 
 	listsData := make([]gitlabGroupIssueBoardListModel, len(groupIssueBoard.Lists))
 	for i, v := range groupIssueBoard.Lists {
@@ -187,7 +194,7 @@ func (r *gitlabGroupIssueBoardResource) Read(ctx context.Context, req resource.R
 
 	// persist API response in state model
 	data.Id = types.StringValue(utils.BuildTwoPartID(&groupID, &boardID))
-	r.groupIssueBoardToStateModel(groupID, groupIssueBoard, data)
+	r.groupIssueBoardToStateModel(ctx, groupID, groupIssueBoard, data)
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -245,7 +252,7 @@ func (r *gitlabGroupIssueBoardResource) Update(ctx context.Context, req resource
 	if err != nil {
 		// persist API response in state model
 		data.Id = types.StringValue(fmt.Sprintf("%s:%d", groupID, issueBoard.ID))
-		r.groupIssueBoardToStateModel(groupID, issueBoard, data)
+		r.groupIssueBoardToStateModel(ctx, groupID, issueBoard, data)
 		// Save updated data into Terraform state
 		resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 
@@ -265,7 +272,7 @@ func (r *gitlabGroupIssueBoardResource) Update(ctx context.Context, req resource
 		if err != nil {
 			// persist API response in state model
 			data.Id = types.StringValue(fmt.Sprintf("%s:%d", groupID, issueBoard.ID))
-			r.groupIssueBoardToStateModel(groupID, issueBoard, data)
+			r.groupIssueBoardToStateModel(ctx, groupID, issueBoard, data)
 			// Save updated data into Terraform state
 			resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 			resp.Diagnostics.AddError("GitLab API error occurred", "failed to delete list ")
@@ -308,7 +315,7 @@ func (r *gitlabGroupIssueBoardResource) Update(ctx context.Context, req resource
 
 	// persist API response in state model
 	data.Id = types.StringValue(fmt.Sprintf("%s:%d", groupID, issueBoard.ID))
-	r.groupIssueBoardToStateModel(groupID, issueBoard, data)
+	r.groupIssueBoardToStateModel(ctx, groupID, issueBoard, data)
 
 	// Log the creation of the resource
 	tflog.Debug(ctx, "updated a group issue board", map[string]interface{}{
@@ -407,7 +414,7 @@ func (r *gitlabGroupIssueBoardResource) Create(ctx context.Context, req resource
 	if err != nil {
 		// persist API response in state model
 		data.Id = types.StringValue(fmt.Sprintf("%s:%d", groupID, issueBoard.ID))
-		r.groupIssueBoardToStateModel(groupID, issueBoard, data)
+		r.groupIssueBoardToStateModel(ctx, groupID, issueBoard, data)
 		// Save updated data into Terraform state
 		resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 
@@ -426,7 +433,7 @@ func (r *gitlabGroupIssueBoardResource) Create(ctx context.Context, req resource
 	if err != nil {
 		// persist API response in state model
 		data.Id = types.StringValue(fmt.Sprintf("%s:%d", groupID, issueBoard.ID))
-		r.groupIssueBoardToStateModel(groupID, issueBoard, data)
+		r.groupIssueBoardToStateModel(ctx, groupID, issueBoard, data)
 		// Save updated data into Terraform state
 		resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 
@@ -478,7 +485,7 @@ func (r *gitlabGroupIssueBoardResource) Create(ctx context.Context, req resource
 	// persist API response in state model
 	boardID := fmt.Sprintf("%d", issueBoard.ID)
 	data.Id = types.StringValue(utils.BuildTwoPartID(&groupID, &boardID))
-	r.groupIssueBoardToStateModel(groupID, issueBoard, data)
+	r.groupIssueBoardToStateModel(ctx, groupID, issueBoard, data)
 
 	// Log the creation of the resource
 	tflog.Debug(ctx, "created a group issue board", map[string]interface{}{
