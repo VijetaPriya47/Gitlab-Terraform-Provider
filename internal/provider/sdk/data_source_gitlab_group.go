@@ -124,9 +124,50 @@ var _ = registerDataSource("gitlab_group", func() *schema.Resource {
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
+			"shared_with_groups": dataSourceGitlabGroupSharedWithGroups(),
 		},
 	}
 })
+
+func dataSourceGitlabGroupSharedWithGroups() *schema.Schema {
+
+	return &schema.Schema{
+		Description: "Describes groups which have access shared to this group.",
+		Type:        schema.TypeList,
+		Computed:    true,
+		Elem: &schema.Resource{
+			Schema: map[string]*schema.Schema{
+
+				"group_id": {
+					Description: "The ID of the group shared with.",
+					Type:        schema.TypeInt,
+					Computed:    true,
+				},
+				"group_name": {
+					Description: "The name of the group shared with.",
+					Type:        schema.TypeString,
+					Computed:    true,
+				},
+				"group_full_path": {
+					Description: "The full path of the group shared with.",
+					Type:        schema.TypeString,
+					Computed:    true,
+				},
+				"group_access_level": {
+					Description: "The access_level permission level of the shared group.",
+					Type:        schema.TypeInt,
+					Computed:    true,
+				},
+				"expires_at": {
+					Description: "Share with group expiration date.",
+					Type:        schema.TypeString,
+					Computed:    true,
+				},
+			},
+		},
+	}
+
+}
 
 func dataSourceGitlabGroupRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
@@ -182,8 +223,28 @@ func dataSourceGitlabGroupRead(ctx context.Context, d *schema.ResourceData, meta
 	d.Set("shared_runners_minutes_limit", group.SharedRunnersMinutesLimit)
 	d.Set("wiki_access_level", group.WikiAccessLevel)
 	d.Set("shared_runners_setting", group.SharedRunnersSetting)
+	if err := d.Set("shared_with_groups", flattenSharedWithGroups(group)); err != nil {
+		return diag.FromErr(err)
+	}
 
 	d.SetId(fmt.Sprintf("%d", group.ID))
 
 	return nil
+}
+
+func flattenSharedWithGroups(group *gitlab.Group) (values []map[string]interface{}) {
+	for _, sharedGroup := range group.SharedWithGroups {
+		v := map[string]interface{}{
+			"group_id":           sharedGroup.GroupID,
+			"group_name":         sharedGroup.GroupName,
+			"group_full_path":    sharedGroup.GroupFullPath,
+			"group_access_level": sharedGroup.GroupAccessLevel,
+		}
+		if sharedGroup.ExpiresAt != nil {
+			v["expires_at"] = sharedGroup.ExpiresAt.String()
+		}
+		values = append(values, v)
+	}
+
+	return values
 }
