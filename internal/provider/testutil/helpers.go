@@ -588,6 +588,25 @@ func AddGroupMembers(t *testing.T, gid interface{}, users []*gitlab.User) {
 	AddGroupMembersWithAccessLevel(t, gid, users, gitlab.DeveloperPermissions)
 }
 
+// GroupShareGroup shares a group with another group with a developer access level and finite date.
+func GroupShareGroup(t *testing.T, parentGid interface{}, sharedGid *int) *gitlab.Group {
+
+	t.Helper()
+
+	endDate := time.Date(2023, 12, 21, 0, 0, 0, 0, time.UTC)
+	exp := gitlab.ISOTime(endDate)
+
+	group, _, err := TestGitlabClient.Groups.ShareGroupWithGroup(parentGid, &gitlab.ShareGroupWithGroupOptions{
+		GroupID:     sharedGid,
+		GroupAccess: gitlab.Ptr(gitlab.DeveloperPermissions),
+		ExpiresAt:   &exp,
+	})
+	if err != nil {
+		t.Fatalf("could not share group with group: %v", err)
+	}
+	return group
+}
+
 // AddGroupMembersWithAccessLevel is a test helper for adding users as members of a group with a given access level.
 func AddGroupMembersWithAccessLevel(t *testing.T, gid interface{}, users []*gitlab.User, accessLevel gitlab.AccessLevelValue) {
 	t.Helper()

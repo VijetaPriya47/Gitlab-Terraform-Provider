@@ -10,10 +10,15 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+
+	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
 func TestAccDataSourceGitlabGroup_basic(t *testing.T) {
 	rString := fmt.Sprintf("%s", acctest.RandString(5)) // nolint // TODO: Resolve this golangci-lint issue: S1025: the argument is already a string, there's no need to use fmt.Sprintf (gosimple)
+
+	groups := testutil.CreateGroups(t, 2)
+	withShare := testutil.GroupShareGroup(t, groups[0].ID, &groups[1].ID)
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
@@ -32,10 +37,40 @@ func TestAccDataSourceGitlabGroup_basic(t *testing.T) {
 					testAccDataSourceGitlabGroup("gitlab_group.sub_foo", "data.gitlab_group.sub_foo"),
 				),
 			},
+			// Group shared with another group
+			{
+				Config: fmt.Sprintf(`
+					data "gitlab_group" "this" {
+						group_id = %d
+					}
+					`, groups[0].ID,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"data.gitlab_group.this",
+						"shared_with_groups.#",
+						"1"),
+					resource.TestCheckResourceAttr(
+						"data.gitlab_group.this",
+						"shared_with_groups.0.group_id",
+						fmt.Sprintf("%d", withShare.SharedWithGroups[0].GroupID)),
+					resource.TestCheckResourceAttr(
+						"data.gitlab_group.this",
+						"shared_with_groups.0.expires_at",
+						withShare.SharedWithGroups[0].ExpiresAt.String()),
+					resource.TestCheckResourceAttr(
+						"data.gitlab_group.this",
+						"shared_with_groups.0.group_full_path",
+						withShare.SharedWithGroups[0].GroupFullPath),
+					resource.TestCheckResourceAttr(
+						"data.gitlab_group.this",
+						"shared_with_groups.0.group_access_level",
+						fmt.Sprintf("%d", withShare.SharedWithGroups[0].GroupAccessLevel)),
+				),
+			},
 		},
 	})
 }
-
 func testAccDataSourceGitlabGroup(src, n string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 
@@ -61,7 +96,6 @@ func testAccDataSourceGitlabGroup(src, n string) resource.TestCheckFunc {
 			"prevent_forking_outside_group",
 			"shared_runners_setting",
 		}
-
 		for _, attribute := range testAttributes {
 			if searchResource[attribute] != groupResource[attribute] {
 				return fmt.Errorf("expected group's parameter `%s` to be: %s, but got: `%s`", attribute, groupResource[attribute], searchResource[attribute])
