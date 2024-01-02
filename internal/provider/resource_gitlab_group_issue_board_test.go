@@ -21,9 +21,7 @@ func TestAccGitlabGroupIssueBoard_basic(t *testing.T) {
 
 	testGroup := testutil.CreateGroups(t, 1)[0]
 	testMilestone := testutil.AddGroupMilestones(t, testGroup, 1)[0]
-	//testLabels := testutil.CreateGroupLabels(t, testGroup.ID, 2)
-	//we can't import the scoped labels
-	//see https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/1771#note_1686852496
+	testLabels := testutil.CreateGroupLabels(t, testGroup.ID, 2)
 	//testUser := testutil.CreateUsers(t, 1)[0]
 
 	// NOTE: there is no way to delete the last issue board, see
@@ -57,8 +55,9 @@ func TestAccGitlabGroupIssueBoard_basic(t *testing.T) {
 						group        = "%d"
 						name         = "Test Group Board"
 						milestone_id = %d
+						labels       = ["%s","%s"]
 					}
-				`, testGroup.ID, testMilestone.ID),
+				`, testGroup.ID, testMilestone.ID, testLabels[0].Name, testLabels[1].Name),
 			},
 			// Verify Import
 			{
