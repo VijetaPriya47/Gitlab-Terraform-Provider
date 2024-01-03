@@ -66,6 +66,52 @@ func TestAccDataGitlabProject_withoutPushRulesAccess(t *testing.T) {
 	})
 }
 
+func TestAccDataGitlabProject_sharedWithGroup(t *testing.T) {
+	testProject := testutil.CreateProject(t)
+	testGroup := testutil.CreateGroups(t, 1)[0]
+	testutil.ProjectShareGroup(t, testProject.ID, testGroup.ID)
+
+	projectData, _, err := testutil.TestGitlabClient.Projects.GetProject(testProject.ID, nil)
+	if err != nil {
+		t.Fatalf("could not refresh %v project's updated data, %v", testProject.PathWithNamespace, err)
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+				data "gitlab_project" "test" {
+					id = "%d"
+				}
+				`, testProject.ID),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"data.gitlab_project.test",
+						"shared_with_groups.#",
+						"1"),
+					resource.TestCheckResourceAttr(
+						"data.gitlab_project.test",
+						"shared_with_groups.0.group_id",
+						fmt.Sprintf("%d", projectData.SharedWithGroups[0].GroupID)),
+					resource.TestCheckResourceAttr(
+						"data.gitlab_project.test",
+						"shared_with_groups.0.group_full_path",
+						projectData.SharedWithGroups[0].GroupFullPath),
+					resource.TestCheckResourceAttr(
+						"data.gitlab_project.test",
+						"shared_with_groups.0.group_access_level",
+						fmt.Sprintf("%d", projectData.SharedWithGroups[0].GroupAccessLevel)),
+					resource.TestCheckResourceAttr(
+						"data.gitlab_project.test",
+						"shared_with_groups.0.group_name",
+						projectData.SharedWithGroups[0].GroupName),
+				),
+			},
+		},
+	})
+}
+
 func TestAccDataGitlabProject_pathWithNamespaceAsIdExpectError(t *testing.T) {
 	testProject := testutil.CreateProject(t)
 
