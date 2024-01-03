@@ -26,7 +26,7 @@ var _ = registerResource("gitlab_project_hook", func() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
-		Schema:        gitlabProjectHookSchema(),
+		Schema:        gitlabProjectHookResourceSchema(),
 		SchemaVersion: 1,
 		StateUpgraders: []schema.StateUpgrader{
 			{
