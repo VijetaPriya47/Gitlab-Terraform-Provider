@@ -200,6 +200,46 @@ func TestAccGitlabPipelineScheduleVariable_basic(t *testing.T) {
 	})
 }
 
+func TestAccGitlabPipelineScheduleVariable_deletedPipeline(t *testing.T) {
+	var variable gitlab.PipelineVariable
+
+	project := testutil.CreateProject(t)
+	schedule, err := testutil.CreateScheduledPipeline(t, project.ID)
+	if err != nil {
+		t.Fatalf("Failed to create dependent resources %v", err)
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabPipelineScheduleVariableDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(
+					`
+					resource "gitlab_pipeline_schedule_variable" "schedule_var" {
+						project = "%d"
+						pipeline_schedule_id = "%d"
+						key = "TERRAFORMED_TEST_VALUE"
+						value = "test_updated"
+					}
+					`, project.ID, schedule.ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabPipelineScheduleVariableExists("gitlab_pipeline_schedule_variable.schedule_var", &variable),
+					func(s *terraform.State) error {
+						// Get client and delete the pipeline we created above
+						client := testutil.TestGitlabClient
+						_, err := client.PipelineSchedules.DeletePipelineSchedule(project.ID, schedule.ID)
+						return err
+					},
+				),
+				// Plan will be non-empty because we've deleted the pipeline
+				// However, without the 404 fix on schedule variable, this would error.
+				ExpectNonEmptyPlan: true,
+			},
+		},
+	})
+}
+
 func testAccCheckGitlabPipelineScheduleVariableExists(n string, variable *gitlab.PipelineVariable) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]

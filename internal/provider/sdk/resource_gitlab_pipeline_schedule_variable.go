@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/xanzy/go-gitlab"
+	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 )
 
 var _ = registerResource("gitlab_pipeline_schedule_variable", func() *schema.Resource {
@@ -142,6 +143,11 @@ func resourceGitlabPipelineScheduleVariableRead(ctx context.Context, d *schema.R
 
 	pipelineSchedule, _, err := client.PipelineSchedules.GetPipelineSchedule(project, scheduleID, gitlab.WithContext(ctx))
 	if err != nil {
+		if api.Is404(err) {
+			log.Printf("[DEBUG] PipelineSchedule %d in project %s does not exist, removing the associated variable from state as deleting the pipeline also removes the variables", scheduleID, project)
+			d.SetId("")
+			return nil
+		}
 		return diag.FromErr(err)
 	}
 

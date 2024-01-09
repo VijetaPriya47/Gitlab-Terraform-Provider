@@ -899,3 +899,22 @@ func CreateComplianceFramework(t *testing.T, group *gitlab.Group) *api.GraphQLCo
 
 	return &response.Data.CreateComplianceFramework.Framework
 }
+
+func CreateScheduledPipeline(t *testing.T, project int) (*gitlab.PipelineSchedule, error) {
+	t.Helper()
+
+	var pipeline *gitlab.PipelineSchedule
+	pipeline, _, err := TestGitlabClient.PipelineSchedules.CreatePipelineSchedule(project, &gitlab.CreatePipelineScheduleOptions{
+		Description:  gitlab.Ptr("test"),
+		Ref:          gitlab.Ptr("master"),
+		Cron:         gitlab.Ptr("0 1 * * *"),
+		CronTimezone: gitlab.Ptr("UTC"),
+	})
+
+	t.Cleanup(func() {
+		_, _ = TestGitlabClient.PipelineSchedules.DeletePipelineSchedule(project, pipeline.ID)
+	})
+
+	return pipeline, err
+
+}
