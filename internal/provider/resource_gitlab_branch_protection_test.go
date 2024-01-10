@@ -954,6 +954,10 @@ func TestAccGitlabBranchProtection_createForProjectDefaultBranch(t *testing.T) {
 					resource "gitlab_project" "this" {
 						name = "%s"
 						initialize_with_readme = true
+
+						timeouts {
+							create = "10m"
+						}
 					}
 
 					resource "gitlab_branch_protection" "default_branch" {

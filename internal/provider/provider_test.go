@@ -41,19 +41,19 @@ var (
 )
 
 func TestAcc_GitLabProvider_UpgradeLatestMajor(t *testing.T) {
-	testProjectName := acctest.RandomWithPrefix("acctest-upgrade-test")
+	testGroupName := acctest.RandomWithPrefix("acctest-upgrade-test")
 
 	// commonConfig is used as a dummy configuration using the provider
 	// which is expected not to break between major gitlab provider versions.
 	// However, this may still happen in the future - in that case, it's
 	// okay to change this test case accordingly.
 	commonConfig := fmt.Sprintf(`
-		resource "gitlab_project" "test" {
-			name                   = "%s"
-			initialize_with_readme = true
-			visibility_level       = "public"
-        }
-	`, testProjectName)
+	resource "gitlab_group" "sample_group" {
+		name        = "%s"
+		path        = "%s"
+		description = "An example group"
+	}
+	`, testGroupName, testGroupName)
 
 	//lintignore:AT001
 	resource.ParallelTest(t, resource.TestCase{
