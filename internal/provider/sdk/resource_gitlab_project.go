@@ -803,6 +803,12 @@ branch using a ` + "`DELETE`" + ` request. Then define the desired branch protec
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
+		Timeouts: &schema.ResourceTimeout{
+			// 10 minutes is longer than the previous 2, but it's set here
+			// to match the existing "Import" timeout that happens during create
+			Create: schema.DefaultTimeout(10 * time.Minute),
+			Delete: schema.DefaultTimeout(10 * time.Minute),
+		},
 		Schema: constructSchema(resourceGitLabProjectSchema, avatarableSchema(), map[string]*schema.Schema{
 			"skip_wait_for_default_branch_protection": {
 				Description: `If ` + "`true`" + `, the default behavior to wait for the default branch protection to be created is skipped.
@@ -1353,7 +1359,7 @@ func resourceGitlabProjectCreate(ctx context.Context, d *schema.ResourceData, me
 		stateConf := &retry.StateChangeConf{
 			Pending: []string{"scheduled", "started"},
 			Target:  []string{"finished"},
-			Timeout: 10 * time.Minute,
+			Timeout: d.Timeout(schema.TimeoutCreate),
 			Refresh: func() (interface{}, string, error) {
 				status, _, err := client.ProjectImportExport.ImportStatus(d.Id(), gitlab.WithContext(ctx))
 				if err != nil {
@@ -1414,7 +1420,11 @@ func resourceGitlabProjectCreate(ctx context.Context, d *schema.ResourceData, me
 			stateConf := &retry.StateChangeConf{
 				Pending: []string{"false"},
 				Target:  []string{"true"},
-				Timeout: 2 * time.Minute, // The async action usually completes very quickly, within seconds. Don't wait too long.
+				// The async action usually completes very quickly, within seconds. However in
+				// lower compute or disk constrained environment, it can take a while.
+				// When importing a project and changing the branch protection, the "TimeoutCreate" may
+				// happen twice, and that's OK.
+				Timeout: d.Timeout(schema.TimeoutCreate),
 				Refresh: func() (interface{}, string, error) {
 					branch, _, err := client.Branches.GetBranch(project.ID, project.DefaultBranch, gitlab.WithContext(ctx))
 					if err != nil {
@@ -2347,7 +2357,7 @@ func resourceGitlabProjectDelete(ctx context.Context, d *schema.ResourceData, me
 				return out, "Deleting", nil
 			},
 
-			Timeout:    10 * time.Minute,
+			Timeout:    d.Timeout(schema.TimeoutDelete),
 			MinTimeout: 3 * time.Second,
 			Delay:      5 * time.Second,
 		}
