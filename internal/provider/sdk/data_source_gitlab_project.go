@@ -419,6 +419,36 @@ var _ = registerDataSource("gitlab_project", func() *schema.Resource {
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
+			"shared_with_groups": {
+				Description: "Describes groups which have access shared to this project.",
+				Type:        schema.TypeList,
+				Computed:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+
+						"group_id": {
+							Description: "The ID of the group shared with.",
+							Type:        schema.TypeInt,
+							Computed:    true,
+						},
+						"group_name": {
+							Description: "The name of the group shared with.",
+							Type:        schema.TypeString,
+							Computed:    true,
+						},
+						"group_full_path": {
+							Description: "The full path of the group shared with.",
+							Type:        schema.TypeString,
+							Computed:    true,
+						},
+						"group_access_level": {
+							Description: "The access_level permission level of the shared group.",
+							Type:        schema.TypeInt,
+							Computed:    true,
+						},
+					},
+				},
+			},
 		},
 	}
 })
@@ -579,5 +609,22 @@ func dataSourceGitlabProjectRead(ctx context.Context, d *schema.ResourceData, me
 
 	d.Set("push_rules", flattenProjectPushRules(pushRules)) // lintignore: XR004 // TODO: Resolve this tfproviderlint issue
 
+	if err := d.Set("shared_with_groups", flattenProjectSharedWithGroups(found)); err != nil {
+		return diag.FromErr(err)
+	}
 	return nil
+}
+
+func flattenProjectSharedWithGroups(project *gitlab.Project) (values []map[string]interface{}) {
+	for _, sharedGroup := range project.SharedWithGroups {
+		v := map[string]interface{}{
+			"group_id":           sharedGroup.GroupID,
+			"group_name":         sharedGroup.GroupName,
+			"group_full_path":    sharedGroup.GroupFullPath,
+			"group_access_level": sharedGroup.GroupAccessLevel,
+		}
+		values = append(values, v)
+	}
+
+	return values
 }
