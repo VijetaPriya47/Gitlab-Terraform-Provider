@@ -1950,6 +1950,38 @@ func TestAccGitlabProject_ContainerExpirationPolicy(t *testing.T) {
 	})
 }
 
+func TestAccGitlabProject_SetBuildsAccessLevel(t *testing.T) {
+	var received gitlab.Project
+	rInt := acctest.RandInt()
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabProjectDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project" "this" {
+						name             = "testname-%d"
+						visibility_level = "public"
+						default_branch   = "main"
+
+						builds_access_level = "private"
+					}`, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabProjectExists("gitlab_project.this", &received),
+					resource.TestCheckResourceAttr("gitlab_project.this", "builds_access_level", "private"),
+				),
+			},
+			// Verify import
+			{
+				ResourceName:      "gitlab_project.this",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 func TestAccGitlabProject_WithoutAvatarHash(t *testing.T) {
 	testConfig := fmt.Sprintf(`
 	resource "gitlab_project" "test" {
