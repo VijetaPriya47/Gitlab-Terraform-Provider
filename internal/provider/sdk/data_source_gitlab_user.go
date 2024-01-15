@@ -130,6 +130,11 @@ the most related match will prioritize an exact match if one is available.
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
+			"is_bot": {
+				Description: "Whether the user is a bot.",
+				Type:        schema.TypeBool,
+				Computed:    true,
+			},
 			"location": {
 				Description: "The location of the user.",
 				Type:        schema.TypeString,
@@ -252,6 +257,7 @@ func dataSourceGitlabUserRead(ctx context.Context, d *schema.ResourceData, meta 
 	d.Set("state", user.State)
 	d.Set("external", user.External)
 	d.Set("extern_uid", user.ExternUID)
+	d.Set("is_bot", user.Bot)
 
 	if user.CreatedAt != nil {
 		d.Set("created_at", user.CreatedAt.String())

@@ -107,6 +107,11 @@ var _ = registerDataSource("gitlab_users", func() *schema.Resource {
 							Type:        schema.TypeBool,
 							Computed:    true,
 						},
+						"is_bot": {
+							Description: "Whether the user is a bot.",
+							Type:        schema.TypeBool,
+							Computed:    true,
+						},
 						"can_create_group": {
 							Description: "Whether the user can create groups.",
 							Type:        schema.TypeBool,
@@ -259,6 +264,7 @@ func flattenGitlabUsers(users []*gitlab.User) []interface{} {
 			"email":              user.Email,
 			"name":               user.Name,
 			"is_admin":           user.IsAdmin,
+			"is_bot":             user.Bot,
 			"can_create_group":   user.CanCreateGroup,
 			"can_create_project": user.CanCreateProject,
 			"projects_limit":     user.ProjectsLimit,
