@@ -293,20 +293,6 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 
-		"delayed_project_deletion": {
-			Description: "Enable delayed project deletion by default in new groups. From GitLab 15.1, can only be enabled when delayed_group_deletion is true.",
-			Type:        schema.TypeBool,
-			Optional:    true,
-			Computed:    true,
-		},
-
-		"delayed_group_deletion": {
-			Description: "Enable delayed group deletion. Introduced in GitLab 15.0. From GitLab 15.1, disables and locks the group-level setting for delayed protect deletion when set to false.",
-			Type:        schema.TypeBool,
-			Optional:    true,
-			Computed:    true,
-		},
-
 		"delete_inactive_projects": {
 			Description: "Enable inactive project deletion feature. Introduced in GitLab 14.10. Became operational in GitLab 15.0 (with feature flag inactive_projects_deletion).",
 			Type:        schema.TypeBool,
@@ -315,7 +301,7 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 		},
 
 		"deletion_adjourned_period": {
-			Description: "The number of days to wait before deleting a project or group that is marked for deletion. Value must be between 1 and 90. From GitLab 15.1, a hook on deletion_adjourned_period sets the period to 1 on every update, and sets both delayed_project_deletion and delayed_group_deletion to false if the period is 0.",
+			Description: "The number of days to wait before deleting a project or group that is marked for deletion. Value must be between 1 and 90.",
 			Type:        schema.TypeInt,
 			Optional:    true,
 			Computed:    true,
@@ -1816,8 +1802,6 @@ func gitlabApplicationSettingsToStateMap(settings *gitlab.Settings) map[string]i
 	stateMap["default_project_visibility"] = settings.DefaultProjectVisibility
 	stateMap["default_projects_limit"] = settings.DefaultProjectsLimit
 	stateMap["default_snippet_visibility"] = settings.DefaultSnippetVisibility
-	stateMap["delayed_project_deletion"] = settings.DelayedProjectDeletion
-	stateMap["delayed_group_deletion"] = settings.DelayedGroupDeletion
 	stateMap["delete_inactive_projects"] = settings.DeleteInactiveProjects
 	stateMap["deletion_adjourned_period"] = settings.DeletionAdjournedPeriod
 	stateMap["diff_max_patch_bytes"] = settings.DiffMaxPatchBytes
@@ -2177,14 +2161,6 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 
 	if d.HasChange("default_snippet_visibility") {
 		options.DefaultSnippetVisibility = stringToVisibilityLevel(d.Get("default_snippet_visibility").(string))
-	}
-
-	if d.HasChange("delayed_project_deletion") {
-		options.DelayedProjectDeletion = gitlab.Ptr(d.Get("delayed_project_deletion").(bool))
-	}
-
-	if d.HasChange("delayed_group_deletion") {
-		options.DelayedGroupDeletion = gitlab.Ptr(d.Get("delayed_group_deletion").(bool))
 	}
 
 	if d.HasChange("delete_inactive_projects") {
