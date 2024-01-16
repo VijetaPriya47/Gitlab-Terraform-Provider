@@ -88,10 +88,8 @@ resource "gitlab_application_settings" "this" {
 - `default_project_visibility` (String) What visibility level new projects receive. Can take private, internal and public as a parameter.
 - `default_projects_limit` (Number) Project limit per user.
 - `default_snippet_visibility` (String) What visibility level new snippets receive. Can take private, internal and public as a parameter.
-- `delayed_group_deletion` (Boolean) Enable delayed group deletion. Introduced in GitLab 15.0. From GitLab 15.1, disables and locks the group-level setting for delayed protect deletion when set to false.
-- `delayed_project_deletion` (Boolean) Enable delayed project deletion by default in new groups. From GitLab 15.1, can only be enabled when delayed_group_deletion is true.
 - `delete_inactive_projects` (Boolean) Enable inactive project deletion feature. Introduced in GitLab 14.10. Became operational in GitLab 15.0 (with feature flag inactive_projects_deletion).
-- `deletion_adjourned_period` (Number) The number of days to wait before deleting a project or group that is marked for deletion. Value must be between 1 and 90. From GitLab 15.1, a hook on deletion_adjourned_period sets the period to 1 on every update, and sets both delayed_project_deletion and delayed_group_deletion to false if the period is 0.
+- `deletion_adjourned_period` (Number) The number of days to wait before deleting a project or group that is marked for deletion. Value must be between 1 and 90.
 - `diff_max_files` (Number) Maximum files in a diff.
 - `diff_max_lines` (Number) Maximum lines in a diff.
 - `diff_max_patch_bytes` (Number) Maximum diff patch size, in bytes.
