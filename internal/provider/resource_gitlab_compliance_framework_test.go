@@ -11,6 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/xanzy/go-gitlab"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
@@ -197,6 +198,122 @@ func TestAccGitlabComplianceFramework_EnsureErrorOnInvalidColor(t *testing.T) {
 					}
 						`, testGroup.FullPath),
 				ExpectError: err_regex,
+			},
+		},
+	})
+}
+
+func TestAccGitlabComplianceFramework_EnsureErrorOnInvalidPermission(t *testing.T) {
+	testutil.SkipIfCE(t)
+
+	testGroup := testutil.CreateGroups(t, 1)[0]
+
+	// Set up users, role mapping and personal access token.
+	users := testutil.CreateUsers(t, 2)
+	testutil.AddGroupMembersWithAccessLevel(t, testGroup.ID, []*gitlab.User{users[0]}, gitlab.OwnerPermissions)
+	testutil.AddGroupMembersWithAccessLevel(t, testGroup.ID, []*gitlab.User{users[1]}, gitlab.DeveloperPermissions)
+	ownerUserPATReadAPI := testutil.CreatePersonalAccessTokenWithScopes(t, users[0], []string{"read_api"})
+	developerUserPAT := testutil.CreatePersonalAccessTokenWithScopes(t, users[1], []string{"api"})
+
+	create_err_regex, err := regexp.Compile("Not permitted to create framework")
+	if err != nil {
+		t.Errorf("Unable to format expected permission error regex: %s", err)
+	}
+	permission_err_regex, err := regexp.Compile("you don't have permission to perform this action")
+	if err != nil {
+		t.Errorf("Unable to format expected permission error regex: %s", err)
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAcc_GitlabComplianceFramework_CheckDestroy,
+		Steps: []resource.TestStep{
+			// Create a compliance framework; should return not permitted to create framework error
+			{
+				// lintignore:AT004  // we need the provider configuration here to create the compliance framework as a different user
+				Config: fmt.Sprintf(`
+					provider "gitlab" {
+						token = "%s"
+					}
+
+					resource "gitlab_compliance_framework" "foo" {
+						namespace_path = "%s"
+						name = "Compliance Framework"
+						description = "A test Compliance Framework"
+						color = "#87BEEF"
+						default = false
+					}
+						`, developerUserPAT.Token, testGroup.FullPath),
+				ExpectError: create_err_regex,
+			},
+			// Create a compliance framework; should return no permission error
+			{
+				// lintignore:AT004  // we need the provider configuration here to create the compliance framework as a different user
+				Config: fmt.Sprintf(`
+					provider "gitlab" {
+						token = "%s"
+					}
+
+					resource "gitlab_compliance_framework" "foo" {
+						namespace_path = "%s"
+						name = "Compliance Framework"
+						description = "A test Compliance Framework"
+						color = "#87BEEF"
+						default = false
+					}
+						`, ownerUserPATReadAPI.Token, testGroup.FullPath),
+				ExpectError: permission_err_regex,
+			},
+			// Create a compliance framework, to be used to check update error
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_compliance_framework" "foo" {
+						namespace_path = "%s"
+						name = "Compliance Framework"
+						description = "A test Compliance Framework"
+						color = "#87BEEF"
+						default = false
+					}
+						`, testGroup.FullPath),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_compliance_framework.foo", "name", "Compliance Framework"),
+					resource.TestCheckResourceAttrSet("gitlab_compliance_framework.foo", "id"),
+				),
+			},
+			{
+				ResourceName:      "gitlab_compliance_framework.foo",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Update a compliance framework; should return no permission error
+			{
+				// lintignore:AT004  // we need the provider configuration here to create the compliance framework as a different user
+				Config: fmt.Sprintf(`
+					provider "gitlab" {
+						token = "%s"
+					}
+
+					resource "gitlab_compliance_framework" "foo" {
+						namespace_path = "%s"
+						name = "Compliance Framework"
+						description = "An updated Compliance Framework"
+						color = "#42BEEF"
+						default = false
+					}
+						`, developerUserPAT.Token, testGroup.FullPath),
+				ExpectError: permission_err_regex,
+			},
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_compliance_framework" "foo" {
+						namespace_path = "%s"
+						name = "Compliance Framework"
+						description = "A test Compliance Framework"
+						color = "#87BEEF"
+						default = false
+					}
+						`, testGroup.FullPath),
+				Destroy: true,
 			},
 		},
 	})

@@ -266,6 +266,23 @@ func (r *gitlabComplianceFrameworkResource) Create(ctx context.Context, req reso
 		return
 	}
 
+	// check response for errors
+	var allerr string
+	if len(response.Errors) > 0 {
+		for i, err := range response.Errors {
+			allerr += fmt.Sprintf("Error %d Message: %s\n", i, err.Message)
+		}
+	}
+	if len(response.Data.CreateComplianceFramework.Errors) > 0 {
+		for i, err := range response.Data.CreateComplianceFramework.Errors {
+			allerr += fmt.Sprintf("Error %d Message: %s\n", i, err)
+		}
+	}
+	if len(allerr) > 0 {
+		resp.Diagnostics.AddError("GitLab GraphQL error occurred", allerr)
+		return
+	}
+
 	// Create resource ID and persist in state model
 	data.Id = types.StringValue(utils.BuildTwoPartID(&namespacePath, &response.Data.CreateComplianceFramework.Framework.ID))
 
@@ -410,6 +427,23 @@ func (r *gitlabComplianceFrameworkResource) update(ctx context.Context, data *gi
 		return err
 	}
 
+	// check response for errors
+	var allerr string
+	if len(response.Errors) > 0 {
+		for i, err := range response.Errors {
+			allerr += fmt.Sprintf("Error %d Message: %s\n", i, err.Message)
+		}
+	}
+	if len(response.Data.UpdateComplianceFramework.Errors) > 0 {
+		for i, err := range response.Data.UpdateComplianceFramework.Errors {
+			allerr += fmt.Sprintf("Error %d Message: %s\n", i, err)
+		}
+	}
+	if len(allerr) > 0 {
+		diags.AddError("GitLab GraphQL error occurred", allerr)
+		return fmt.Errorf("GitLab GraphQL error occurred: %s", allerr)
+	}
+
 	// persist API response in state model
 	r.complianceFrameworkToStateModel(&response.Data.UpdateComplianceFramework.ComplianceFramework, namespacePath, data)
 
@@ -440,14 +474,32 @@ type createComplianceFrameworkResponse struct {
 	Data struct {
 		CreateComplianceFramework struct {
 			Framework api.GraphQLComplianceFramework `json:"framework"`
+			Errors    []string                       `json:"errors"`
 		} `json:"createComplianceFramework"`
 	} `json:"data"`
+	Errors []struct {
+		Message   string `json:"message"`
+		Locations []struct {
+			Line   int `json:"line"`
+			Column int `json:"column"`
+		} `json:"locations"`
+		Path []string `json:"path"`
+	} `json:"errors"`
 }
 
 type updateComplianceFrameworkResponse struct {
 	Data struct {
 		UpdateComplianceFramework struct {
 			ComplianceFramework api.GraphQLComplianceFramework `json:"complianceFramework"`
+			Errors              []string                       `json:"errors"`
 		} `json:"updateComplianceFramework"`
 	} `json:"data"`
+	Errors []struct {
+		Message   string `json:"message"`
+		Locations []struct {
+			Line   int `json:"line"`
+			Column int `json:"column"`
+		} `json:"locations"`
+		Path []string `json:"path"`
+	} `json:"errors"`
 }
