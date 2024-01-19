@@ -243,11 +243,18 @@ func CreateUsersWithPrefix(t *testing.T, n int, prefix string) []*gitlab.User {
 	return users
 }
 
-// Create Personal Access Token for a given user.
+// Create Personal Access Token for a given user with `api` scope
 func CreatePersonalAccessToken(t *testing.T, user *gitlab.User) *gitlab.PersonalAccessToken {
 	t.Helper()
 
-	token, _, err := TestGitlabClient.Users.CreatePersonalAccessToken(user.ID, &gitlab.CreatePersonalAccessTokenOptions{Name: gitlab.Ptr(acctest.RandomWithPrefix("acctest")), Scopes: &[]string{"api"}})
+	return CreatePersonalAccessTokenWithScopes(t, user, []string{"api"})
+}
+
+// Create Personal Access Token for a given user with specified scopes
+func CreatePersonalAccessTokenWithScopes(t *testing.T, user *gitlab.User, scopes []string) *gitlab.PersonalAccessToken {
+	t.Helper()
+
+	token, _, err := TestGitlabClient.Users.CreatePersonalAccessToken(user.ID, &gitlab.CreatePersonalAccessTokenOptions{Name: gitlab.Ptr(acctest.RandomWithPrefix("acctest")), Scopes: &scopes})
 	if err != nil {
 		t.Fatalf("could not create Personal Access Token for user %d", user.ID)
 	}
