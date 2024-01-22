@@ -1,19 +1,22 @@
 //go:build acceptance
 // +build acceptance
 
-package sdk
+package provider
 
 import (
 	"context"
 	"fmt"
 	"reflect"
+	"strconv"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/xanzy/go-gitlab"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
+	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
@@ -23,42 +26,42 @@ func TestAccGitlabPipelineSchedule_StateUpgradeV0(t *testing.T) {
 
 	testcases := []struct {
 		name            string
-		givenV0State    map[string]interface{}
-		expectedV1State map[string]interface{}
+		givenV0State    gitlabPipelineScheduleResourceModelSchema0
+		expectedV1State gitlabPipelineScheduleResourceModel
 	}{
 		{
 			name: "Project With ID",
-			givenV0State: map[string]interface{}{
-				"project": "99",
-				"id":      "42",
+			givenV0State: gitlabPipelineScheduleResourceModelSchema0{
+				Project: types.StringValue("99"),
+				ID:      types.StringValue("42"),
 			},
-			expectedV1State: map[string]interface{}{
-				"project": "99",
-				"id":      "99:42",
+			expectedV1State: gitlabPipelineScheduleResourceModel{
+				Project: types.StringValue("99"),
+				ID:      types.StringValue("99:42"),
 			},
 		},
 		{
 			name: "Project With Namespace",
-			givenV0State: map[string]interface{}{
-				"project": "foo/bar",
-				"id":      "42",
+			givenV0State: gitlabPipelineScheduleResourceModelSchema0{
+				Project: types.StringValue("foo/bar"),
+				ID:      types.StringValue("42"),
 			},
-			expectedV1State: map[string]interface{}{
-				"project": "foo/bar",
-				"id":      "foo/bar:42",
+			expectedV1State: gitlabPipelineScheduleResourceModel{
+				Project: types.StringValue("foo/bar"),
+				ID:      types.StringValue("foo/bar:42"),
 			},
 		},
 	}
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			actualV1State, err := resourceGitlabPipelineScheduleStateUpgradeV0(context.Background(), tc.givenV0State, nil)
+			actualV1State, err := resourceGitlabPipelineScheduleStateUpgradeV0ToV1(context.Background(), &tc.givenV0State)
 			if err != nil {
 				t.Fatalf("Error migrating state: %s", err)
 			}
 
-			if !reflect.DeepEqual(tc.expectedV1State, actualV1State) {
-				t.Fatalf("\n\nexpected:\n\n%#v\n\ngot:\n\n%#v\n\n", tc.expectedV1State, actualV1State)
+			if !reflect.DeepEqual(tc.expectedV1State, *actualV1State) {
+				t.Fatalf("\n\nexpected:\n\n%#v\n\ngot:\n\n%#v\n\n", tc.expectedV1State, *actualV1State)
 			}
 		})
 
@@ -68,7 +71,7 @@ func TestAccGitlabPipelineSchedule_StateUpgradeV0(t *testing.T) {
 func TestAccGitlabPipelineSchedule_SchemaMigration0_1(t *testing.T) {
 	testProject := testutil.CreateProject(t)
 
-	config := fmt.Sprintf(`	
+	config := fmt.Sprintf(`
 	resource "gitlab_pipeline_schedule" "schedule" {
 		project = "%d"
 		description = "Pipeline Schedule"
@@ -90,7 +93,7 @@ func TestAccGitlabPipelineSchedule_SchemaMigration0_1(t *testing.T) {
 				Config: config,
 			},
 			{
-				ProtoV6ProviderFactories: providerFactoriesV6,
+				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 				Config:                   config,
 				PlanOnly:                 true,
 			},
@@ -103,7 +106,7 @@ func TestAccGitlabPipelineSchedule_basic(t *testing.T) {
 	rInt := acctest.RandInt()
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		CheckDestroy:             testAccCheckGitlabPipelineScheduleDestroy,
 		Steps: []resource.TestStep{
 			// Create a project and pipeline schedule with default options
@@ -170,6 +173,20 @@ func TestAccGitlabPipelineSchedule_basic(t *testing.T) {
 	})
 }
 
+func resourceGitlabPipelineScheduleParseID(id string) (string, int, error) {
+	project, rawPipelineScheduleID, err := utils.ParseTwoPartID(id)
+	if err != nil {
+		return "", 0, err
+	}
+
+	pipelineScheduleID, err := strconv.Atoi(rawPipelineScheduleID)
+	if err != nil {
+		return "", 0, err
+	}
+
+	return project, pipelineScheduleID, nil
+}
+
 func testAccCheckGitlabPipelineScheduleExists(n string, schedule *gitlab.PipelineSchedule) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
@@ -177,12 +194,12 @@ func testAccCheckGitlabPipelineScheduleExists(n string, schedule *gitlab.Pipelin
 			return fmt.Errorf("Not Found: %s", n)
 		}
 
-		project, pipelineScheduleId, err := resourceGitlabPipelineTriggerParseId(rs.Primary.ID)
+		project, pipelineScheduleID, err := resourceGitlabPipelineScheduleParseID(rs.Primary.ID)
 		if err != nil {
 			return err
 		}
 
-		sc, _, err := testutil.TestGitlabClient.PipelineSchedules.GetPipelineSchedule(project, pipelineScheduleId)
+		sc, _, err := testutil.TestGitlabClient.PipelineSchedules.GetPipelineSchedule(project, pipelineScheduleID)
 		if err != nil {
 			if api.Is404(err) {
 				return fmt.Errorf("Pipeline Schedule %q does not exist", rs.Primary.ID)
@@ -233,14 +250,14 @@ func testAccCheckGitlabPipelineScheduleDestroy(s *terraform.State) error {
 			continue
 		}
 
-		project, pipelineScheduleId, err := resourceGitlabPipelineTriggerParseId(rs.Primary.ID)
+		project, pipelineScheduleID, err := resourceGitlabPipelineScheduleParseID(rs.Primary.ID)
 		if err != nil {
 			return err
 		}
 
-		_, _, err = testutil.TestGitlabClient.PipelineSchedules.GetPipelineSchedule(project, pipelineScheduleId)
+		_, _, err = testutil.TestGitlabClient.PipelineSchedules.GetPipelineSchedule(project, pipelineScheduleID)
 		if err == nil {
-			return fmt.Errorf("the Pipeline Schedule %d in project %s still exists", pipelineScheduleId, project)
+			return fmt.Errorf("the Pipeline Schedule %d in project %s still exists", pipelineScheduleID, project)
 		}
 		if !api.Is404(err) {
 			return err
@@ -250,7 +267,7 @@ func testAccCheckGitlabPipelineScheduleDestroy(s *terraform.State) error {
 	return nil
 }
 
-func TestAccGitlabPipelineSchedule_takeOwnership(t *testing.T) {
+func TestAccGitlabPipelineSchedule_takeOwnershipWithChanges(t *testing.T) {
 	var schedule gitlab.PipelineSchedule
 
 	// Set up project, user, role mapping and personal access token.
@@ -260,17 +277,17 @@ func TestAccGitlabPipelineSchedule_takeOwnership(t *testing.T) {
 	userPAT := testutil.CreatePersonalAccessToken(t, user)
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		CheckDestroy:             testAccCheckGitlabPipelineScheduleDestroy,
 		Steps: []resource.TestStep{
-			// Import the Pipeline Schedule
+			// Create a Pipeline Schedule with our custom user
 			{
 				// lintignore:AT004  // we need the provider configuration here to create the schedule with a different user
 				Config: fmt.Sprintf(`
 				provider "gitlab" {
 					token = "%s"
 				}
-				
+
 				resource "gitlab_pipeline_schedule" "schedule" {
 					project = "%d"
 					description = "Schedule"
@@ -284,7 +301,72 @@ func TestAccGitlabPipelineSchedule_takeOwnership(t *testing.T) {
 					resource.TestCheckResourceAttr("gitlab_pipeline_schedule.schedule", "owner", fmt.Sprintf("%d", user.ID)),
 				),
 			},
-			// Update the Pipeline Schedule with Take Ownership
+			// Let the provider take the ownership on the Pipeline Schedule (with changes)
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_pipeline_schedule" "schedule" {
+					project = "%d"
+					description = "Schedule Updated"
+					ref = "main"
+					cron = "0 4 * * *"
+					active = false
+					take_ownership = true
+				}
+					`, project.ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabPipelineScheduleExists("gitlab_pipeline_schedule.schedule", &schedule),
+					resource.TestCheckResourceAttr("gitlab_pipeline_schedule.schedule", "owner", "1"),
+				),
+			},
+			// Verify upstream attributes with an import
+			{
+				ResourceName:      "gitlab_pipeline_schedule.schedule",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"take_ownership",
+				},
+			},
+		},
+	})
+}
+
+func TestAccGitlabPipelineSchedule_takeOwnershipWithoutChanges(t *testing.T) {
+	var schedule gitlab.PipelineSchedule
+
+	// Set up project, user, role mapping and personal access token.
+	project := testutil.CreateProject(t)
+	user := testutil.CreateUsers(t, 1)[0]
+	testutil.AddProjectMembersWithAccessLevel(t, project.ID, []*gitlab.User{user}, gitlab.MaintainerPermissions)
+	userPAT := testutil.CreatePersonalAccessToken(t, user)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		CheckDestroy:             testAccCheckGitlabPipelineScheduleDestroy,
+		Steps: []resource.TestStep{
+			// Create a Pipeline Schedule with our custom user
+			{
+				// lintignore:AT004  // we need the provider configuration here to create the schedule with a different user
+				Config: fmt.Sprintf(`
+				provider "gitlab" {
+					token = "%s"
+				}
+
+				resource "gitlab_pipeline_schedule" "schedule" {
+					project = "%d"
+					description = "Schedule"
+					ref = "main"
+					cron = "0 4 * * *"
+					active = false
+					take_ownership = true
+				}
+				`, userPAT.Token, project.ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabPipelineScheduleExists("gitlab_pipeline_schedule.schedule", &schedule),
+					resource.TestCheckResourceAttr("gitlab_pipeline_schedule.schedule", "owner", fmt.Sprintf("%d", user.ID)),
+				),
+			},
+			// Let the provider take the ownership on the Pipeline Schedule (with no changes)
 			{
 				Config: fmt.Sprintf(`
 				resource "gitlab_pipeline_schedule" "schedule" {
@@ -301,7 +383,7 @@ func TestAccGitlabPipelineSchedule_takeOwnership(t *testing.T) {
 					resource.TestCheckResourceAttr("gitlab_pipeline_schedule.schedule", "owner", "1"),
 				),
 			},
-			// Verify upstream attributes with an import.
+			// Verify upstream attributes with an import
 			{
 				ResourceName:      "gitlab_pipeline_schedule.schedule",
 				ImportState:       true,
