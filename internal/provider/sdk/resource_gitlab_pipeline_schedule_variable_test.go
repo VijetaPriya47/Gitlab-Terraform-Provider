@@ -9,7 +9,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/xanzy/go-gitlab"
@@ -88,7 +87,11 @@ func TestAccGitlabPipelineScheduleVariable_StateUpgradeV0(t *testing.T) {
 }
 
 func TestAccGitlabPipelineScheduleVariable_SchemaMigration0_1(t *testing.T) {
-	testProject := testutil.CreateProject(t)
+	project := testutil.CreateProject(t)
+	schedule, err := testutil.CreateScheduledPipeline(t, project.ID)
+	if err != nil {
+		t.Fatalf("Failed to create dependent resources %v", err)
+	}
 
 	resource.ParallelTest(t, resource.TestCase{
 		CheckDestroy: testAccCheckGitlabPipelineScheduleVariableDestroy,
@@ -101,39 +104,25 @@ func TestAccGitlabPipelineScheduleVariable_SchemaMigration0_1(t *testing.T) {
 					},
 				},
 				Config: fmt.Sprintf(`
-				resource "gitlab_pipeline_schedule" "schedule" {
-					project = "%d"
-					description = "Pipeline Schedule"
-					ref = "master"
-					cron = "0 1 * * *"
-				}
-				
 				resource "gitlab_pipeline_schedule_variable" "schedule_var" {
 					project = "%d"
-					pipeline_schedule_id = "${gitlab_pipeline_schedule.schedule.id}"
+					pipeline_schedule_id = "%d"
 					key = "TERRAFORMED_TEST_VALUE"
 					value = "test"
 				}
-				`, testProject.ID, testProject.ID),
+				`, project.ID, schedule.ID),
 			},
 			{
 				// The "id" attribute is updated to "pipeline_schedule_id" in 16.0, but it should still apply properly.
 				ProtoV6ProviderFactories: providerFactoriesV6,
 				Config: fmt.Sprintf(`
-				resource "gitlab_pipeline_schedule" "schedule" {
-					project = "%d"
-					description = "Pipeline Schedule"
-					ref = "master"
-					cron = "0 1 * * *"
-				}
-				
 				resource "gitlab_pipeline_schedule_variable" "schedule_var" {
 					project = "%d"
-					pipeline_schedule_id = "${gitlab_pipeline_schedule.schedule.pipeline_schedule_id}"
+					pipeline_schedule_id = "%d"
 					key = "TERRAFORMED_TEST_VALUE"
 					value = "test"
 				}
-				`, testProject.ID, testProject.ID),
+				`, project.ID, schedule.ID),
 				PlanOnly: true,
 			},
 		},
@@ -142,14 +131,25 @@ func TestAccGitlabPipelineScheduleVariable_SchemaMigration0_1(t *testing.T) {
 
 func TestAccGitlabPipelineScheduleVariable_basic(t *testing.T) {
 	var variable gitlab.PipelineVariable
-	rInt := acctest.RandInt()
+	project := testutil.CreateProject(t)
+	schedule, err := testutil.CreateScheduledPipeline(t, project.ID)
+	if err != nil {
+		t.Fatalf("Failed to create dependent resources %v", err)
+	}
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
 		CheckDestroy:             testAccCheckGitlabPipelineScheduleVariableDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccGitlabPipelineScheduleVariableConfig(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_pipeline_schedule_variable" "schedule_var" {
+					project = "%d"
+					pipeline_schedule_id = "%d"
+					key = "TERRAFORMED_TEST_VALUE"
+					value = "test"
+				}
+				`, project.ID, schedule.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabPipelineScheduleVariableExists("gitlab_pipeline_schedule_variable.schedule_var", &variable),
 					testAccCheckGitlabPipelineScheduleVariableAttributes(&variable, &testAccGitlabPipelineScheduleVariableExpectedAttributes{
@@ -165,7 +165,14 @@ func TestAccGitlabPipelineScheduleVariable_basic(t *testing.T) {
 				ImportStateVerify: true,
 			},
 			{
-				Config: testAccGitlabPipelineScheduleVariableUpdateConfig(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_pipeline_schedule_variable" "schedule_var" {
+					project = "%d"
+					pipeline_schedule_id = "%d"
+					key = "TERRAFORMED_TEST_VALUE"
+					value = "test_updated"
+				}
+				`, project.ID, schedule.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabPipelineScheduleVariableExists("gitlab_pipeline_schedule_variable.schedule_var", &variable),
 					testAccCheckGitlabPipelineScheduleVariableAttributes(&variable, &testAccGitlabPipelineScheduleVariableExpectedAttributes{
@@ -181,7 +188,14 @@ func TestAccGitlabPipelineScheduleVariable_basic(t *testing.T) {
 				ImportStateVerify: true,
 			},
 			{
-				Config: testAccGitlabPipelineScheduleVariableConfig(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_pipeline_schedule_variable" "schedule_var" {
+					project = "%d"
+					pipeline_schedule_id = "%d"
+					key = "TERRAFORMED_TEST_VALUE"
+					value = "test"
+				}
+				`, project.ID, schedule.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabPipelineScheduleVariableExists("gitlab_pipeline_schedule_variable.schedule_var", &variable),
 					testAccCheckGitlabPipelineScheduleVariableAttributes(&variable, &testAccGitlabPipelineScheduleVariableExpectedAttributes{
@@ -214,8 +228,7 @@ func TestAccGitlabPipelineScheduleVariable_deletedPipeline(t *testing.T) {
 		CheckDestroy:             testAccCheckGitlabPipelineScheduleVariableDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(
-					`
+				Config: fmt.Sprintf(`
 					resource "gitlab_pipeline_schedule_variable" "schedule_var" {
 						project = "%d"
 						pipeline_schedule_id = "%d"
@@ -280,60 +293,6 @@ func testAccCheckGitlabPipelineScheduleVariableAttributes(variable *gitlab.Pipel
 
 		return nil
 	}
-}
-
-func testAccGitlabPipelineScheduleVariableConfig(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "foo" {
-  name = "foo-%d"
-  description = "Terraform acceptance tests"
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-
-resource "gitlab_pipeline_schedule" "schedule" {
-	project = "${gitlab_project.foo.id}"
-	description = "Pipeline Schedule"
-	ref = "master"
-	cron = "0 1 * * *"
-}
-
-resource "gitlab_pipeline_schedule_variable" "schedule_var" {
-	project = "${gitlab_project.foo.id}"
-	pipeline_schedule_id = "${gitlab_pipeline_schedule.schedule.pipeline_schedule_id}"
-	key = "TERRAFORMED_TEST_VALUE"
-	value = "test"
-}
-	`, rInt)
-}
-
-func testAccGitlabPipelineScheduleVariableUpdateConfig(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "foo" {
-  name = "foo-%d"
-  description = "Terraform acceptance tests"
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-
-resource "gitlab_pipeline_schedule" "schedule" {
-	project = "${gitlab_project.foo.id}"
-	description = "Pipeline Schedule"
-	ref = "master"
-	cron = "0 1 * * *"
-}
-
-resource "gitlab_pipeline_schedule_variable" "schedule_var" {
-	project = "${gitlab_project.foo.id}"
-	pipeline_schedule_id = "${gitlab_pipeline_schedule.schedule.pipeline_schedule_id}"
-	key = "TERRAFORMED_TEST_VALUE"
-	value = "test_updated"
-}
-	`, rInt)
 }
 
 func testAccCheckGitlabPipelineScheduleVariableDestroy(s *terraform.State) error {
