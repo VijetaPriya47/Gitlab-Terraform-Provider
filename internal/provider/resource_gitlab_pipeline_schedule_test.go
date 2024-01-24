@@ -233,7 +233,7 @@ func TestAccGitlabPipelineSchedule_takeOwnershipWithoutChanges(t *testing.T) {
 func TestAccGitlabPipelineSchedule_migrateFromSDKToFramework(t *testing.T) {
 	var schedule gitlab.PipelineSchedule
 
-	// Set up project, user, role mapping and personal access token.
+	// Set up project
 	project := testutil.CreateProject(t)
 
 	// Create common config for testing
