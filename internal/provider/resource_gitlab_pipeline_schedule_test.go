@@ -101,6 +101,186 @@ func TestAccGitlabPipelineSchedule_SchemaMigration0_1(t *testing.T) {
 	})
 }
 
+func TestAccGitlabPipelineSchedule_takeOwnershipWithChanges(t *testing.T) {
+	var schedule gitlab.PipelineSchedule
+
+	// Set up project, user, role mapping and personal access token.
+	project := testutil.CreateProject(t)
+	user := testutil.CreateUsers(t, 1)[0]
+	testutil.AddProjectMembersWithAccessLevel(t, project.ID, []*gitlab.User{user}, gitlab.MaintainerPermissions)
+	userPAT := testutil.CreatePersonalAccessToken(t, user)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		CheckDestroy:             testAccCheckGitlabPipelineScheduleDestroy,
+		Steps: []resource.TestStep{
+			// Create a Pipeline Schedule with our custom user
+			{
+				// lintignore:AT004  // we need the provider configuration here to create the schedule with a different user
+				Config: fmt.Sprintf(`
+				provider "gitlab" {
+					token = "%s"
+				}
+
+				resource "gitlab_pipeline_schedule" "schedule" {
+					project = "%d"
+					description = "Schedule"
+					ref = "main"
+					cron = "0 4 * * *"
+					active = false
+				}
+				`, userPAT.Token, project.ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabPipelineScheduleExists("gitlab_pipeline_schedule.schedule", &schedule),
+					resource.TestCheckResourceAttr("gitlab_pipeline_schedule.schedule", "owner", fmt.Sprintf("%d", user.ID)),
+				),
+			},
+			// Let the provider take the ownership on the Pipeline Schedule (with changes)
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_pipeline_schedule" "schedule" {
+					project = "%d"
+					description = "Schedule Updated"
+					ref = "main"
+					cron = "0 4 * * *"
+					active = false
+					take_ownership = true
+				}
+					`, project.ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabPipelineScheduleExists("gitlab_pipeline_schedule.schedule", &schedule),
+					resource.TestCheckResourceAttr("gitlab_pipeline_schedule.schedule", "owner", "1"),
+				),
+			},
+			// Verify upstream attributes with an import
+			{
+				ResourceName:      "gitlab_pipeline_schedule.schedule",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"take_ownership",
+				},
+			},
+		},
+	})
+}
+
+func TestAccGitlabPipelineSchedule_takeOwnershipWithoutChanges(t *testing.T) {
+	var schedule gitlab.PipelineSchedule
+
+	// Set up project, user, role mapping and personal access token.
+	project := testutil.CreateProject(t)
+	user := testutil.CreateUsers(t, 1)[0]
+	testutil.AddProjectMembersWithAccessLevel(t, project.ID, []*gitlab.User{user}, gitlab.MaintainerPermissions)
+	userPAT := testutil.CreatePersonalAccessToken(t, user)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		CheckDestroy:             testAccCheckGitlabPipelineScheduleDestroy,
+		Steps: []resource.TestStep{
+			// Create a Pipeline Schedule with our custom user
+			{
+				// lintignore:AT004  // we need the provider configuration here to create the schedule with a different user
+				Config: fmt.Sprintf(`
+				provider "gitlab" {
+					token = "%s"
+				}
+
+				resource "gitlab_pipeline_schedule" "schedule" {
+					project = "%d"
+					description = "Schedule"
+					ref = "main"
+					cron = "0 4 * * *"
+					active = false
+					take_ownership = true
+				}
+				`, userPAT.Token, project.ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabPipelineScheduleExists("gitlab_pipeline_schedule.schedule", &schedule),
+					resource.TestCheckResourceAttr("gitlab_pipeline_schedule.schedule", "owner", fmt.Sprintf("%d", user.ID)),
+				),
+			},
+			// Let the provider take the ownership on the Pipeline Schedule (with no changes)
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_pipeline_schedule" "schedule" {
+					project = "%d"
+					description = "Schedule"
+					ref = "main"
+					cron = "0 4 * * *"
+					active = false
+					take_ownership = true
+				}
+					`, project.ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabPipelineScheduleExists("gitlab_pipeline_schedule.schedule", &schedule),
+					resource.TestCheckResourceAttr("gitlab_pipeline_schedule.schedule", "owner", "1"),
+				),
+			},
+			// Verify upstream attributes with an import
+			{
+				ResourceName:      "gitlab_pipeline_schedule.schedule",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"take_ownership",
+				},
+			},
+		},
+	})
+}
+
+func TestAccGitlabPipelineSchedule_migrateFromSDKToFramework(t *testing.T) {
+	var schedule gitlab.PipelineSchedule
+
+	// Set up project, user, role mapping and personal access token.
+	project := testutil.CreateProject(t)
+
+	// Create common config for testing
+	config := fmt.Sprintf(`
+		resource "gitlab_pipeline_schedule" "schedule" {
+			project = "%d"
+			description = "Schedule"
+			ref = "main"
+			cron = "0 4 * * *"
+			active = false
+		}
+		`, project.ID)
+
+	resource.ParallelTest(t, resource.TestCase{
+		CheckDestroy: testAccCheckGitlabPipelineScheduleDestroy,
+		Steps: []resource.TestStep{
+			// Create the pipeline in the old provider version
+			{
+				ExternalProviders: map[string]resource.ExternalProvider{
+					"gitlab": {
+						VersionConstraint: "~> 16.6",
+						Source:            "gitlabhq/gitlab",
+					},
+				},
+				Config: config,
+				Check:  testAccCheckGitlabPipelineScheduleExists("gitlab_pipeline_schedule.schedule", &schedule),
+			},
+			// Create the config in the new provider version to ensure migration works
+			{
+				ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+				Config:                   config,
+				Check:                    testAccCheckGitlabPipelineScheduleExists("gitlab_pipeline_schedule.schedule", &schedule),
+			},
+			// Verify upstream attributes with an import
+			{
+				ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+				ResourceName:             "gitlab_pipeline_schedule.schedule",
+				ImportState:              true,
+				ImportStateVerify:        true,
+				ImportStateVerifyIgnore: []string{
+					"take_ownership",
+				},
+			},
+		},
+	})
+}
+
 func TestAccGitlabPipelineSchedule_basic(t *testing.T) {
 	var schedule gitlab.PipelineSchedule
 	rInt := acctest.RandInt()
@@ -265,135 +445,6 @@ func testAccCheckGitlabPipelineScheduleDestroy(s *terraform.State) error {
 		return nil
 	}
 	return nil
-}
-
-func TestAccGitlabPipelineSchedule_takeOwnershipWithChanges(t *testing.T) {
-	var schedule gitlab.PipelineSchedule
-
-	// Set up project, user, role mapping and personal access token.
-	project := testutil.CreateProject(t)
-	user := testutil.CreateUsers(t, 1)[0]
-	testutil.AddProjectMembersWithAccessLevel(t, project.ID, []*gitlab.User{user}, gitlab.MaintainerPermissions)
-	userPAT := testutil.CreatePersonalAccessToken(t, user)
-
-	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
-		CheckDestroy:             testAccCheckGitlabPipelineScheduleDestroy,
-		Steps: []resource.TestStep{
-			// Create a Pipeline Schedule with our custom user
-			{
-				// lintignore:AT004  // we need the provider configuration here to create the schedule with a different user
-				Config: fmt.Sprintf(`
-				provider "gitlab" {
-					token = "%s"
-				}
-
-				resource "gitlab_pipeline_schedule" "schedule" {
-					project = "%d"
-					description = "Schedule"
-					ref = "main"
-					cron = "0 4 * * *"
-					active = false
-				}
-				`, userPAT.Token, project.ID),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabPipelineScheduleExists("gitlab_pipeline_schedule.schedule", &schedule),
-					resource.TestCheckResourceAttr("gitlab_pipeline_schedule.schedule", "owner", fmt.Sprintf("%d", user.ID)),
-				),
-			},
-			// Let the provider take the ownership on the Pipeline Schedule (with changes)
-			{
-				Config: fmt.Sprintf(`
-				resource "gitlab_pipeline_schedule" "schedule" {
-					project = "%d"
-					description = "Schedule Updated"
-					ref = "main"
-					cron = "0 4 * * *"
-					active = false
-					take_ownership = true
-				}
-					`, project.ID),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabPipelineScheduleExists("gitlab_pipeline_schedule.schedule", &schedule),
-					resource.TestCheckResourceAttr("gitlab_pipeline_schedule.schedule", "owner", "1"),
-				),
-			},
-			// Verify upstream attributes with an import
-			{
-				ResourceName:      "gitlab_pipeline_schedule.schedule",
-				ImportState:       true,
-				ImportStateVerify: true,
-				ImportStateVerifyIgnore: []string{
-					"take_ownership",
-				},
-			},
-		},
-	})
-}
-
-func TestAccGitlabPipelineSchedule_takeOwnershipWithoutChanges(t *testing.T) {
-	var schedule gitlab.PipelineSchedule
-
-	// Set up project, user, role mapping and personal access token.
-	project := testutil.CreateProject(t)
-	user := testutil.CreateUsers(t, 1)[0]
-	testutil.AddProjectMembersWithAccessLevel(t, project.ID, []*gitlab.User{user}, gitlab.MaintainerPermissions)
-	userPAT := testutil.CreatePersonalAccessToken(t, user)
-
-	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
-		CheckDestroy:             testAccCheckGitlabPipelineScheduleDestroy,
-		Steps: []resource.TestStep{
-			// Create a Pipeline Schedule with our custom user
-			{
-				// lintignore:AT004  // we need the provider configuration here to create the schedule with a different user
-				Config: fmt.Sprintf(`
-				provider "gitlab" {
-					token = "%s"
-				}
-
-				resource "gitlab_pipeline_schedule" "schedule" {
-					project = "%d"
-					description = "Schedule"
-					ref = "main"
-					cron = "0 4 * * *"
-					active = false
-					take_ownership = true
-				}
-				`, userPAT.Token, project.ID),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabPipelineScheduleExists("gitlab_pipeline_schedule.schedule", &schedule),
-					resource.TestCheckResourceAttr("gitlab_pipeline_schedule.schedule", "owner", fmt.Sprintf("%d", user.ID)),
-				),
-			},
-			// Let the provider take the ownership on the Pipeline Schedule (with no changes)
-			{
-				Config: fmt.Sprintf(`
-				resource "gitlab_pipeline_schedule" "schedule" {
-					project = "%d"
-					description = "Schedule"
-					ref = "main"
-					cron = "0 4 * * *"
-					active = false
-					take_ownership = true
-				}
-					`, project.ID),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabPipelineScheduleExists("gitlab_pipeline_schedule.schedule", &schedule),
-					resource.TestCheckResourceAttr("gitlab_pipeline_schedule.schedule", "owner", "1"),
-				),
-			},
-			// Verify upstream attributes with an import
-			{
-				ResourceName:      "gitlab_pipeline_schedule.schedule",
-				ImportState:       true,
-				ImportStateVerify: true,
-				ImportStateVerifyIgnore: []string{
-					"take_ownership",
-				},
-			},
-		},
-	})
 }
 
 func testAccGitlabPipelineScheduleConfig(rInt int) string {
