@@ -183,6 +183,45 @@ func TestAccGitlabApplicationSettings_testState(t *testing.T) {
 	})
 }
 
+// Unfortunately, in order for this test to work, there must be a running
+// elasticsearch cluster, since GitLab pings the URL to ensure it's a cluster.
+// As a result, a t.Skip() is used here, but the test can be validated
+// by running a local elastcisearch docker image.
+func TestAccGitlabApplicationSettings_elasticSearchSettings(t *testing.T) {
+	t.Skip()
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccGitlabApplicationSettingsDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+					resource "gitlab_application_settings" "this" {
+						housekeeping_enabled = true
+						housekeeping_optimize_repository_period = 10
+
+						elasticsearch_indexing = true
+						elasticsearch_search   = true
+						elasticsearch_url = [
+							"http://localhost:9200/
+						]
+
+						elasticsearch_namespace_ids = [
+							1,
+							2,
+							3,
+						]
+					}		
+				`,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_application_settings.this", "housekeeping_enabled", "true"),
+					resource.TestCheckResourceAttr("gitlab_application_settings.this", "housekeeping_optimize_repository_period", "10"),
+				),
+			},
+		},
+	})
+}
+
 /*
 README: Adding a test destroy function seems a easier-to-understand path to ilustrate
 application settings nature and its inhability to be destroyed than simply using a nil

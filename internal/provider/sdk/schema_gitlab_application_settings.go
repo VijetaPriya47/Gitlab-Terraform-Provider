@@ -513,7 +513,7 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 		"elasticsearch_namespace_ids": {
 			Description: "The namespaces to index via Elasticsearch if elasticsearch_limit_indexing is enabled.",
 			Type:        schema.TypeList,
-			Elem:        &schema.Schema{Type: schema.TypeString},
+			Elem:        &schema.Schema{Type: schema.TypeInt},
 			Optional:    true,
 			Computed:    true,
 		},
@@ -521,7 +521,7 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 		"elasticsearch_project_ids": {
 			Description: "The projects to index via Elasticsearch if elasticsearch_limit_indexing is enabled.",
 			Type:        schema.TypeList,
-			Elem:        &schema.Schema{Type: schema.TypeString},
+			Elem:        &schema.Schema{Type: schema.TypeInt},
 			Optional:    true,
 			Computed:    true,
 		},
