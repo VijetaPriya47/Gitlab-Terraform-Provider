@@ -220,6 +220,45 @@ data "gitlab_projects" "search" {
 	})
 }
 
+// Create a test that populates the CI Restrict Pipeline value using testUtil,
+// then uses a terraform `gitlab_projects` datasource to read and validate that it matches
+func TestAccDataSourceGitLabProjects_CIRestrictPipeline(t *testing.T) {
+	client := testutil.TestGitlabClient
+
+	// Create a new project using testutil, and update it's pipelines cancellation
+	// to "developer"
+	group := testutil.CreateGroups(t, 1)[0]
+	project := testutil.CreateProjectWithNamespace(t, group.ID)
+	var devAccessLevel gitlab.AccessControlValue = "developer"
+	_, _, err := client.Projects.EditProject(project.ID, &gitlab.EditProjectOptions{
+		CIRestrictPipelineCancellationRole: &devAccessLevel,
+	})
+	if err != nil {
+		t.Fatalf("Error updating project: %v", err)
+	}
+
+	// Create the terraform test
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(
+					`
+					 data "gitlab_projects" "this" {
+						group_id = %d
+					 }
+					`, group.ID,
+				),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testAccDataSourceGitlabProjectsContainsProjects("data.gitlab_projects.this", project),
+					resource.TestCheckResourceAttr("data.gitlab_projects.this", "projects.0.ci_restrict_pipeline_cancellation_role", "developer"),
+				),
+			},
+		},
+	})
+
+}
+
 func testAccDataSourceGitlabProjectsContainsProjects(dsPath string, projects ...*gitlab.Project) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		search := s.RootModule().Resources[dsPath]

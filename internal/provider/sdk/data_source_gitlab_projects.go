@@ -205,6 +205,7 @@ func flattenProjects(projects []*gitlab.Project) (values []map[string]interface{
 				"feature_flags_access_level":                       string(project.FeatureFlagsAccessLevel),
 				"infrastructure_access_level":                      string(project.InfrastructureAccessLevel),
 				"monitor_access_level":                             string(project.MonitorAccessLevel),
+				"ci_restrict_pipeline_cancellation_role":           string(project.CIRestrictPipelineCancellationRole),
 
 				// nolint:staticcheck // SA1019 ignore deprecated EmailsDisabled
 				"emails_disabled": project.EmailsDisabled,
@@ -1029,6 +1030,11 @@ var _ = registerDataSource("gitlab_projects", func() *schema.Resource {
 						},
 						"monitor_access_level": {
 							Description: fmt.Sprintf("Set the monitor access level. Valid values are %s.", utils.RenderValueListForDocs(validProjectAccessLevels)),
+							Type:        schema.TypeString,
+							Computed:    true,
+						},
+						"ci_restrict_pipeline_cancellation_role": {
+							Description: fmt.Sprintf("the role required to cancel a pipeline or job. Introduced in GitLab 16.8. Premium and Ultimate only. Valid values are %s", utils.RenderValueListForDocs(api.ValidCIRestrictPipelineConcellationRoleValues)),
 							Type:        schema.TypeString,
 							Computed:    true,
 						},

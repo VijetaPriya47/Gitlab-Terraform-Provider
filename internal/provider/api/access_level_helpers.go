@@ -65,6 +65,10 @@ var ValidProjectEnvironmentStates = []string{
 	"available", "stopped",
 }
 
+var ValidCIRestrictPipelineConcellationRoleValues = []string{
+	"developer", "maintainer", "no one",
+}
+
 var AccessLevelNameToValue = map[string]gitlab.AccessLevelValue{
 	"no one":     gitlab.NoPermissions,
 	"minimal":    gitlab.MinimalAccessPermissions,
