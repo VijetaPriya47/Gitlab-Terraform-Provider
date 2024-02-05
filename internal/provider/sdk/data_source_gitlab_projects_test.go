@@ -222,7 +222,7 @@ data "gitlab_projects" "search" {
 
 // Create a test that populates the CI Restrict Pipeline value using testUtil,
 // then uses a terraform `gitlab_projects` datasource to read and validate that it matches
-func TestAccDataSourceGitLabProjects_CIRestrictPipeline(t *testing.T) {
+func TestAccDataGitlabProjects_CIRestrictPipeline(t *testing.T) {
 	client := testutil.TestGitlabClient
 
 	// Create a new project using testutil, and update it's pipelines cancellation
