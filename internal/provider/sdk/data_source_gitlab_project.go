@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/xanzy/go-gitlab"
+	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
 
@@ -320,6 +321,11 @@ var _ = registerDataSource("gitlab_project", func() *schema.Resource {
 				Type:        schema.TypeBool,
 				Computed:    true,
 			},
+			"ci_restrict_pipeline_cancellation_role": {
+				Description: fmt.Sprintf("the role required to cancel a pipeline or job. Introduced in GitLab 16.8. Premium and Ultimate only. Valid values are %s", utils.RenderValueListForDocs(api.ValidCIRestrictPipelineConcellationRoleValues)),
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
 			"keep_latest_artifact": {
 				Description: "Disable or enable the ability to keep the latest artifact for this project.",
 				Type:        schema.TypeBool,
@@ -589,6 +595,7 @@ func dataSourceGitlabProjectRead(ctx context.Context, d *schema.ResourceData, me
 	d.Set("ci_default_git_depth", found.CIDefaultGitDepth)
 	d.Set("ci_config_path", found.CIConfigPath)
 	d.Set("ci_separated_caches", found.CISeperateCache)
+	d.Set("ci_restrict_pipeline_cancellation_role", found.CIRestrictPipelineCancellationRole)
 	d.Set("keep_latest_artifact", found.KeepLatestArtifact)
 	d.Set("import_url", found.ImportURL)
 	d.Set("releases_access_level", string(found.ReleasesAccessLevel))

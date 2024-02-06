@@ -261,7 +261,6 @@ func TestAccDataGitlabProjects_CIRestrictPipeline(t *testing.T) {
 			},
 		},
 	})
-
 }
 
 func testAccDataSourceGitlabProjectsContainsProjects(dsPath string, projects ...*gitlab.Project) resource.TestCheckFunc {
