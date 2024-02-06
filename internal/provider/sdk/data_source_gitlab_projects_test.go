@@ -223,10 +223,15 @@ data "gitlab_projects" "search" {
 // Create a test that populates the CI Restrict Pipeline value using testUtil,
 // then uses a terraform `gitlab_projects` datasource to read and validate that it matches
 func TestAccDataGitlabProjects_CIRestrictPipeline(t *testing.T) {
-	client := testutil.TestGitlabClient
+	// Requires EE
+	testutil.SkipIfCE(t)
+
+	// Requires GitLab 16.8 or greater
+	testutil.RunIfAtLeast(t, "16.8")
 
 	// Create a new project using testutil, and update it's pipelines cancellation
 	// to "developer"
+	client := testutil.TestGitlabClient
 	group := testutil.CreateGroups(t, 1)[0]
 	project := testutil.CreateProjectWithNamespace(t, group.ID)
 	var devAccessLevel gitlab.AccessControlValue = "developer"
