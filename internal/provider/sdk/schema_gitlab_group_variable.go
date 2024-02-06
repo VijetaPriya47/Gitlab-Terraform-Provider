@@ -62,6 +62,11 @@ func gitlabGroupVariableGetSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Default:     false,
 		},
+		"description": {
+			Description: "The description of the variable.",
+			Type:        schema.TypeString,
+			Optional:    true,
+		},
 	}
 }
 
@@ -75,5 +80,6 @@ func gitlabGroupVariableToStateMap(group string, variable *gitlab.GroupVariable)
 	stateMap["masked"] = variable.Masked
 	stateMap["environment_scope"] = variable.EnvironmentScope
 	stateMap["raw"] = variable.Raw
+	stateMap["description"] = variable.Description
 	return stateMap
 }
