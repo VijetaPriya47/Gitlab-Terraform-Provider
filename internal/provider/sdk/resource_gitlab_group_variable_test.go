@@ -35,6 +35,7 @@ func TestAccGitlabGroupVariable_basic(t *testing.T) {
 						Key:              fmt.Sprintf("key_%s", rString),
 						Value:            fmt.Sprintf("value-%s", rString),
 						EnvironmentScope: "*",
+						Description:      fmt.Sprintf("description-%s", rString),
 					}),
 				),
 			},
@@ -48,6 +49,7 @@ func TestAccGitlabGroupVariable_basic(t *testing.T) {
 						Value:            fmt.Sprintf("value-inverse-%s", rString),
 						Protected:        true,
 						EnvironmentScope: "*",
+						Description:      fmt.Sprintf("description-inverse-%s", rString),
 					}),
 				),
 			},
@@ -61,6 +63,7 @@ func TestAccGitlabGroupVariable_basic(t *testing.T) {
 						Value:            fmt.Sprintf("value-%s", rString),
 						Protected:        false,
 						EnvironmentScope: "*",
+						Description:      fmt.Sprintf("description-%s", rString),
 					}),
 				),
 			},
@@ -104,6 +107,7 @@ func TestAccGitlabGroupVariable_basic(t *testing.T) {
 						Value:            fmt.Sprintf("value-%s", rString),
 						EnvironmentScope: "*",
 						Protected:        false,
+						Description:      fmt.Sprintf("description-%s", rString),
 					}),
 				),
 			},
@@ -233,6 +237,7 @@ type testAccGitlabGroupVariableExpectedAttributes struct {
 	Protected        bool
 	Masked           bool
 	EnvironmentScope string
+	Description      string
 }
 
 func testAccCheckGitlabGroupVariableAttributes(variable *gitlab.GroupVariable, want *testAccGitlabGroupVariableExpectedAttributes) resource.TestCheckFunc {
@@ -255,6 +260,9 @@ func testAccCheckGitlabGroupVariableAttributes(variable *gitlab.GroupVariable, w
 
 		if variable.EnvironmentScope != want.EnvironmentScope {
 			return fmt.Errorf("got environment_scope %s; want %s", variable.EnvironmentScope, want.EnvironmentScope)
+		}
+		if variable.Description != want.Description {
+			return fmt.Errorf("got description %s; want %s", variable.Description, want.Description)
 		}
 
 		return nil
@@ -296,8 +304,9 @@ resource "gitlab_group_variable" "foo" {
   value = "value-%s"
   variable_type = "file"
   masked = false
+  description = "description-%s"
 }
-	`, rString, rString, rString, rString)
+	`, rString, rString, rString, rString, rString)
 }
 
 func testAccGitlabGroupVariableUpdateConfig(rString string) string {
@@ -313,8 +322,9 @@ resource "gitlab_group_variable" "foo" {
   value = "value-inverse-%s"
   protected = true
   masked = false
+  description = "description-inverse-%s"
 }
-	`, rString, rString, rString, rString)
+	`, rString, rString, rString, rString, rString)
 }
 
 func testAccGitlabGroupVariableScopeConfig(rString, scopeA, scopeB string, valueA, valueB string) string {

@@ -77,6 +77,7 @@ func resourceGitlabProjectVariableCreate(ctx context.Context, d *schema.Resource
 	masked := d.Get("masked").(bool)
 	environmentScope := d.Get("environment_scope").(string)
 	raw := d.Get("raw").(bool)
+	description := d.Get("description").(string)
 
 	options := gitlab.CreateProjectVariableOptions{
 		Key:              &key,
@@ -86,6 +87,7 @@ func resourceGitlabProjectVariableCreate(ctx context.Context, d *schema.Resource
 		Masked:           &masked,
 		EnvironmentScope: &environmentScope,
 		Raw:              &raw,
+		Description:      &description,
 	}
 
 	id := strings.Join([]string{project, key, environmentScope}, ":")
@@ -146,6 +148,7 @@ func resourceGitlabProjectVariableUpdate(ctx context.Context, d *schema.Resource
 	masked := d.Get("masked").(bool)
 	environmentScope := d.Get("environment_scope").(string)
 	raw := d.Get("raw").(bool)
+	description := d.Get("description").(string)
 
 	options := &gitlab.UpdateProjectVariableOptions{
 		Value:            &value,
@@ -154,6 +157,7 @@ func resourceGitlabProjectVariableUpdate(ctx context.Context, d *schema.Resource
 		Masked:           &masked,
 		EnvironmentScope: &environmentScope,
 		Raw:              &raw,
+		Description:      &description,
 	}
 	log.Printf("[DEBUG] update gitlab project variable %q", d.Id())
 

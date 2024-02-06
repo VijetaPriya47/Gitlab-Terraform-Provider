@@ -64,6 +64,11 @@ func gitlabProjectVariableGetSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Default:     false,
 		},
+		"description": {
+			Description: "The description of the variable.",
+			Type:        schema.TypeString,
+			Optional:    true,
+		},
 	}
 }
 
@@ -77,5 +82,6 @@ func gitlabProjectVariableToStateMap(project string, variable *gitlab.ProjectVar
 	stateMap["masked"] = variable.Masked
 	stateMap["environment_scope"] = variable.EnvironmentScope
 	stateMap["raw"] = variable.Raw
+	stateMap["description"] = variable.Description
 	return stateMap
 }

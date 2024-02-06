@@ -99,6 +99,7 @@ func testAccCheckGitlabProjectVariableExists(name string) resource.TestCheckFunc
 		masked           string
 		environmentScope string
 		raw              string
+		description      string
 	)
 
 	return resource.ComposeTestCheckFunc(
@@ -118,6 +119,7 @@ func testAccCheckGitlabProjectVariableExists(name string) resource.TestCheckFunc
 			masked = strconv.FormatBool(got.Masked)
 			environmentScope = got.EnvironmentScope
 			raw = strconv.FormatBool(got.Raw)
+			description = string(got.Description)
 
 			return nil
 		},
@@ -131,6 +133,7 @@ func testAccCheckGitlabProjectVariableExists(name string) resource.TestCheckFunc
 			resource.TestCheckResourceAttrPtr(name, "protected", &protected),
 			resource.TestCheckResourceAttrPtr(name, "environment_scope", &environmentScope),
 			resource.TestCheckResourceAttrPtr(name, "raw", &raw),
+			resource.TestCheckResourceAttrPtr(name, "description", &description),
 		),
 	)
 }
@@ -222,8 +225,9 @@ resource "gitlab_project_variable" "foo" {
   value = "my_value_2"
   protected = true
   masked = true
+  description = %d
 }
-`, testProject.ID),
+`, testProject.ID, testProject.ID),
 				Check: testAccCheckGitlabProjectVariableExists("gitlab_project_variable.foo"),
 			},
 			{
