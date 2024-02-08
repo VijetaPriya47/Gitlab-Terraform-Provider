@@ -3,7 +3,6 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/url"
 	"strconv"
 	"time"
@@ -986,6 +985,7 @@ func resourceGitlabProjectCreate(ctx context.Context, d *schema.ResourceData, me
 		project = createdProject
 
 	} else {
+
 		tflog.Debug(ctx, "Creating project", map[string]interface{}{
 			"data": d,
 		})
@@ -1043,7 +1043,7 @@ func resourceGitlabProjectCreate(ctx context.Context, d *schema.ResourceData, me
 		err := editOrAddPushRules(ctx, client, d.Id(), d)
 		if err != nil {
 			if api.Is404(err) {
-				log.Printf("[DEBUG] Failed to edit push rules for project %q: %v", d.Id(), err)
+				tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Failed to edit push rules for project %q: %v", d.Id(), err))
 				return diag.Errorf("Project push rules are not supported in your version of GitLab")
 			}
 			return diag.Errorf("Failed to edit push rules for project %q: %s", d.Id(), err)
@@ -1114,19 +1114,19 @@ func resourceGitlabProjectCreate(ctx context.Context, d *schema.ResourceData, me
 
 func resourceGitlabProjectRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
-	log.Printf("[DEBUG] read gitlab project %s", d.Id())
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab project %s", d.Id()))
 
 	project, _, err := client.Projects.GetProject(d.Id(), nil, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] gitlab project %s has already been deleted, removing from state", d.Id())
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab project %s has already been deleted, removing from state", d.Id()))
 			d.SetId("")
 			return nil
 		}
 		return diag.FromErr(err)
 	}
 	if project.MarkedForDeletionAt != nil {
-		log.Printf("[DEBUG] gitlab project %s is marked for deletion, removing from state", d.Id())
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab project %s is marked for deletion, removing from state", d.Id()))
 		d.SetId("")
 		return nil
 	}
@@ -1135,11 +1135,11 @@ func resourceGitlabProjectRead(ctx context.Context, d *schema.ResourceData, meta
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] read gitlab project %q push rules", d.Id())
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab project %q push rules", d.Id()))
 
 	pushRules, _, err := client.Projects.GetProjectPushRules(d.Id(), gitlab.WithContext(ctx))
 	if api.Is404(err) {
-		log.Printf("[DEBUG] Failed to get push rules for project %q: %v", d.Id(), err)
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Failed to get push rules for project %q: %v", d.Id(), err))
 	} else if err != nil {
 		return diag.Errorf("Failed to get push rules for project %q: %s", d.Id(), err)
 	}
@@ -1517,7 +1517,7 @@ func resourceGitlabProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	if *options != (gitlab.EditProjectOptions{}) {
-		log.Printf("[DEBUG] update gitlab project %s", d.Id())
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab project %s", d.Id()))
 		_, _, err := client.Projects.EditProject(d.Id(), options, gitlab.WithContext(ctx))
 		if err != nil {
 			return diag.FromErr(err)
@@ -1557,7 +1557,7 @@ func resourceGitlabProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	if *transferOptions != (gitlab.TransferProjectOptions{}) {
-		log.Printf("[DEBUG] transferring project %s to namespace %d", d.Id(), transferOptions.Namespace)
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] transferring project %s to namespace %d", d.Id(), transferOptions.Namespace))
 		_, _, err := client.Projects.TransferProject(d.Id(), transferOptions, gitlab.WithContext(ctx))
 		if err != nil {
 			return diag.FromErr(err)
@@ -1580,7 +1580,7 @@ func resourceGitlabProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 		err := editOrAddPushRules(ctx, client, d.Id(), d)
 		if err != nil {
 			if api.Is404(err) {
-				log.Printf("[DEBUG] Failed to get push rules for project %q: %v", d.Id(), err)
+				tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Failed to get push rules for project %q: %v", d.Id(), err))
 				return diag.Errorf("Project push rules are not supported in your version of GitLab")
 			}
 			return diag.Errorf("Failed to edit push rules for project %q: %s", d.Id(), err)
@@ -1594,7 +1594,7 @@ func resourceGitlabProjectDelete(ctx context.Context, d *schema.ResourceData, me
 	client := meta.(*gitlab.Client)
 
 	if !d.Get("archive_on_destroy").(bool) {
-		log.Printf("[DEBUG] Delete gitlab project %s", d.Id())
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Delete gitlab project %s", d.Id()))
 		_, err := client.Projects.DeleteProject(d.Id(), gitlab.WithContext(ctx))
 		if err != nil {
 			return diag.FromErr(err)
@@ -1611,7 +1611,7 @@ func resourceGitlabProjectDelete(ctx context.Context, d *schema.ResourceData, me
 					if api.Is404(err) {
 						return out, "Deleted", nil
 					}
-					log.Printf("[ERROR] Received error: %#v", err)
+					tflog.Debug(ctx, fmt.Sprintf("[ERROR] Received error: %#v", err))
 					return out, "Error", err
 				}
 				if out.MarkedForDeletionAt != nil {
@@ -1632,7 +1632,7 @@ func resourceGitlabProjectDelete(ctx context.Context, d *schema.ResourceData, me
 		}
 
 	} else {
-		log.Printf("[DEBUG] Archive gitlab project %s", d.Id())
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Archive gitlab project %s", d.Id()))
 		_, _, err := client.Projects.ArchiveProject(d.Id(), gitlab.WithContext(ctx))
 		if err != nil {
 			return diag.FromErr(err)
@@ -1643,19 +1643,19 @@ func resourceGitlabProjectDelete(ctx context.Context, d *schema.ResourceData, me
 }
 
 func editOrAddPushRules(ctx context.Context, client *gitlab.Client, projectID string, d *schema.ResourceData) error {
-	log.Printf("[DEBUG] Editing push rules for project %q", projectID)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Editing push rules for project %q", projectID))
 
 	pushRules, _, err := client.Projects.GetProjectPushRules(d.Id(), gitlab.WithContext(ctx))
 	// NOTE: push rules id `0` indicates that there haven't been any push rules set.
 	if err != nil || pushRules.ID == 0 {
 		if addOptions := expandAddProjectPushRuleOptions(d); (gitlab.AddProjectPushRuleOptions{}) != addOptions {
-			log.Printf("[DEBUG] Creating new push rules for project %q", projectID)
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Creating new push rules for project %q", projectID))
 			_, _, err = client.Projects.AddProjectPushRule(projectID, &addOptions, gitlab.WithContext(ctx))
 			if err != nil {
 				return err
 			}
 		} else {
-			log.Printf("[DEBUG] Don't create new push rules for defaults for project %q", projectID)
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Don't create new push rules for defaults for project %q", projectID))
 		}
 
 		return nil
@@ -1663,13 +1663,13 @@ func editOrAddPushRules(ctx context.Context, client *gitlab.Client, projectID st
 
 	editOptions := expandEditProjectPushRuleOptions(d, pushRules)
 	if (gitlab.EditProjectPushRuleOptions{}) != editOptions {
-		log.Printf("[DEBUG] Editing existing push rules for project %q", projectID)
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Editing existing push rules for project %q", projectID))
 		_, _, err = client.Projects.EditProjectPushRule(projectID, &editOptions, gitlab.WithContext(ctx))
 		if err != nil {
 			return err
 		}
 	} else {
-		log.Printf("[DEBUG] Don't edit existing push rules for defaults for project %q", projectID)
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Don't edit existing push rules for defaults for project %q", projectID))
 	}
 
 	return nil
@@ -2258,7 +2258,7 @@ func createProject(ctx context.Context, d *schema.ResourceData, client *gitlab.C
 		options.MonitorAccessLevel = stringToAccessControlValue(v.(string))
 	}
 
-	log.Printf("[DEBUG] create gitlab project %q", *options.Name)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab project %q", *options.Name))
 
 	project, _, err := client.Projects.CreateProject(options, gitlab.WithContext(ctx))
 	if err != nil {
@@ -2272,7 +2272,7 @@ func createProject(ctx context.Context, d *schema.ResourceData, client *gitlab.C
 // creating a "normal" project
 func createForkedProject(ctx context.Context, forkedFromProjectID int, d *schema.ResourceData, client *gitlab.Client) (*gitlab.Project, diag.Diagnostics) {
 
-	log.Printf("[DEBUG] forking project %d", forkedFromProjectID)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] forking project %d", forkedFromProjectID))
 
 	options := gitlab.ForkProjectOptions{}
 	if v, ok := d.GetOk("description"); ok {

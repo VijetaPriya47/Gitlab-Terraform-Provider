@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"regexp"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -517,7 +517,7 @@ var datasourceContainerExpirationPolicyAttributesSchema = &schema.Resource{
 func dataSourceGitlabProjectRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
-	log.Printf("[INFO] Reading Gitlab project")
+	tflog.Debug(ctx, "[INFO] Reading Gitlab project")
 
 	var pid interface{}
 	if v, ok := d.GetOk("id"); ok {
@@ -604,12 +604,12 @@ func dataSourceGitlabProjectRead(ctx context.Context, d *schema.ResourceData, me
 	d.Set("infrastructure_access_level", string(found.InfrastructureAccessLevel))
 	d.Set("monitor_access_level", string(found.MonitorAccessLevel))
 
-	log.Printf("[DEBUG] Reading Gitlab project %q push rules", d.Id())
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Reading Gitlab project %q push rules", d.Id()))
 
 	pushRules, _, err := client.Projects.GetProjectPushRules(d.Id(), gitlab.WithContext(ctx))
 	var httpError *gitlab.ErrorResponse
 	if errors.As(err, &httpError) && (httpError.Response.StatusCode == http.StatusNotFound || httpError.Response.StatusCode == http.StatusForbidden) {
-		log.Printf("[DEBUG] Failed to get push rules for project %q: %v", d.Id(), err)
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Failed to get push rules for project %q: %v", d.Id(), err))
 	} else if err != nil {
 		return diag.Errorf("Failed to get push rules for project %q: %v", d.Id(), err)
 	}

@@ -3,9 +3,9 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -1180,7 +1180,7 @@ func dataSourceGitlabProjectsRead(ctx context.Context, d *schema.ResourceData, m
 		withSharedPtr = &d
 	}
 
-	log.Printf("[DEBUG] Reading Gitlab projects")
+	tflog.Debug(ctx, "[DEBUG] Reading Gitlab projects")
 
 	switch groupId, ok := d.GetOk("group_id"); ok {
 	// GroupProject case
@@ -1214,7 +1214,7 @@ func dataSourceGitlabProjectsRead(ctx context.Context, d *schema.ResourceData, m
 			projectList = append(projectList, projects...)
 			opts.ListOptions.Page++
 
-			log.Printf("[INFO] Currentpage: %d, Total: %d", response.CurrentPage, response.TotalPages)
+			tflog.Debug(ctx, fmt.Sprintf("[INFO] Currentpage: %d, Total: %d", response.CurrentPage, response.TotalPages))
 			if response.CurrentPage == response.TotalPages || response.CurrentPage > maxQueryablePages {
 				break
 			}
@@ -1261,7 +1261,7 @@ func dataSourceGitlabProjectsRead(ctx context.Context, d *schema.ResourceData, m
 			projectList = append(projectList, projects...)
 			opts.ListOptions.Page++
 
-			log.Printf("[INFO] Currentpage: %d, Total: %d", response.CurrentPage, response.TotalPages)
+			tflog.Debug(ctx, fmt.Sprintf("[INFO] Currentpage: %d, Total: %d", response.CurrentPage, response.TotalPages))
 			if response.CurrentPage == response.TotalPages || response.CurrentPage > maxQueryablePages {
 				break
 			}
