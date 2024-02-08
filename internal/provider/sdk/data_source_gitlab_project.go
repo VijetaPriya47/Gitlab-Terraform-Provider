@@ -322,7 +322,7 @@ var _ = registerDataSource("gitlab_project", func() *schema.Resource {
 				Computed:    true,
 			},
 			"ci_restrict_pipeline_cancellation_role": {
-				Description: fmt.Sprintf("the role required to cancel a pipeline or job. Introduced in GitLab 16.8. Premium and Ultimate only. Valid values are %s", utils.RenderValueListForDocs(api.ValidCIRestrictPipelineConcellationRoleValues)),
+				Description: fmt.Sprintf("The role required to cancel a pipeline or job. Introduced in GitLab 16.8. Premium and Ultimate only. Valid values are %s", utils.RenderValueListForDocs(api.ValidCIRestrictPipelineCancellationRoleValues)),
 				Type:        schema.TypeString,
 				Computed:    true,
 			},

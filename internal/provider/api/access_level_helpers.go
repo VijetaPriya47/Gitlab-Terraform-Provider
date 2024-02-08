@@ -65,7 +65,7 @@ var ValidProjectEnvironmentStates = []string{
 	"available", "stopped",
 }
 
-var ValidCIRestrictPipelineConcellationRoleValues = []string{
+var ValidCIRestrictPipelineCancellationRoleValues = []string{
 	"developer", "maintainer", "no one",
 }
 
