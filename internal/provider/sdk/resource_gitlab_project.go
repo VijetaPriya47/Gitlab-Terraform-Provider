@@ -1101,7 +1101,7 @@ func resourceGitlabProjectCreate(ctx context.Context, d *schema.ResourceData, me
 
 	// Create our "EditProjectOptions" call using state and the existing project
 	var editProjectOptions gitlab.EditProjectOptions
-	updatePostCreateEditOptions(ctx, editProjectOptions, d, client, project)
+	updatePostCreateEditOptions(ctx, &editProjectOptions, d, client, project)
 
 	if (editProjectOptions != gitlab.EditProjectOptions{}) {
 		if _, _, err := client.Projects.EditProject(d.Id(), &editProjectOptions, gitlab.WithContext(ctx)); err != nil {
@@ -1347,6 +1347,11 @@ func resourceGitlabProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 
 	if d.HasChange("ci_forward_deployment_enabled") {
 		options.CIForwardDeploymentEnabled = gitlab.Ptr(d.Get("ci_forward_deployment_enabled").(bool))
+	}
+
+	if d.HasChange("ci_restrict_pipeline_cancellation_role") {
+		stringVal := d.Get("ci_restrict_pipeline_cancellation_role").(string)
+		options.CIRestrictPipelineCancellationRole = gitlab.Ptr(api.AccessControlLevelValueToName(stringVal))
 	}
 
 	if d.HasChange("merge_pipelines_enabled") {
@@ -2308,7 +2313,7 @@ func createForkedProject(ctx context.Context, forkedFromProjectID int, d *schema
 // There are options during the `resourceGitlabProjectCreate` operation that cannot be set because they're
 // only supported in the `Update` API. This function handles updating the `editPojectOptions` to include
 // those options.
-func updatePostCreateEditOptions(ctx context.Context, editProjectOptions gitlab.EditProjectOptions, d *schema.ResourceData, client *gitlab.Client, project *gitlab.Project) diag.Diagnostics {
+func updatePostCreateEditOptions(ctx context.Context, editProjectOptions *gitlab.EditProjectOptions, d *schema.ResourceData, client *gitlab.Client, project *gitlab.Project) diag.Diagnostics {
 
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
@@ -2382,6 +2387,12 @@ func updatePostCreateEditOptions(ctx context.Context, editProjectOptions gitlab.
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 	if v, ok := d.GetOkExists("restrict_user_defined_variables"); ok {
 		editProjectOptions.RestrictUserDefinedVariables = gitlab.Ptr(v.(bool))
+	}
+
+	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
+	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
+	if v, ok := d.GetOkExists("ci_restrict_pipeline_cancellation_role"); ok {
+		editProjectOptions.CIRestrictPipelineCancellationRole = gitlab.Ptr(api.AccessControlLevelValueToName(v.(string)))
 	}
 
 	// If we forked the project we could apply lots of the attributes,
@@ -2529,12 +2540,6 @@ func updatePostCreateEditOptions(ctx context.Context, editProjectOptions gitlab.
 		// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 		if v, ok := d.GetOkExists("ci_forward_deployment_enabled"); ok {
 			editProjectOptions.CIForwardDeploymentEnabled = gitlab.Ptr(v.(bool))
-		}
-
-		// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
-		// lintignore: XR001 // TODO: replace with alternative for GetOkExists
-		if v, ok := d.GetOkExists("ci_restrict_pipeline_cancellation_role"); ok {
-			editProjectOptions.CIRestrictPipelineCancellationRole = gitlab.Ptr(v.(gitlab.AccessControlValue))
 		}
 
 		// nolint:staticcheck // SA1019 ignore deprecated GetOkExists

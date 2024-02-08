@@ -1135,6 +1135,27 @@ func TestAccGitlabProject_ciRestrictPipelineCancellationRole(t *testing.T) {
 					resource.TestCheckResourceAttr("gitlab_project.this", "ci_restrict_pipeline_cancellation_role", "developer"),
 				),
 			},
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project" "this" {
+						name             = "testname-%d"
+						visibility_level = "private"
+						default_branch   = "main"
+
+						ci_restrict_pipeline_cancellation_role = "maintainer"
+					}`, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabProjectExists("gitlab_project.this", &received),
+					resource.TestCheckResourceAttr("gitlab_project.this", "ci_restrict_pipeline_cancellation_role", "maintainer"),
+				),
+			},
+			// Verify Import
+			{
+				ResourceName:            "gitlab_project.this",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"initialize_with_readme"},
+			},
 		},
 	})
 }
