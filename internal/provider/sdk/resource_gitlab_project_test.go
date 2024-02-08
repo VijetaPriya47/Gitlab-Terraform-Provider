@@ -1108,6 +1108,37 @@ func TestAccGitlabProject_skipWaitSetProperly(t *testing.T) {
 	})
 }
 
+// tests to ensure that ci_restrict_pipeline_cancellation_role functions as expected
+func TestAccGitlabProject_ciRestrictPipelineCancellationRole(t *testing.T) {
+	var received gitlab.Project
+	rInt := acctest.RandInt()
+
+	// This value is only present in 16.8 and beyond, and only in EE
+	testutil.SkipIfCE(t)
+	testutil.RunIfAtLeast(t, "16.8")
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabProjectDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project" "this" {
+						name             = "testname-%d"
+						visibility_level = "private"
+						default_branch   = "main"
+
+						ci_restrict_pipeline_cancellation_role = "developer"
+					}`, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabProjectExists("gitlab_project.this", &received),
+					resource.TestCheckResourceAttr("gitlab_project.this", "ci_restrict_pipeline_cancellation_role", "developer"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccGitlabProject_InstanceBranchProtectionDisabled(t *testing.T) {
 	rInt := acctest.RandInt()
 
@@ -2477,7 +2508,6 @@ resource "gitlab_project" "foo" {
   pages_access_level = "disabled"
   ci_forward_deployment_enabled = false
   ci_separated_caches = false
-  ci_restrict_pipeline_cancellation_role = "developer"
   keep_latest_artifact = false
   merge_pipelines_enabled = false
   merge_trains_enabled = false
@@ -2859,7 +2889,6 @@ resource "gitlab_project" "foo" {
 }
 
 func testProjectDefaults(rInt int) gitlab.Project {
-	var devAccessControlValue gitlab.AccessControlValue = "developer"
 	return gitlab.Project{
 		Namespace:                &gitlab.ProjectNamespace{ID: 0},
 		Name:                     fmt.Sprintf("foo-%d", rInt),
@@ -2883,28 +2912,27 @@ func testProjectDefaults(rInt int) gitlab.Project {
 		OnlyAllowMergeIfPipelineSucceeds:          true,
 		OnlyAllowMergeIfAllDiscussionsAreResolved: true,
 
-		SquashOption:                       gitlab.SquashOptionDefaultOff,
-		AllowMergeOnSkippedPipeline:        false,
-		Archived:                           false, // needless, but let's make this explicit
-		PackagesEnabled:                    true,
-		PrintingMergeRequestLinkEnabled:    true,
-		PagesAccessLevel:                   gitlab.PublicAccessControl,
-		IssuesTemplate:                     "",
-		MergeRequestsTemplate:              "",
-		CIConfigPath:                       ".gitlab-ci.yml@mynamespace/myproject",
-		CIForwardDeploymentEnabled:         true,
-		CISeperateCache:                    true,
-		CIRestrictPipelineCancellationRole: devAccessControlValue,
-		KeepLatestArtifact:                 true,
-		ResolveOutdatedDiffDiscussions:     true,
-		AnalyticsAccessLevel:               gitlab.EnabledAccessControl,
-		AutoCancelPendingPipelines:         "enabled",
-		AutoDevopsDeployStrategy:           "continuous",
-		AutoDevopsEnabled:                  true,
-		AutocloseReferencedIssues:          true,
-		BuildGitStrategy:                   "fetch",
-		BuildTimeout:                       42 * 60,
-		BuildsAccessLevel:                  gitlab.EnabledAccessControl,
+		SquashOption:                    gitlab.SquashOptionDefaultOff,
+		AllowMergeOnSkippedPipeline:     false,
+		Archived:                        false, // needless, but let's make this explicit
+		PackagesEnabled:                 true,
+		PrintingMergeRequestLinkEnabled: true,
+		PagesAccessLevel:                gitlab.PublicAccessControl,
+		IssuesTemplate:                  "",
+		MergeRequestsTemplate:           "",
+		CIConfigPath:                    ".gitlab-ci.yml@mynamespace/myproject",
+		CIForwardDeploymentEnabled:      true,
+		CISeperateCache:                 true,
+		KeepLatestArtifact:              true,
+		ResolveOutdatedDiffDiscussions:  true,
+		AnalyticsAccessLevel:            gitlab.EnabledAccessControl,
+		AutoCancelPendingPipelines:      "enabled",
+		AutoDevopsDeployStrategy:        "continuous",
+		AutoDevopsEnabled:               true,
+		AutocloseReferencedIssues:       true,
+		BuildGitStrategy:                "fetch",
+		BuildTimeout:                    42 * 60,
+		BuildsAccessLevel:               gitlab.EnabledAccessControl,
 		ContainerExpirationPolicy: &gitlab.ContainerExpirationPolicy{
 			Enabled:   true,
 			Cadence:   "1month",
