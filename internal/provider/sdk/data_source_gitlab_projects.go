@@ -3,9 +3,9 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -205,6 +205,7 @@ func flattenProjects(projects []*gitlab.Project) (values []map[string]interface{
 				"feature_flags_access_level":                       string(project.FeatureFlagsAccessLevel),
 				"infrastructure_access_level":                      string(project.InfrastructureAccessLevel),
 				"monitor_access_level":                             string(project.MonitorAccessLevel),
+				"ci_restrict_pipeline_cancellation_role":           string(project.CIRestrictPipelineCancellationRole),
 
 				// nolint:staticcheck // SA1019 ignore deprecated EmailsDisabled
 				"emails_disabled": project.EmailsDisabled,
@@ -1032,6 +1033,11 @@ var _ = registerDataSource("gitlab_projects", func() *schema.Resource {
 							Type:        schema.TypeString,
 							Computed:    true,
 						},
+						"ci_restrict_pipeline_cancellation_role": {
+							Description: fmt.Sprintf("The role required to cancel a pipeline or job. Introduced in GitLab 16.8. Premium and Ultimate only. Valid values are %s", utils.RenderValueListForDocs(api.ValidCIRestrictPipelineCancellationRoleValues)),
+							Type:        schema.TypeString,
+							Computed:    true,
+						},
 					},
 				},
 			},
@@ -1174,7 +1180,7 @@ func dataSourceGitlabProjectsRead(ctx context.Context, d *schema.ResourceData, m
 		withSharedPtr = &d
 	}
 
-	log.Printf("[DEBUG] Reading Gitlab projects")
+	tflog.Debug(ctx, "[DEBUG] Reading Gitlab projects")
 
 	switch groupId, ok := d.GetOk("group_id"); ok {
 	// GroupProject case
@@ -1208,7 +1214,7 @@ func dataSourceGitlabProjectsRead(ctx context.Context, d *schema.ResourceData, m
 			projectList = append(projectList, projects...)
 			opts.ListOptions.Page++
 
-			log.Printf("[INFO] Currentpage: %d, Total: %d", response.CurrentPage, response.TotalPages)
+			tflog.Debug(ctx, fmt.Sprintf("[INFO] Currentpage: %d, Total: %d", response.CurrentPage, response.TotalPages))
 			if response.CurrentPage == response.TotalPages || response.CurrentPage > maxQueryablePages {
 				break
 			}
@@ -1255,7 +1261,7 @@ func dataSourceGitlabProjectsRead(ctx context.Context, d *schema.ResourceData, m
 			projectList = append(projectList, projects...)
 			opts.ListOptions.Page++
 
-			log.Printf("[INFO] Currentpage: %d, Total: %d", response.CurrentPage, response.TotalPages)
+			tflog.Debug(ctx, fmt.Sprintf("[INFO] Currentpage: %d, Total: %d", response.CurrentPage, response.TotalPages))
 			if response.CurrentPage == response.TotalPages || response.CurrentPage > maxQueryablePages {
 				break
 			}

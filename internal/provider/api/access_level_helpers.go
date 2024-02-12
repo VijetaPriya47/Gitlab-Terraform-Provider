@@ -65,6 +65,10 @@ var ValidProjectEnvironmentStates = []string{
 	"available", "stopped",
 }
 
+var ValidCIRestrictPipelineCancellationRoleValues = []string{
+	"developer", "maintainer", "no one",
+}
+
 var AccessLevelNameToValue = map[string]gitlab.AccessLevelValue{
 	"no one":     gitlab.NoPermissions,
 	"minimal":    gitlab.MinimalAccessPermissions,
@@ -88,4 +92,20 @@ var AccessLevelValueToName = map[gitlab.AccessLevelValue]string{
 	gitlab.MaintainerPermissions:    "maintainer",
 	gitlab.OwnerPermissions:         "owner",
 	gitlab.AdminPermissions:         "admin",
+}
+
+// This function is required because the CIRestrict setting using an
+// AccessControlLevel instead of an AccessLevelName, so it can't use the
+// constants within go-gitlab
+func AccessControlLevelValueToName(input string) gitlab.AccessControlValue {
+	var developer gitlab.AccessControlValue = "developer"
+	var maintainer gitlab.AccessControlValue = "maintainer"
+	var noOne gitlab.AccessControlValue = "no one"
+	values := map[string]gitlab.AccessControlValue{
+		"developer":  developer,
+		"maintainer": maintainer,
+		"no one":     noOne,
+	}
+
+	return values[input]
 }

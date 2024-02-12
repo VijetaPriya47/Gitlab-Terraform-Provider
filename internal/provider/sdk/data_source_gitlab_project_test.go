@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/xanzy/go-gitlab"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
@@ -125,6 +126,47 @@ func TestAccDataGitlabProject_pathWithNamespaceAsIdExpectError(t *testing.T) {
 				}
 				`, testProject.PathWithNamespace),
 				ExpectError: regexp.MustCompile("`id` must be an integer string and not a path."),
+			},
+		},
+	})
+}
+
+// Create a test that populates the CI Restrict Pipeline value using testUtil,
+// then uses a terraform `gitlab_project` datasource to read and validate that it matches
+func TestAccDataGitlabProject_CIRestrictPipeline(t *testing.T) {
+	// Requires EE
+	testutil.SkipIfCE(t)
+
+	// Requires GitLab 16.8 or greater
+	testutil.RunIfAtLeast(t, "16.8")
+
+	// Create a new project using testutil, and update it's pipelines cancellation
+	// to "developer"
+	client := testutil.TestGitlabClient
+	project := testutil.CreateProject(t)
+	var devAccessLevel gitlab.AccessControlValue = "developer"
+	_, _, err := client.Projects.EditProject(project.ID, &gitlab.EditProjectOptions{
+		CIRestrictPipelineCancellationRole: &devAccessLevel,
+	})
+	if err != nil {
+		t.Fatalf("Error updating project: %v", err)
+	}
+
+	// Create the terraform test
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(
+					`
+					 data "gitlab_project" "this" {
+						id = %d
+					 }
+					`, project.ID,
+				),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("data.gitlab_project.this", "ci_restrict_pipeline_cancellation_role", "developer"),
+				),
 			},
 		},
 	})

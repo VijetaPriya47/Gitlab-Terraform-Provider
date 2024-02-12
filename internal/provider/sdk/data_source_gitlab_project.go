@@ -4,14 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"regexp"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/xanzy/go-gitlab"
+	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
 
@@ -320,6 +321,11 @@ var _ = registerDataSource("gitlab_project", func() *schema.Resource {
 				Type:        schema.TypeBool,
 				Computed:    true,
 			},
+			"ci_restrict_pipeline_cancellation_role": {
+				Description: fmt.Sprintf("The role required to cancel a pipeline or job. Introduced in GitLab 16.8. Premium and Ultimate only. Valid values are %s", utils.RenderValueListForDocs(api.ValidCIRestrictPipelineCancellationRoleValues)),
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
 			"keep_latest_artifact": {
 				Description: "Disable or enable the ability to keep the latest artifact for this project.",
 				Type:        schema.TypeBool,
@@ -511,7 +517,7 @@ var datasourceContainerExpirationPolicyAttributesSchema = &schema.Resource{
 func dataSourceGitlabProjectRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
-	log.Printf("[INFO] Reading Gitlab project")
+	tflog.Debug(ctx, "[INFO] Reading Gitlab project")
 
 	var pid interface{}
 	if v, ok := d.GetOk("id"); ok {
@@ -589,6 +595,7 @@ func dataSourceGitlabProjectRead(ctx context.Context, d *schema.ResourceData, me
 	d.Set("ci_default_git_depth", found.CIDefaultGitDepth)
 	d.Set("ci_config_path", found.CIConfigPath)
 	d.Set("ci_separated_caches", found.CISeperateCache)
+	d.Set("ci_restrict_pipeline_cancellation_role", found.CIRestrictPipelineCancellationRole)
 	d.Set("keep_latest_artifact", found.KeepLatestArtifact)
 	d.Set("import_url", found.ImportURL)
 	d.Set("releases_access_level", string(found.ReleasesAccessLevel))
@@ -597,12 +604,12 @@ func dataSourceGitlabProjectRead(ctx context.Context, d *schema.ResourceData, me
 	d.Set("infrastructure_access_level", string(found.InfrastructureAccessLevel))
 	d.Set("monitor_access_level", string(found.MonitorAccessLevel))
 
-	log.Printf("[DEBUG] Reading Gitlab project %q push rules", d.Id())
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Reading Gitlab project %q push rules", d.Id()))
 
 	pushRules, _, err := client.Projects.GetProjectPushRules(d.Id(), gitlab.WithContext(ctx))
 	var httpError *gitlab.ErrorResponse
 	if errors.As(err, &httpError) && (httpError.Response.StatusCode == http.StatusNotFound || httpError.Response.StatusCode == http.StatusForbidden) {
-		log.Printf("[DEBUG] Failed to get push rules for project %q: %v", d.Id(), err)
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Failed to get push rules for project %q: %v", d.Id(), err))
 	} else if err != nil {
 		return diag.Errorf("Failed to get push rules for project %q: %v", d.Id(), err)
 	}

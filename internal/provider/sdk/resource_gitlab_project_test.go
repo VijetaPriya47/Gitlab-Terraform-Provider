@@ -1108,6 +1108,58 @@ func TestAccGitlabProject_skipWaitSetProperly(t *testing.T) {
 	})
 }
 
+// tests to ensure that ci_restrict_pipeline_cancellation_role functions as expected
+func TestAccGitlabProject_ciRestrictPipelineCancellationRole(t *testing.T) {
+	var received gitlab.Project
+	rInt := acctest.RandInt()
+
+	// This value is only present in 16.8 and beyond, and only in EE
+	testutil.SkipIfCE(t)
+	testutil.RunIfAtLeast(t, "16.8")
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabProjectDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project" "this" {
+						name             = "testname-%d"
+						visibility_level = "private"
+						default_branch   = "main"
+
+						ci_restrict_pipeline_cancellation_role = "developer"
+					}`, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabProjectExists("gitlab_project.this", &received),
+					resource.TestCheckResourceAttr("gitlab_project.this", "ci_restrict_pipeline_cancellation_role", "developer"),
+				),
+			},
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project" "this" {
+						name             = "testname-%d"
+						visibility_level = "private"
+						default_branch   = "main"
+
+						ci_restrict_pipeline_cancellation_role = "maintainer"
+					}`, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabProjectExists("gitlab_project.this", &received),
+					resource.TestCheckResourceAttr("gitlab_project.this", "ci_restrict_pipeline_cancellation_role", "maintainer"),
+				),
+			},
+			// Verify Import
+			{
+				ResourceName:            "gitlab_project.this",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"initialize_with_readme"},
+			},
+		},
+	})
+}
+
 func TestAccGitlabProject_InstanceBranchProtectionDisabled(t *testing.T) {
 	rInt := acctest.RandInt()
 
@@ -2859,26 +2911,28 @@ resource "gitlab_project" "foo" {
 
 func testProjectDefaults(rInt int) gitlab.Project {
 	return gitlab.Project{
-		Namespace:                        &gitlab.ProjectNamespace{ID: 0},
-		Name:                             fmt.Sprintf("foo-%d", rInt),
-		Path:                             fmt.Sprintf("foo.%d", rInt),
-		Description:                      "Terraform acceptance tests",
-		TagList:                          []string{"foo", "bar"},
-		RequestAccessEnabled:             true,
-		IssuesEnabled:                    true,
-		MergeRequestsEnabled:             true,
-		JobsEnabled:                      true,
-		ApprovalsBeforeMerge:             0,
-		WikiEnabled:                      true,
-		SnippetsEnabled:                  true,
-		ContainerRegistryEnabled:         true,
-		LFSEnabled:                       true,
-		SharedRunnersEnabled:             true,
-		GroupRunnersEnabled:              true,
-		Visibility:                       gitlab.PublicVisibility,
-		MergeMethod:                      gitlab.FastForwardMerge,
-		OnlyAllowMergeIfPipelineSucceeds: true,
+		Namespace:                &gitlab.ProjectNamespace{ID: 0},
+		Name:                     fmt.Sprintf("foo-%d", rInt),
+		Path:                     fmt.Sprintf("foo.%d", rInt),
+		Description:              "Terraform acceptance tests",
+		TagList:                  []string{"foo", "bar"},
+		RequestAccessEnabled:     true,
+		IssuesEnabled:            true,
+		MergeRequestsEnabled:     true,
+		JobsEnabled:              true,
+		ApprovalsBeforeMerge:     0,
+		WikiEnabled:              true,
+		SnippetsEnabled:          true,
+		ContainerRegistryEnabled: true,
+		LFSEnabled:               true,
+		SharedRunnersEnabled:     true,
+		GroupRunnersEnabled:      true,
+		Visibility:               gitlab.PublicVisibility,
+		MergeMethod:              gitlab.FastForwardMerge,
+
+		OnlyAllowMergeIfPipelineSucceeds:          true,
 		OnlyAllowMergeIfAllDiscussionsAreResolved: true,
+
 		SquashOption:                    gitlab.SquashOptionDefaultOff,
 		AllowMergeOnSkippedPipeline:     false,
 		Archived:                        false, // needless, but let's make this explicit
