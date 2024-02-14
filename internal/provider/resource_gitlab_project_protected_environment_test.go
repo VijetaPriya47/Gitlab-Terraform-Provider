@@ -89,6 +89,44 @@ func TestAcc_GitlabProjectProtectedEnvironment_basic(t *testing.T) {
 	})
 }
 
+func TestAcc_GitlabProjectProtectedEnvironment_basicWithEncodedName(t *testing.T) {
+	testutil.SkipIfCE(t)
+
+	// Set up project environment.
+	project := testutil.CreateProject(t)
+	environment := testutil.CreateProjectEnvironment(t, project.ID, &gitlab.CreateEnvironmentOptions{
+		Name: gitlab.Ptr(acctest.RandomWithPrefix("testing/testing")),
+	})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAcc_GitlabProjectProtectedEnvironment_CheckDestroy(project.ID, environment.Name),
+		Steps: []resource.TestStep{
+			// Create a basic protected environment.
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_protected_environment" "this" {
+					project     = %d
+					environment = %q
+
+					deploy_access_levels {
+						access_level = "developer"
+					}
+				}`, project.ID, environment.Name),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project_protected_environment.this", "required_approval_count", "0"),
+				),
+			},
+			// Verify upstream attributes with an import.
+			{
+				ResourceName:      "gitlab_project_protected_environment.this",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 func TestAcc_GitlabProjectProtectedEnvironment_deployAccessLevels_userIdAndGroupIdAreConflicting(t *testing.T) {
 	// Set up project environment.
 	project := testutil.CreateProject(t)
