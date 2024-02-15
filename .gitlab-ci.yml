@@ -319,6 +319,19 @@ testacc:ee:nightly:flakey:
     GITLAB_VERSION: nightly
   script: make testacc-flakey
 
+goreleaser:build-verification:
+  stage: acceptance-test
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "schedule"
+  image:
+    name: goreleaser/goreleaser:v1.25.0-nightly
+    entrypoint: [""]
+  script:
+    # Skip `git` validation so we don't get git commit mismatches from tags since this job
+    # won't always run on a tag. Since we're not calling `release`, nothing is published
+    # here.
+    - goreleaser build --skip validation
+
 testacc:nightly:failure:
   image: alpine:latest
   stage: acceptance-test

@@ -1,3 +1,9 @@
+## 16.9.1 (2024-02-15)
+
+This release was tested against GitLab 16.7, 16.8, and 16.9 for both CE and EE
+
+- Fixed a Go version mismatch when using `goreleaser` that prevented v16.9.0 from being published properly ([!1839](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/1839))
+
 ## 16.9.0 (2024-02-15)
 
 This release was tested against GitLab 16.7, 16.8, and 16.9 for both CE and EE
