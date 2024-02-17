@@ -330,7 +330,7 @@ goreleaser:build-verification:
     # Skip `git` validation so we don't get git commit mismatches from tags since this job
     # won't always run on a tag. Since we're not calling `release`, nothing is published
     # here.
-    - goreleaser build --skip validation
+    - goreleaser build --skip validate
 
 testacc:nightly:failure:
   image: alpine:latest
