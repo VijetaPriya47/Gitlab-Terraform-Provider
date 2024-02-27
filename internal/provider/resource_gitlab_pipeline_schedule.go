@@ -366,12 +366,6 @@ func (r *gitlabPipelineScheduleResource) Update(ctx context.Context, req resourc
 
 	pipelineSchedule, _, err := r.client.PipelineSchedules.EditPipelineSchedule(projectID, pipelineScheduleID, optionsEdit, gitlab.WithContext(ctx))
 	if err != nil {
-		// persist API response in state model
-		rawPipelineScheduleID = strconv.Itoa(pipelineSchedule.ID)
-		data.ID = types.StringValue(utils.BuildTwoPartID(&projectID, &rawPipelineScheduleID))
-		r.pipelineScheduleToStateModel(projectID, pipelineSchedule, data)
-		// Save updated data into Terraform state
-		resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to update pipeline schedule: %s", err.Error()))
 		return
 	}
