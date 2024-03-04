@@ -290,7 +290,7 @@ func CreateGroupsWithPrefix(t *testing.T, n int, prefix string) []*gitlab.Group 
 
 		groupID := groups[i].ID // Needed for closure.
 		t.Cleanup(func() {
-			if _, err := TestGitlabClient.Groups.DeleteGroup(groupID); err != nil {
+			if _, err := TestGitlabClient.Groups.DeleteGroup(groupID, nil); err != nil {
 				t.Fatalf("could not cleanup test group: %v", err)
 			}
 		})
