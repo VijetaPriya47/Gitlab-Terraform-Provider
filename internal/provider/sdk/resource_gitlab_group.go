@@ -757,7 +757,7 @@ func resourceGitlabGroupDelete(ctx context.Context, d *schema.ResourceData, meta
 		"id": d.Id(),
 	})
 
-	_, err := client.Groups.DeleteGroup(d.Id(), gitlab.WithContext(ctx))
+	_, err := client.Groups.DeleteGroup(d.Id(), nil, gitlab.WithContext(ctx))
 	if err != nil && !strings.Contains(err.Error(), "Group has been already marked for deletion") {
 		return diag.Errorf("error deleting group %s: %s", d.Id(), err)
 	}
