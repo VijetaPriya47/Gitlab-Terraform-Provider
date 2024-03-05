@@ -175,6 +175,71 @@ func TestAccGitlabGroupLdapLink_basicFilter(t *testing.T) {
 	})
 }
 
+// Since LDAP links are destroyed when a group is, test that LDAP links clean up
+// properly when the group is removed.
+func TestAccGitlabGroupLdapLink_removeOutsideTf(t *testing.T) {
+	testutil.SkipIfCE(t)
+
+	var ldapLink gitlab.LDAPGroupLink
+
+	// permanently_delete only works on subgroups, so we need to create a TLG to use for the test
+	parentGroup := testutil.CreateGroups(t, 1)[0]
+
+	// Create two groups for use during the test, both of which are subgroups of the initial group
+	groups := testutil.CreateSubGroups(t, parentGroup, 2)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabGroupLdapLinkDestroy,
+		Steps: []resource.TestStep{
+
+			// Create a group LDAP link as a developer (uses testAccGitlabGroupLdapLinkCreateConfig for Config)
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group_ldap_link" "this" {
+					group 		    = %d
+					cn				= "default"
+					group_access 	= "developer"
+					ldap_provider   = "default"	
+					
+					force           = true
+				}`, groups[0].ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabGroupLdapLinkExists("gitlab_group_ldap_link.this", &ldapLink),
+				),
+			},
+			{
+				// Destroy the group outside of TF, which will also destroy the LDAP link by proxy
+				PreConfig: func() {
+
+					// Mark the group for deletion, then delete it
+					// We don't need to check error on the first call because the second will fail if the first one does.
+					_, _ = testutil.TestGitlabClient.Groups.DeleteGroup(groups[0].ID, nil)
+					_, err := testutil.TestGitlabClient.Groups.DeleteGroup(groups[0].ID, &gitlab.DeleteGroupOptions{
+						PermanentlyRemove: gitlab.Ptr(true),
+						FullPath:          gitlab.Ptr(groups[0].FullPath),
+					})
+					if err != nil {
+						t.Fatalf("Failed to delete group outside of TF. err: %v", err)
+					}
+				},
+				Config: fmt.Sprintf(`				
+				resource "gitlab_group_ldap_link" "this" {
+					group 		    = %d
+					cn				= "default"
+					group_access 	= "developer"
+					ldap_provider   = "default"
+
+					force           = true
+				}`, groups[1].ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabGroupLdapLinkExists("gitlab_group_ldap_link.this", &ldapLink),
+				),
+			},
+		},
+	})
+}
+
 func TestAccGitlabGroupLdapLink_updateCnAndFilter(t *testing.T) {
 	testutil.SkipIfCE(t)
 	group := testutil.CreateGroups(t, 1)[0]
