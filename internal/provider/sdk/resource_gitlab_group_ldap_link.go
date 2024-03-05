@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 
@@ -90,7 +89,7 @@ func gitlabGroupLDAPLinkSchema() map[string]*schema.Schema {
 			ForceNew:    true,
 		},
 		"force": {
-			Description: "If true, then delete and replace an existing LDAP link if one exists.",
+			Description: "If true, then delete and replace an existing LDAP link if one exists. Will also remove an LDAP link if the parent group is not found.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Default:     false,
@@ -190,13 +189,14 @@ func resourceGitlabGroupLdapLinkCreate(ctx context.Context, d *schema.ResourceDa
 		options.Filter = &filter
 	}
 
-	log.Printf("[DEBUG] Create GitLab group LdapLink %s", d.Id())
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Create GitLab group LdapLink %s", d.Id()))
 	ldapLink, _, err := client.Groups.AddGroupLDAPLink(group, options, gitlab.WithContext(ctx))
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	d.SetId(resourceGitLabGroupLDAPLinkBuildId(group, ldapLink.Provider, ldapLink.CN, ldapLink.Filter))
+	d.Set("force", force)
 
 	return resourceGitlabGroupLdapLinkRead(ctx, d, meta)
 }
@@ -208,10 +208,22 @@ func resourceGitlabGroupLdapLinkRead(ctx context.Context, d *schema.ResourceData
 		return diag.FromErr(err)
 	}
 
+	// check if "force" is set, as that will impact how we handle `403` errors
+	force := d.Get("force").(bool)
+
 	// Try to fetch all group links from GitLab
-	log.Printf("[DEBUG] Read GitLab group LdapLinks %s", group)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Read GitLab group LdapLinks %s", group))
 	ldapLinks, _, err := client.Groups.ListGroupLDAPLinks(group, nil, gitlab.WithContext(ctx))
 	if err != nil {
+
+		// If the underlying group is removed, a 403 will be returned instead, but the group link is still gone
+		// so it needs to be removed from state. Since a 403 can normally occur, we check if "force" is set to
+		// true before we remove it from a state to give a user more control.
+		if api.Is403(err) && force {
+			d.SetId("")
+			return nil
+		}
+
 		// NOTE: the LDAP list API returns a 404 if there are no LDAP links present.
 		if !api.Is404(err) {
 			return diag.FromErr(err)
@@ -237,7 +249,7 @@ func resourceGitlabGroupLdapLinkRead(ctx context.Context, d *schema.ResourceData
 
 	if !found {
 		d.SetId("")
-		log.Printf("LdapLink %s does not exist, removing from state.", d.Id())
+		tflog.Info(ctx, fmt.Sprintf("LdapLink %s does not exist, removing from state.", d.Id()))
 		return nil
 	}
 
@@ -253,10 +265,11 @@ func resourceGitlabGroupLdapLinkDelete(ctx context.Context, d *schema.ResourceDa
 	return resourceGitlabGroupLdapLinkDeleteWithID(ctx, group, ldapProvider, cn, filter, meta)
 }
 
+// Used to destroy an LDAP link with primary keys. Used in both `Create` (when force == true) and in the delete function.
 func resourceGitlabGroupLdapLinkDeleteWithID(ctx context.Context, group, ldapProvider, cn, filter string, meta interface{}) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
-	log.Printf("[DEBUG] Delete GitLab group LdapLink %s:%s:%s:%s", group, ldapProvider, cn, filter)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Delete GitLab group LdapLink %s:%s:%s:%s", group, ldapProvider, cn, filter))
 	options := gitlab.DeleteGroupLDAPLinkWithCNOrFilterOptions{
 		Provider: &ldapProvider,
 	}
@@ -268,11 +281,17 @@ func resourceGitlabGroupLdapLinkDeleteWithID(ctx context.Context, group, ldapPro
 	}
 
 	if _, err := client.Groups.DeleteGroupLDAPLinkWithCNOrFilter(group, &options, gitlab.WithContext(ctx)); err != nil {
-		switch err.(type) { // nolint // TODO: Resolve this golangci-lint issue: S1034: assigning the result of this type assertion to a variable (switch err := err.(type)) could eliminate type assertions in switch cases (gosimple)
+		switch err := err.(type) {
 		case *gitlab.ErrorResponse:
+
 			// Ignore LDAP links that don't exist
-			if strings.Contains(string(err.(*gitlab.ErrorResponse).Message), "Linked LDAP group not found") { // nolint // TODO: Resolve this golangci-lint issue: S1034(related information): could eliminate this type assertion (gosimple)
-				log.Printf("[WARNING] %s", err)
+			if strings.Contains(err.Message, "Linked LDAP group not found") || api.Is403(err) {
+				tflog.Warn(ctx, "Linked LDAP group not found. Was the LDAP link or its group deleted outside TF?", map[string]interface{}{
+					"group":         group,
+					"ldap_provider": ldapProvider,
+					"cn":            cn,
+					"filter":        filter,
+				})
 			} else {
 				return diag.FromErr(err)
 			}
