@@ -10,14 +10,21 @@ registry_nginx['ssl_certificate_key'] = "/etc/gitlab/ssl/gitlab-registry.key"
 
 gitlab_rails['initial_shared_runners_registration_token'] = "ACCTEST1234567890123_RUNNER_REG_TOKEN"
 
+# The new licenses issued are for the new Customer Portal.
+# see https://docs.gitlab.com/omnibus/development/setup.html#use-customers-portal-staging-in-gitlab
+gitlab_rails['env'] = {
+  "GITLAB_LICENSE_MODE" => "test",
+  "CUSTOMER_PORTAL_URL" => "https://customers.staging.gitlab.com"
+}
+
 # This setting is required to disable caching for application settings
 # which is required to test different scenarios in the acceptance tests.
 # see https://gitlab.com/gitlab-org/gitlab/-/issues/364812#note_986366898
 # see https://gitlab.com/gitlab-org/terraform-provider-gitlab/pull/1128
 gitlab_rails['application_settings_cache_seconds'] = 0
-gitlab_rails['env'] = {
+gitlab_rails['env'].merge!({
     'IN_MEMORY_APPLICATION_SETTINGS' => 'false'
-}
+})
 
 # Enable SAML authentication for GitLab (required for SAML group links).
 # see https://docs.gitlab.com/ee/integration/saml.html
