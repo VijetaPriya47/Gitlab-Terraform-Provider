@@ -310,7 +310,7 @@ func (d *gitlabProjectLevelMrApprovalsResource) getV1Schema() schema.Schema {
 				PlanModifiers:       []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
 			},
 			"merge_requests_disable_committers_approval": schema.BoolAttribute{
-				MarkdownDescription: "Set to `true` to allow merge requests committers to approve their own merge requests.",
+				MarkdownDescription: "Set to `true` to disable merge request committers from approving their own merge requests.",
 				Optional:            true,
 				Computed:            true,
 				PlanModifiers:       []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
