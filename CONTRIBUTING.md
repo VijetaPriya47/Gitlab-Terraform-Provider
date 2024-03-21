@@ -502,8 +502,7 @@ This license must be renewed every three months using an Access Request.
 
 This process can only be followed by GitLab Team Members.
 
-1. Create a new related issue from this AR: https://gitlab.com/gitlab-com/team-member-epics/access-requests/-/issues/18758 (internal).
-1. Choose the `GitLab_Team_Member_License_request` template.
-1. Make sure to check `Ultimate` with a seats of at least `100`.
-1. Follow the template instructions.
+1. A GitLab Team Member (ping `@timofurrer`) has to submit the [license request form](https://support-super-form-gitlab-com-support-support-op-651f22e90ce6d7.gitlab.io/)
+1. Make sure to use an `Ultimate` license with at least `100` seats.
+1. Follow the form instructions.
 1. Update the license that is sent to you in the `GITLAB_LICENSE` CI/CD variable of this project.
