@@ -15,8 +15,13 @@ import (
 // for it.
 func gitlabProjectHookResourceSchema() map[string]*schema.Schema {
 	schema := gitlabProjectHookSchema()
+
+	// When the URL updates, we need to re-create to ensure the token is preserved
 	schema["url"].Description = fmt.Sprintf("%s Forces re-creation to preserve `token`.", schema["url"].Description)
 	schema["url"].ForceNew = true
+
+	// when changing "project" as a resource, we should re-create the hook since that's used for the ID
+	schema["project"].ForceNew = true
 
 	return schema
 }
