@@ -116,6 +116,54 @@ func TestAccGitlabProjectHook_basic(t *testing.T) {
 	})
 }
 
+// Test that when updating the `project` attribute, the
+// hook is associated to the new project properly
+func TestAccGitlabProjectHook_updateProject(t *testing.T) {
+	var hook gitlab.ProjectHook
+	projectOne := testutil.CreateProject(t)
+	projectTwo := testutil.CreateProject(t)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabProjectHookDestroy,
+		Steps: []resource.TestStep{
+			// Create a project and hook with default options
+			{
+				Config: fmt.Sprintf(`resource "gitlab_project_hook" "foo" {
+					project = "%d"
+					url = "https://example.com/hook-1234"
+				  }`, projectOne.ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabProjectHookExists("gitlab_project_hook.foo", &hook),
+					resource.TestCheckResourceAttr(
+						"gitlab_project_hook.foo", "project_id", fmt.Sprintf("%d", projectOne.ID),
+					),
+				),
+			},
+			// Verify import
+			{
+				ResourceName:            "gitlab_project_hook.foo",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"token"},
+			},
+			// Create a project and hook using the second project, validate that the project_id changes
+			{
+				Config: fmt.Sprintf(`resource "gitlab_project_hook" "foo" {
+					project = "%d"
+					url = "https://example.com/hook-5678"
+				  }`, projectTwo.ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabProjectHookExists("gitlab_project_hook.foo", &hook),
+					resource.TestCheckResourceAttr(
+						"gitlab_project_hook.foo", "project_id", fmt.Sprintf("%d", projectTwo.ID),
+					),
+				),
+			},
+		},
+	})
+}
+
 func testAccCheckGitlabProjectHookExists(n string, hook *gitlab.ProjectHook) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
