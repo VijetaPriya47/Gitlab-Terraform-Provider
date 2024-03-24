@@ -137,6 +137,11 @@ func gitlabProjectHookSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Default:     true,
 		},
+		"custom_webhook_template": {
+			Description: "Set a custom webhook template.",
+			Type:        schema.TypeString,
+			Optional:    true,
+		},
 	}
 }
 
@@ -160,5 +165,6 @@ func gitlabProjectHookToStateMap(project string, hook *gitlab.ProjectHook) map[s
 	stateMap["deployment_events"] = hook.DeploymentEvents
 	stateMap["releases_events"] = hook.ReleasesEvents
 	stateMap["enable_ssl_verification"] = hook.EnableSSLVerification
+	stateMap["custom_webhook_template"] = hook.CustomWebhookTemplate
 	return stateMap
 }

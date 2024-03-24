@@ -94,6 +94,7 @@ func resourceGitlabProjectHookCreate(ctx context.Context, d *schema.ResourceData
 		DeploymentEvents:         gitlab.Ptr(d.Get("deployment_events").(bool)),
 		ReleasesEvents:           gitlab.Ptr(d.Get("releases_events").(bool)),
 		EnableSSLVerification:    gitlab.Ptr(d.Get("enable_ssl_verification").(bool)),
+		CustomWebhookTemplate:    gitlab.Ptr(d.Get("custom_webhook_template").(string)),
 	}
 
 	if v, ok := d.GetOk("token"); ok {
@@ -160,6 +161,7 @@ func resourceGitlabProjectHookUpdate(ctx context.Context, d *schema.ResourceData
 		DeploymentEvents:         gitlab.Ptr(d.Get("deployment_events").(bool)),
 		ReleasesEvents:           gitlab.Ptr(d.Get("releases_events").(bool)),
 		EnableSSLVerification:    gitlab.Ptr(d.Get("enable_ssl_verification").(bool)),
+		CustomWebhookTemplate:    gitlab.Ptr(d.Get("custom_webhook_template").(string)),
 	}
 
 	if d.HasChange("token") {

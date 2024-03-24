@@ -122,6 +122,11 @@ func gitlabGroupHookSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Default:     true,
 		},
+		"custom_webhook_template": {
+			Description: "Set a custom webhook template.",
+			Type:        schema.TypeString,
+			Optional:    true,
+		},
 	}
 }
 
@@ -146,5 +151,6 @@ func gitlabGroupHookToStateMap(group string, hook *gitlab.GroupHook) map[string]
 	stateMap["releases_events"] = hook.ReleasesEvents
 	stateMap["subgroup_events"] = hook.SubGroupEvents
 	stateMap["enable_ssl_verification"] = hook.EnableSSLVerification
+	stateMap["custom_webhook_template"] = hook.CustomWebhookTemplate
 	return stateMap
 }
