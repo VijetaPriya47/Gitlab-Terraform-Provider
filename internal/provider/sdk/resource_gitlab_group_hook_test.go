@@ -4,6 +4,7 @@
 package sdk
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -87,6 +88,34 @@ func TestAccGitlabGroupHook_basic(t *testing.T) {
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"token"},
+			},
+			// Update group hook to use a custom template, only after version 16.10
+			{
+				SkipFunc: api.IsGitLabVersionLessThan(context.Background(), testutil.TestGitlabClient, "16.10"),
+				Config: fmt.Sprintf(`
+				resource "gitlab_group_hook" "this" {
+					group = "%s"
+					url = "http://example.com"
+
+					token                      = "supersecret"
+					enable_ssl_verification    = false
+					push_events                = true
+					push_events_branch_filter  = "devel"
+					issues_events              = false
+					confidential_issues_events = false
+					merge_requests_events      = true
+					tag_push_events            = true
+					note_events                = true
+					confidential_note_events   = true
+					job_events                 = true
+					pipeline_events            = true
+					wiki_page_events           = true
+					deployment_events          = true
+					releases_events            = true
+					subgroup_events            = true
+					custom_webhook_template    = "{\"event\":\"{{object_kind}}\"}"
+				}
+				`, testGroup.FullPath),
 			},
 		},
 	})

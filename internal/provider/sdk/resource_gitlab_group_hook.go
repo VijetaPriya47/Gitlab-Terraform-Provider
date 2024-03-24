@@ -50,6 +50,7 @@ func resourceGitlabGroupHookCreate(ctx context.Context, d *schema.ResourceData, 
 		ReleasesEvents:           gitlab.Ptr(d.Get("releases_events").(bool)),
 		SubGroupEvents:           gitlab.Ptr(d.Get("subgroup_events").(bool)),
 		EnableSSLVerification:    gitlab.Ptr(d.Get("enable_ssl_verification").(bool)),
+		CustomWebhookTemplate:    gitlab.Ptr(d.Get("custom_webhook_template").(string)),
 	}
 
 	if v, ok := d.GetOk("token"); ok {
@@ -118,6 +119,7 @@ func resourceGitlabGroupHookUpdate(ctx context.Context, d *schema.ResourceData, 
 		ReleasesEvents:           gitlab.Ptr(d.Get("releases_events").(bool)),
 		SubGroupEvents:           gitlab.Ptr(d.Get("subgroup_events").(bool)),
 		EnableSSLVerification:    gitlab.Ptr(d.Get("enable_ssl_verification").(bool)),
+		CustomWebhookTemplate:    gitlab.Ptr(d.Get("custom_webhook_template").(string)),
 	}
 
 	if d.HasChange("token") {

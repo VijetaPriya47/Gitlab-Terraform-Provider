@@ -116,6 +116,75 @@ func TestAccGitlabProjectHook_basic(t *testing.T) {
 	})
 }
 
+// Ensure the "custom_template" attribute works
+func TestAccGitlabProjectHook_customTemplate(t *testing.T) {
+	// Feature only available after 16.10
+	testutil.RunIfAtLeast(t, "16.10")
+	project := testutil.CreateProject(t)
+
+	// Used for testing later
+	var hook gitlab.ProjectHook
+	rInt := acctest.RandInt()
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabProjectHookDestroy,
+		Steps: []resource.TestStep{
+			// Update the project hook to toggle all the values to their inverse
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_hook" "foo" {
+					project = "%d"
+					url = "https://example.com/hook-%d"
+					enable_ssl_verification = false
+					push_events = true
+					push_events_branch_filter = "devel"
+					issues_events = false
+					confidential_issues_events = false
+					merge_requests_events = true
+					tag_push_events = true
+					note_events = true
+					confidential_note_events = true
+					job_events = true
+					pipeline_events = true
+					wiki_page_events = true
+					deployment_events = true
+					releases_events = true
+					custom_webhook_template = "{\"event\":\"{{object_kind}}\"}"
+				  }`, project.ID, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabProjectHookExists("gitlab_project_hook.foo", &hook),
+					testAccCheckGitlabProjectHookAttributes(&hook, &testAccGitlabProjectHookExpectedAttributes{
+						URL:                      fmt.Sprintf("https://example.com/hook-%d", rInt),
+						PushEvents:               true,
+						PushEventsBranchFilter:   "devel",
+						IssuesEvents:             false,
+						ConfidentialIssuesEvents: false,
+						MergeRequestsEvents:      true,
+						TagPushEvents:            true,
+						NoteEvents:               true,
+						ConfidentialNoteEvents:   true,
+						JobEvents:                true,
+						PipelineEvents:           true,
+						WikiPageEvents:           true,
+						DeploymentEvents:         true,
+						ReleasesEvents:           true,
+						EnableSSLVerification:    false,
+						CustomWebhookTemplate:    "{\"event\":\"{{object_kind}}\"}",
+					}),
+				),
+			},
+			// Verify import
+			{
+				ResourceName:            "gitlab_project_hook.foo",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"token"},
+			},
+		},
+	})
+}
+
 // Test that when updating the `project` attribute, the
 // hook is associated to the new project properly
 func TestAccGitlabProjectHook_updateProject(t *testing.T) {
@@ -225,6 +294,7 @@ type testAccGitlabProjectHookExpectedAttributes struct {
 	DeploymentEvents         bool
 	ReleasesEvents           bool
 	EnableSSLVerification    bool
+	CustomWebhookTemplate    string
 }
 
 func testAccCheckGitlabProjectHookAttributes(hook *gitlab.ProjectHook, want *testAccGitlabProjectHookExpectedAttributes) resource.TestCheckFunc {
@@ -287,6 +357,10 @@ func testAccCheckGitlabProjectHookAttributes(hook *gitlab.ProjectHook, want *tes
 
 		if hook.ReleasesEvents != want.ReleasesEvents {
 			return fmt.Errorf("got releases_events %t; want %t", hook.ReleasesEvents, want.ReleasesEvents)
+		}
+
+		if hook.CustomWebhookTemplate != want.CustomWebhookTemplate {
+			return fmt.Errorf("got custom_webhook_template %q; want %q", hook.CustomWebhookTemplate, want.CustomWebhookTemplate)
 		}
 
 		return nil
