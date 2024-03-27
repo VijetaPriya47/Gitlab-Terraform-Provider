@@ -429,6 +429,250 @@ func TestAcc_GitlabProjectProtectedEnvironment_EnsureDeployAccessLevelsAreUnorde
 	})
 }
 
+func TestAcc_GitlabProjectProtectedEnvironment_GroupInheritanceType(t *testing.T) {
+	testutil.SkipIfCE(t)
+
+	// Set up project environment.
+	project := testutil.CreateProject(t)
+	environment := testutil.CreateProjectEnvironment(t, project.ID, &gitlab.CreateEnvironmentOptions{
+		Name: gitlab.Ptr(acctest.RandomWithPrefix("test-protected-environment")),
+	})
+
+	// Set up project user.
+	user := testutil.CreateUsers(t, 1)[0]
+	testutil.AddProjectMembers(t, project.ID, []*gitlab.User{user})
+
+	// Set up group access.
+	group := testutil.CreateGroups(t, 1)[0]
+	if _, err := testutil.TestGitlabClient.Projects.ShareProjectWithGroup(project.ID, &gitlab.ShareWithGroupOptions{
+		GroupID:     &group.ID,
+		GroupAccess: gitlab.Ptr(gitlab.MaintainerPermissions),
+	}); err != nil {
+		t.Fatalf("unable to share project %d with group %d", project.ID, group.ID)
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAcc_GitlabProjectProtectedEnvironment_CheckDestroy(group.ID, environment.Name),
+		Steps: []resource.TestStep{
+			// Create a basic group protected environment.
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_protected_environment" "this" {
+					project     = %d
+					environment = %q
+
+					deploy_access_levels {
+						group_id = %d
+					}
+				}`, project.ID, environment, group.ID),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("gitlab_project_protected_environment.this", "deploy_access_levels.0.access_level_description"),
+					resource.TestCheckResourceAttr("gitlab_project_protected_environment.this", "required_approval_count", "0"),
+				),
+			},
+			// Verify upstream attributes with an import.
+			{
+				ResourceName:      "gitlab_project_protected_environment.this",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Add approval rules with group inheritance type
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_protected_environment" "this" {
+					project     = %d
+					environment = %q
+					required_approval_count = 1
+
+					deploy_access_levels {
+						group_id = %d
+					}
+
+					approval_rules = [
+						{
+							group_id = %d
+							required_approvals = 3
+							group_inheritance_type = 1
+						}
+					] 
+				}`, project.ID, environment, group.ID, group.ID),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("gitlab_project_protected_environment.this", "deploy_access_levels.0.access_level_description"),
+					resource.TestCheckResourceAttr("gitlab_project_protected_environment.this", "required_approval_count", "1"),
+					resource.TestCheckResourceAttrSet("gitlab_project_protected_environment.this", "approval_rules.0.access_level_description"),
+					resource.TestCheckResourceAttr("gitlab_project_protected_environment.this", "approval_rules.0.group_inheritance_type", "1"),
+				),
+			},
+			// Verify upstream attributes with an import.
+			{
+				ResourceName:      "gitlab_project_protected_environment.this",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Remove approval rules
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_protected_environment" "this" {
+					project     = %d
+					environment = %q
+
+					deploy_access_levels {
+						group_id = %d
+					}
+				}`, project.ID, environment, group.ID),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("gitlab_project_protected_environment.this", "deploy_access_levels.0.access_level_description"),
+					resource.TestCheckNoResourceAttr("gitlab_project_protected_environment.this", "approval_rules.0.access_level_description"),
+				),
+			},
+			// Verify upstream attributes with an import.
+			{
+				ResourceName:      "gitlab_project_protected_environment.this",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Add deploy access level with group inheritance type
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_protected_environment" "this" {
+					project     = %d
+					environment = %q
+					required_approval_count = 1
+
+					deploy_access_levels {
+						group_id = %d
+						group_inheritance_type = 1
+					}
+
+					approval_rules = [
+						{
+							group_id = %d
+							required_approvals = 3
+						}
+					] 
+				}`, project.ID, environment, group.ID, group.ID),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("gitlab_project_protected_environment.this", "deploy_access_levels.0.access_level_description"),
+					resource.TestCheckResourceAttr("gitlab_project_protected_environment.this", "required_approval_count", "1"),
+					resource.TestCheckResourceAttrSet("gitlab_project_protected_environment.this", "approval_rules.0.access_level_description"),
+					resource.TestCheckResourceAttr("gitlab_project_protected_environment.this", "deploy_access_levels.0.group_inheritance_type", "1"),
+				),
+			},
+			// Verify upstream attributes with an import.
+			{
+				ResourceName:      "gitlab_project_protected_environment.this",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAcc_GitlabProjectProtectedEnvironment_approvalRules_InvalidGroupInheritanceType(t *testing.T) {
+	testutil.SkipIfCE(t)
+
+	// Set up project environment.
+	project := testutil.CreateProject(t)
+	environment := testutil.CreateProjectEnvironment(t, project.ID, &gitlab.CreateEnvironmentOptions{
+		Name: gitlab.Ptr(acctest.RandomWithPrefix("test-protected-environment")),
+	})
+
+	// Set up project user.
+	user := testutil.CreateUsers(t, 1)[0]
+	testutil.AddProjectMembers(t, project.ID, []*gitlab.User{user})
+
+	// Set up group access.
+	group := testutil.CreateGroups(t, 1)[0]
+	if _, err := testutil.TestGitlabClient.Projects.ShareProjectWithGroup(project.ID, &gitlab.ShareWithGroupOptions{
+		GroupID:     &group.ID,
+		GroupAccess: gitlab.Ptr(gitlab.MaintainerPermissions),
+	}); err != nil {
+		t.Fatalf("unable to share project %d with group %d", project.ID, group.ID)
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAcc_GitlabProjectProtectedEnvironment_CheckDestroy(project.ID, environment.Name),
+		Steps: []resource.TestStep{
+			// Add approval rules with group inheritance type
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_protected_environment" "this" {
+					project     = %d
+					environment = %q
+					required_approval_count = 1
+
+					deploy_access_levels {
+						access_level = "maintainer"
+					}
+
+					approval_rules = [
+						{
+							group_id = %d
+							required_approvals = 3
+							group_inheritance_type = 3
+						}
+					] 
+				}`, project.ID, environment.Name, group.ID),
+				ExpectError: regexp.MustCompile("Error: Invalid Attribute Value Match"),
+			},
+		},
+	})
+}
+
+func TestAcc_GitlabProjectProtectedEnvironment_deployAccessLevels_InvalidGroupInheritanceType(t *testing.T) {
+	testutil.SkipIfCE(t)
+
+	// Set up project environment.
+	project := testutil.CreateProject(t)
+	environment := testutil.CreateProjectEnvironment(t, project.ID, &gitlab.CreateEnvironmentOptions{
+		Name: gitlab.Ptr(acctest.RandomWithPrefix("test-protected-environment")),
+	})
+
+	// Set up project user.
+	user := testutil.CreateUsers(t, 1)[0]
+	testutil.AddProjectMembers(t, project.ID, []*gitlab.User{user})
+
+	// Set up group access.
+	group := testutil.CreateGroups(t, 1)[0]
+	if _, err := testutil.TestGitlabClient.Projects.ShareProjectWithGroup(project.ID, &gitlab.ShareWithGroupOptions{
+		GroupID:     &group.ID,
+		GroupAccess: gitlab.Ptr(gitlab.MaintainerPermissions),
+	}); err != nil {
+		t.Fatalf("unable to share project %d with group %d", project.ID, group.ID)
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAcc_GitlabProjectProtectedEnvironment_CheckDestroy(project.ID, environment.Name),
+		Steps: []resource.TestStep{
+			// Add approval rules with group inheritance type
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_protected_environment" "this" {
+					project     = %d
+					environment = %q
+					required_approval_count = 1
+
+					deploy_access_levels {
+						group_id = %d
+						group_inheritance_type = 3
+					}
+
+					approval_rules = [
+						{
+							group_id = %d
+							required_approvals = 3
+						}
+					] 
+				}`, project.ID, environment.Name, group.ID, group.ID),
+				ExpectError: regexp.MustCompile("Error: Invalid Attribute Value Match"),
+			},
+		},
+	})
+}
+
 func testAcc_GitlabProjectProtectedEnvironment_CheckDestroy(projectID int, environmentName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		_, _, err := testutil.TestGitlabClient.ProtectedEnvironments.GetProtectedEnvironment(projectID, environmentName)
