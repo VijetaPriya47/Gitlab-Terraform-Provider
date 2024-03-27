@@ -60,6 +60,7 @@ type gitlabGroupProtectedEnvironmentDeployAccessLevelModel struct {
 	AccessLevelDescription types.String `tfsdk:"access_level_description"`
 	UserId                 types.Int64  `tfsdk:"user_id"`
 	GroupId                types.Int64  `tfsdk:"group_id"`
+	GroupInheritanceType   types.Int64  `tfsdk:"group_inheritance_type"`
 }
 
 type gitlabGroupProtectedEnvironmentApprovalRuleModel struct {
@@ -69,6 +70,7 @@ type gitlabGroupProtectedEnvironmentApprovalRuleModel struct {
 	UserId                 types.Int64  `tfsdk:"user_id"`
 	GroupId                types.Int64  `tfsdk:"group_id"`
 	RequiredApprovals      types.Int64  `tfsdk:"required_approvals"`
+	GroupInheritanceType   types.Int64  `tfsdk:"group_inheritance_type"`
 }
 
 func (r *gitlabGroupProtectedEnvironmentResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -160,6 +162,15 @@ func groupDeployAccessLevelSchema() schema.SetNestedAttribute {
 					PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
 					Validators:          []validator.Int64{int64validator.AtLeast(1)},
 				},
+				"group_inheritance_type": schema.Int64Attribute{
+					MarkdownDescription: "Group inheritance allows deploy access levels to take inherited group membership into account. Valid values are `0`, `1`. `0` => Direct group membership only, `1` => All inherited groups. Default: `0`",
+					Optional:            true,
+					Computed:            true,
+					PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
+					Validators: []validator.Int64{
+						int64validator.OneOf([]int64{0, 1}...),
+					},
+				},
 			},
 		},
 	}
@@ -209,6 +220,15 @@ func groupApprovalRuleSchema() schema.SetNestedAttribute {
 					Computed:            true,
 					PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
 					Validators:          []validator.Int64{int64validator.AtLeast(1)},
+				},
+				"group_inheritance_type": schema.Int64Attribute{
+					MarkdownDescription: "Group inheritance allows access rules to take inherited group membership into account. Valid values are `0`, `1`. `0` => Direct group membership only, `1` => All inherited groups. Default: `0`",
+					Optional:            true,
+					Computed:            true,
+					PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
+					Validators: []validator.Int64{
+						int64validator.OneOf([]int64{0, 1}...),
+					},
 				},
 			},
 		},
@@ -315,6 +335,10 @@ func (r *gitlabGroupProtectedEnvironmentResource) Create(ctx context.Context, re
 		if !v.GroupId.IsNull() && v.GroupId.ValueInt64() != 0 {
 			deployAccessLevelOptions.GroupID = gitlab.Ptr(int(v.GroupId.ValueInt64()))
 		}
+		if !v.GroupInheritanceType.IsNull() && v.GroupInheritanceType.ValueInt64() != 0 {
+			deployAccessLevelOptions.GroupInheritanceType = gitlab.Ptr(int(v.GroupInheritanceType.ValueInt64()))
+		}
+
 		deployAccessLevelsOption[i] = deployAccessLevelOptions
 	}
 	options.DeployAccessLevels = &deployAccessLevelsOption
@@ -340,6 +364,9 @@ func (r *gitlabGroupProtectedEnvironmentResource) Create(ctx context.Context, re
 		}
 		if !v.RequiredApprovals.IsNull() && v.RequiredApprovals.ValueInt64() != 0 {
 			approvalRuleOptions.RequiredApprovalCount = gitlab.Ptr(int(v.RequiredApprovals.ValueInt64()))
+		}
+		if !v.GroupInheritanceType.IsNull() && v.GroupInheritanceType.ValueInt64() != 0 {
+			approvalRuleOptions.GroupInheritanceType = gitlab.Ptr(int(v.GroupInheritanceType.ValueInt64()))
 		}
 
 		approvalRulesOption[i] = approvalRuleOptions
@@ -491,6 +518,9 @@ func (r *gitlabGroupProtectedEnvironmentResource) Update(ctx context.Context, re
 		if !v.GroupId.IsNull() && v.GroupId.ValueInt64() != 0 {
 			deployAccessLevelOptions.GroupID = gitlab.Ptr(int(v.GroupId.ValueInt64()))
 		}
+		if !v.GroupInheritanceType.IsNull() && v.GroupInheritanceType.ValueInt64() != 0 {
+			deployAccessLevelOptions.GroupInheritanceType = gitlab.Ptr(int(v.GroupInheritanceType.ValueInt64()))
+		}
 
 		deployAccessLevelsOption = append(deployAccessLevelsOption, deployAccessLevelOptions)
 	}
@@ -556,6 +586,9 @@ func (r *gitlabGroupProtectedEnvironmentResource) Update(ctx context.Context, re
 		}
 		if !v.RequiredApprovals.IsNull() && v.RequiredApprovals.ValueInt64() != 0 {
 			approvalRuleOptions.RequiredApprovalCount = gitlab.Ptr(int(v.RequiredApprovals.ValueInt64()))
+		}
+		if !v.GroupInheritanceType.IsNull() && v.GroupInheritanceType.ValueInt64() != 0 {
+			approvalRuleOptions.GroupInheritanceType = gitlab.Ptr(int(v.GroupInheritanceType.ValueInt64()))
 		}
 
 		approvalRulesOptionSlice = append(approvalRulesOptionSlice, approvalRuleOptions)
@@ -679,6 +712,9 @@ func (r *gitlabGroupProtectedEnvironmentResource) protectedEnvironmentToStateMod
 		if obj.GroupID != 0 {
 			deployAccessLevelData.GroupId = types.Int64Value(int64(obj.GroupID))
 		}
+		if obj.GroupInheritanceType != 0 {
+			deployAccessLevelData.GroupInheritanceType = types.Int64Value(int64(obj.GroupInheritanceType))
+		}
 
 		deployAccessLevelsData = append(deployAccessLevelsData, deployAccessLevelData)
 	}
@@ -705,6 +741,10 @@ func (r *gitlabGroupProtectedEnvironmentResource) protectedEnvironmentToStateMod
 		if obj.RequiredApprovalCount != 0 {
 			approvalRuleData.RequiredApprovals = types.Int64Value(int64(obj.RequiredApprovalCount))
 		}
+		if obj.GroupInheritanceType != 0 {
+			approvalRuleData.GroupInheritanceType = types.Int64Value(int64(obj.GroupInheritanceType))
+		}
+
 		approvalRulesData = append(approvalRulesData, approvalRuleData)
 	}
 	approvalRulesSetType, newDiag := types.SetValueFrom(ctx, groupApprovalRuleSchema().NestedObject.Type(), approvalRulesData)
