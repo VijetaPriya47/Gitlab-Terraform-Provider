@@ -1828,7 +1828,7 @@ func TestAccGitlabProject_ForkProject(t *testing.T) {
 						mr_default_target_self = true
 
 						# Set some attributes which are not part of the fork API
-						topics = ["foo", "bar"]
+						build_timeout = 600
 				   }
 				`, testProjectToFork.Name, testProjectToFork.ID, testProjectToFork.Path),
 			},
@@ -1848,7 +1848,7 @@ func TestAccGitlabProject_ForkProject(t *testing.T) {
 						visibility_level = "public"
 
 						# Set some attributes which are not part of the fork API
-						topics = ["foo"]
+						build_timeout = 660
 				   }
 				`, testProjectToFork.Name, testProjectToFork.ID, testProjectToFork.Path),
 			},
@@ -1872,7 +1872,7 @@ func TestAccGitlabProject_ForkProject(t *testing.T) {
 						mr_default_target_self = false
 
 						# Set some attributes which are not part of the fork API
-						topics = ["foo", "bar", "readded"]
+						build_timeout = 690
 				   }
 				`, testProjectToFork.Name, testProjectToFork.ID, testProjectToFork.Path),
 			},
@@ -1896,7 +1896,7 @@ func TestAccGitlabProject_ForkProject(t *testing.T) {
 						mr_default_target_self = true
 
 						# Set some attributes which are not part of the fork API
-						topics = ["foo", "bar", "changed"]
+						build_timeout = 720
 				   }
 				`, testProjectToFork.Name, testProjectToFork2.ID, testProjectToFork.Path),
 			},
@@ -2400,6 +2400,8 @@ func testAccGitlabProjectConfigDefaultBranch(rInt int, defaultBranch string) str
 		defaultBranchStatement = fmt.Sprintf("default_branch = \"%s\"", defaultBranch)
 	}
 
+	topic := acctest.RandString(4)
+
 	return fmt.Sprintf(`
 resource "gitlab_project" "foo" {
   name = "foo-%d"
@@ -2448,7 +2450,7 @@ resource "gitlab_project" "foo" {
   security_and_compliance_access_level = "enabled"
   snippets_access_level = "enabled"
   suggestion_commit_message = "hello suggestion"
-  topics = ["foo", "bar"]
+  topics = ["%s"]
   wiki_access_level = "enabled"
   squash_commit_template = "hello squash"
   merge_commit_template = "hello merge"
@@ -2459,7 +2461,7 @@ resource "gitlab_project" "foo" {
   infrastructure_access_level = "enabled"
   monitor_access_level = "enabled"
 }
-	`, rInt, rInt, defaultBranchStatement)
+	`, rInt, rInt, defaultBranchStatement, topic)
 }
 
 func testAccGitlabProjectConfigDefaultBranchSkipFunc(project *gitlab.Project, defaultBranch string) func() (bool, error) {
@@ -2497,12 +2499,6 @@ resource "gitlab_project" "foo" {
   name = "foo-%d"
   path = "foo.%d"
   description = "Terraform acceptance tests!"
-
-  # NOTE: replaces by topics
-  # tags = [
-  # "tag1",
-  # "tag2"
-  # ]
 
   # So that acceptance tests can be run in a gitlab organization
   # with no billing
@@ -2702,7 +2698,6 @@ resource "gitlab_project" "foo" {
   security_and_compliance_access_level = "enabled"
   snippets_access_level = "enabled"
   suggestion_commit_message = "hello suggestion"
-  topics = ["foo", "bar"]
   wiki_access_level = "enabled"
   squash_commit_template = "hello squash"
   merge_commit_template = "hello merge"
@@ -2840,6 +2835,9 @@ resource "gitlab_project" "foo" {
 }
 
 func testAccGitlabProjectConfigEE(rInt int) string {
+
+	topic := acctest.RandString(4)
+
 	return fmt.Sprintf(`
 resource "gitlab_project" "foo" {
   name = "foo-%d"
@@ -2887,7 +2885,7 @@ resource "gitlab_project" "foo" {
   security_and_compliance_access_level = "enabled"
   snippets_access_level = "enabled"
   suggestion_commit_message = "hello suggestion"
-  topics = ["foo", "bar"]
+  topics = ["%s"]
   wiki_access_level = "enabled"
   squash_commit_template = "hello squash"
   merge_commit_template = "hello merge"
@@ -2906,7 +2904,7 @@ resource "gitlab_project" "foo" {
   # mirror_trigger_builds = true
   # mirror = true
 }
-	`, rInt, rInt)
+	`, rInt, rInt, topic)
 }
 
 func testProjectDefaults(rInt int) gitlab.Project {
