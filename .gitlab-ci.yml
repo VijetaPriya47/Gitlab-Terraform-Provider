@@ -324,7 +324,7 @@ goreleaser:build-verification:
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "schedule"
   image:
-    name: goreleaser/goreleaser:v1.25.0-nightly
+    name: goreleaser/goreleaser:v1.26.0-nightly
     entrypoint: [""]
   script:
     # Skip `git` validation so we don't get git commit mismatches from tags since this job
@@ -369,7 +369,7 @@ goreleaser:
   only:
     - tags
   image:
-    name: goreleaser/goreleaser:v1.25.0-nightly
+    name: goreleaser/goreleaser:v1.26.0-nightly
     entrypoint: [""]
   variables:
     # Disable shallow cloning so that goreleaser can diff between tags to
