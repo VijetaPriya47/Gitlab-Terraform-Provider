@@ -184,7 +184,6 @@ func gitlabGroupToStateMap(group *gitlab.Group) map[string]interface{} {
 	stateMap["created_at"] = group.CreatedAt.Format(time.RFC3339)
 	stateMap["default_branch_protection"] = group.DefaultBranchProtection
 	stateMap["description"] = group.Description
-	stateMap["emails_disabled"] = group.EmailsDisabled
 	stateMap["file_template_project_id"] = group.FileTemplateProjectID
 	stateMap["full_name"] = group.FullName
 	stateMap["full_path"] = group.FullPath
@@ -205,6 +204,10 @@ func gitlabGroupToStateMap(group *gitlab.Group) map[string]interface{} {
 	stateMap["web_url"] = group.WebURL
 	stateMap["wiki_access_level"] = group.WikiAccessLevel
 	stateMap["shared_runners_setting"] = group.SharedRunnersSetting
+
+	// nolint:staticcheck // SA1019 ignore deprecated EmailsDisabled
+	stateMap["emails_disabled"] = group.EmailsDisabled
+
 	return stateMap
 }
 

@@ -530,7 +530,6 @@ func resourceGitlabGroupRead(ctx context.Context, d *schema.ResourceData, meta i
 	d.Set("require_two_factor_authentication", group.RequireTwoFactorAuth)
 	d.Set("two_factor_grace_period", group.TwoFactorGracePeriod)
 	d.Set("auto_devops_enabled", group.AutoDevopsEnabled)
-	d.Set("emails_disabled", group.EmailsDisabled)
 	d.Set("mentions_disabled", group.MentionsDisabled)
 	d.Set("parent_id", group.ParentID)
 	d.Set("runners_token", group.RunnersToken)
@@ -543,6 +542,9 @@ func resourceGitlabGroupRead(ctx context.Context, d *schema.ResourceData, meta i
 	d.Set("avatar_url", group.AvatarURL)
 	d.Set("wiki_access_level", group.WikiAccessLevel)
 	d.Set("shared_runners_setting", group.SharedRunnersSetting)
+
+	// nolint:staticcheck // SA1019 ignore deprecated EmailsDisabled
+	d.Set("emails_disabled", group.EmailsDisabled)
 
 	// The value comes back from the API as a comma separated string, and stores in TF as a set.
 	// We need to set the value only if it's "", otherwise the split gives up [""] which will result
@@ -632,6 +634,7 @@ func resourceGitlabGroupUpdate(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	if d.HasChange("emails_disabled") {
+		// nolint:staticcheck // SA1019 ignore deprecated EmailsDisabled
 		options.EmailsDisabled = gitlab.Ptr(d.Get("emails_disabled").(bool))
 	}
 
