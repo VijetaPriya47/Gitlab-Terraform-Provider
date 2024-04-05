@@ -181,7 +181,7 @@ func (r *gitlabComplianceFrameworkResource) Read(ctx context.Context, req resour
 		"query": query.Query,
 	})
 
-	var response complianceFrameworkResponse
+	var response ComplianceFrameworkResponse
 	if _, err := api.SendGraphQLRequest(ctx, r.client, query, &response); err != nil {
 		if api.Is404(err) {
 			tflog.Debug(ctx, "compliance framework does not exist, removing from state", map[string]interface{}{
@@ -459,7 +459,7 @@ func (r *gitlabComplianceFrameworkResource) ImportState(ctx context.Context, req
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
-type complianceFrameworkResponse struct {
+type ComplianceFrameworkResponse struct {
 	Data struct {
 		Namespace struct {
 			NamespacePath        string `json:"fullPath"`
