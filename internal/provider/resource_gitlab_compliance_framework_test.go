@@ -341,7 +341,7 @@ func testAcc_GitlabComplianceFramework_CheckDestroy(s *terraform.State) error {
 						}`, namespacePath, frameworkID),
 			}
 
-			var response complianceFrameworkResponse
+			var response ComplianceFrameworkResponse
 			if _, err := api.SendGraphQLRequest(context.Background(), testutil.TestGitlabClient, query, &response); err != nil {
 				return err
 			}
