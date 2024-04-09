@@ -40,23 +40,23 @@ resource "gitlab_group_variable" "example" {
 
 ### Required
 
-- `expires_at` (String) The token expires at midnight UTC on that date. The date must be in the format YYYY-MM-DD.
-- `group` (String) The ID or path of the group to add the group access token to.
+- `expires_at` (String) When the token will expire, YYYY-MM-DD format.
+- `group` (String) The ID or full path of the group.
 - `name` (String) The name of the group access token.
-- `scopes` (Set of String) The scope for the group access token. It determines the actions which can be performed when authenticating with this token. Valid values are: `api`, `read_api`, `read_registry`, `write_registry`, `read_repository`, `write_repository`, `create_runner`, `ai_features`, `k8s_proxy`, `read_observability`, `write_observability`.
+- `scopes` (Set of String) The scopes of the group access token.
 
 ### Optional
 
-- `access_level` (String) The access level for the group access token. Valid values are: `guest`, `reporter`, `developer`, `maintainer`, `owner`.
+- `access_level` (String) The access level for the group access token. Valid values are: `no one`, `minimal`, `guest`, `reporter`, `developer`, `maintainer`, `owner`, `master`. Default is `maintainer`.
 
 ### Read-Only
 
 - `active` (Boolean) True if the token is active.
 - `created_at` (String) Time the token has been created, RFC3339 format.
-- `id` (String) The ID of this resource.
+- `id` (String) The ID of the group access token.
 - `revoked` (Boolean) True if the token is revoked.
-- `token` (String, Sensitive) The group access token. This is only populated when creating a new group access token. This attribute is not available for imported resources.
-- `user_id` (Number) The user id associated to the token.
+- `token` (String, Sensitive) The token of the group access token. **Note**: the token is not available for imported resources.
+- `user_id` (Number) The user_id associated to the token.
 
 ## Import
 

@@ -118,8 +118,7 @@ func (r *gitlabGroupAccessTokenResource) Schema(ctx context.Context, req resourc
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
-				Computed: true,
-				Optional: true,
+				Required: true,
 			},
 			"created_at": schema.StringAttribute{
 				MarkdownDescription: "Time the token has been created, RFC3339 format.",
