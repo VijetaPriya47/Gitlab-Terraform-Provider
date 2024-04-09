@@ -5,6 +5,7 @@ subcategory: ""
 description: |-
   The gitlab_project_access_token resource allows to manage the lifecycle of a project access token.
   ~>  Use of the timestamp() function with expires_at will cause the resource to be re-created with every apply, it's recommended to use plantimestamp() or a static value instead.
+  ~> Observability scopes are in beta and may not work on all instances. See more details in the documentation https://docs.gitlab.com/ee/operations/tracing.html
   Upstream API: GitLab API docs https://docs.gitlab.com/ee/api/project_access_tokens.html
 ---
 
@@ -13,6 +14,8 @@ description: |-
 The `gitlab_project_access_token` resource allows to manage the lifecycle of a project access token.
 
 ~>  Use of the `timestamp()` function with expires_at will cause the resource to be re-created with every apply, it's recommended to use `plantimestamp()` or a static value instead.
+
+~> Observability scopes are in beta and may not work on all instances. See more details in [the documentation](https://docs.gitlab.com/ee/operations/tracing.html)
 
 **Upstream API**: [GitLab API docs](https://docs.gitlab.com/ee/api/project_access_tokens.html)
 
@@ -43,7 +46,7 @@ resource "gitlab_project_variable" "example" {
 - `expires_at` (String) Time the token will expire it, YYYY-MM-DD format.
 - `name` (String) A name to describe the project access token.
 - `project` (String) The id of the project to add the project access token to.
-- `scopes` (Set of String) The scope for the project access token. It determines the actions which can be performed when authenticating with this token. Valid values are: `api`, `read_api`, `read_registry`, `write_registry`, `read_repository`, `write_repository`, `create_runner`.
+- `scopes` (Set of String) The scope for the project access token. It determines the actions which can be performed when authenticating with this token. Valid values are: `api`, `read_api`, `read_registry`, `write_registry`, `read_repository`, `write_repository`, `create_runner`, `ai_features`, `k8s_proxy`, `read_observability`, `write_observability`.
 
 ### Optional
 

@@ -56,7 +56,18 @@ func TestAccGitlabProjectAccessToken_basic(t *testing.T) {
 				resource "gitlab_project_access_token" "foo" {
 					project = %d
 					name    = "foo"
-					scopes  = ["api", "read_api", "read_repository", "write_repository", "read_registry", "write_registry"]
+					scopes  = [
+						"api",
+						"read_api",
+						"read_repository",
+						"write_repository",
+						"read_registry",
+						"write_registry",
+						"ai_features",
+						"k8s_proxy",
+						"read_observability",
+						"write_observability",
+					]
 					access_level = "developer"
 					expires_at = %q
 				}
