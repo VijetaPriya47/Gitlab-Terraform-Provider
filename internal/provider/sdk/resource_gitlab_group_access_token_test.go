@@ -37,7 +37,7 @@ func TestAccGitlabGroupAccessToken_basic(t *testing.T) {
 					testAccCheckGitlabGroupAccessTokenExists("gitlab_group_access_token.this", &gat),
 					testAccCheckGitlabGroupAccessTokenAttributes(&gat, &testAccGitlabGroupAccessTokenExpectedAttributes{
 						name:        "my group token",
-						scopes:      map[string]bool{"read_repository": true, "api": true, "write_repository": true, "read_api": true},
+						scopes:      map[string]bool{"read_repository": true, "api": true, "write_repository": true, "read_api": true, "ai_features": true, "k8s_proxy": true, "read_observability": true, "write_observability": true},
 						expiresAt:   expiresAt.Format(iso8601),
 						accessLevel: gitlab.AccessLevelValue(gitlab.DeveloperPermissions),
 					}),
@@ -90,7 +90,7 @@ func TestAccGitlabGroupAccessToken_basic(t *testing.T) {
 					testAccCheckGitlabGroupAccessTokenExists("gitlab_group_access_token.this", &gat),
 					testAccCheckGitlabGroupAccessTokenAttributes(&gat, &testAccGitlabGroupAccessTokenExpectedAttributes{
 						name:        "my group token",
-						scopes:      map[string]bool{"read_repository": true, "api": true, "write_repository": true, "read_api": true},
+						scopes:      map[string]bool{"read_repository": true, "api": true, "write_repository": true, "read_api": true, "ai_features": true, "k8s_proxy": true, "read_observability": true, "write_observability": true},
 						expiresAt:   expiresAt.Format(iso8601),
 						accessLevel: gitlab.AccessLevelValue(gitlab.DeveloperPermissions),
 					}),
@@ -233,7 +233,7 @@ resource "gitlab_group_access_token" "this" {
   group = %d
   expires_at = "%s"
   access_level = "developer"
-  scopes = ["read_repository" , "api", "write_repository", "read_api"]
+  scopes = ["read_repository" , "api", "write_repository", "read_api", "ai_features", "k8s_proxy", "read_observability", "write_observability"]
 }
 	`, groupId, expiresAt.Format(iso8601))
 }

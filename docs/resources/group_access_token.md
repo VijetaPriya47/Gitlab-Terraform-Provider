@@ -4,7 +4,7 @@ page_title: "gitlab_group_access_token Resource - terraform-provider-gitlab"
 subcategory: ""
 description: |-
   The gitlab_group_accesstoken resource allows to manage the lifecycle of a group access token.
-  -> Group Access Token were introduced in GitLab 14.7
+  ~> Observability scopes are in beta and may not work on all instances. See more details in the documentation https://docs.gitlab.com/ee/operations/tracing.html
   Upstream API: GitLab REST API https://docs.gitlab.com/ee/api/group_access_tokens.html
 ---
 
@@ -12,7 +12,7 @@ description: |-
 
 The `gitlab_group_access`token resource allows to manage the lifecycle of a group access token.
 
--> Group Access Token were introduced in GitLab 14.7
+~> Observability scopes are in beta and may not work on all instances. See more details in [the documentation](https://docs.gitlab.com/ee/operations/tracing.html)
 
 **Upstream API**: [GitLab REST API](https://docs.gitlab.com/ee/api/group_access_tokens.html)
 
@@ -43,7 +43,7 @@ resource "gitlab_group_variable" "example" {
 - `expires_at` (String) The token expires at midnight UTC on that date. The date must be in the format YYYY-MM-DD.
 - `group` (String) The ID or path of the group to add the group access token to.
 - `name` (String) The name of the group access token.
-- `scopes` (Set of String) The scope for the group access token. It determines the actions which can be performed when authenticating with this token. Valid values are: `api`, `read_api`, `read_registry`, `write_registry`, `read_repository`, `write_repository`, `create_runner`.
+- `scopes` (Set of String) The scope for the group access token. It determines the actions which can be performed when authenticating with this token. Valid values are: `api`, `read_api`, `read_registry`, `write_registry`, `read_repository`, `write_repository`, `create_runner`, `ai_features`, `k8s_proxy`, `read_observability`, `write_observability`.
 
 ### Optional
 

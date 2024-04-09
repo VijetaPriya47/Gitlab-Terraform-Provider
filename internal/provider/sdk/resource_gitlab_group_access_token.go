@@ -23,6 +23,10 @@ var validGroupAccessTokenScopes = []string{
 	"read_repository",
 	"write_repository",
 	"create_runner",
+	"ai_features",
+	"k8s_proxy",
+	"read_observability",
+	"write_observability",
 }
 var validAccessLevels = []string{
 	"guest",
@@ -36,7 +40,7 @@ var _ = registerResource("gitlab_group_access_token", func() *schema.Resource {
 	return &schema.Resource{
 		Description: `The ` + "`gitlab_group_access`" + `token resource allows to manage the lifecycle of a group access token.
 
--> Group Access Token were introduced in GitLab 14.7
+~> Observability scopes are in beta and may not work on all instances. See more details in [the documentation](https://docs.gitlab.com/ee/operations/tracing.html)
 
 **Upstream API**: [GitLab REST API](https://docs.gitlab.com/ee/api/group_access_tokens.html)`,
 

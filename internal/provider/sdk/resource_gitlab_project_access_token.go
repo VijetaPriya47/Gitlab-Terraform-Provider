@@ -25,6 +25,10 @@ var validProjectAccessTokenScopes = []string{
 	"read_repository",
 	"write_repository",
 	"create_runner",
+	"ai_features",
+	"k8s_proxy",
+	"read_observability",
+	"write_observability",
 }
 
 var _ = registerResource("gitlab_project_access_token", func() *schema.Resource {
@@ -32,6 +36,8 @@ var _ = registerResource("gitlab_project_access_token", func() *schema.Resource 
 		Description: `The ` + "`" + `gitlab_project_access_token` + "`" + ` resource allows to manage the lifecycle of a project access token.
 
 ~>  Use of the ` + "`timestamp()`" + ` function with expires_at will cause the resource to be re-created with every apply, it's recommended to use ` + "`plantimestamp()`" + ` or a static value instead.
+
+~> Observability scopes are in beta and may not work on all instances. See more details in [the documentation](https://docs.gitlab.com/ee/operations/tracing.html)
 
 **Upstream API**: [GitLab API docs](https://docs.gitlab.com/ee/api/project_access_tokens.html)`,
 
