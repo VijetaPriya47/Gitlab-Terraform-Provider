@@ -4,7 +4,7 @@
     "GITLAB_TOKEN": "glpat-ACCTEST1234567890123",
     "GITLAB_BASE_URL": "http://127.0.0.1:8085"
   },
-  "go.testFlags": ["-count=1", "-v", "-tags=acceptance", "-parallel=2"],
+  "go.testFlags": ["-count=1", "-v", "-tags=acceptance", "-parallel=2", "-timeout", "180s"],
   "go.buildFlags": [
     "-tags=acceptance"
   ],

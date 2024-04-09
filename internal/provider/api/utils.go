@@ -18,6 +18,9 @@ func Is404(err error) bool {
 	return false
 }
 
+// The ISO constant for parsing dates to a `gitlab.ISOTime` value
+const Iso8601 = "2006-01-02"
+
 // Checks if the error represents a 403 response
 func Is403(err error) bool {
 	if errResponse, ok := err.(*gitlab.ErrorResponse); ok &&
