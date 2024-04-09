@@ -1,7 +1,7 @@
 //go:build acceptance
 // +build acceptance
 
-package sdk
+package provider
 
 import (
 	"fmt"
@@ -12,14 +12,63 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/xanzy/go-gitlab"
-	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 
+	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
+	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
+
+func TestAccGitlabGroupAccessToken_migrateFromSDKToFramework(t *testing.T) {
+	// Set up project
+	group := testutil.CreateGroups(t, 1)[0]
+
+	// Create common config for testing
+	config := fmt.Sprintf(`
+	resource "gitlab_group_access_token" "foo" {
+		group = %d
+		name    = "foo"
+		scopes  = ["api"]
+
+		expires_at = "%s"
+	}
+	`, group.ID, time.Now().Add(time.Hour*48).Format(api.Iso8601))
+
+	resource.ParallelTest(t, resource.TestCase{
+		CheckDestroy: testAccCheckGitlabPipelineScheduleDestroy,
+		Steps: []resource.TestStep{
+			// Create the pipeline in the old provider version
+			{
+				ExternalProviders: map[string]resource.ExternalProvider{
+					"gitlab": {
+						VersionConstraint: "~> 16.10",
+						Source:            "gitlabhq/gitlab",
+					},
+				},
+				Config: config,
+				Check:  resource.TestCheckResourceAttrSet("gitlab_group_access_token.foo", "id"),
+			},
+			// Create the config in the new provider version to ensure migration works
+			{
+				ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+				Config:                   config,
+				Check:                    resource.TestCheckResourceAttrSet("gitlab_group_access_token.foo", "id"),
+			},
+			// Verify upstream attributes with an import
+			{
+				ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+				ResourceName:             "gitlab_group_access_token.foo",
+				ImportState:              true,
+				ImportStateVerify:        true,
+				ImportStateVerifyIgnore: []string{
+					"token",
+				},
+			},
+		},
+	})
+}
 
 func TestAccGitlabGroupAccessToken_basic(t *testing.T) {
 	var gat testAccGitlabGroupAccessTokenWrapper
-	var groupVariable gitlab.GroupVariable
 
 	testGroup := testutil.CreateGroups(t, 1)[0]
 
@@ -27,71 +76,119 @@ func TestAccGitlabGroupAccessToken_basic(t *testing.T) {
 	updatedExpiresAt := expiresAt.AddDate(0, 1, 0)
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		CheckDestroy:             testAccCheckGitlabGroupAccessTokenDestroy,
 		Steps: []resource.TestStep{
 			// Create a Group and a Group Access Token
 			{
-				Config: testAccGitlabGroupAccessTokenConfig(testGroup.ID, expiresAt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_group_access_token" "this" {
+				  name = "my group token"
+				  group = %d
+				  expires_at = "%s"
+				  access_level = "developer"
+				  scopes = ["read_repository" , "api", "write_repository", "read_api", "ai_features", "k8s_proxy", "read_observability", "write_observability"]
+				}
+					`, testGroup.ID, expiresAt.Format(api.Iso8601)),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabGroupAccessTokenExists("gitlab_group_access_token.this", &gat),
 					testAccCheckGitlabGroupAccessTokenAttributes(&gat, &testAccGitlabGroupAccessTokenExpectedAttributes{
 						name:        "my group token",
 						scopes:      map[string]bool{"read_repository": true, "api": true, "write_repository": true, "read_api": true, "ai_features": true, "k8s_proxy": true, "read_observability": true, "write_observability": true},
-						expiresAt:   expiresAt.Format(iso8601),
+						expiresAt:   expiresAt.Format(api.Iso8601),
 						accessLevel: gitlab.AccessLevelValue(gitlab.DeveloperPermissions),
 					}),
 				),
 			},
 			// Update the Group Access Token to change the parameters
 			{
-				Config: testAccGitlabGroupAccessTokenUpdateConfig(testGroup.ID, updatedExpiresAt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_group_access_token" "this" {
+				  name = "my new group token"
+				  group = %d
+				  expires_at = "%s"
+				  access_level = "maintainer"
+				  scopes = ["api"]
+				}
+					`, testGroup.ID, updatedExpiresAt.Format(api.Iso8601)),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabGroupAccessTokenExists("gitlab_group_access_token.this", &gat),
 					testAccCheckGitlabGroupAccessTokenAttributes(&gat, &testAccGitlabGroupAccessTokenExpectedAttributes{
 						name:        "my new group token",
 						scopes:      map[string]bool{"read_repository": false, "api": true, "write_repository": false, "read_api": false},
-						expiresAt:   updatedExpiresAt.Format(iso8601),
+						expiresAt:   updatedExpiresAt.Format(api.Iso8601),
 						accessLevel: gitlab.AccessLevelValue(gitlab.MaintainerPermissions),
 					}),
 				),
 			},
 			// Update the Group Access Token Access Level to Owner
 			{
-				Config: testAccGitlabGroupAccessTokenUpdateAccessLevel(testGroup.ID, updatedExpiresAt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_group_access_token" "this" {
+				  name = "my new group token"
+				  group = %d
+				  expires_at = "%s"
+				  access_level = "owner"
+				  scopes = ["api"]
+				}
+					`, testGroup.ID, updatedExpiresAt.Format(api.Iso8601)),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabGroupAccessTokenExists("gitlab_group_access_token.this", &gat),
 					testAccCheckGitlabGroupAccessTokenAttributes(&gat, &testAccGitlabGroupAccessTokenExpectedAttributes{
 						name:        "my new group token",
 						scopes:      map[string]bool{"read_repository": false, "api": true, "write_repository": false, "read_api": false},
-						expiresAt:   updatedExpiresAt.Format(iso8601),
+						expiresAt:   updatedExpiresAt.Format(api.Iso8601),
 						accessLevel: gitlab.AccessLevelValue(gitlab.OwnerPermissions),
 					}),
 				),
 			},
 			// Add a CICD variable with Group Access Token value
 			{
-				Config: testAccGitlabGroupAccessTokenUpdateConfigWithCICDvar(testGroup.ID, updatedExpiresAt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_group_access_token" "this" {
+				  name = "my new group token"
+				  group = %[1]d
+				  expires_at = "%[2]s"
+				  access_level = "maintainer"
+				  scopes = ["api"]
+				}
+
+				resource "gitlab_group_variable" "var" {
+				  group   = %[1]d
+				  key     = "my_grp_access_token"
+				  value   = gitlab_group_access_token.this.token
+				}
+
+				`, testGroup.ID, updatedExpiresAt.Format(api.Iso8601)),
+				// We aren't going to explicitly check the `gitlab_group_variable` because it's not part of our
+				// test other than it existing and the fact that TF doesn't error means it was created properly.
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabGroupAccessTokenExists("gitlab_group_access_token.this", &gat),
-					testAccCheckGitlabGroupVariableExists("gitlab_group_variable.var", &groupVariable),
 					testAccCheckGitlabGroupAccessTokenAttributes(&gat, &testAccGitlabGroupAccessTokenExpectedAttributes{
 						name:        "my new group token",
 						scopes:      map[string]bool{"read_repository": false, "api": true, "write_repository": false, "read_api": false},
-						expiresAt:   updatedExpiresAt.Format(iso8601),
+						expiresAt:   updatedExpiresAt.Format(api.Iso8601),
 						accessLevel: gitlab.AccessLevelValue(gitlab.MaintainerPermissions),
 					}),
 				),
 			},
 			//Restore Group Access Token initial parameters
 			{
-				Config: testAccGitlabGroupAccessTokenConfig(testGroup.ID, expiresAt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_group_access_token" "this" {
+				  name = "my group token"
+				  group = %d
+				  expires_at = "%s"
+				  access_level = "developer"
+				  scopes = ["read_repository" , "api", "write_repository", "read_api", "ai_features", "k8s_proxy", "read_observability", "write_observability"]
+				}
+					`, testGroup.ID, expiresAt.Format(api.Iso8601)),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabGroupAccessTokenExists("gitlab_group_access_token.this", &gat),
 					testAccCheckGitlabGroupAccessTokenAttributes(&gat, &testAccGitlabGroupAccessTokenExpectedAttributes{
 						name:        "my group token",
 						scopes:      map[string]bool{"read_repository": true, "api": true, "write_repository": true, "read_api": true, "ai_features": true, "k8s_proxy": true, "read_observability": true, "write_observability": true},
-						expiresAt:   expiresAt.Format(iso8601),
+						expiresAt:   expiresAt.Format(api.Iso8601),
 						accessLevel: gitlab.AccessLevelValue(gitlab.DeveloperPermissions),
 					}),
 				),
@@ -224,59 +321,4 @@ func testAccCheckGitlabGroupAccessTokenDestroy(s *terraform.State) error {
 		return nil
 	}
 	return nil
-}
-
-func testAccGitlabGroupAccessTokenConfig(groupId int, expiresAt time.Time) string {
-	return fmt.Sprintf(`
-resource "gitlab_group_access_token" "this" {
-  name = "my group token"
-  group = %d
-  expires_at = "%s"
-  access_level = "developer"
-  scopes = ["read_repository" , "api", "write_repository", "read_api", "ai_features", "k8s_proxy", "read_observability", "write_observability"]
-}
-	`, groupId, expiresAt.Format(iso8601))
-}
-
-func testAccGitlabGroupAccessTokenUpdateConfig(groupId int, expiresAt time.Time) string {
-	return fmt.Sprintf(`
-resource "gitlab_group_access_token" "this" {
-  name = "my new group token"
-  group = %d
-  expires_at = "%s"
-  access_level = "maintainer"
-  scopes = ["api"]
-}
-	`, groupId, expiresAt.Format(iso8601))
-}
-
-func testAccGitlabGroupAccessTokenUpdateAccessLevel(groupId int, expiresAt time.Time) string {
-	return fmt.Sprintf(`
-resource "gitlab_group_access_token" "this" {
-  name = "my new group token"
-  group = %d
-  expires_at = "%s"
-  access_level = "owner"
-  scopes = ["api"]
-}
-	`, groupId, expiresAt.Format(iso8601))
-}
-
-func testAccGitlabGroupAccessTokenUpdateConfigWithCICDvar(groupId int, expiresAt time.Time) string {
-	return fmt.Sprintf(`
-resource "gitlab_group_access_token" "this" {
-  name = "my new group token"
-  group = %[1]d
-  expires_at = "%[2]s"
-  access_level = "maintainer"
-  scopes = ["api"]
-}
-
-resource "gitlab_group_variable" "var" {
-  group   = %[1]d
-  key     = "my_grp_access_token"
-  value   = gitlab_group_access_token.this.token
- }
-
-	`, groupId, expiresAt.Format(iso8601))
 }

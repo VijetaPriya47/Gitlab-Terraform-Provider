@@ -28,27 +28,27 @@ import (
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ resource.Resource                = &gitlabProjectAccessTokenResource{}
-	_ resource.ResourceWithConfigure   = &gitlabProjectAccessTokenResource{}
-	_ resource.ResourceWithImportState = &gitlabProjectAccessTokenResource{}
+	_ resource.Resource                = &gitlabGroupAccessTokenResource{}
+	_ resource.ResourceWithConfigure   = &gitlabGroupAccessTokenResource{}
+	_ resource.ResourceWithImportState = &gitlabGroupAccessTokenResource{}
 )
 
 func init() {
-	registerResource(NewGitLabProjectAccessTokenResource)
+	registerResource(NewGitLabGroupAccessTokenResource)
 }
 
-func NewGitLabProjectAccessTokenResource() resource.Resource {
-	return &gitlabProjectAccessTokenResource{}
+func NewGitLabGroupAccessTokenResource() resource.Resource {
+	return &gitlabGroupAccessTokenResource{}
 }
 
-type gitlabProjectAccessTokenResource struct {
+type gitlabGroupAccessTokenResource struct {
 	client *gitlab.Client
 }
 
 // The base Resource implementation struct
-type gitlabProjectAccessTokenResourceModel struct {
+type gitlabGroupAccessTokenResourceModel struct {
 	ID          types.String `tfsdk:"id"`
-	Project     types.String `tfsdk:"project"`
+	Group       types.String `tfsdk:"group"`
 	Name        types.String `tfsdk:"name"`
 	Token       types.String `tfsdk:"token"`
 	UserId      types.Int64  `tfsdk:"user_id"`
@@ -64,27 +64,27 @@ type gitlabProjectAccessTokenResourceModel struct {
 	Revoked types.Bool `tfsdk:"revoked"`
 }
 
-func (r *gitlabProjectAccessTokenResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_project_access_token"
+func (r *gitlabGroupAccessTokenResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_group_access_token"
 }
 
-func (r *gitlabProjectAccessTokenResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *gitlabGroupAccessTokenResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `The ` + "`" + `gitlab_project_access_token` + "`" + ` resource allows to manage the lifecycle of a project access token.
+		MarkdownDescription: `The ` + "`gitlab_group_access`" + `token resource allows to manage the lifecycle of a group access token.
 
-~>  Use of the ` + "`timestamp()`" + ` function with expires_at will cause the resource to be re-created with every apply, it's recommended to use ` + "`plantimestamp()`" + ` or a static value instead.
+~> Observability scopes are in beta and may not work on all instances. See more details in [the documentation](https://docs.gitlab.com/ee/operations/tracing.html)
 
-**Upstream API**: [GitLab API docs](https://docs.gitlab.com/ee/api/project_access_tokens.html)`,
+**Upstream API**: [GitLab REST API](https://docs.gitlab.com/ee/api/group_access_tokens.html)`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				MarkdownDescription: "The ID of the project access token.",
+				MarkdownDescription: "The ID of the group access token.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 				Computed: true,
 			},
-			"project": schema.StringAttribute{
-				MarkdownDescription: "The ID or full path of the project.",
+			"group": schema.StringAttribute{
+				MarkdownDescription: "The ID or full path of the group.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
@@ -92,7 +92,7 @@ func (r *gitlabProjectAccessTokenResource) Schema(ctx context.Context, req resou
 				Required: true,
 			},
 			"name": schema.StringAttribute{
-				MarkdownDescription: "The name of the project access token.",
+				MarkdownDescription: "The name of the group access token.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
@@ -100,7 +100,7 @@ func (r *gitlabProjectAccessTokenResource) Schema(ctx context.Context, req resou
 				Required: true,
 			},
 			"scopes": schema.SetAttribute{
-				MarkdownDescription: "The scopes of the project access token.",
+				MarkdownDescription: "The scopes of the group access token.",
 				Required:            true,
 				ElementType:         types.StringType,
 				PlanModifiers: []planmodifier.Set{
@@ -126,7 +126,7 @@ func (r *gitlabProjectAccessTokenResource) Schema(ctx context.Context, req resou
 				Computed:            true,
 			},
 			"token": schema.StringAttribute{
-				MarkdownDescription: "The token of the project access token. **Note**: the token is not available for imported resources.",
+				MarkdownDescription: "The token of the group access token. **Note**: the token is not available for imported resources.",
 				Computed:            true,
 				Sensitive:           true,
 			},
@@ -143,7 +143,7 @@ func (r *gitlabProjectAccessTokenResource) Schema(ctx context.Context, req resou
 				Computed:            true,
 			},
 			"access_level": schema.StringAttribute{
-				MarkdownDescription: fmt.Sprintf("The access level for the project access token. Valid values are: %s. Default is `%s`.", utils.RenderValueListForDocs(api.ValidProjectAccessLevelNames), api.AccessLevelValueToName[gitlab.MaintainerPermissions]),
+				MarkdownDescription: fmt.Sprintf("The access level for the group access token. Valid values are: %s. Default is `%s`.", utils.RenderValueListForDocs(api.ValidProjectAccessLevelNames), api.AccessLevelValueToName[gitlab.MaintainerPermissions]),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
@@ -159,7 +159,7 @@ func (r *gitlabProjectAccessTokenResource) Schema(ctx context.Context, req resou
 }
 
 // Configure adds the provider configured client to the resource.
-func (r *gitlabProjectAccessTokenResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *gitlabGroupAccessTokenResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	// Prevent panic if the provider has not been configured.
 	if req.ProviderData == nil {
 		return
@@ -168,9 +168,9 @@ func (r *gitlabProjectAccessTokenResource) Configure(ctx context.Context, req re
 	r.client = req.ProviderData.(*gitlab.Client)
 }
 
-func (r *gitlabProjectAccessTokenResource) projectAccessTokenToStateModel(data *gitlabProjectAccessTokenResourceModel, token *gitlab.ProjectAccessToken, project string) diag.Diagnostics {
+func (r *gitlabGroupAccessTokenResource) groupAccessTokenToStateModel(data *gitlabGroupAccessTokenResourceModel, token *gitlab.GroupAccessToken, project string) diag.Diagnostics {
 
-	data.Project = types.StringValue(project)
+	data.Group = types.StringValue(project)
 	data.Name = types.StringValue(token.Name)
 	data.ExpiresAt = types.StringValue(token.ExpiresAt.String())
 	data.CreatedAt = types.StringValue(token.CreatedAt.String())
@@ -195,28 +195,28 @@ func (r *gitlabProjectAccessTokenResource) projectAccessTokenToStateModel(data *
 }
 
 // ImportState imports the resource into the Terraform state.
-func (r *gitlabProjectAccessTokenResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *gitlabGroupAccessTokenResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
-func (r *gitlabProjectAccessTokenResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var data *gitlabProjectAccessTokenResourceModel
+func (r *gitlabGroupAccessTokenResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var data *gitlabGroupAccessTokenResourceModel
 	// Read Terraform prior state data into the model
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// get the project and tokenID from the resource ID
-	project, accessTokenId, err := utils.ParseTwoPartID(data.ID.ValueString())
+	// get the group and tokenID from the resource ID
+	group, accessTokenId, err := utils.ParseTwoPartID(data.ID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error parsing ID",
-			"Could not parse ID into project and accessTokenId",
+			"Could not parse ID into group and accessTokenId",
 		)
 		return
 	}
-	tflog.Debug(ctx, fmt.Sprintf("Read gitlab ProjectAccessToken %s, project ID %s", accessTokenId, project))
+	tflog.Debug(ctx, fmt.Sprintf("Read gitlab GroupAccessToken %s, group ID %s", accessTokenId, group))
 
 	// Make sure the token ID is an int
 	accessTokenIdInt, err := strconv.Atoi(accessTokenId)
@@ -229,30 +229,30 @@ func (r *gitlabProjectAccessTokenResource) Read(ctx context.Context, req resourc
 	}
 
 	// Read the access token from the API
-	projectAccessToken, _, err := r.client.ProjectAccessTokens.GetProjectAccessToken(project, accessTokenIdInt, gitlab.WithContext(ctx))
+	groupAccessToken, _, err := r.client.GroupAccessTokens.GetGroupAccessToken(group, accessTokenIdInt, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
 			// The access token doesn't exist anymore; remove it.
-			tflog.Debug(ctx, fmt.Sprintf("GitLab ProjectAccessToken %s, project ID %s not found, removing from state", accessTokenId, project))
+			tflog.Debug(ctx, fmt.Sprintf("GitLab GroupAccessTokens %s, group ID %s not found, removing from state", accessTokenId, group))
 			resp.State.RemoveResource(ctx)
 			return
 		}
 
 		// Legit error, add a diagnostic and error
 		resp.Diagnostics.AddError(
-			"Error reading GitLab ProjectAccessToken",
-			fmt.Sprintf("Could not read GitLab ProjectAccessToken, unexpected error: %v", err),
+			"Error reading GitLab GroupAccessTokens",
+			fmt.Sprintf("Could not read GitLab GroupAccessTokens, unexpected error: %v", err),
 		)
 		return
 	}
 
 	// Set the token information into state
-	resp.Diagnostics.Append(r.projectAccessTokenToStateModel(data, projectAccessToken, project)...)
+	resp.Diagnostics.Append(r.groupAccessTokenToStateModel(data, groupAccessToken, group)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *gitlabProjectAccessTokenResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var data *gitlabProjectAccessTokenResourceModel
+func (r *gitlabGroupAccessTokenResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var data *gitlabGroupAccessTokenResourceModel
 
 	// Read Terraform plan data into the model
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
@@ -269,7 +269,7 @@ func (r *gitlabProjectAccessTokenResource) Create(ctx context.Context, req resou
 	}
 
 	// Create options struct
-	options := &gitlab.CreateProjectAccessTokenOptions{
+	options := &gitlab.CreateGroupAccessTokenOptions{
 		Name:   data.Name.ValueStringPointer(),
 		Scopes: gitlab.Ptr(scopes),
 	}
@@ -296,29 +296,29 @@ func (r *gitlabProjectAccessTokenResource) Create(ctx context.Context, req resou
 		options.ExpiresAt = &expiryDate
 	}
 
-	token, _, err := r.client.ProjectAccessTokens.CreateProjectAccessToken(data.Project.ValueString(), options, gitlab.WithContext(ctx))
+	token, _, err := r.client.GroupAccessTokens.CreateGroupAccessToken(data.Group.ValueString(), options, gitlab.WithContext(ctx))
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error creating GitLab ProjectAccessToken",
-			fmt.Sprintf("Could not create GitLab ProjectAccessToken, unexpected error: %v", err),
+			"Error creating GitLab GroupAccessTokens",
+			fmt.Sprintf("Could not create GitLab GroupAccessTokens, unexpected error: %v", err),
 		)
 		return
 	}
 
 	// Set the ID for the resource
-	data.ID = types.StringValue(utils.BuildTwoPartID(data.Project.ValueStringPointer(), gitlab.Ptr(strconv.Itoa(token.ID))))
+	data.ID = types.StringValue(utils.BuildTwoPartID(data.Group.ValueStringPointer(), gitlab.Ptr(strconv.Itoa(token.ID))))
 
-	r.projectAccessTokenToStateModel(data, token, data.Project.ValueString())
+	r.groupAccessTokenToStateModel(data, token, data.Group.ValueString())
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *gitlabProjectAccessTokenResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r *gitlabGroupAccessTokenResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Update only triggers when `expires_at` is updated. Anything else should trigger
 	// a "replace" operation which will destory/create.
-	var data *gitlabProjectAccessTokenResourceModel
+	var data *gitlabGroupAccessTokenResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 
-	project, patId, err := utils.ParseTwoPartID(data.ID.ValueString())
+	group, patId, err := utils.ParseTwoPartID(data.ID.ValueString())
 	intPatId, parseErr := strconv.Atoi(patId)
 	if joinedErr := errors.Join(err, parseErr); joinedErr != nil {
 		resp.Diagnostics.AddError(
@@ -338,28 +338,28 @@ func (r *gitlabProjectAccessTokenResource) Update(ctx context.Context, req resou
 		return
 	}
 
-	// update with a project access token means rotate it
-	token, _, err := r.client.ProjectAccessTokens.RotateProjectAccessToken(project, intPatId, &gitlab.RotateProjectAccessTokenOptions{
+	// update with a group access token means rotate it
+	token, _, err := r.client.GroupAccessTokens.RotateGroupAccessToken(group, intPatId, &gitlab.RotateGroupAccessTokenOptions{
 		ExpiresAt: &expiresAt,
 	}, gitlab.WithContext(ctx))
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error rotating GitLab ProjectAccessToken",
-			fmt.Sprintf("Could not rotate GitLab ProjectAccessToken, unexpected error: %v", err),
+			"Error rotating GitLab GroupAccessTokens",
+			fmt.Sprintf("Could not rotate GitLab GroupAccessTokens, unexpected error: %v", err),
 		)
 		return
 	}
 
-	r.projectAccessTokenToStateModel(data, token, data.Project.ValueString())
+	r.groupAccessTokenToStateModel(data, token, data.Group.ValueString())
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *gitlabProjectAccessTokenResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (r *gitlabGroupAccessTokenResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// Read Terraform state data into the model to get ID
-	var data *gitlabProjectAccessTokenResourceModel
+	var data *gitlabGroupAccessTokenResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
-	project, patId, err := utils.ParseTwoPartID(data.ID.ValueString())
+	group, patId, err := utils.ParseTwoPartID(data.ID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error parsing resource ID",
@@ -368,7 +368,7 @@ func (r *gitlabProjectAccessTokenResource) Delete(ctx context.Context, req resou
 		return
 	}
 
-	projectAccessTokenID, err := strconv.Atoi(patId)
+	groupAccessTokenID, err := strconv.Atoi(patId)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error parsing access token ID",
@@ -377,33 +377,33 @@ func (r *gitlabProjectAccessTokenResource) Delete(ctx context.Context, req resou
 		return
 	}
 
-	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Deleting ProjectAccessToken %d from project %s", projectAccessTokenID, project))
-	_, err = r.client.ProjectAccessTokens.RevokeProjectAccessToken(project, projectAccessTokenID, gitlab.WithContext(ctx))
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Deleting GroupAccessTokens %d from group %s", groupAccessTokenID, group))
+	_, err = r.client.GroupAccessTokens.RevokeGroupAccessToken(group, groupAccessTokenID, gitlab.WithContext(ctx))
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error deleting project access token",
-			fmt.Sprintf("Could not delete project access token, unexpected error: %v", err),
+			"Error deleting group access token",
+			fmt.Sprintf("Could not delete group access token, unexpected error: %v", err),
 		)
 		return
 	}
 
 	// Deleting access token is async, so Log that we're waiting for it to delete
-	tflog.Info(ctx, "Waiting up to 5 minutes for async delete of project access token")
+	tflog.Info(ctx, "Waiting up to 5 minutes for async delete of group access token")
 	err = retry.RetryContext(ctx, 5*time.Minute, func() *retry.RetryError {
-		_, _, err := r.client.ProjectAccessTokens.GetProjectAccessToken(project, projectAccessTokenID, gitlab.WithContext(ctx))
+		_, _, err := r.client.GroupAccessTokens.GetGroupAccessToken(group, groupAccessTokenID, gitlab.WithContext(ctx))
 		if err != nil {
 			if api.Is404(err) {
 				return nil
 			}
 			return retry.NonRetryableError(err)
 		}
-		return retry.RetryableError(errors.New("project access token was not deleted"))
+		return retry.RetryableError(errors.New("group access token was not deleted"))
 	})
 
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error deleting project access token",
-			fmt.Sprintf("Could not delete project access token, unexpected error: %v", err),
+			"Error deleting group access token",
+			fmt.Sprintf("Could not delete group access token, unexpected error: %v", err),
 		)
 	}
 }
