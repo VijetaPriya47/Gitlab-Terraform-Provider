@@ -226,6 +226,12 @@ var _ = registerDataSource("gitlab_project", func() *schema.Resource {
 			"emails_disabled": {
 				Description: "Disable email notifications.",
 				Type:        schema.TypeBool,
+				Deprecated:  "Use of `emails_disabled` is deprecated. Use `emails_enabled` instead.",
+				Computed:    true,
+			},
+			"emails_enabled": {
+				Description: "Enable email notifications.",
+				Type:        schema.TypeBool,
 				Computed:    true,
 			},
 			"external_authorization_classification_label": {
@@ -577,6 +583,7 @@ func dataSourceGitlabProjectRead(ctx context.Context, d *schema.ResourceData, me
 
 	// nolint:staticcheck // SA1019 ignore deprecated EmailsDisabled
 	d.Set("emails_disabled", found.EmailsDisabled)
+	d.Set("emails_enabled", found.EmailsEnabled)
 
 	// Map PublicJobs -> PublicBuild until we have a breaking version.
 	d.Set("public_builds", found.PublicJobs)

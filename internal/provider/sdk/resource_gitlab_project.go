@@ -561,6 +561,19 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 		Type:        schema.TypeBool,
 		Optional:    true,
 		Computed:    true,
+		Deprecated:  "use `emails_enabled` instead.",
+		ConflictsWith: []string{
+			"emails_enabled",
+		},
+	},
+	"emails_enabled": {
+		Description: "Enable email notifications.",
+		Type:        schema.TypeBool,
+		Optional:    true,
+		Computed:    true,
+		ConflictsWith: []string{
+			"emails_disabled",
+		},
 	},
 	"external_authorization_classification_label": {
 		Description: "The classification label for the project.",
@@ -912,6 +925,7 @@ func resourceGitlabProjectSetToState(ctx context.Context, client *gitlab.Client,
 
 	// nolint:staticcheck // SA1019 ignore deprecated EmailsDisabled
 	d.Set("emails_disabled", project.EmailsDisabled)
+	d.Set("emails_enabled", project.EmailsEnabled)
 
 	d.Set("external_authorization_classification_label", project.ExternalAuthorizationClassificationLabel)
 	d.Set("forking_access_level", string(project.ForkingAccessLevel))
@@ -1407,8 +1421,12 @@ func resourceGitlabProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	if d.HasChange("emails_disabled") {
-		// nolint:staticcheck // SA1019 ignore deprecated EmailsDisabled
-		options.EmailsDisabled = gitlab.Ptr(d.Get("emails_disabled").(bool))
+		// GitLab 16.10 may cause issues with EmailsDisabled, do invert the config and use EmailsEnabled instead.
+		options.EmailsEnabled = gitlab.Ptr(!d.Get("emails_disabled").(bool))
+	}
+
+	if d.HasChange("emails_enabled") {
+		options.EmailsEnabled = gitlab.Ptr(d.Get("emails_enabled").(bool))
 	}
 
 	if d.HasChange("external_authorization_classification_label") {
@@ -2054,7 +2072,13 @@ func createProject(ctx context.Context, d *schema.ResourceData, client *gitlab.C
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 	if v, ok := d.GetOkExists("emails_disabled"); ok {
-		options.EmailsDisabled = gitlab.Ptr(v.(bool))
+		options.EmailsEnabled = gitlab.Ptr(!v.(bool))
+	}
+
+	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
+	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
+	if v, ok := d.GetOkExists("emails_enabled"); ok {
+		options.EmailsEnabled = gitlab.Ptr(v.(bool))
 	}
 
 	if v, ok := d.GetOk("external_authorization_classification_label"); ok {
@@ -2595,7 +2619,13 @@ func updatePostCreateEditOptions(ctx context.Context, editProjectOptions *gitlab
 		// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
 		// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 		if v, ok := d.GetOkExists("emails_disabled"); ok {
-			editProjectOptions.EmailsDisabled = gitlab.Ptr(v.(bool))
+			editProjectOptions.EmailsEnabled = gitlab.Ptr(!v.(bool))
+		}
+
+		// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
+		// lintignore: XR001 // TODO: replace with alternative for GetOkExists
+		if v, ok := d.GetOkExists("emails_enabled"); ok {
+			editProjectOptions.EmailsEnabled = gitlab.Ptr(v.(bool))
 		}
 
 		if v, ok := d.GetOk("external_authorization_classification_label"); ok {

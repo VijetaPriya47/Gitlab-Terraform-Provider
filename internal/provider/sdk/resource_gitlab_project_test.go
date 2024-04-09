@@ -1728,6 +1728,8 @@ func TestAccGitlabProject_SetDefaultFalseBooleansOnCreate(t *testing.T) {
 						resolve_outdated_diff_discussions   = false
 						auto_devops_enabled                 = false
 						autoclose_referenced_issues         = false
+
+						// Even though this is deprecated, leaving it alone to test the inversion logic.
 						emails_disabled                     = false
 						public_jobs                         = false
 						merge_pipelines_enabled             = false
@@ -2440,7 +2442,7 @@ resource "gitlab_project" "foo" {
   	cadence = "1month"
   }
   container_registry_access_level = "enabled"
-  emails_disabled = true
+  emails_enabled = false
   forking_access_level = "enabled"
   issues_access_level = "enabled"
   merge_requests_access_level = "enabled"
@@ -2542,7 +2544,7 @@ resource "gitlab_project" "foo" {
   	cadence = "3month"
   }
   container_registry_access_level = "disabled"
-  emails_disabled = false
+  emails_enabled = true
   forking_access_level = "disabled"
   issues_access_level = "disabled"
   merge_requests_access_level = "disabled"
@@ -2688,7 +2690,7 @@ resource "gitlab_project" "foo" {
   	cadence = "1month"
   }
   container_registry_access_level = "enabled"
-  emails_disabled = true
+  emails_enabled = false
   forking_access_level = "enabled"
   issues_access_level = "enabled"
   merge_requests_access_level = "enabled"
@@ -2875,7 +2877,7 @@ resource "gitlab_project" "foo" {
   	cadence = "1month"
   }
   container_registry_access_level = "enabled"
-  emails_disabled = true
+  emails_enabled = false
   forking_access_level = "enabled"
   issues_access_level = "enabled"
   merge_requests_access_level = "enabled"

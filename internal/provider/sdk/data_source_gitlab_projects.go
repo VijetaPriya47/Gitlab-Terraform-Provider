@@ -209,6 +209,7 @@ func flattenProjects(projects []*gitlab.Project) (values []map[string]interface{
 
 				// nolint:staticcheck // SA1019 ignore deprecated EmailsDisabled
 				"emails_disabled": project.EmailsDisabled,
+				"emails_enabled":  project.EmailsEnabled,
 			}
 			values = append(values, v)
 		}
@@ -927,6 +928,12 @@ var _ = registerDataSource("gitlab_projects", func() *schema.Resource {
 						},
 						"emails_disabled": {
 							Description: "Disable email notifications.",
+							Type:        schema.TypeBool,
+							Deprecated:  "Use of `emails_disabled` is deprecated. Use `emails_enabled` instead.",
+							Computed:    true,
+						},
+						"emails_enabled": {
+							Description: "Enable email notifications.",
 							Type:        schema.TypeBool,
 							Computed:    true,
 						},
