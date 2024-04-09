@@ -738,7 +738,7 @@ func TestAccGitlabGroup_SetDefaultFalseBooleansOnCreate(t *testing.T) {
 
 						require_two_factor_authentication = false
 						auto_devops_enabled               = false
-						emails_disabled                   = false
+						emails_enabled                    = true
 						mentions_disabled                 = false
 						prevent_forking_outside_group     = false
 					}`, rInt, rInt),
@@ -867,6 +867,7 @@ type testAccGitlabGroupExpectedAttributes struct {
 	ShareWithGroupLock      *bool
 	AutoDevopsEnabled       *bool
 	EmailsDisabled          *bool
+	EmailsEnabled           *bool
 	MentionsDisabled        *bool
 	ProjectCreationLevel    gitlab.ProjectCreationLevelValue
 	SubGroupCreationLevel   gitlab.SubGroupCreationLevelValue
@@ -907,6 +908,10 @@ func testAccCheckGitlabGroupAttributes(group *gitlab.Group, want *testAccGitlabG
 
 			// nolint:staticcheck // SA1019 ignore deprecated EmailsDisabled
 			return fmt.Errorf("got request_emails_disabled: %t; want %t", group.EmailsDisabled, *want.EmailsDisabled)
+		}
+
+		if want.EmailsEnabled != nil && group.EmailsEnabled != *want.EmailsEnabled {
+			return fmt.Errorf("got request_emails_enabled: %t; want %t", group.EmailsEnabled, *want.EmailsEnabled)
 		}
 
 		if want.MentionsDisabled != nil && group.MentionsDisabled != *want.MentionsDisabled {
@@ -1099,7 +1104,7 @@ resource "gitlab_group" "foo" {
   require_two_factor_authentication = true
   two_factor_grace_period = 56
   auto_devops_enabled = true
-  emails_disabled = true
+  emails_enabled = false
   mentions_disabled = true
   share_with_group_lock = true
   default_branch_protection = %d

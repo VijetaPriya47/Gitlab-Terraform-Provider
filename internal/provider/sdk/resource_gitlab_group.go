@@ -127,6 +127,19 @@ var _ = registerResource("gitlab_group", func() *schema.Resource {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Computed:    true,
+				Deprecated:  "use `emails_enabled` instead",
+				ConflictsWith: []string{
+					"emails_enabled",
+				},
+			},
+			"emails_enabled": {
+				Description: "Enable email notifications.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+				ConflictsWith: []string{
+					"emails_disabled",
+				},
 			},
 			"mentions_disabled": {
 				Description: "Disable the capability of a group from getting mentioned.",
@@ -352,7 +365,16 @@ func resourceGitlabGroupCreate(ctx context.Context, d *schema.ResourceData, meta
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 	if v, ok := d.GetOkExists("emails_disabled"); ok {
-		options.EmailsDisabled = gitlab.Ptr(v.(bool))
+
+		// EmailsDisabled can cause an error starting in GitLab 16.10, so pass in EmailsEnabled
+		// and invert it if it's specified in the config.
+		options.EmailsEnabled = gitlab.Ptr(!v.(bool))
+	}
+
+	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
+	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
+	if v, ok := d.GetOkExists("emails_enabled"); ok {
+		options.EmailsEnabled = gitlab.Ptr(v.(bool))
 	}
 
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
@@ -545,6 +567,7 @@ func resourceGitlabGroupRead(ctx context.Context, d *schema.ResourceData, meta i
 
 	// nolint:staticcheck // SA1019 ignore deprecated EmailsDisabled
 	d.Set("emails_disabled", group.EmailsDisabled)
+	d.Set("emails_enabled", group.EmailsEnabled)
 
 	// The value comes back from the API as a comma separated string, and stores in TF as a set.
 	// We need to set the value only if it's "", otherwise the split gives up [""] which will result
@@ -634,8 +657,13 @@ func resourceGitlabGroupUpdate(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	if d.HasChange("emails_disabled") {
-		// nolint:staticcheck // SA1019 ignore deprecated EmailsDisabled
-		options.EmailsDisabled = gitlab.Ptr(d.Get("emails_disabled").(bool))
+		// EmailsDisabled causes issues in certain builds of 16.10, so use EmailsEnabled
+		// and invert the config to prevent this issue.
+		options.EmailsEnabled = gitlab.Ptr(!d.Get("emails_disabled").(bool))
+	}
+
+	if d.HasChange("emails_enabled") {
+		options.EmailsEnabled = gitlab.Ptr(d.Get("emails_enabled").(bool))
 	}
 
 	if d.HasChange("mentions_disabled") {
