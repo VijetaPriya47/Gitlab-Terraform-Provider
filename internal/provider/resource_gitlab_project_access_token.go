@@ -100,7 +100,7 @@ func (r *gitlabProjectAccessTokenResource) Schema(ctx context.Context, req resou
 				Required: true,
 			},
 			"scopes": schema.SetAttribute{
-				MarkdownDescription: "The scopes of the project access token.",
+				MarkdownDescription: fmt.Sprintf("The scopes of the project access token. valid values are: %s", utils.RenderValueListForDocs(api.ValidAccessTokenScopes)),
 				Required:            true,
 				ElementType:         types.StringType,
 				PlanModifiers: []planmodifier.Set{

@@ -100,7 +100,7 @@ func (r *gitlabGroupAccessTokenResource) Schema(ctx context.Context, req resourc
 				Required: true,
 			},
 			"scopes": schema.SetAttribute{
-				MarkdownDescription: "The scopes of the group access token.",
+				MarkdownDescription: fmt.Sprintf("The scopes of the group access token. Valid values are: %s", utils.RenderValueListForDocs(api.ValidAccessTokenScopes)),
 				Required:            true,
 				ElementType:         types.StringType,
 				PlanModifiers: []planmodifier.Set{

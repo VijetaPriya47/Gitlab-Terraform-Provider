@@ -43,7 +43,7 @@ resource "gitlab_project_variable" "example" {
 - `expires_at` (String) When the token will expire, YYYY-MM-DD format.
 - `name` (String) The name of the project access token.
 - `project` (String) The ID or full path of the project.
-- `scopes` (Set of String) The scopes of the project access token.
+- `scopes` (Set of String) The scopes of the project access token. valid values are: `api`, `read_api`, `read_user`, `k8s_proxy`, `read_registry`, `write_registry`, `read_repository`, `write_repository`, `create_runner`, `ai_features`, `k8s_proxy`, `read_observability`, `write_observability`
 
 ### Optional
 
