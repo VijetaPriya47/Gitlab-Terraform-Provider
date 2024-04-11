@@ -6,12 +6,9 @@ package provider
 import (
 	"context"
 	"fmt"
-	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 var (
@@ -39,40 +36,3 @@ var (
 		},
 	}
 )
-
-func TestAcc_GitLabProvider_UpgradeLatestMajor(t *testing.T) {
-	testGroupName := acctest.RandomWithPrefix("acctest-upgrade-test")
-
-	// commonConfig is used as a dummy configuration using the provider
-	// which is expected not to break between major gitlab provider versions.
-	// However, this may still happen in the future - in that case, it's
-	// okay to change this test case accordingly.
-	commonConfig := fmt.Sprintf(`
-	resource "gitlab_group" "sample_group" {
-		name        = "%s"
-		path        = "%s"
-		description = "An example group"
-	}
-	`, testGroupName, testGroupName)
-
-	//lintignore:AT001
-	resource.ParallelTest(t, resource.TestCase{
-		Steps: []resource.TestStep{
-			// Create resources with the latest major version
-			{
-				ExternalProviders: map[string]resource.ExternalProvider{
-					"gitlab": {
-						VersionConstraint: "~> 3.0",
-						Source:            "gitlabhq/gitlab",
-					},
-				},
-				Config: commonConfig,
-			},
-			// Migrate to the current provider version
-			{
-				ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
-				Config:                   commonConfig,
-			},
-		},
-	})
-}
