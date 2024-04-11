@@ -51,6 +51,11 @@ var _ = registerResource("gitlab_group_membership", func() *schema.Resource {
 				ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(api.ValidGroupAccessLevelNames, false)),
 				Required:         true,
 			},
+			"member_role_id": {
+				Description: "The ID of a custom member role. Only available for Ultimate instances.",
+				Type:        schema.TypeInt,
+				Optional:    true,
+			},
 			"expires_at": {
 				Description:  "Expiration date for the group membership. Format: `YYYY-MM-DD`",
 				Type:         schema.TypeString,
@@ -86,6 +91,11 @@ func resourceGitlabGroupMembershipCreate(ctx context.Context, d *schema.Resource
 		AccessLevel: &accessLevelId,
 		ExpiresAt:   &expiresAt,
 	}
+
+	if v, ok := d.GetOk("member_role_id"); v != nil && ok {
+		options.MemberRoleID = gitlab.Ptr(v.(int))
+	}
+
 	log.Printf("[DEBUG] create gitlab group groupMember for %d in %s", options.UserID, groupId)
 
 	groupMember, _, err := client.GroupMembers.AddGroupMember(groupId, options, gitlab.WithContext(ctx))
@@ -145,6 +155,11 @@ func resourceGitlabGroupMembershipUpdate(ctx context.Context, d *schema.Resource
 		AccessLevel: &accessLevelId,
 		ExpiresAt:   &expiresAt,
 	}
+
+	if v, ok := d.GetOk("member_role_id"); v != nil && ok {
+		options.MemberRoleID = gitlab.Ptr(v.(int))
+	}
+
 	log.Printf("[DEBUG] update gitlab group membership %v for %s", userId, groupId)
 
 	_, _, err := client.GroupMembers.EditGroupMember(groupId, userId, &options, gitlab.WithContext(ctx))
@@ -184,6 +199,14 @@ func resourceGitlabGroupMembershipSetToState(d *schema.ResourceData, groupMember
 	d.Set("group_id", groupId)
 	d.Set("user_id", groupMember.ID)
 	d.Set("access_level", api.AccessLevelValueToName[groupMember.AccessLevel])
+
+	// If a custom member role is returned, save it to state
+	if groupMember.MemberRole != nil {
+		d.Set("member_role_id", groupMember.MemberRole.ID)
+	} else {
+		d.Set("member_role_id", nil)
+	}
+
 	if groupMember.ExpiresAt != nil {
 		d.Set("expires_at", groupMember.ExpiresAt.String())
 	} else {
