@@ -3,14 +3,14 @@
 page_title: "gitlab_group_access_token Resource - terraform-provider-gitlab"
 subcategory: ""
 description: |-
-  The gitlab_group_accesstoken resource allows to manage the lifecycle of a group access token.
+  The gitlab_group_access_tokenresource allows to manage the lifecycle of a group access token.
   ~> Observability scopes are in beta and may not work on all instances. See more details in the documentation https://docs.gitlab.com/ee/operations/tracing.html
   Upstream API: GitLab REST API https://docs.gitlab.com/ee/api/group_access_tokens.html
 ---
 
 # gitlab_group_access_token (Resource)
 
-The `gitlab_group_access`token resource allows to manage the lifecycle of a group access token.
+The `gitlab_group_access_token`resource allows to manage the lifecycle of a group access token.
 
 ~> Observability scopes are in beta and may not work on all instances. See more details in [the documentation](https://docs.gitlab.com/ee/operations/tracing.html)
 
