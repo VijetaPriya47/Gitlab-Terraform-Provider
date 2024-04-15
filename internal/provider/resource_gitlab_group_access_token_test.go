@@ -5,6 +5,7 @@ package provider
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"testing"
 	"time"
@@ -202,6 +203,200 @@ func TestAccGitlabGroupAccessToken_basic(t *testing.T) {
 					// the token is only known during creating. We explicitly mention this limitation in the docs.
 					"token",
 				},
+			},
+		},
+	})
+}
+
+func TestAccGitlabGroupAccessToken_rotationConfiguration(t *testing.T) {
+	group := testutil.CreateGroups(t, 1)[0]
+
+	// Function for easily calculating the expiry days from the current time.
+	getCurrentTimePlusDays := func(days int) gitlab.ISOTime {
+		now := time.Now()
+		expiryDate := now.AddDate(0, 0, days)
+		expiryIsoTime, err := gitlab.ParseISOTime(expiryDate.Format(api.Iso8601))
+		if err != nil {
+			t.Fatal("Somehow failed to generate a good date", err)
+		}
+		return expiryIsoTime
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabProjectAccessTokenDestroy,
+		Steps: []resource.TestStep{
+			// Create a basic access token.
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group_access_token" "this" {
+					name = "my group token"
+					group = %d
+
+					access_level = "developer"
+					scopes = ["api"]
+
+					// Create a token good for 10 days, that rotates after 9 days
+					rotation_configuration = {
+						expiration_days = 10
+						rotate_before_days = 1
+					}
+
+				}
+				`, group.ID),
+				// Check computed and default attributes.
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_group_access_token.this", "active", "true"),
+					resource.TestCheckResourceAttr("gitlab_group_access_token.this", "expires_at", getCurrentTimePlusDays(10).String()),
+				),
+			},
+			// Verify upstream resource with an import.
+			{
+				ResourceName:      "gitlab_group_access_token.this",
+				ImportState:       true,
+				ImportStateVerify: true,
+				// The token is only known during creating. We explicitly mention this limitation in the docs.
+				ImportStateVerifyIgnore: []string{"token", "rotation_configuration"},
+			},
+			// Recreate the access token with a different expiration. The higher expiration should trigger a rotation.
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group_access_token" "this" {
+					name = "my group token"
+					group = %d
+
+					access_level = "developer"
+					scopes = ["api"]
+
+					// Create a token good for 20 days, that rotates immediately because 15
+					// days is > 10 that we used in the previous configuration
+					rotation_configuration = {
+						expiration_days = 20
+						rotate_before_days = 30
+					}
+
+				}
+				`, group.ID),
+				// Check computed and default attributes.
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_group_access_token.this", "active", "true"),
+					resource.TestCheckResourceAttr("gitlab_group_access_token.this", "expires_at", getCurrentTimePlusDays(20).String()),
+				),
+			},
+			// Verify upstream resource with an import.
+			{
+				ResourceName:      "gitlab_group_access_token.this",
+				ImportState:       true,
+				ImportStateVerify: true,
+				// The token is only known during creating. We explicitly mention this limitation in the docs.
+				ImportStateVerifyIgnore: []string{"token", "rotation_configuration"},
+			},
+			// Recreate the access token with a different rotation. The lower expiration should not trigger another rotation.
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group_access_token" "this" {
+					name = "my group token"
+					group = %d
+
+					access_level = "developer"
+					scopes = ["api"]
+
+					// Create a token good for 20 days, that rotates 1 day before it expires
+					rotation_configuration = {
+						expiration_days = 20
+						rotate_before_days = 2
+					}
+
+				}
+				`, group.ID),
+				// Check computed and default attributes.
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_group_access_token.this", "active", "true"),
+					resource.TestCheckResourceAttr("gitlab_group_access_token.this", "expires_at", getCurrentTimePlusDays(20).String()),
+				),
+			},
+		},
+	})
+}
+
+func TestAccGitlabGroupAccessToken_attributeValidation(t *testing.T) {
+	group := testutil.CreateGroups(t, 1)[0]
+
+	// Function for easily calculating the expiry days from the current time.
+	getCurrentTimePlusDays := func(days int) gitlab.ISOTime {
+		now := time.Now()
+		expiryDate := now.AddDate(0, 0, days)
+		expiryIsoTime, err := gitlab.ParseISOTime(expiryDate.Format(api.Iso8601))
+		if err != nil {
+			t.Fatal("Somehow failed to generate a good date", err)
+		}
+		return expiryIsoTime
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabProjectAccessTokenDestroy,
+		Steps: []resource.TestStep{
+			// Validate expires_at and rotation_configuration conflict
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group_access_token" "this" {
+					name = "my group token"
+					group = %d
+					expires_at = %s
+
+					access_level = "developer"
+					scopes = ["api"]
+
+					// Create a token good for 10 days, that rotates after 9 days
+					rotation_configuration = {
+						expiration_days = 10
+						rotate_before_days = 1
+					}
+
+				}
+				`, group.ID, getCurrentTimePlusDays(2).String()), // so it's always in the future.
+				ExpectError: regexp.MustCompile("Error: Invalid Attribute Combination"),
+			},
+			// Validate that expiration must be > 0
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group_access_token" "this" {
+					name = "my group token"
+					group = %d
+
+					access_level = "developer"
+					scopes = ["api"]
+
+					// Create a token good for 10 days, that rotates after 9 days
+					rotation_configuration = {
+						expiration_days = -1
+						rotate_before_days = 1
+					}
+
+				}
+				`, group.ID),
+				ExpectError: regexp.MustCompile("rotation_configuration.expiration_days value must be at least 1"),
+			},
+			// Validate that rotate_before_days must be > 0
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group_access_token" "this" {
+					name = "my group token"
+					group = %d
+
+					access_level = "developer"
+					scopes = ["api"]
+
+					// Create a token good for 10 days, that rotates after 9 days
+					rotation_configuration = {
+						expiration_days = 1
+						rotate_before_days = -1
+					}
+
+				}
+				`, group.ID),
+				ExpectError: regexp.MustCompile("rotation_configuration.rotate_before_days value must be at least 1"),
 			},
 		},
 	})
