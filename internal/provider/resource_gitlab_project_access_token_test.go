@@ -5,11 +5,13 @@ package provider
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/xanzy/go-gitlab"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
@@ -158,6 +160,181 @@ func TestAccGitlabProjectAccessToken_basic(t *testing.T) {
 				ImportStateVerify: true,
 				// The token is only known during creating. We explicitly mention this limitation in the docs.
 				ImportStateVerifyIgnore: []string{"token"},
+			},
+		},
+	})
+}
+
+func TestAccGitlabProjectAccessToken_rotationConfiguration(t *testing.T) {
+	project := testutil.CreateProject(t)
+
+	// Function for easily calculating the expiry days from the current time.
+	getCurrentTimePlusDays := func(days int) gitlab.ISOTime {
+		now := time.Now()
+		expiryDate := now.AddDate(0, 0, days)
+		expiryIsoTime, err := gitlab.ParseISOTime(expiryDate.Format(api.Iso8601))
+		if err != nil {
+			t.Fatal("Somehow failed to generate a good date", err)
+		}
+		return expiryIsoTime
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabProjectAccessTokenDestroy,
+		Steps: []resource.TestStep{
+			// Create a basic access token.
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_access_token" "foo" {
+					project = %d
+					name    = "foo"
+					scopes  = ["api"]
+
+					// Create a token good for 10 days, that rotates after 9 days
+					rotation_configuration = {
+						expiration_days = 10
+						rotate_before_days = 1
+					}
+				}
+				`, project.ID),
+				// Check computed and default attributes.
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project_access_token.foo", "active", "true"),
+					resource.TestCheckResourceAttr("gitlab_project_access_token.foo", "expires_at", getCurrentTimePlusDays(10).String()),
+				),
+			},
+			// Verify upstream resource with an import.
+			{
+				ResourceName:      "gitlab_project_access_token.foo",
+				ImportState:       true,
+				ImportStateVerify: true,
+				// The token is only known during creating. We explicitly mention this limitation in the docs.
+				ImportStateVerifyIgnore: []string{"token", "rotation_configuration"},
+			},
+			// Recreate the access token with a different expiration. The higher expiration should trigger a rotation.
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_access_token" "foo" {
+					project = %d
+					name    = "foo"
+					scopes  = ["api"]
+
+					// Create a token good for 20 days, that rotates immediately because the 15 days is
+					// Greater than the 10 days we previously configured
+					rotation_configuration = {
+						expiration_days = 20
+						rotate_before_days = 30
+					}
+				}
+				`, project.ID),
+				// Check computed and default attributes.
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project_access_token.foo", "active", "true"),
+					resource.TestCheckResourceAttr("gitlab_project_access_token.foo", "expires_at", getCurrentTimePlusDays(20).String()),
+				),
+			},
+			// Verify upstream resource with an import.
+			{
+				ResourceName:            "gitlab_project_access_token.foo",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"token", "rotation_configuration"},
+			},
+			// Recreate the access token with a different rotation. The lower expiration should not trigger another rotation.
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_access_token" "foo" {
+					project = %d
+					name    = "foo"
+					scopes  = ["api"]
+
+					// Create a token good for 20 days, that rotates 1 day before expiration
+					rotation_configuration = {
+						expiration_days = 20
+						rotate_before_days = 1
+					}
+				}
+				`, project.ID),
+				// Check computed and default attributes.
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project_access_token.foo", "active", "true"),
+					resource.TestCheckResourceAttr("gitlab_project_access_token.foo", "expires_at", getCurrentTimePlusDays(20).String()),
+				),
+			},
+		},
+	})
+}
+
+func TestAccGitlabProjectAccessToken_attributeValidation(t *testing.T) {
+	project := testutil.CreateProject(t)
+
+	// Function for easily calculating the expiry days from the current time.
+	getCurrentTimePlusDays := func(days int) gitlab.ISOTime {
+		now := time.Now()
+		expiryDate := now.AddDate(0, 0, days)
+		expiryIsoTime, err := gitlab.ParseISOTime(expiryDate.Format(api.Iso8601))
+		if err != nil {
+			t.Fatal("Somehow failed to generate a good date", err)
+		}
+		return expiryIsoTime
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabProjectAccessTokenDestroy,
+		Steps: []resource.TestStep{
+			// Validate expires_at and rotation_configuration conflict
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_access_token" "foo" {
+					project = %d
+					name    = "foo"
+					scopes  = ["api"]
+
+					expires_at = %s
+
+					// Create a token good for 10 days, that rotates after 9 days
+					rotation_configuration = {
+						expiration_days = 10
+						rotate_before_days = 1
+					}
+				}
+				`, project.ID, getCurrentTimePlusDays(2).String()), // To ensure it's always in the future
+				ExpectError: regexp.MustCompile("Error: Invalid Attribute Combination"),
+			},
+			// Validate expiration_days is at least 1
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_access_token" "foo" {
+					project = %d
+					name    = "foo"
+					scopes  = ["api"]
+
+					rotation_configuration = {
+						expiration_days = -1
+						rotate_before_days = 1
+					}
+				}
+				`, project.ID),
+				ExpectError: regexp.MustCompile("rotation_configuration.expiration_days value must be at least 1"),
+			},
+
+			// Validate rotate_before_days is at least 1
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_access_token" "foo" {
+					project = %d
+					name    = "foo"
+					scopes  = ["api"]
+
+					rotation_configuration = {
+						expiration_days = 1
+						rotate_before_days = -1
+					}
+				}
+				`, project.ID),
+				ExpectError: regexp.MustCompile("rotation_configuration.rotate_before_days value must be at least 1"),
 			},
 		},
 	})

@@ -7,12 +7,15 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/objectvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
@@ -31,6 +34,7 @@ var (
 	_ resource.Resource                = &gitlabProjectAccessTokenResource{}
 	_ resource.ResourceWithConfigure   = &gitlabProjectAccessTokenResource{}
 	_ resource.ResourceWithImportState = &gitlabProjectAccessTokenResource{}
+	_ resource.ResourceWithModifyPlan  = &gitlabProjectAccessTokenResource{}
 )
 
 func init() {
@@ -62,6 +66,15 @@ type gitlabProjectAccessTokenResourceModel struct {
 
 	Active  types.Bool `tfsdk:"active"`
 	Revoked types.Bool `tfsdk:"revoked"`
+
+	RotationConfiguration *gitlabAccessTokenRotationConfiguration `tfsdk:"rotation_configuration"`
+}
+
+// The struct for rotation configurations. Used when the provider is auto
+// rotating tokens, and its use conflicts with `expires_at`
+type gitlabAccessTokenRotationConfiguration struct {
+	ExpirationDays   types.Int64 `tfsdk:"expiration_days"`
+	RotateBeforeDays types.Int64 `tfsdk:"rotate_before_days"`
 }
 
 func (r *gitlabProjectAccessTokenResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -72,7 +85,11 @@ func (r *gitlabProjectAccessTokenResource) Schema(ctx context.Context, req resou
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`" + `gitlab_project_access_token` + "`" + ` resource allows to manage the lifecycle of a project access token.
 
-~>  Use of the ` + "`timestamp()`" + ` function with expires_at will cause the resource to be re-created with every apply, it's recommended to use ` + "`plantimestamp()`" + ` or a static value instead.
+~> Observability scopes are in beta and may not work on all instances. See more details in [the documentation](https://docs.gitlab.com/ee/operations/tracing.html)
+
+~> Use ` + "`rotation_configuration`" + ` to automatically rotate tokens instead of using ` + "`timestamp()`" + ` as timestamp will cause changes with every plan. ` + "`terraform apply`" + ` must still be run to rotate the token.
+
+~> Due to [Automatic reuse detection](https://docs.gitlab.com/ee/api/project_access_tokens.html#automatic-reuse-detection) it's possible that a new Project Access Token will immediately be revoked. Check if an old process using the old token is running if this happens.
 
 **Upstream API**: [GitLab API docs](https://docs.gitlab.com/ee/api/project_access_tokens.html)`,
 		Attributes: map[string]schema.Attribute{
@@ -114,11 +131,15 @@ func (r *gitlabProjectAccessTokenResource) Schema(ctx context.Context, req resou
 				},
 			},
 			"expires_at": schema.StringAttribute{
-				MarkdownDescription: "When the token will expire, YYYY-MM-DD format.",
+				MarkdownDescription: "When the token will expire, YYYY-MM-DD format. Is automatically set when `rotation_configuration` is used.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
-				Required: true,
+				Validators: []validator.String{
+					stringvalidator.ConflictsWith(path.MatchRoot("rotation_configuration")),
+				},
+				Optional: true,
+				Computed: true,
 			},
 			"created_at": schema.StringAttribute{
 				MarkdownDescription: "Time the token has been created, RFC3339 format.",
@@ -152,6 +173,40 @@ func (r *gitlabProjectAccessTokenResource) Schema(ctx context.Context, req resou
 				),
 				Computed: true,
 				Optional: true,
+			},
+			"rotation_configuration": schema.SingleNestedAttribute{
+				MarkdownDescription: "The configuration for when to rotate a token automatically. Will not rotate a token until `terraform apply` is run.",
+				Optional:            true,
+				Validators: []validator.Object{
+					objectvalidator.ConflictsWith(path.MatchRoot("expires_at")),
+				},
+
+				// Rotation attributes
+				Attributes: map[string]schema.Attribute{
+					"expiration_days": schema.Int64Attribute{
+						MarkdownDescription: "The duration (in days) the new token should be valid for.",
+						Required:            true,
+						PlanModifiers: []planmodifier.Int64{
+							int64planmodifier.UseStateForUnknown(),
+							int64planmodifier.RequiresReplace(),
+						},
+						Validators: []validator.Int64{
+							int64validator.AtLeast(1),
+						},
+					},
+
+					"rotate_before_days": schema.Int64Attribute{
+						MarkdownDescription: "The duration (in days) before the expiration when the token should be rotated. As an example, if set to 7 days, the token will rotate 7 days before the expiration date, but only when `terraform apply` is run in that timeframe.",
+						Required:            true,
+						PlanModifiers: []planmodifier.Int64{
+							int64planmodifier.UseStateForUnknown(),
+							int64planmodifier.RequiresReplace(),
+						},
+						Validators: []validator.Int64{
+							int64validator.AtLeast(1),
+						},
+					},
+				},
 			},
 		},
 	}
@@ -196,6 +251,69 @@ func (r *gitlabProjectAccessTokenResource) projectAccessTokenToStateModel(data *
 // ImportState imports the resource into the Terraform state.
 func (r *gitlabProjectAccessTokenResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+// Use the `ModifyPlan` to determine if we need to rotate the `token` associated to this
+// resource, by checking the date that's set in the `expires_at` field is less than the `rotate_before_days`
+// value.
+func (r *gitlabProjectAccessTokenResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+
+	// Retrieve the plan data to start with
+	var planData *gitlabProjectAccessTokenResourceModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &planData)...)
+
+	if planData == nil || planData.RotationConfiguration == nil {
+		// Log a note that there is no plan data, usually because we're importing.
+		tflog.Debug(ctx, "Plan data is nil or RotationConfiguraiton is nil, no check for token rotation is needed")
+		return
+	}
+
+	// Now retrieve the `state` values instead of plan, because we need to get the expiry date from the state.
+	var stateData *gitlabProjectAccessTokenResourceModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &stateData)...)
+
+	// Check to determine if we need to rotate the expiry date
+	shouldSetExpiration := false
+
+	// If expiration (or ANY state) has never been set yet (we're in a "Create" plan), ensure we calculate and set the first time.
+	if stateData == nil || stateData.ExpiresAt.IsNull() || stateData.ExpiresAt.IsUnknown() {
+		shouldSetExpiration = true
+
+	} else {
+
+		// We're in an "Update" plan that already has expiration set, calculate if we need to rotate
+		rotateBefore := stateData.ExpiresAt.ValueString()
+		rotateBeforeTime, err := time.Parse(api.Iso8601, rotateBefore)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Error parsing rotation date",
+				fmt.Sprintf("Could not parse rotation date %q: %s", rotateBefore, err),
+			)
+			return
+		}
+
+		// Subtract the rotation days
+		// This is done using `Add` because it returns "time.Time" instead of `Sub` which returns time.Duration. For some reason.
+		gapTime := rotateBeforeTime.Add(-time.Duration(planData.RotationConfiguration.RotateBeforeDays.ValueInt64()) * 24 * time.Hour)
+		if gapTime.Before(time.Now()) {
+			shouldSetExpiration = true
+		}
+	}
+
+	if shouldSetExpiration {
+		// We need to re-calculate the expiryDate, and set it in the plan
+		expiryDate, err := r.determinExpiryDate(planData)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Error determining new expiry date",
+				fmt.Sprintf("Could not determine new expiry date: %s", err),
+			)
+			return
+		}
+
+		// Set the new expiration date in the plan
+		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("expires_at"), expiryDate.String())...)
+	}
 }
 
 func (r *gitlabProjectAccessTokenResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -281,19 +399,17 @@ func (r *gitlabProjectAccessTokenResource) Create(ctx context.Context, req resou
 		options.AccessLevel = &accessLevel
 	}
 
-	// Get the valid expiry date from the `expires_at`
-	if !data.ExpiresAt.IsNull() && !data.ExpiresAt.IsUnknown() {
-		expiryDate, err := gitlab.ParseISOTime(data.ExpiresAt.ValueString())
-		if err != nil {
-			resp.Diagnostics.AddError(
-				"Error determining expiry date",
-				fmt.Sprintf("Could not determine expiry date: %s", err),
-			)
-			return
-		}
-
-		options.ExpiresAt = &expiryDate
+	// Get the valid expiry date from the `expires_at` or the `rotation_configuration`
+	expiryDate, err := r.determinExpiryDate(data)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error determining expiry date",
+			fmt.Sprintf("Could not determine expiry date: %s", err),
+		)
+		return
 	}
+
+	options.ExpiresAt = expiryDate
 
 	token, _, err := r.client.ProjectAccessTokens.CreateProjectAccessToken(data.Project.ValueString(), options, gitlab.WithContext(ctx))
 	if err != nil {
@@ -328,7 +444,7 @@ func (r *gitlabProjectAccessTokenResource) Update(ctx context.Context, req resou
 	}
 
 	// determine the new expires_at from the config
-	expiresAt, err := gitlab.ParseISOTime(data.ExpiresAt.ValueString())
+	expiresAt, err := r.determinExpiryDate(data)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Failed to parse expires_at value into a valid ISOTime",
@@ -339,7 +455,7 @@ func (r *gitlabProjectAccessTokenResource) Update(ctx context.Context, req resou
 
 	// update with a project access token means rotate it
 	token, _, err := r.client.ProjectAccessTokens.RotateProjectAccessToken(project, intPatId, &gitlab.RotateProjectAccessTokenOptions{
-		ExpiresAt: &expiresAt,
+		ExpiresAt: expiresAt,
 	}, gitlab.WithContext(ctx))
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -405,4 +521,33 @@ func (r *gitlabProjectAccessTokenResource) Delete(ctx context.Context, req resou
 			fmt.Sprintf("Could not delete project access token, unexpected error: %v", err),
 		)
 	}
+}
+
+// Takes in a resource model, and checks with the `expiry_date` or the `rotation_configuration` to determine what
+// value should be set into the `expiry_date` field for the options.
+// Returns a gitlab.ISOTime object of what should be set into the `expiry_date` field.
+func (r *gitlabProjectAccessTokenResource) determinExpiryDate(data *gitlabProjectAccessTokenResourceModel) (*gitlab.ISOTime, error) {
+
+	// If `expires_at` is set, then attempt to parse the time, and return the isoTime value if it
+	// successfully parses
+	if !data.ExpiresAt.IsNull() && !data.ExpiresAt.IsUnknown() {
+
+		isoTime, err := gitlab.ParseISOTime(data.ExpiresAt.ValueString())
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse expiration date into ISOTime. Provided value: %s", data.ExpiresAt.ValueString())
+		}
+		return &isoTime, nil
+	}
+
+	// If `expires_at` is not set, then use the `rotation_configuration.expiration_days` if possible to to add the duration
+	// to the current date to determine expiration, and return that instead. Otherwise, simply return nil, and let the default take.
+	if data.RotationConfiguration != nil && !data.RotationConfiguration.ExpirationDays.IsNull() && !data.RotationConfiguration.ExpirationDays.IsUnknown() {
+		now := time.Now()
+		expiryDate := now.AddDate(0, 0, int(data.RotationConfiguration.ExpirationDays.ValueInt64()))
+		expiryIsoTime, err := gitlab.ParseISOTime(expiryDate.Format(api.Iso8601))
+
+		return &expiryIsoTime, err
+	}
+
+	return nil, nil
 }
