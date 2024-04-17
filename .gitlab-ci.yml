@@ -326,6 +326,10 @@ goreleaser:build-verification:
   image:
     name: goreleaser/goreleaser:v1.26.0-nightly
     entrypoint: [""]
+  variables:
+    # Disable shallow cloning so that goreleaser can diff between tags to validate
+    GIT_DEPTH: 0
+    GITLAB_TOKEN: $CI_JOB_TOKEN
   script:
     # Skip `git` validation so we don't get git commit mismatches from tags since this job
     # won't always run on a tag. Since we're not calling `release`, nothing is published
