@@ -582,24 +582,32 @@ func resourceGitlabGroupRead(ctx context.Context, d *schema.ResourceData, meta i
 		return diag.FromErr(err)
 	}
 
-	tflog.Debug(ctx, "[DEBUG] read gitlab group push rules", map[string]interface{}{"id": d.Id()})
-
-	pushRules, _, err := client.Groups.GetGroupPushRules(d.Id(), gitlab.WithContext(ctx))
-	if api.Is404(err) {
-		tflog.Error(ctx, "[ERROR] Failed to get push rules for group", map[string]interface{}{
-			"group_id": d.Id(),
-			"error":    err,
-		})
-	} else if err != nil {
-		return diag.Errorf("Failed to get push rules for group %q: %s", d.Id(), err)
-	}
-
-	pushRuleValues, err := flattenGroupPushRules(ctx, client, pushRules)
+	isEE, err := utils.IsRunningInEEContext(client)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if err := d.Set("push_rules", pushRuleValues); err != nil {
-		return diag.FromErr(err)
+
+	if isEE {
+		tflog.Debug(ctx, "[DEBUG] read gitlab group push rules", map[string]interface{}{"id": d.Id()})
+
+		pushRules, _, err := client.Groups.GetGroupPushRules(d.Id(), gitlab.WithContext(ctx))
+		if api.Is404(err) {
+			tflog.Error(ctx, "[ERROR] Failed to get push rules for group", map[string]interface{}{
+				"group_id": d.Id(),
+				"error":    err,
+			})
+		} else if err != nil {
+			return diag.Errorf("Failed to get push rules for group %q: %s", d.Id(), err)
+		}
+		pushRuleValues, err := flattenGroupPushRules(ctx, client, pushRules)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		if err := d.Set("push_rules", pushRuleValues); err != nil {
+			return diag.FromErr(err)
+		}
+	} else {
+		tflog.Debug(ctx, "[DEBUG] gitlab group push rule not read due to gitlab community edition")
 	}
 
 	return nil
