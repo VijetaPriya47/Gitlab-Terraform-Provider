@@ -26,9 +26,6 @@ var ValidGroupAccessLevelNames = []string{
 	"developer",
 	"maintainer",
 	"owner",
-
-	// Deprecated and should be removed in v4 of this provider
-	"master",
 }
 var ValidProjectAccessLevelNames = []string{
 	"no one",
@@ -38,9 +35,6 @@ var ValidProjectAccessLevelNames = []string{
 	"developer",
 	"maintainer",
 	"owner",
-
-	// Deprecated and should be removed in v4 of this provider
-	"master",
 }
 
 // NOTE(TF): the documentation here https://docs.gitlab.com/ee/api/protected_branches.html
@@ -78,9 +72,6 @@ var AccessLevelNameToValue = map[string]gitlab.AccessLevelValue{
 	"maintainer": gitlab.MaintainerPermissions,
 	"owner":      gitlab.OwnerPermissions,
 	"admin":      gitlab.AdminPermissions,
-
-	// Deprecated and should be removed in v4 of this provider
-	"master": gitlab.MaintainerPermissions,
 }
 
 var AccessLevelValueToName = map[gitlab.AccessLevelValue]string{
