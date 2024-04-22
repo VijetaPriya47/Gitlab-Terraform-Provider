@@ -317,7 +317,7 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 					Optional:    true,
 				},
 				"commit_message_negative_regex": {
-					Description: "No commit message is allowed to match this regex, for example `ssh\\:\\/\\/`.",
+					Description: "No commit message is allowed to match this regex, e.g. `ssh\\:\\/\\/`.",
 					Type:        schema.TypeString,
 					Optional:    true,
 				},

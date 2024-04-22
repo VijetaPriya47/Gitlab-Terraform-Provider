@@ -270,7 +270,7 @@ Optional:
 - `author_email_regex` (String) All commit author emails must match this regex, e.g. `@my-company.com$`.
 - `branch_name_regex` (String) All branch names must match this regex, e.g. `(feature|hotfix)\/*`.
 - `commit_committer_check` (Boolean) Users can only push commits to this repository that were committed with one of their own verified emails.
-- `commit_message_negative_regex` (String) No commit message is allowed to match this regex, for example `ssh\:\/\/`.
+- `commit_message_negative_regex` (String) No commit message is allowed to match this regex, e.g. `ssh\:\/\/`.
 - `commit_message_regex` (String) All commit messages must match this regex, e.g. `Fixed \d+\..*`.
 - `deny_delete_tag` (Boolean) Deny deleting a tag.
 - `file_name_regex` (String) All committed filenames must not match this regex, e.g. `(jar|exe)$`.
