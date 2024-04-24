@@ -3,7 +3,6 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -49,6 +48,7 @@ func gitlabPipelineTriggerSchema() map[string]*schema.Schema {
 		"project": {
 			Description: "The name or id of the project to add the trigger to.",
 			Type:        schema.TypeString,
+			ForceNew:    true,
 			Required:    true,
 		},
 		"description": {
@@ -57,7 +57,7 @@ func gitlabPipelineTriggerSchema() map[string]*schema.Schema {
 			Required:    true,
 		},
 		"token": {
-			Description: "The pipeline trigger token.",
+			Description: "The pipeline trigger token. This value is not available during import.",
 			Type:        schema.TypeString,
 			Computed:    true,
 			Sensitive:   true,
@@ -116,7 +116,7 @@ func resourceGitlabPipelineTriggerCreate(ctx context.Context, d *schema.Resource
 		Description: gitlab.Ptr(d.Get("description").(string)),
 	}
 
-	log.Printf("[DEBUG] create gitlab PipelineTrigger %s", *options.Description)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab PipelineTrigger %s", *options.Description))
 
 	pipelineTrigger, _, err := client.PipelineTriggers.AddPipelineTrigger(project, options, gitlab.WithContext(ctx))
 	if err != nil {
@@ -124,6 +124,13 @@ func resourceGitlabPipelineTriggerCreate(ctx context.Context, d *schema.Resource
 	}
 
 	d.SetId(resourceGitlabPipelineTriggerBuildId(project, pipelineTrigger.ID))
+
+	// While the token does come back on the "GET" api on every request, attempting to retrieve the token using a
+	// different user than the one who created the token results in a truncated value coming back from the API,
+	// which can corrupt the state. See https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/issues/1410 for
+	// more information
+	d.Set("token", pipelineTrigger.Token)
+
 	return resourceGitlabPipelineTriggerRead(ctx, d, meta)
 }
 
@@ -134,12 +141,12 @@ func resourceGitlabPipelineTriggerRead(ctx context.Context, d *schema.ResourceDa
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] read gitlab PipelineTrigger %s/%d", project, pipelineTriggerId)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab PipelineTrigger %s/%d", project, pipelineTriggerId))
 
 	pipelineTrigger, _, err := client.PipelineTriggers.GetPipelineTrigger(project, pipelineTriggerId, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] gitlab pipeline trigger not found %s/%d", project, pipelineTriggerId)
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab pipeline trigger not found %s/%d", project, pipelineTriggerId))
 			d.SetId("")
 			return nil
 		}
@@ -149,7 +156,6 @@ func resourceGitlabPipelineTriggerRead(ctx context.Context, d *schema.ResourceDa
 	d.Set("pipeline_trigger_id", pipelineTrigger.ID)
 	d.Set("project", project)
 	d.Set("description", pipelineTrigger.Description)
-	d.Set("token", pipelineTrigger.Token)
 
 	return nil
 }
@@ -169,7 +175,7 @@ func resourceGitlabPipelineTriggerUpdate(ctx context.Context, d *schema.Resource
 		options.Description = gitlab.Ptr(d.Get("description").(string))
 	}
 
-	log.Printf("[DEBUG] update gitlab PipelineTrigger %s", d.Id())
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab PipelineTrigger %s", d.Id()))
 
 	_, _, err = client.PipelineTriggers.EditPipelineTrigger(project, pipelineTriggerId, options, gitlab.WithContext(ctx))
 	if err != nil {
@@ -185,7 +191,7 @@ func resourceGitlabPipelineTriggerDelete(ctx context.Context, d *schema.Resource
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	log.Printf("[DEBUG] Delete gitlab PipelineTrigger %s", d.Id())
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Delete gitlab PipelineTrigger %s", d.Id()))
 
 	_, err = client.PipelineTriggers.DeletePipelineTrigger(project, pipelineTriggerId, gitlab.WithContext(ctx))
 	if err != nil {
