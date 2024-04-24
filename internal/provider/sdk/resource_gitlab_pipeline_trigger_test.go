@@ -119,6 +119,9 @@ func TestAccGitlabPipelineTrigger_basic(t *testing.T) {
 				ResourceName:      "gitlab_pipeline_trigger.trigger",
 				ImportState:       true,
 				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"token",
+				},
 			},
 			// Update the pipeline trigger to change the parameters
 			{
@@ -135,6 +138,9 @@ func TestAccGitlabPipelineTrigger_basic(t *testing.T) {
 				ResourceName:      "gitlab_pipeline_trigger.trigger",
 				ImportState:       true,
 				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"token",
+				},
 			},
 			// Update the pipeline trigger to get back to initial settings
 			{
@@ -151,6 +157,65 @@ func TestAccGitlabPipelineTrigger_basic(t *testing.T) {
 				ResourceName:      "gitlab_pipeline_trigger.trigger",
 				ImportState:       true,
 				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"token",
+				},
+			},
+		},
+	})
+}
+
+func TestAccGitlabPipelineTrigger_readWithDifferentUser(t *testing.T) {
+	var trigger gitlab.PipelineTrigger
+
+	// Create a separate user to use with the second apply
+	project := testutil.CreateProject(t)
+	separateUser := testutil.CreateUsers(t, 1)[0]
+	personalToken := testutil.CreatePersonalAccessTokenWithScopes(t, separateUser, []string{"api", "admin_mode"})
+
+	// Add user to project (required for reading triggers)
+	testutil.AddProjectMembersWithAccessLevel(t, project.ID, []*gitlab.User{separateUser}, gitlab.MaintainerPermissions)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabPipelineTriggerDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_pipeline_trigger" "trigger" {
+					project = "%d"
+					description = "External Pipeline Trigger"
+				}
+				`, project.ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabPipelineTriggerExists("gitlab_pipeline_trigger.trigger", &trigger),
+				),
+			},
+			{
+				// lintignore:AT004  // we need the provider configuration here to read the trigger as a separate user
+				Config: fmt.Sprintf(`
+				# Instantiate a separate provider so we can use a different user from the first apply
+				provider "gitlab" {
+					token = "%s"
+				}
+
+				resource "gitlab_pipeline_trigger" "trigger" {
+					project = "%d"
+					description = "External Pipeline Trigger"
+				}
+				`, personalToken.Token, project.ID),
+				Check: resource.ComposeTestCheckFunc(
+					// Validate that the token we get from the second apply in state matches the token we have from the first apply..
+					func(input *terraform.State) error {
+						values := input.RootModule().Resources["gitlab_pipeline_trigger.trigger"].Primary.Attributes
+						stateTokenValue := values["token"]
+
+						if stateTokenValue != trigger.Token {
+							return fmt.Errorf("Failed to retrieve the expected token value. Expected it to be the same on both tests. Values: %s , %s", stateTokenValue, trigger.Token)
+						}
+						return nil
+					},
+				),
 			},
 		},
 	})
