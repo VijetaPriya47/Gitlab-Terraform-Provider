@@ -148,7 +148,7 @@ func resourceGitlabPersonalAccessTokenRead(ctx context.Context, d *schema.Resour
 
 	log.Printf("[DEBUG] read gitlab PersonalAccessToken %d, user ID %d", tokenID, userID)
 
-	personalAccessToken, err := resourceGitlabPersonalAccessTokenFind(ctx, client, userID, tokenID)
+	personalAccessToken, _, err := client.PersonalAccessTokens.GetSinglePersonalAccessTokenByID(tokenID)
 	if errors.Is(err, errResourceGitlabPersonalAccessTokenNotFound) {
 		log.Printf("[DEBUG] failed to read gitlab PersonalAccessToken %d, user ID %d", tokenID, userID)
 		d.SetId("")
@@ -194,36 +194,6 @@ func resourceGitlabPersonalAccessTokenDelete(ctx context.Context, d *schema.Reso
 }
 
 var errResourceGitlabPersonalAccessTokenNotFound = errors.New("personal access token not found")
-
-// resourceGitlabPersonalAccessTokenFind finds the personal access token with the specified tokenID.
-// It returns a errResourceGitlabPersonalAccessTokenNotFound error if the token is not found or in a revoked state.
-func resourceGitlabPersonalAccessTokenFind(ctx context.Context, client *gitlab.Client, userId int, personalAccessTokenID int) (*gitlab.PersonalAccessToken, error) {
-	//there is a slight possibility to not find an existing item, for example
-	// 1. item is #101 (ie, in the 2nd page)
-	// 2. I load first page (ie. I don't find my target item)
-	// 3. A concurrent operation remove item 99 (ie, my target item shift to 1st page)
-	// 4. a concurrent operation add an item
-	// 5: I load 2nd page  (ie. I don't find my target item)
-	// 6. Total pages and total items properties are unchanged (from the perspective of the reader)
-
-	page := 1
-	for page != 0 {
-		personalAccessTokens, response, err := client.PersonalAccessTokens.ListPersonalAccessTokens(&gitlab.ListPersonalAccessTokensOptions{UserID: &userId, ListOptions: gitlab.ListOptions{Page: page, PerPage: 100}}, gitlab.WithContext(ctx))
-		if err != nil {
-			return nil, err
-		}
-
-		for _, personalAccessToken := range personalAccessTokens {
-			if personalAccessToken.ID == personalAccessTokenID && !personalAccessToken.Revoked {
-				return personalAccessToken, nil
-			}
-		}
-
-		page = response.NextPage
-	}
-
-	return nil, errResourceGitlabPersonalAccessTokenNotFound
-}
 
 func resourceGitLabPersonalAccessTokenParseId(id string) (int, int, error) {
 	userID, tokenID, err := utils.ParseTwoPartID(id)
