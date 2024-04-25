@@ -1,6 +1,6 @@
-* @timofurrer @alexand @patrickrice @armsnyder
+* @timofurrer @patrickrice
 
 [Documentation]
-/docs/      @phillipwells @timofurrer @alexand @patrickrice @armsnyder
-/templates/ @phillipwells @timofurrer @alexand @patrickrice @armsnyder
-*.md        @phillipwells @timofurrer @alexand @patrickrice @armsnyder
+/docs/      @phillipwells @timofurrer @patrickrice
+/templates/ @phillipwells @timofurrer @patrickrice
+*.md        @phillipwells @timofurrer @patrickrice
