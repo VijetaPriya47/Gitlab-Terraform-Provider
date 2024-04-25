@@ -5,8 +5,8 @@ subcategory: ""
 description: |-
   The gitlab_project_push_rules resource allows to manage the lifecycle of push rules on a project.
   ~> This resource will compete with the gitlab_project resource if push rules are also defined as
-     part of that resource. It is recommended to define push rules using this resource OR in the gitlab_project resource,
-     but not in both as it may result in terraform identifying changes with every "plan" operation.
+  part of that resource. It is recommended to define push rules using this resource OR in the gitlab_project resource,
+  but not in both as it may result in terraform identifying changes with every "plan" operation.
   -> This resource requires a GitLab Enterprise instance with a Premium license to set the push rules on a project.
   Upstream API: GitLab API docs https://docs.gitlab.com/ee/api/projects.html#push-rules
 ---
