@@ -5,11 +5,11 @@ subcategory: ""
 description: |-
   The gitlab_application_settings resource allows to manage the GitLab application settings.
   ~> This is an experimental resource. By nature it doesn't properly fit into how Terraform resources are meant to work.
-     Feel free to join the discussion https://gitlab.com/gitlab-org/terraform-provider-gitlab/issues/957 if you have any
-     ideas or questions regarding this resource.
+  Feel free to join the discussion https://gitlab.com/gitlab-org/terraform-provider-gitlab/issues/957 if you have any
+  ideas or questions regarding this resource.
   ~> All gitlab_application_settings use the same ID gitlab.
   !> This resource does not implement any destroy logic, it's a no-op at this point.
-     It's also not possible to revert to the previous settings.
+  It's also not possible to revert to the previous settings.
   -> Requires at administrative privileges on GitLab.
   Upstream API: GitLab REST API docs https://docs.gitlab.com/ee/api/settings.html
 ---
