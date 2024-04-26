@@ -1101,6 +1101,13 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 
+		"minimum_password_length": {
+			Description: "Indicates whether passwords require a minimum length. Introduced in GitLab 15.1. Premium and Ultimate only.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
+		},
+
 		"password_number_required": {
 			Description: "Indicates whether passwords require at least one number. Introduced in GitLab 15.1.",
 			Type:        schema.TypeBool,
@@ -1912,6 +1919,7 @@ func gitlabApplicationSettingsToStateMap(settings *gitlab.Settings) map[string]i
 	stateMap["pages_domain_verification_enabled"] = settings.PagesDomainVerificationEnabled
 	stateMap["password_authentication_enabled_for_git"] = settings.PasswordAuthenticationEnabledForGit
 	stateMap["password_authentication_enabled_for_web"] = settings.PasswordAuthenticationEnabledForWeb
+	stateMap["minimum_password_length"] = settings.MinimumPasswordLength
 	stateMap["password_number_required"] = settings.PasswordNumberRequired
 	stateMap["password_symbol_required"] = settings.PasswordSymbolRequired
 	stateMap["password_uppercase_required"] = settings.PasswordUppercaseRequired
@@ -2602,6 +2610,10 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 
 	if d.HasChange("password_authentication_enabled_for_web") {
 		options.PasswordAuthenticationEnabledForWeb = gitlab.Ptr(d.Get("password_authentication_enabled_for_web").(bool))
+	}
+
+	if d.HasChange("minimum_password_length") {
+		options.MinimumPasswordLength = gitlab.Ptr(d.Get("minimum_password_length").(int))
 	}
 
 	if d.HasChange("password_number_required") {

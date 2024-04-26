@@ -222,6 +222,33 @@ func TestAccGitlabApplicationSettings_elasticSearchSettings(t *testing.T) {
 	})
 }
 
+func TestAccGitlabApplicationSettings_testMinimumPasswordLength(t *testing.T) {
+	// lintignore:AT001
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		Steps: []resource.TestStep{
+			// Verify setting a minimum password length
+			{
+				Config: `
+					resource "gitlab_application_settings" "this" {
+						minimum_password_length = 10
+					}
+				`,
+				Check: resource.TestCheckResourceAttr("gitlab_application_settings.this", "minimum_password_length", "10"),
+			},
+			// Verify updating the setting
+			{
+				Config: `
+					resource "gitlab_application_settings" "this" {
+						minimum_password_length = 12
+					}
+				`,
+				Check: resource.TestCheckResourceAttr("gitlab_application_settings.this", "minimum_password_length", "12"),
+			},
+		},
+	})
+}
+
 /*
 README: Adding a test destroy function seems a easier-to-understand path to ilustrate
 application settings nature and its inhability to be destroyed than simply using a nil

@@ -190,6 +190,7 @@ resource "gitlab_application_settings" "this" {
 - `max_personal_access_token_lifetime` (Number) Maximum allowable lifetime for access tokens in days.
 - `max_ssh_key_lifetime` (Number) Maximum allowable lifetime for SSH keys in days. Introduced in GitLab 14.6.
 - `metrics_method_call_threshold` (Number) A method call is only tracked when it takes longer than the given amount of milliseconds.
+- `minimum_password_length` (Number) Indicates whether passwords require a minimum length. Introduced in GitLab 15.1. Premium and Ultimate only.
 - `mirror_available` (Boolean) Allow repository mirroring to configured by project Maintainers. If disabled, only Administrators can configure repository mirroring.
 - `mirror_capacity_threshold` (Number) Minimum capacity to be available before scheduling more mirrors preemptively.
 - `mirror_max_capacity` (Number) Maximum number of mirrors that can be synchronizing at the same time.
