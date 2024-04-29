@@ -378,6 +378,11 @@ var _ = registerDataSource("gitlab_project", func() *schema.Resource {
 							Type:        schema.TypeBool,
 							Computed:    true,
 						},
+						"commit_committer_name_check": {
+							Description: "Users can only push commits to this repository if the commit author name is consistent with their GitLab account name.",
+							Type:        schema.TypeBool,
+							Computed:    true,
+						},
 						"deny_delete_tag": {
 							Description: "Deny deleting a tag.",
 							Type:        schema.TypeBool,
