@@ -208,19 +208,81 @@ func TestAccGitlabGroupAccessToken_basic(t *testing.T) {
 	})
 }
 
+// This test checks an issue where using the `expires` to change the rotation would only work once.
+// This is because the primary ID of the token was only stored on create, so after the first rotation,
+// it attempts to re-use that primary key, which was already expired.
+// It may look like the `basic` test covers this, but because `scopes` changes, that forces new and restarts
+// the counter for when the error occurs.
+func TestAccGitlabGroupAccessToken_rotationUsingExpiresAt(t *testing.T) {
+	testGroup := testutil.CreateGroups(t, 1)[0]
+
+	initialExpires := testutil.GetCurrentTimePlusDays(t, 10).String()
+	updatedExpires := testutil.GetCurrentTimePlusDays(t, 20).String()
+	secondUpdateExpires := testutil.GetCurrentTimePlusDays(t, 30).String()
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		CheckDestroy:             testAccCheckGitlabGroupAccessTokenDestroy,
+		Steps: []resource.TestStep{
+			// Create a Group and a Group Access Token
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group_access_token" "this" {
+				  name = "my group token"
+				  group = %d
+				  expires_at = "%s"
+				  access_level = "developer"
+				  scopes = ["api"]
+				}
+					`, testGroup.ID, initialExpires),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_group_access_token.this", "expires_at", initialExpires),
+				),
+			},
+			// Update the Group Access Token to change expires
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group_access_token" "this" {
+				  name = "my new group token 2"
+				  group = %d
+				  expires_at = "%s"
+				  access_level = "maintainer"
+				  scopes = ["api"]
+				}
+					`, testGroup.ID, updatedExpires),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_group_access_token.this", "expires_at", updatedExpires),
+				),
+			},
+			// Update the Group Access Token once more to change expires a final time
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group_access_token" "this" {
+					name = "my new group token 3"
+					group = %d
+					expires_at = "%s"
+					access_level = "maintainer"
+					scopes = ["api"]
+				}
+					`, testGroup.ID, secondUpdateExpires),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_group_access_token.this", "expires_at", secondUpdateExpires),
+				),
+			},
+			// Verify upstream resource with an import.
+			{
+				ResourceName:      "gitlab_group_access_token.this",
+				ImportState:       true,
+				ImportStateVerify: true,
+				// The token is only known during creating. We explicitly mention this limitation in the docs.
+				ImportStateVerifyIgnore: []string{"token", "rotation_configuration"},
+			},
+		},
+	})
+}
+
 func TestAccGitlabGroupAccessToken_rotationConfiguration(t *testing.T) {
 	group := testutil.CreateGroups(t, 1)[0]
-
-	// Function for easily calculating the expiry days from the current time.
-	getCurrentTimePlusDays := func(days int) gitlab.ISOTime {
-		now := time.Now()
-		expiryDate := now.AddDate(0, 0, days)
-		expiryIsoTime, err := gitlab.ParseISOTime(expiryDate.Format(api.Iso8601))
-		if err != nil {
-			t.Fatal("Somehow failed to generate a good date", err)
-		}
-		return expiryIsoTime
-	}
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
@@ -247,7 +309,7 @@ func TestAccGitlabGroupAccessToken_rotationConfiguration(t *testing.T) {
 				// Check computed and default attributes.
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("gitlab_group_access_token.this", "active", "true"),
-					resource.TestCheckResourceAttr("gitlab_group_access_token.this", "expires_at", getCurrentTimePlusDays(10).String()),
+					resource.TestCheckResourceAttr("gitlab_group_access_token.this", "expires_at", testutil.GetCurrentTimePlusDays(t, 10).String()),
 				),
 			},
 			// Verify upstream resource with an import.
@@ -280,7 +342,7 @@ func TestAccGitlabGroupAccessToken_rotationConfiguration(t *testing.T) {
 				// Check computed and default attributes.
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("gitlab_group_access_token.this", "active", "true"),
-					resource.TestCheckResourceAttr("gitlab_group_access_token.this", "expires_at", getCurrentTimePlusDays(20).String()),
+					resource.TestCheckResourceAttr("gitlab_group_access_token.this", "expires_at", testutil.GetCurrentTimePlusDays(t, 20).String()),
 				),
 			},
 			// Verify upstream resource with an import.
@@ -312,7 +374,7 @@ func TestAccGitlabGroupAccessToken_rotationConfiguration(t *testing.T) {
 				// Check computed and default attributes.
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("gitlab_group_access_token.this", "active", "true"),
-					resource.TestCheckResourceAttr("gitlab_group_access_token.this", "expires_at", getCurrentTimePlusDays(20).String()),
+					resource.TestCheckResourceAttr("gitlab_group_access_token.this", "expires_at", testutil.GetCurrentTimePlusDays(t, 20).String()),
 				),
 			},
 		},
@@ -321,17 +383,6 @@ func TestAccGitlabGroupAccessToken_rotationConfiguration(t *testing.T) {
 
 func TestAccGitlabGroupAccessToken_attributeValidation(t *testing.T) {
 	group := testutil.CreateGroups(t, 1)[0]
-
-	// Function for easily calculating the expiry days from the current time.
-	getCurrentTimePlusDays := func(days int) gitlab.ISOTime {
-		now := time.Now()
-		expiryDate := now.AddDate(0, 0, days)
-		expiryIsoTime, err := gitlab.ParseISOTime(expiryDate.Format(api.Iso8601))
-		if err != nil {
-			t.Fatal("Somehow failed to generate a good date", err)
-		}
-		return expiryIsoTime
-	}
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
@@ -355,7 +406,7 @@ func TestAccGitlabGroupAccessToken_attributeValidation(t *testing.T) {
 					}
 
 				}
-				`, group.ID, getCurrentTimePlusDays(2).String()), // so it's always in the future.
+				`, group.ID, testutil.GetCurrentTimePlusDays(t, 2).String()), // so it's always in the future.
 				ExpectError: regexp.MustCompile("Error: Invalid Attribute Combination"),
 			},
 			// Validate that expiration must be > 0

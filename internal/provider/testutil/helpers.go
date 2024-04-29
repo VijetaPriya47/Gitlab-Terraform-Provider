@@ -925,3 +925,10 @@ func CreateScheduledPipeline(t *testing.T, project int) (*gitlab.PipelineSchedul
 	return pipeline, err
 
 }
+
+// Function for easily calculating the expiry days from the current time.
+func GetCurrentTimePlusDays(t *testing.T, days int) gitlab.ISOTime {
+	now := time.Now()
+	expiryDate := now.AddDate(0, 0, days)
+	return gitlab.ISOTime(expiryDate)
+}

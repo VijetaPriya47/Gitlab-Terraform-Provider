@@ -165,6 +165,79 @@ func TestAccGitlabProjectAccessToken_basic(t *testing.T) {
 	})
 }
 
+// This test checks an issue where using the `expires` to change the rotation would only work once.
+// This is because the primary ID of the token was only stored on create, so after the first rotation,
+// it attempts to re-use that primary key, which was already expired.
+// It may look like the `basic` test covers this, but because `scopes` changes, that forces new and restarts
+// the counter for when the error occurs.
+func TestAccGitlabProjectAccessToken_rotationUsingExpiresAt(t *testing.T) {
+	project := testutil.CreateProject(t)
+
+	initialExpires := testutil.GetCurrentTimePlusDays(t, 10).String()
+	updatedExpires := testutil.GetCurrentTimePlusDays(t, 20).String()
+	secondUpdateExpires := testutil.GetCurrentTimePlusDays(t, 30).String()
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		CheckDestroy:             testAccCheckGitlabProjectAccessTokenDestroy,
+		Steps: []resource.TestStep{
+			// Create a Project Access Token
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_access_token" "this" {
+				  name = "my project token"
+				  project = %d
+				  expires_at = "%s"
+				  access_level = "developer"
+				  scopes = ["api"]
+				}
+					`, project.ID, initialExpires),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project_access_token.this", "expires_at", initialExpires),
+				),
+			},
+			// Update the Project Access Token to change expires
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_access_token" "this" {
+				  name = "my new project token"
+				  project = %d
+				  expires_at = "%s"
+				  access_level = "maintainer"
+				  scopes = ["api"]
+				}
+					`, project.ID, updatedExpires),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project_access_token.this", "expires_at", updatedExpires),
+				),
+			},
+			// Update the Project Access Token once more to change expires a final time
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_access_token" "this" {
+					name = "my new project token"
+					project = %d
+					expires_at = "%s"
+					access_level = "maintainer"
+					scopes = ["api"]
+				}
+					`, project.ID, secondUpdateExpires),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project_access_token.this", "expires_at", secondUpdateExpires),
+				),
+			},
+			// Verify upstream resource with an import.
+			{
+				ResourceName:      "gitlab_project_access_token.this",
+				ImportState:       true,
+				ImportStateVerify: true,
+				// The token is only known during creating. We explicitly mention this limitation in the docs.
+				ImportStateVerifyIgnore: []string{"token", "rotation_configuration"},
+			},
+		},
+	})
+}
+
 func TestAccGitlabProjectAccessToken_rotationConfiguration(t *testing.T) {
 	project := testutil.CreateProject(t)
 
