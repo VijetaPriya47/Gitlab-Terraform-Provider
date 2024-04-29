@@ -253,27 +253,27 @@ func (r *gitlabGroupAccessTokenResource) ImportState(ctx context.Context, req re
 func (r *gitlabGroupAccessTokenResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
 
 	// Retrieve the plan data to start with
-	var planData *gitlabGroupAccessTokenResourceModel
+	var planData, stateData *gitlabGroupAccessTokenResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &planData)...)
+	// Now retrieve the `state` values instead of plan, because we need to get the expiry date from the state.
+	resp.Diagnostics.Append(req.State.Get(ctx, &stateData)...)
 
-	if planData == nil || planData.RotationConfiguration == nil {
+	if planData == nil {
 		// Log a note that there is no plan data, usually because we're importing.
-		tflog.Debug(ctx, "Plan data is nil or RotationConfiguraiton is nil, no check for token rotation is needed")
+		tflog.Debug(ctx, "Plan data is nil, no check for token rotation is needed")
 		return
 	}
-
-	// Now retrieve the `state` values instead of plan, because we need to get the expiry date from the state.
-	var stateData *gitlabGroupAccessTokenResourceModel
-	resp.Diagnostics.Append(req.State.Get(ctx, &stateData)...)
 
 	// Check to determine if we need to rotate the expiry date
 	shouldSetExpiration := false
 
 	// If expiration (or ANY state) has never been set yet (we're in a "Create" plan), ensure we calculate and set the first time.
-	if stateData == nil || stateData.ExpiresAt.IsNull() || stateData.ExpiresAt.IsUnknown() {
+	// This should also run if the expiration date has changed between plan and state, to ensure the ID is set to unknown.
+	if stateData == nil || stateData.ExpiresAt.IsNull() || stateData.ExpiresAt.IsUnknown() || stateData.ExpiresAt != planData.ExpiresAt {
 		shouldSetExpiration = true
 
-	} else {
+		// Otherwise, execute the logic if rotation configuration is present
+	} else if stateData.RotationConfiguration != nil {
 
 		// We're in an "Update" plan that already has expiration set, calculate if we need to rotate
 		rotateBefore := stateData.ExpiresAt.ValueString()
@@ -305,8 +305,17 @@ func (r *gitlabGroupAccessTokenResource) ModifyPlan(ctx context.Context, req res
 			return
 		}
 
-		// Set the new expiration date in the plan
-		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("expires_at"), expiryDate.String())...)
+		// If the newly calculated expiryDate is different than what's in state, modify the plan
+		// This check is required to prevent the ID being unknown on every apply with rotation_configuration even
+		// if the calculated date is exactly the same as it currently is
+		if stateData != nil && expiryDate.String() != stateData.ExpiresAt.ValueString() {
+			// Set the new expiration date in the plan
+			planData.ExpiresAt = types.StringValue(expiryDate.String())
+			// Set ID to unknown since it will change as part of rotation
+			planData.ID = types.StringUnknown()
+
+			resp.Diagnostics.Append(resp.Plan.Set(ctx, planData)...)
+		}
 	}
 }
 
@@ -423,10 +432,12 @@ func (r *gitlabGroupAccessTokenResource) Create(ctx context.Context, req resourc
 func (r *gitlabGroupAccessTokenResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Update only triggers when `expires_at` is updated. Anything else should trigger
 	// a "replace" operation which will destory/create.
-	var data *gitlabGroupAccessTokenResourceModel
+	var data, state *gitlabGroupAccessTokenResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
-	group, patId, err := utils.ParseTwoPartID(data.ID.ValueString())
+	// Read the ID from state since it may be `unknown` in the plan.
+	group, patId, err := utils.ParseTwoPartID(state.ID.ValueString())
 	intPatId, parseErr := strconv.Atoi(patId)
 	if joinedErr := errors.Join(err, parseErr); joinedErr != nil {
 		resp.Diagnostics.AddError(
@@ -457,6 +468,9 @@ func (r *gitlabGroupAccessTokenResource) Update(ctx context.Context, req resourc
 		)
 		return
 	}
+
+	// Updating an access token changes the primary key, so we need to re-set the ID of the resource
+	data.ID = types.StringValue(utils.BuildTwoPartID(data.Group.ValueStringPointer(), gitlab.Ptr(strconv.Itoa(token.ID))))
 
 	r.groupAccessTokenToStateModel(data, token, data.Group.ValueString())
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
