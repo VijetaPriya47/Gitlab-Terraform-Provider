@@ -8,7 +8,6 @@ import (
 	"regexp"
 	"strconv"
 	"testing"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -24,6 +23,7 @@ func TestAccGitlabBranchProtection_basic(t *testing.T) {
 
 	var pb gitlab.ProtectedBranch
 	rInt := acctest.RandInt()
+	project := testutil.CreateProject(t)
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
@@ -31,21 +31,12 @@ func TestAccGitlabBranchProtection_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create a project and Branch Protection with default options
 			{
-				Config: fmt.Sprintf(`
-				resource "gitlab_project" "foo" {
-				  name = "foo-%[1]d"
-				  description = "Terraform acceptance tests"
-				
-				  # So that acceptance tests can be run in a gitlab organization
-				  # with no billing
-				  visibility_level = "public"
-				}
-				
+				Config: fmt.Sprintf(`				
 				resource "gitlab_branch_protection" "branch_protect" {
-				  project            = gitlab_project.foo.id
-				  branch             = "BranchProtect-%[1]d"
+				  project            = %d
+				  branch             = "BranchProtect-%d"
 				}
-					`, rInt),
+				`, project.ID, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabBranchProtectionExists("gitlab_branch_protection.branch_protect", &pb),
 					testAccCheckGitlabBranchProtectionPersistsInStateCorrectly("gitlab_branch_protection.branch_protect", &pb),
@@ -61,23 +52,15 @@ func TestAccGitlabBranchProtection_basic(t *testing.T) {
 			// Configure the Branch Protection access levels
 			{
 				Config: fmt.Sprintf(`
-				resource "gitlab_project" "foo" {
-				  name = "foo-%[1]d"
-				  description = "Terraform acceptance tests"
-				
-				  # So that acceptance tests can be run in a gitlab organization
-				  # with no billing
-				  visibility_level = "public"
-				}
-				
 				resource "gitlab_branch_protection" "branch_protect" {
-				  project                = gitlab_project.foo.id
-				  branch                 = "BranchProtect-%[1]d"
+				  project            = %d
+				  branch             = "BranchProtect-%d"
+
 				  push_access_level      = "developer"
 				  merge_access_level     = "developer"
 				  unprotect_access_level = "developer"
 				}
-					`, rInt),
+				`, project.ID, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabBranchProtectionExists("gitlab_branch_protection.branch_protect", &pb),
 					testAccCheckGitlabBranchProtectionPersistsInStateCorrectly("gitlab_branch_protection.branch_protect", &pb),
@@ -92,23 +75,15 @@ func TestAccGitlabBranchProtection_basic(t *testing.T) {
 			// Update the Branch Protection access levels
 			{
 				Config: fmt.Sprintf(`
-				resource "gitlab_project" "foo" {
-				  name = "foo-%[1]d"
-				  description = "Terraform acceptance tests"
-				
-				  # So that acceptance tests can be run in a gitlab organization
-				  # with no billing
-				  visibility_level = "public"
-				}
-				
 				resource "gitlab_branch_protection" "branch_protect" {
-				  project                = gitlab_project.foo.id
-				  branch                 = "BranchProtect-%[1]d"
+				  project            = %d
+				  branch             = "BranchProtect-%d"
+
 				  push_access_level      = "maintainer"
 				  merge_access_level     = "maintainer"
 				  unprotect_access_level = "maintainer"
 				}
-					`, rInt),
+				`, project.ID, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabBranchProtectionExists("gitlab_branch_protection.branch_protect", &pb),
 					testAccCheckGitlabBranchProtectionPersistsInStateCorrectly("gitlab_branch_protection.branch_protect", &pb),
@@ -122,21 +97,12 @@ func TestAccGitlabBranchProtection_basic(t *testing.T) {
 			},
 			// Update the Branch Protection to get back to initial settings
 			{
-				Config: fmt.Sprintf(`
-				resource "gitlab_project" "foo" {
-				  name = "foo-%[1]d"
-				  description = "Terraform acceptance tests"
-				
-				  # So that acceptance tests can be run in a gitlab organization
-				  # with no billing
-				  visibility_level = "public"
-				}
-				
+				Config: fmt.Sprintf(`				
 				resource "gitlab_branch_protection" "branch_protect" {
-				  project            = gitlab_project.foo.id
-				  branch             = "BranchProtect-%[1]d"
+				  project            = %d
+				  branch             = "BranchProtect-%d"
 				}
-					`, rInt),
+				`, project.ID, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabBranchProtectionExists("gitlab_branch_protection.branch_protect", &pb),
 					testAccCheckGitlabBranchProtectionPersistsInStateCorrectly("gitlab_branch_protection.branch_protect", &pb),
@@ -150,7 +116,14 @@ func TestAccGitlabBranchProtection_basic(t *testing.T) {
 			},
 			// Update the Branch Protection with allow force push enabled
 			{
-				Config: testAccGitlabBranchProtectionUpdateConfigAllowForcePushTrue(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_branch_protection" "branch_protect" {
+				  project            = %d
+				  branch             = "BranchProtect-%d"
+
+				  allow_force_push             = true
+				}
+				`, project.ID, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabBranchProtectionExists("gitlab_branch_protection.branch_protect", &pb),
 					testAccCheckGitlabBranchProtectionPersistsInStateCorrectly("gitlab_branch_protection.branch_protect", &pb),
@@ -165,21 +138,12 @@ func TestAccGitlabBranchProtection_basic(t *testing.T) {
 			},
 			// Update the Branch Protection to get back to initial settings
 			{
-				Config: fmt.Sprintf(`
-				resource "gitlab_project" "foo" {
-				  name = "foo-%[1]d"
-				  description = "Terraform acceptance tests"
-				
-				  # So that acceptance tests can be run in a gitlab organization
-				  # with no billing
-				  visibility_level = "public"
-				}
-				
+				Config: fmt.Sprintf(`				
 				resource "gitlab_branch_protection" "branch_protect" {
-				  project            = gitlab_project.foo.id
-				  branch             = "BranchProtect-%[1]d"
+				  project            = %d
+				  branch             = "BranchProtect-%d"
 				}
-					`, rInt),
+				`, project.ID, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabBranchProtectionExists("gitlab_branch_protection.branch_protect", &pb),
 					testAccCheckGitlabBranchProtectionPersistsInStateCorrectly("gitlab_branch_protection.branch_protect", &pb),
@@ -194,7 +158,14 @@ func TestAccGitlabBranchProtection_basic(t *testing.T) {
 			// Update the Branch Protection code owner approval setting
 			{
 				SkipFunc: testutil.IsRunningInCE,
-				Config:   testAccGitlabBranchProtectionUpdateConfigCodeOwnerTrue(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_branch_protection" "branch_protect" {
+				  project            = %d
+				  branch             = "BranchProtect-%d"
+
+				  code_owner_approval_required = true
+				}
+				`, project.ID, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabBranchProtectionExists("gitlab_branch_protection.branch_protect", &pb),
 					testAccCheckGitlabBranchProtectionPersistsInStateCorrectly("gitlab_branch_protection.branch_protect", &pb),
@@ -209,21 +180,12 @@ func TestAccGitlabBranchProtection_basic(t *testing.T) {
 			},
 			// Update the Branch Protection to get back to initial settings
 			{
-				Config: fmt.Sprintf(`
-				resource "gitlab_project" "foo" {
-				  name = "foo-%[1]d"
-				  description = "Terraform acceptance tests"
-				
-				  # So that acceptance tests can be run in a gitlab organization
-				  # with no billing
-				  visibility_level = "public"
-				}
-				
+				Config: fmt.Sprintf(`				
 				resource "gitlab_branch_protection" "branch_protect" {
-				  project            = gitlab_project.foo.id
-				  branch             = "BranchProtect-%[1]d"
+				  project            = %d
+				  branch             = "BranchProtect-%d"
 				}
-					`, rInt),
+				`, project.ID, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabBranchProtectionExists("gitlab_branch_protection.branch_protect", &pb),
 					testAccCheckGitlabBranchProtectionPersistsInStateCorrectly("gitlab_branch_protection.branch_protect", &pb),
@@ -242,6 +204,7 @@ func TestAccGitlabBranchProtection_basic(t *testing.T) {
 func TestAccGitlabBranchProtection_createWithCodeOwnerApproval(t *testing.T) {
 	var pb gitlab.ProtectedBranch
 	rInt := acctest.RandInt()
+	project := testutil.CreateProject(t)
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
@@ -251,20 +214,11 @@ func TestAccGitlabBranchProtection_createWithCodeOwnerApproval(t *testing.T) {
 			{
 				SkipFunc: testutil.IsRunningInEE,
 				Config: fmt.Sprintf(`
-				resource "gitlab_project" "foo" {
-				  name = "foo-%[1]d"
-				  description = "Terraform acceptance tests"
-				
-				  # So that acceptance tests can be run in a gitlab organization
-				  # with no billing
-				  visibility_level = "public"
-				}
-				
 				resource "gitlab_branch_protection" "branch_protect" {
-				  project            = gitlab_project.foo.id
-				  branch             = "BranchProtect-%[1]d"
+				  project            = %d
+				  branch             = "BranchProtect-%d"
 				}
-					`, rInt),
+					`, project.ID, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabBranchProtectionExists("gitlab_branch_protection.branch_protect", &pb),
 					testAccCheckGitlabBranchProtectionPersistsInStateCorrectly("gitlab_branch_protection.branch_protect", &pb),
@@ -279,7 +233,14 @@ func TestAccGitlabBranchProtection_createWithCodeOwnerApproval(t *testing.T) {
 			// Create a project and Branch Protection with code owner approval enabled
 			{
 				SkipFunc: testutil.IsRunningInCE,
-				Config:   testAccGitlabBranchProtectionUpdateConfigCodeOwnerTrue(rInt),
+				Config: fmt.Sprintf(`			
+				resource "gitlab_branch_protection" "branch_protect" {
+					project            = %d
+					branch             = "BranchProtect-%d"
+
+				  code_owner_approval_required = true
+				}
+				`, project.ID, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabBranchProtectionExists("gitlab_branch_protection.branch_protect", &pb),
 					testAccCheckGitlabBranchProtectionPersistsInStateCorrectly("gitlab_branch_protection.branch_protect", &pb),
@@ -294,27 +255,25 @@ func TestAccGitlabBranchProtection_createWithCodeOwnerApproval(t *testing.T) {
 			},
 			// Attempting to update code owner approval setting on CE should fail safely and with an informative error message
 			{
-				SkipFunc:    testutil.IsRunningInEE,
-				Config:      testAccGitlabBranchProtectionUpdateConfigCodeOwnerTrue(rInt),
+				SkipFunc: testutil.IsRunningInEE,
+				Config: fmt.Sprintf(`				
+				resource "gitlab_branch_protection" "branch_protect" {
+				  project            = %d
+				  branch             = "BranchProtect-%d"
+
+				  code_owner_approval_required = true
+				}
+					`, project.ID, rInt),
 				ExpectError: regexp.MustCompile("feature unavailable `code_owner_approval_required`"),
 			},
 			// Update the Branch Protection to get back to initial settings
 			{
 				Config: fmt.Sprintf(`
-				resource "gitlab_project" "foo" {
-				  name = "foo-%[1]d"
-				  description = "Terraform acceptance tests"
-				
-				  # So that acceptance tests can be run in a gitlab organization
-				  # with no billing
-				  visibility_level = "public"
-				}
-				
 				resource "gitlab_branch_protection" "branch_protect" {
-				  project            = gitlab_project.foo.id
-				  branch             = "BranchProtect-%[1]d"
+				  project            = %d
+				  branch             = "BranchProtect-%d"
 				}
-					`, rInt),
+					`, project.ID, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabBranchProtectionExists("gitlab_branch_protection.branch_protect", &pb),
 					testAccCheckGitlabBranchProtectionPersistsInStateCorrectly("gitlab_branch_protection.branch_protect", &pb),
@@ -333,6 +292,7 @@ func TestAccGitlabBranchProtection_createWithCodeOwnerApproval(t *testing.T) {
 func TestAccGitlabBranchProtection_createWithAllowForcePush(t *testing.T) {
 	var pb gitlab.ProtectedBranch
 	rInt := acctest.RandInt()
+	project := testutil.CreateProject(t)
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
@@ -340,21 +300,12 @@ func TestAccGitlabBranchProtection_createWithAllowForcePush(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Start with allow force push disabled
 			{
-				Config: fmt.Sprintf(`
-				resource "gitlab_project" "foo" {
-				  name = "foo-%[1]d"
-				  description = "Terraform acceptance tests"
-				
-				  # So that acceptance tests can be run in a gitlab organization
-				  # with no billing
-				  visibility_level = "public"
-				}
-				
+				Config: fmt.Sprintf(`				
 				resource "gitlab_branch_protection" "branch_protect" {
-				  project            = gitlab_project.foo.id
-				  branch             = "BranchProtect-%[1]d"
+				  project            = %d
+				  branch             = "BranchProtect-%d"
 				}
-					`, rInt),
+				`, project.ID, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabBranchProtectionExists("gitlab_branch_protection.branch_protect", &pb),
 					testAccCheckGitlabBranchProtectionPersistsInStateCorrectly("gitlab_branch_protection.branch_protect", &pb),
@@ -368,7 +319,14 @@ func TestAccGitlabBranchProtection_createWithAllowForcePush(t *testing.T) {
 			},
 			// Create a project and Branch Protection with allow force push enabled
 			{
-				Config: testAccGitlabBranchProtectionUpdateConfigAllowForcePushTrue(rInt),
+				Config: fmt.Sprintf(`				
+				resource "gitlab_branch_protection" "branch_protect" {
+					project            = %d
+					branch             = "BranchProtect-%d"
+
+				    allow_force_push             = true
+				}
+				`, project.ID, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabBranchProtectionExists("gitlab_branch_protection.branch_protect", &pb),
 					testAccCheckGitlabBranchProtectionPersistsInStateCorrectly("gitlab_branch_protection.branch_protect", &pb),
@@ -383,21 +341,12 @@ func TestAccGitlabBranchProtection_createWithAllowForcePush(t *testing.T) {
 			},
 			// Update the Branch Protection to get back to initial settings
 			{
-				Config: fmt.Sprintf(`
-				resource "gitlab_project" "foo" {
-				  name = "foo-%[1]d"
-				  description = "Terraform acceptance tests"
-				
-				  # So that acceptance tests can be run in a gitlab organization
-				  # with no billing
-				  visibility_level = "public"
-				}
-				
+				Config: fmt.Sprintf(`				
 				resource "gitlab_branch_protection" "branch_protect" {
-				  project            = gitlab_project.foo.id
-				  branch             = "BranchProtect-%[1]d"
+				  project            = %d
+				  branch             = "BranchProtect-%d"
 				}
-					`, rInt),
+				`, project.ID, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabBranchProtectionExists("gitlab_branch_protection.branch_protect", &pb),
 					testAccCheckGitlabBranchProtectionPersistsInStateCorrectly("gitlab_branch_protection.branch_protect", &pb),
@@ -416,6 +365,7 @@ func TestAccGitlabBranchProtection_createWithAllowForcePush(t *testing.T) {
 func TestAccGitlabBranchProtection_createWithUnprotectAccessLevel(t *testing.T) {
 	var pb gitlab.ProtectedBranch
 	rInt := acctest.RandInt()
+	project := testutil.CreateProject(t)
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
@@ -423,24 +373,15 @@ func TestAccGitlabBranchProtection_createWithUnprotectAccessLevel(t *testing.T) 
 		Steps: []resource.TestStep{
 			// Configure the Branch Protection access levels
 			{
-				Config: fmt.Sprintf(`
-				resource "gitlab_project" "foo" {
-				  name = "foo-%[1]d"
-				  description = "Terraform acceptance tests"
-				
-				  # So that acceptance tests can be run in a gitlab organization
-				  # with no billing
-				  visibility_level = "public"
-				}
-				
+				Config: fmt.Sprintf(`				
 				resource "gitlab_branch_protection" "branch_protect" {
-				  project                = gitlab_project.foo.id
-				  branch                 = "BranchProtect-%[1]d"
+				  project                = %d
+				  branch                 = "BranchProtect-%d"
 				  push_access_level      = "developer"
 				  merge_access_level     = "developer"
 				  unprotect_access_level = "maintainer"
 				}
-					`, rInt),
+				`, project.ID, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabBranchProtectionExists("gitlab_branch_protection.branch_protect", &pb),
 					testAccCheckGitlabBranchProtectionPersistsInStateCorrectly("gitlab_branch_protection.branch_protect", &pb),
@@ -454,24 +395,15 @@ func TestAccGitlabBranchProtection_createWithUnprotectAccessLevel(t *testing.T) 
 			},
 			// Update the Branch Protection access levels
 			{
-				Config: fmt.Sprintf(`
-				resource "gitlab_project" "foo" {
-				  name = "foo-%[1]d"
-				  description = "Terraform acceptance tests"
-				
-				  # So that acceptance tests can be run in a gitlab organization
-				  # with no billing
-				  visibility_level = "public"
-				}
-				
+				Config: fmt.Sprintf(`				
 				resource "gitlab_branch_protection" "branch_protect" {
-				  project                = gitlab_project.foo.id
-				  branch                 = "BranchProtect-%[1]d"
+				  project                = %d
+				  branch                 = "BranchProtect-%d"
 				  push_access_level      = "maintainer"
 				  merge_access_level     = "maintainer"
 				  unprotect_access_level = "maintainer"
 				}
-					`, rInt),
+				`, project.ID, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabBranchProtectionExists("gitlab_branch_protection.branch_protect", &pb),
 					testAccCheckGitlabBranchProtectionPersistsInStateCorrectly("gitlab_branch_protection.branch_protect", &pb),
@@ -485,24 +417,15 @@ func TestAccGitlabBranchProtection_createWithUnprotectAccessLevel(t *testing.T) 
 			},
 			// Update the Branch Protection access levels using "admin"
 			{
-				Config: fmt.Sprintf(`
-				resource "gitlab_project" "foo" {
-				  name = "foo-%[1]d"
-				  description = "Terraform acceptance tests"
-				
-				  # So that acceptance tests can be run in a gitlab organization
-				  # with no billing
-				  visibility_level = "public"
-				}
-				
+				Config: fmt.Sprintf(`				
 				resource "gitlab_branch_protection" "branch_protect" {
-				  project                = gitlab_project.foo.id
-				  branch                 = "BranchProtect-%[1]d"
+				  project                = %d
+				  branch                 = "BranchProtect-%d"
 				  push_access_level      = "maintainer"
 				  merge_access_level     = "maintainer"
 				  unprotect_access_level = "admin"
 				}
-					`, rInt),
+				`, project.ID, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabBranchProtectionExists("gitlab_branch_protection.branch_protect", &pb),
 					testAccCheckGitlabBranchProtectionPersistsInStateCorrectly("gitlab_branch_protection.branch_protect", &pb),
@@ -518,431 +441,10 @@ func TestAccGitlabBranchProtection_createWithUnprotectAccessLevel(t *testing.T) 
 	})
 }
 
-func TestAccGitlabBranchProtection_createWithMultipleAccessLevels(t *testing.T) {
-	testutil.SkipIfCE(t)
-
-	// Set up the project for the protected branch
-	testProject := testutil.CreateProject(t)
-	// Set up the groups to share the `testProject` with
-	testGroups := testutil.CreateGroups(t, 2)
-	// Set up the users to add as members to the `testProject`
-	testUsers := testutil.CreateUsers(t, 2)
-	// Add users as members to project
-	testutil.AddProjectMembers(t, testProject.ID, testUsers)
-	// Add users to groups
-	testutil.AddGroupMembers(t, testGroups[0].ID, []*gitlab.User{testUsers[0]})
-	testutil.AddGroupMembers(t, testGroups[1].ID, []*gitlab.User{testUsers[1]})
-	// Share project with groups
-	testutil.ProjectShareGroup(t, testProject.ID, testGroups[0].ID)
-	testutil.ProjectShareGroup(t, testProject.ID, testGroups[1].ID)
-
-	var pb gitlab.ProtectedBranch
-
-	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
-		CheckDestroy:             testAccCheckGitlabBranchProtectionDestroy,
-		Steps: []resource.TestStep{
-			// Create a project, groups, users and Branch Protection with advanced allowed_to blocks
-			{
-				Config: fmt.Sprintf(`
-					resource "gitlab_branch_protection" "test" {
-						project                = %d
-						branch                 = "test-branch"
-						push_access_level      = "maintainer"
-						merge_access_level     = "maintainer"
-						unprotect_access_level = "maintainer"
-
-						allowed_to_push {
-							user_id = %[3]d
-						}
-						
-						allowed_to_push {
-							group_id = %[4]d
-						}
-
-						allowed_to_push {
-							group_id = %[5]d
-						}
-
-
-						allowed_to_merge { 
-							user_id = %[2]d
-						}
-						
-						allowed_to_merge { 
-							group_id = %[4]d
-						}
-						
-						allowed_to_merge { 
-							user_id = %[3]d
-						}
-						
-						allowed_to_merge { 
-							group_id = %[5]d
-						}
-
-
-						allowed_to_unprotect {
-							user_id = %[2]d
-						}
-						
-						allowed_to_unprotect {
-								group_id = %[4]d
-						}
-
-						allowed_to_unprotect {
-							user_id = %[3]d
-						}
-						
-						allowed_to_unprotect {
-							group_id = %[5]d
-						}
-					}
-				`, testProject.ID, testUsers[0].ID, testUsers[1].ID, testGroups[0].ID, testGroups[1].ID),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabBranchProtectionExists("gitlab_branch_protection.test", &pb),
-					testAccCheckGitlabBranchProtectionPersistsInStateCorrectly("gitlab_branch_protection.test", &pb),
-					testAccCheckGitlabBranchProtectionAttributes(&pb, &testAccGitlabBranchProtectionExpectedAttributes{
-						Name:                     "test-branch",
-						PushAccessLevel:          api.AccessLevelValueToName[gitlab.MaintainerPermissions],
-						MergeAccessLevel:         api.AccessLevelValueToName[gitlab.MaintainerPermissions],
-						UnprotectAccessLevel:     api.AccessLevelValueToName[gitlab.MaintainerPermissions],
-						UsersAllowedToPush:       []string{testUsers[1].Username},
-						UsersAllowedToMerge:      []string{testUsers[0].Username, testUsers[1].Username},
-						UsersAllowedToUnprotect:  []string{testUsers[0].Username, testUsers[1].Username},
-						GroupsAllowedToPush:      []string{testGroups[0].Name, testGroups[1].Name},
-						GroupsAllowedToMerge:     []string{testGroups[0].Name, testGroups[1].Name},
-						GroupsAllowedToUnprotect: []string{testGroups[0].Name, testGroups[1].Name},
-					}),
-				),
-			},
-			// Update to remove some allowed_to blocks and update access levels
-			{
-				Config: fmt.Sprintf(`
-					resource "gitlab_branch_protection" "test" {
-						project                = %d
-						branch                 = "test-branch"
-						push_access_level      = "developer"
-						merge_access_level     = "developer"
-						unprotect_access_level = "developer"
-
-						allowed_to_push {
-							user_id = %[3]d
-						}
-						
-						allowed_to_push {
-							group_id = %[4]d
-						}
-
-
-						allowed_to_merge {
-							user_id = %[2]d
-						}
-						
-						allowed_to_merge {
-							group_id = %[4]d
-						}
-
-
-						allowed_to_unprotect {
-							user_id = %[2]d
-						}
-						
-						allowed_to_unprotect {
-							group_id = %[5]d
-						}
-					}
-				`, testProject.ID, testUsers[0].ID, testUsers[1].ID, testGroups[0].ID, testGroups[1].ID),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabBranchProtectionExists("gitlab_branch_protection.test", &pb),
-					testAccCheckGitlabBranchProtectionPersistsInStateCorrectly("gitlab_branch_protection.test", &pb),
-					testAccCheckGitlabBranchProtectionAttributes(&pb, &testAccGitlabBranchProtectionExpectedAttributes{
-						Name:                     "test-branch",
-						PushAccessLevel:          api.AccessLevelValueToName[gitlab.DeveloperPermissions],
-						MergeAccessLevel:         api.AccessLevelValueToName[gitlab.DeveloperPermissions],
-						UnprotectAccessLevel:     api.AccessLevelValueToName[gitlab.DeveloperPermissions],
-						UsersAllowedToPush:       []string{testUsers[1].Username},
-						UsersAllowedToMerge:      []string{testUsers[0].Username},
-						UsersAllowedToUnprotect:  []string{testUsers[0].Username},
-						GroupsAllowedToPush:      []string{testGroups[0].Name},
-						GroupsAllowedToMerge:     []string{testGroups[0].Name},
-						GroupsAllowedToUnprotect: []string{testGroups[1].Name},
-					}),
-				),
-			},
-		},
-	})
-}
-
-func TestAccGitlabBranchProtection_allowSecificUserAndNoRoleToPush(t *testing.T) {
-	testutil.SkipIfCE(t)
-
-	// Set up the project for the protected branch
-	testProject := testutil.CreateProject(t)
-	// Set up the groups to share the `testProject` with
-	testUsers := testutil.CreateUsers(t, 1)
-
-	// Add users as members to project
-	testutil.AddProjectMembers(t, testProject.ID, testUsers)
-
-	//list existing project members
-	testutil.ListProjectMembers(t, testProject.ID)
-
-	// add a sleep to determine if there is a race condition in group membership for protected
-	// branches
-	t.Log("Sleeping for 10s to wait for membership to be accurate")
-	//nolint // R018 this is part of testing code, not the provider itself.
-	time.Sleep(10 * time.Second)
-
-	var pb gitlab.ProtectedBranch
-
-	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
-		CheckDestroy:             testAccCheckGitlabBranchProtectionDestroy,
-		Steps: []resource.TestStep{
-			// Create a branch protection, with only user and no role allowed to push
-			{
-				Config: fmt.Sprintf(`
-					resource "gitlab_branch_protection" "test" {
-						project                = %d
-						branch                 = "test-branch"
-						push_access_level      = "maintainer"
-						merge_access_level     = "maintainer"
-						unprotect_access_level = "maintainer"
-
-
-						allowed_to_push {
-							user_id = %[2]d
-						}
-					}
-				`, testProject.ID, testUsers[0].ID),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabBranchProtectionExists("gitlab_branch_protection.test", &pb),
-					testAccCheckGitlabBranchProtectionPersistsInStateCorrectly("gitlab_branch_protection.test", &pb),
-					testAccCheckGitlabBranchProtectionAttributes(&pb, &testAccGitlabBranchProtectionExpectedAttributes{
-						Name:                 "test-branch",
-						PushAccessLevel:      api.AccessLevelValueToName[gitlab.MaintainerPermissions],
-						MergeAccessLevel:     api.AccessLevelValueToName[gitlab.MaintainerPermissions],
-						UnprotectAccessLevel: api.AccessLevelValueToName[gitlab.MaintainerPermissions],
-						UsersAllowedToPush:   []string{testUsers[0].Username},
-					}),
-				),
-			},
-			{
-				ResourceName:      "gitlab_branch_protection.test",
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
-			// Update a branch protection, with only user and no role allowed to push
-			{
-				Config: fmt.Sprintf(`
-					resource "gitlab_branch_protection" "test" {
-						project                = %d
-						branch                 = "test-branch"
-						push_access_level      = "maintainer"
-						merge_access_level     = "maintainer"
-						unprotect_access_level = "maintainer"
-
-
-						allowed_to_push {
-							user_id = %[2]d
-						}
-					}
-				`, testProject.ID, testUsers[0].ID),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabBranchProtectionExists("gitlab_branch_protection.test", &pb),
-					testAccCheckGitlabBranchProtectionPersistsInStateCorrectly("gitlab_branch_protection.test", &pb),
-					testAccCheckGitlabBranchProtectionAttributes(&pb, &testAccGitlabBranchProtectionExpectedAttributes{
-						Name:                 "test-branch",
-						PushAccessLevel:      api.AccessLevelValueToName[gitlab.MaintainerPermissions],
-						MergeAccessLevel:     api.AccessLevelValueToName[gitlab.MaintainerPermissions],
-						UnprotectAccessLevel: api.AccessLevelValueToName[gitlab.MaintainerPermissions],
-						UsersAllowedToPush:   []string{testUsers[0].Username},
-					}),
-				),
-			},
-		},
-	})
-}
-
-func TestAccGitlabBranchProtection_removeUsersAndGroupsFromAllowedTo(t *testing.T) {
-	testutil.SkipIfCE(t)
-
-	// Set up the project for the protected branch
-	testProject := testutil.CreateProject(t)
-	// Set up the groups to share the `testProject` with
-	testGroups := testutil.CreateGroups(t, 2)
-	// Set up the users to add as members to the `testProject`
-	testUsers := testutil.CreateUsers(t, 2)
-	// Add users as members to project
-	testutil.AddProjectMembers(t, testProject.ID, testUsers)
-
-	// Add users to groups
-	testutil.AddGroupMembers(t, testGroups[0].ID, []*gitlab.User{testUsers[0]})
-	testutil.AddGroupMembers(t, testGroups[1].ID, []*gitlab.User{testUsers[1]})
-
-	// Share project with groups
-	testutil.ProjectShareGroup(t, testProject.ID, testGroups[0].ID)
-	testutil.ProjectShareGroup(t, testProject.ID, testGroups[1].ID)
-
-	testutil.ListProjectMembers(t, testProject.ID)
-
-	t.Log("Sleeping for 10s to wait for membership to be accurate")
-	//nolint // R018 this is part of testing code, not the provider itself.
-	time.Sleep(10 * time.Second)
-
-	var pb gitlab.ProtectedBranch
-
-	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
-		CheckDestroy:             testAccCheckGitlabBranchProtectionDestroy,
-		Steps: []resource.TestStep{
-			// Create a branch protection, with only user and no role allowed to push
-			{
-				Config: fmt.Sprintf(`
-					resource "gitlab_branch_protection" "test" {
-						project                = %d
-						branch                 = "test-branch"
-						push_access_level      = "maintainer"
-						merge_access_level     = "maintainer"
-						unprotect_access_level = "maintainer"
-
-
-						allowed_to_push {
-							user_id = %[2]d
-						}
-						
-						allowed_to_push {
-							user_id = %[3]d
-						}
-
-						allowed_to_push {
-							group_id = %[4]d
-						}
-						
-						allowed_to_push {
-							group_id = %[5]d
-						}
-
-
-						allowed_to_merge {
-							user_id = %[2]d
-						}
-					
-						allowed_to_merge {
-							user_id = %[3]d
-						}
-						
-						allowed_to_merge {
-							group_id = %[4]d
-						}
-						
-						allowed_to_merge {
-							group_id = %[5]d
-						}
-
-
-						allowed_to_unprotect {
-							user_id = %[2]d
-						}
-						
-						allowed_to_unprotect {
-							user_id = %[3]d
-						}
-						
-						allowed_to_unprotect {
-							group_id = %[4]d
-						}
-						
-						allowed_to_unprotect {
-							group_id = %[5]d
-						}
-					}
-				`, testProject.ID, testUsers[0].ID, testUsers[1].ID, testGroups[0].ID, testGroups[1].ID),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabBranchProtectionExists("gitlab_branch_protection.test", &pb),
-					testAccCheckGitlabBranchProtectionPersistsInStateCorrectly("gitlab_branch_protection.test", &pb),
-					testAccCheckGitlabBranchProtectionAttributes(&pb, &testAccGitlabBranchProtectionExpectedAttributes{
-						Name:                     "test-branch",
-						PushAccessLevel:          api.AccessLevelValueToName[gitlab.MaintainerPermissions],
-						MergeAccessLevel:         api.AccessLevelValueToName[gitlab.MaintainerPermissions],
-						UnprotectAccessLevel:     api.AccessLevelValueToName[gitlab.MaintainerPermissions],
-						UsersAllowedToPush:       []string{testUsers[0].Username, testUsers[1].Username},
-						UsersAllowedToMerge:      []string{testUsers[0].Username, testUsers[1].Username},
-						UsersAllowedToUnprotect:  []string{testUsers[0].Username, testUsers[1].Username},
-						GroupsAllowedToPush:      []string{testGroups[0].Name, testGroups[1].Name},
-						GroupsAllowedToMerge:     []string{testGroups[0].Name, testGroups[1].Name},
-						GroupsAllowedToUnprotect: []string{testGroups[0].Name, testGroups[1].Name},
-					}),
-				),
-			},
-			{
-				ResourceName:      "gitlab_branch_protection.test",
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
-			// Update a branch protection, with removed user and group allowed to specific action
-			{
-				Config: fmt.Sprintf(`
-					resource "gitlab_branch_protection" "test" {
-						project                = %d
-						branch                 = "test-branch"
-						push_access_level      = "maintainer"
-						merge_access_level     = "maintainer"
-						unprotect_access_level = "maintainer"
-
-
-						allowed_to_push {
-							user_id = %[2]d
-						}
-
-						allowed_to_push {
-							group_id = %[3]d
-						}
-
-
-						allowed_to_merge {
-							user_id = %[2]d
-						}
-						
-						allowed_to_merge {
-							group_id = %[3]d
-						}
-
-
-						allowed_to_unprotect {
-							user_id = %[2]d
-						}
-						
-						allowed_to_unprotect {
-							group_id = %[3]d
-						}
-					}
-				`, testProject.ID, testUsers[0].ID, testGroups[0].ID),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabBranchProtectionExists("gitlab_branch_protection.test", &pb),
-					testAccCheckGitlabBranchProtectionPersistsInStateCorrectly("gitlab_branch_protection.test", &pb),
-					testAccCheckGitlabBranchProtectionAttributes(&pb, &testAccGitlabBranchProtectionExpectedAttributes{
-						Name:                     "test-branch",
-						PushAccessLevel:          api.AccessLevelValueToName[gitlab.MaintainerPermissions],
-						MergeAccessLevel:         api.AccessLevelValueToName[gitlab.MaintainerPermissions],
-						UnprotectAccessLevel:     api.AccessLevelValueToName[gitlab.MaintainerPermissions],
-						UsersAllowedToPush:       []string{testUsers[0].Username},
-						UsersAllowedToMerge:      []string{testUsers[0].Username},
-						UsersAllowedToUnprotect:  []string{testUsers[0].Username},
-						GroupsAllowedToPush:      []string{testGroups[0].Name},
-						GroupsAllowedToMerge:     []string{testGroups[0].Name},
-						GroupsAllowedToUnprotect: []string{testGroups[0].Name},
-					}),
-				),
-			},
-		},
-	})
-}
-
 func TestAccGitlabBranchProtection_createForProjectDefaultBranch(t *testing.T) {
-	testProjectName := acctest.RandomWithPrefix("tf-acc-test")
 	var protectedBranch gitlab.ProtectedBranch
+
+	project := testutil.CreateProject(t)
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
@@ -951,23 +453,14 @@ func TestAccGitlabBranchProtection_createForProjectDefaultBranch(t *testing.T) {
 			// Create a project and protect its default branch with custom settings
 			{
 				Config: fmt.Sprintf(`
-					resource "gitlab_project" "this" {
-						name = "%s"
-						initialize_with_readme = true
-
-						timeouts {
-							create = "10m"
-						}
-					}
-
 					resource "gitlab_branch_protection" "default_branch" {
-						project = gitlab_project.this.id
-						branch = gitlab_project.this.default_branch
+						project = "%d"
+						branch = "%s"
 
 						// non-default setting
 						allow_force_push = true
 					}
-				`, testProjectName),
+				`, project.ID, project.DefaultBranch),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabBranchProtectionExists("gitlab_branch_protection.default_branch", &protectedBranch),
 					func(_ *terraform.State) error {
@@ -1526,42 +1019,4 @@ func testAccCheckGitlabBranchProtectionDestroy(s *terraform.State) error {
 		return err
 	}
 	return nil
-}
-
-func testAccGitlabBranchProtectionUpdateConfigAllowForcePushTrue(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "foo" {
-  name = "foo-%[1]d"
-  description = "Terraform acceptance tests"
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-
-resource "gitlab_branch_protection" "branch_protect" {
-  project                      = gitlab_project.foo.id
-  branch                       = "BranchProtect-%[1]d"
-  allow_force_push             = true
-}
-	`, rInt)
-}
-
-func testAccGitlabBranchProtectionUpdateConfigCodeOwnerTrue(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "foo" {
-  name = "foo-%[1]d"
-  description = "Terraform acceptance tests"
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-
-resource "gitlab_branch_protection" "branch_protect" {
-  project                      = gitlab_project.foo.id
-  branch                       = "BranchProtect-%[1]d"
-  code_owner_approval_required = true
-}
-	`, rInt)
 }
