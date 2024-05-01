@@ -11,7 +11,6 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/xanzy/go-gitlab"
@@ -71,11 +70,13 @@ func TestAccGitlabPipelineSchedule_StateUpgradeV0(t *testing.T) {
 func TestAccGitlabPipelineSchedule_SchemaMigration0_1(t *testing.T) {
 	testProject := testutil.CreateProject(t)
 
+	// Even though we can usually ignore the `refs/heads`, that logic wasn't in place in the old
+	// provider, so the full ref is required for backwards compatibility of the old provider.
 	config := fmt.Sprintf(`
 	resource "gitlab_pipeline_schedule" "schedule" {
 		project = "%d"
 		description = "Pipeline Schedule"
-		ref = "master"
+		ref = "refs/heads/master"
 		cron = "0 1 * * *"
 	}
 		`, testProject.ID)
@@ -125,7 +126,7 @@ func TestAccGitlabPipelineSchedule_takeOwnershipWithChanges(t *testing.T) {
 				resource "gitlab_pipeline_schedule" "schedule" {
 					project = "%d"
 					description = "Schedule"
-					ref = "main"
+					ref = "refs/heads/main"
 					cron = "0 4 * * *"
 					active = false
 				}
@@ -141,7 +142,7 @@ func TestAccGitlabPipelineSchedule_takeOwnershipWithChanges(t *testing.T) {
 				resource "gitlab_pipeline_schedule" "schedule" {
 					project = "%d"
 					description = "Schedule Updated"
-					ref = "main"
+					ref = "refs/heads/main"
 					cron = "0 4 * * *"
 					active = false
 					take_ownership = true
@@ -189,7 +190,7 @@ func TestAccGitlabPipelineSchedule_takeOwnershipWithoutChanges(t *testing.T) {
 				resource "gitlab_pipeline_schedule" "schedule" {
 					project = "%d"
 					description = "Schedule"
-					ref = "main"
+					ref = "refs/heads/main"
 					cron = "0 4 * * *"
 					active = false
 					take_ownership = true
@@ -206,7 +207,7 @@ func TestAccGitlabPipelineSchedule_takeOwnershipWithoutChanges(t *testing.T) {
 				resource "gitlab_pipeline_schedule" "schedule" {
 					project = "%d"
 					description = "Schedule"
-					ref = "main"
+					ref = "refs/heads/main"
 					cron = "0 4 * * *"
 					active = false
 					take_ownership = true
@@ -241,7 +242,7 @@ func TestAccGitlabPipelineSchedule_migrateFromSDKToFramework(t *testing.T) {
 		resource "gitlab_pipeline_schedule" "schedule" {
 			project = "%d"
 			description = "Schedule"
-			ref = "main"
+			ref = "refs/heads/main"
 			cron = "0 4 * * *"
 			active = false
 		}
@@ -283,7 +284,7 @@ func TestAccGitlabPipelineSchedule_migrateFromSDKToFramework(t *testing.T) {
 
 func TestAccGitlabPipelineSchedule_basic(t *testing.T) {
 	var schedule gitlab.PipelineSchedule
-	rInt := acctest.RandInt()
+	project := testutil.CreateProject(t)
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
@@ -291,12 +292,18 @@ func TestAccGitlabPipelineSchedule_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create a project and pipeline schedule with default options
 			{
-				Config: testAccGitlabPipelineScheduleConfig(rInt),
+				Config: fmt.Sprintf(`
+					  resource "gitlab_pipeline_schedule" "schedule" {
+						  project = "%d"
+						  description = "Pipeline Schedule"
+						  ref = "refs/heads/master"
+						  cron = "0 1 * * *"
+					  }`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabPipelineScheduleExists("gitlab_pipeline_schedule.schedule", &schedule),
 					testAccCheckGitlabPipelineScheduleAttributes(&schedule, &testAccGitlabPipelineScheduleExpectedAttributes{
 						Description:  "Pipeline Schedule",
-						Ref:          "master",
+						Ref:          "refs/heads/master",
 						Cron:         "0 1 * * *",
 						CronTimezone: "UTC",
 						Active:       true,
@@ -311,12 +318,19 @@ func TestAccGitlabPipelineSchedule_basic(t *testing.T) {
 			},
 			// Update the pipeline schedule to change the parameters
 			{
-				Config: testAccGitlabPipelineScheduleUpdateConfig(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_pipeline_schedule" "schedule" {
+				  project = "%d"
+				  description = "Schedule"
+				  ref = "refs/heads/master"
+				  cron = "0 4 * * *"
+				  active = false
+				}`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabPipelineScheduleExists("gitlab_pipeline_schedule.schedule", &schedule),
 					testAccCheckGitlabPipelineScheduleAttributes(&schedule, &testAccGitlabPipelineScheduleExpectedAttributes{
 						Description:  "Schedule",
-						Ref:          "master",
+						Ref:          "refs/heads/master",
 						Cron:         "0 4 * * *",
 						CronTimezone: "UTC",
 						Active:       false,
@@ -331,12 +345,18 @@ func TestAccGitlabPipelineSchedule_basic(t *testing.T) {
 			},
 			// Update the pipeline schedule to get back to initial settings
 			{
-				Config: testAccGitlabPipelineScheduleConfig(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_pipeline_schedule" "schedule" {
+					project = "%d"
+					description = "Pipeline Schedule"
+					ref = "refs/heads/master"
+					cron = "0 1 * * *"
+				}`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabPipelineScheduleExists("gitlab_pipeline_schedule.schedule", &schedule),
 					testAccCheckGitlabPipelineScheduleAttributes(&schedule, &testAccGitlabPipelineScheduleExpectedAttributes{
 						Description:  "Pipeline Schedule",
-						Ref:          "master",
+						Ref:          "refs/heads/master",
 						Cron:         "0 1 * * *",
 						CronTimezone: "UTC",
 						Active:       true,
@@ -445,45 +465,4 @@ func testAccCheckGitlabPipelineScheduleDestroy(s *terraform.State) error {
 		return nil
 	}
 	return nil
-}
-
-func testAccGitlabPipelineScheduleConfig(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "foo" {
-  name = "foo-%d"
-  description = "Terraform acceptance tests"
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-
-resource "gitlab_pipeline_schedule" "schedule" {
-	project = "${gitlab_project.foo.id}"
-	description = "Pipeline Schedule"
-	ref = "master"
-	cron = "0 1 * * *"
-}
-	`, rInt)
-}
-
-func testAccGitlabPipelineScheduleUpdateConfig(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "foo" {
-  name = "foo-%d"
-  description = "Terraform acceptance tests"
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-
-resource "gitlab_pipeline_schedule" "schedule" {
-  project = "${gitlab_project.foo.id}"
-  description = "Schedule"
-  ref = "master"
-  cron = "0 4 * * *"
-  active = false
-}
-	`, rInt)
 }
