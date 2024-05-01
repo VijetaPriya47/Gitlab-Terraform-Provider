@@ -1078,19 +1078,22 @@ func resourceGitlabProjectCreate(ctx context.Context, d *schema.ResourceData, me
 		}
 
 		if waitForDefaultBranchProtection {
+			var branch *gitlab.Branch
+
 			// Branch protection for a newly created branch is an async action, so use WaitForState to ensure it's protected
 			// before we continue. Note this check should only be required when there is a custom default branch set
 			// See issue 800: https://gitlab.com/gitlab-org/terraform-provider-gitlab/issues/800
 			stateConf := &retry.StateChangeConf{
 				Pending: []string{"false"},
 				Target:  []string{"true"},
+
 				// The async action usually completes very quickly, within seconds. However in
 				// lower compute or disk constrained environment, it can take a while.
 				// When importing a project and changing the branch protection, the "TimeoutCreate" may
 				// happen twice, and that's OK.
 				Timeout: d.Timeout(schema.TimeoutCreate),
 				Refresh: func() (interface{}, string, error) {
-					branch, _, err := client.Branches.GetBranch(project.ID, project.DefaultBranch, gitlab.WithContext(ctx))
+					branch, _, err = client.Branches.GetBranch(project.ID, project.DefaultBranch, gitlab.WithContext(ctx))
 					if err != nil {
 						if api.Is404(err) {
 							// When we hit a 404 here, it means the default branch wasn't created at all as part of the project
@@ -1100,15 +1103,25 @@ func resourceGitlabProjectCreate(ctx context.Context, d *schema.ResourceData, me
 						}
 
 						// This is legit error, return the error.
+						tflog.Debug(ctx, "Error received when attempting to read branch protection of the default branch", map[string]interface{}{
+							"error":   err,
+							"project": project,
+							"branch":  project.DefaultBranch,
+						})
 						return nil, "", err
 					}
 
+					tflog.Debug(ctx, "Project polling for default branch status", map[string]interface{}{
+						"project":          project,
+						"branch":           project.DefaultBranch,
+						"protectionStatus": branch.Protected,
+					})
 					return branch, strconv.FormatBool(branch.Protected), nil
 				},
 			}
 
 			if _, err := stateConf.WaitForStateContext(ctx); err != nil {
-				return diag.Errorf("error while waiting for branch %s to reach 'protected' status, %s", project.DefaultBranch, err)
+				return diag.Errorf("error while waiting for branch %s to reach 'protected' status; current status is protected %t, %s", branch.Name, branch.Protected, err)
 			}
 		}
 	}

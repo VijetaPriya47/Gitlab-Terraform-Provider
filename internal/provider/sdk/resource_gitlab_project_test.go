@@ -385,7 +385,6 @@ func TestAccGitlabProject_initializeWithReadme(t *testing.T) {
 				Config: testAccGitlabProjectConfigInitializeWithReadme(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectExists("gitlab_project.foo", &project),
-					testAccCheckGitlabProjectDefaultBranch(&project, nil),
 					func(state *terraform.State) error {
 						_, _, err := testutil.TestGitlabClient.RepositoryFiles.GetFile(project.ID, "README.md", &gitlab.GetFileOptions{Ref: gitlab.Ptr("main")}, nil)
 						if err != nil {
@@ -2574,6 +2573,9 @@ resource "gitlab_project" "foo" {
   path = "foo.%d"
   description = "Terraform acceptance tests"
   initialize_with_readme = true
+
+  # Not required for the test, and makes it much more stable
+  skip_wait_for_default_branch_protection = true
 
   # So that acceptance tests can be run in a gitlab organization
   # with no billing

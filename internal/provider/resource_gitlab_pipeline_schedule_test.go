@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -174,6 +175,10 @@ func TestAccGitlabPipelineSchedule_takeOwnershipWithoutChanges(t *testing.T) {
 	user := testutil.CreateUsers(t, 1)[0]
 	testutil.AddProjectMembersWithAccessLevel(t, project.ID, []*gitlab.User{user}, gitlab.MaintainerPermissions)
 	userPAT := testutil.CreatePersonalAccessToken(t, user)
+
+	// Wait some time to ensure that membership changes have propogated in the background processes.
+	//nolint // R018 this is part of testing code, not the provider itself.
+	time.Sleep(20 * time.Second)
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
