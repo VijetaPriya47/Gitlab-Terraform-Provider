@@ -88,7 +88,7 @@ func (d *gitlabPipelineScheduleResource) getV1Schema() schema.Schema {
 				Required:            true,
 			},
 			"ref": schema.StringAttribute{
-				MarkdownDescription: "The branch/tag name to be triggered.",
+				MarkdownDescription: "The branch/tag name to be triggered. This must be the full branch reference, for example: `refs/heads/main`, not `main`.",
 				Required:            true,
 			},
 			"cron": schema.StringAttribute{
