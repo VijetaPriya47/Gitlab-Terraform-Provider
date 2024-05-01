@@ -331,6 +331,11 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 					Type:        schema.TypeBool,
 					Optional:    true,
 				},
+				"commit_committer_name_check": {
+					Description: "Users can only push commits to this repository if the commit author name is consistent with their GitLab account name.",
+					Type:        schema.TypeBool,
+					Optional:    true,
+				},
 				"deny_delete_tag": {
 					Description: "Deny deleting a tag.",
 					Type:        schema.TypeBool,
@@ -1738,6 +1743,10 @@ func expandEditProjectPushRuleOptions(d *schema.ResourceData, currentPushRules *
 		options.CommitCommitterCheck = gitlab.Ptr(d.Get("push_rules.0.commit_committer_check").(bool))
 	}
 
+	if d.Get("push_rules.0.commit_committer_name_check") != currentPushRules.CommitCommitterNameCheck {
+		options.CommitCommitterNameCheck = gitlab.Ptr(d.Get("push_rules.0.commit_committer_name_check").(bool))
+	}
+
 	if d.Get("push_rules.0.deny_delete_tag") != currentPushRules.DenyDeleteTag {
 		options.DenyDeleteTag = gitlab.Ptr(d.Get("push_rules.0.deny_delete_tag").(bool))
 	}
@@ -1788,6 +1797,10 @@ func expandAddProjectPushRuleOptions(d *schema.ResourceData) gitlab.AddProjectPu
 		options.CommitCommitterCheck = gitlab.Ptr(v.(bool))
 	}
 
+	if v, ok := d.GetOk("push_rules.0.commit_committer_name_check"); ok {
+		options.CommitCommitterNameCheck = gitlab.Ptr(v.(bool))
+	}
+
 	if v, ok := d.GetOk("push_rules.0.deny_delete_tag"); ok {
 		options.DenyDeleteTag = gitlab.Ptr(v.(bool))
 	}
@@ -1824,6 +1837,7 @@ func flattenProjectPushRules(pushRules *gitlab.ProjectPushRules) (values []map[s
 			"commit_message_negative_regex": pushRules.CommitMessageNegativeRegex,
 			"file_name_regex":               pushRules.FileNameRegex,
 			"commit_committer_check":        pushRules.CommitCommitterCheck,
+			"commit_committer_name_check":   pushRules.CommitCommitterNameCheck,
 			"deny_delete_tag":               pushRules.DenyDeleteTag,
 			"member_check":                  pushRules.MemberCheck,
 			"prevent_secrets":               pushRules.PreventSecrets,

@@ -175,6 +175,7 @@ commit_message_regex = "foo_commit"
 commit_message_negative_regex = "foo_not_commit"
 file_name_regex = "foo_file"
 commit_committer_check = true
+commit_committer_name_check = true
 deny_delete_tag = true
 member_check = true
 prevent_secrets = true
@@ -188,6 +189,7 @@ max_file_size = 123
 					CommitMessageNegativeRegex: "foo_not_commit",
 					FileNameRegex:              "foo_file",
 					CommitCommitterCheck:       true,
+					CommitCommitterNameCheck:   true,
 					DenyDeleteTag:              true,
 					MemberCheck:                true,
 					PreventSecrets:             true,
@@ -212,6 +214,7 @@ commit_message_regex = "foo_commit"
 commit_message_negative_regex = "foo_not_commit"
 file_name_regex = "foo_file_2"
 commit_committer_check = true
+commit_committer_name_check = false
 deny_delete_tag = true
 member_check = false
 prevent_secrets = true
@@ -225,6 +228,7 @@ max_file_size = 1234
 					CommitMessageNegativeRegex: "foo_not_commit",
 					FileNameRegex:              "foo_file_2",
 					CommitCommitterCheck:       true,
+					CommitCommitterNameCheck:   false,
 					DenyDeleteTag:              true,
 					MemberCheck:                false,
 					PreventSecrets:             true,
@@ -2244,6 +2248,11 @@ func testAccCheckGitlabProjectPushRules(name string, wantPushRules *gitlab.Proje
 		if gotPushRules.CommitCommitterCheck != wantPushRules.CommitCommitterCheck {
 			messages = append(messages, fmt.Sprintf("commit_committer_check (got: %t, wanted: %t)",
 				gotPushRules.CommitCommitterCheck, wantPushRules.CommitCommitterCheck))
+		}
+
+		if gotPushRules.CommitCommitterNameCheck != wantPushRules.CommitCommitterNameCheck {
+			messages = append(messages, fmt.Sprintf("commit_committer_name_check (got: %t, wanted: %t)",
+				gotPushRules.CommitCommitterNameCheck, wantPushRules.CommitCommitterNameCheck))
 		}
 
 		if gotPushRules.DenyDeleteTag != wantPushRules.DenyDeleteTag {

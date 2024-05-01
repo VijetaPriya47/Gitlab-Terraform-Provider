@@ -126,6 +126,7 @@ Read-Only:
 - `author_email_regex` (String)
 - `branch_name_regex` (String)
 - `commit_committer_check` (Boolean)
+- `commit_committer_name_check` (Boolean)
 - `commit_message_negative_regex` (String)
 - `commit_message_regex` (String)
 - `deny_delete_tag` (Boolean)
