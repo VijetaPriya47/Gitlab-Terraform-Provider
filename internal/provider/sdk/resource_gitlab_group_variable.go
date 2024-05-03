@@ -6,6 +6,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/xanzy/go-gitlab"
@@ -54,7 +55,7 @@ func resourceGitlabGroupVariableCreate(ctx context.Context, d *schema.ResourceDa
 		Raw:              &raw,
 		Description:      &description,
 	}
-	log.Printf("[DEBUG] create gitlab group variable %s/%s", group, key)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab group variable %s/%s", group, key))
 
 	_, _, err := client.GroupVariables.CreateVariable(group, &options, gitlab.WithContext(ctx))
 	if err != nil {
@@ -82,7 +83,7 @@ func resourceGitlabGroupVariableRead(ctx context.Context, d *schema.ResourceData
 		scope = keyScope[1]
 	}
 
-	log.Printf("[DEBUG] read gitlab group variable %s/%s/%s", group, key, scope)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab group variable %s/%s/%s", group, key, scope))
 
 	v, _, err := client.GroupVariables.GetVariable(
 		group,
@@ -128,7 +129,7 @@ func resourceGitlabGroupVariableUpdate(ctx context.Context, d *schema.ResourceDa
 		Raw:              &raw,
 		Description:      &description,
 	}
-	log.Printf("[DEBUG] update gitlab group variable %s/%s/%s", group, key, environmentScope)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab group variable %s/%s/%s", group, key, environmentScope))
 
 	_, _, err := client.GroupVariables.UpdateVariable(
 		group,
@@ -148,7 +149,7 @@ func resourceGitlabGroupVariableDelete(ctx context.Context, d *schema.ResourceDa
 	group := d.Get("group").(string)
 	key := d.Get("key").(string)
 	environmentScope := d.Get("environment_scope").(string)
-	log.Printf("[DEBUG] Delete gitlab group variable %s/%s/%s", group, key, environmentScope)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Delete gitlab group variable %s/%s/%s", group, key, environmentScope))
 
 	_, err := client.GroupVariables.RemoveVariable(
 		group,

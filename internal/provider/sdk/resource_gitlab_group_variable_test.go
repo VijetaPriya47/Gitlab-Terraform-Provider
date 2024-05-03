@@ -115,6 +115,87 @@ func TestAccGitlabGroupVariable_basic(t *testing.T) {
 	})
 }
 
+func TestAccGitlabGroupVariable_sameVariableDifferentEnvironments(t *testing.T) {
+	group := testutil.CreateGroups(t, 1)[0]
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabGroupVariableDestroy,
+		Steps: []resource.TestStep{
+			// Create a group with 2 variables with different env scopes but the same name
+			{
+				Config: fmt.Sprintf(
+					`
+					resource "gitlab_group_variable" "env1" {
+						group = %d
+						key = "variableName"
+						value = "val1"
+						variable_type = "file"
+						masked = false
+						description = "description"
+						environment_scope = "env1"
+					}
+
+					resource "gitlab_group_variable" "env2" {
+						group = %d
+						key = "variableName"
+						value = "val2"
+						variable_type = "file"
+						masked = false
+						description = "description"
+						environment_scope = "env2"
+					}
+					`,
+					group.ID, group.ID,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					// Check environment scope
+					resource.TestCheckResourceAttr("gitlab_group_variable.env1", "environment_scope", "env1"),
+					resource.TestCheckResourceAttr("gitlab_group_variable.env2", "environment_scope", "env2"),
+					// Check the `value`
+					resource.TestCheckResourceAttr("gitlab_group_variable.env1", "value", "val1"),
+					resource.TestCheckResourceAttr("gitlab_group_variable.env2", "value", "val2"),
+				),
+			},
+			// Update both variables to have a different value
+			{
+				Config: fmt.Sprintf(
+					`
+					resource "gitlab_group_variable" "env1" {
+						group = %d
+						key = "variableName"
+						value = "value1"
+						variable_type = "file"
+						masked = false
+						description = "description"
+						environment_scope = "env1"
+					}
+
+					resource "gitlab_group_variable" "env2" {
+						group = %d
+						key = "variableName"
+						value = "value2"
+						variable_type = "file"
+						masked = false
+						description = "description"
+						environment_scope = "env2"
+					}
+					`,
+					group.ID, group.ID,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					// Check environment scope
+					resource.TestCheckResourceAttr("gitlab_group_variable.env1", "environment_scope", "env1"),
+					resource.TestCheckResourceAttr("gitlab_group_variable.env2", "environment_scope", "env2"),
+					// Check the `value`
+					resource.TestCheckResourceAttr("gitlab_group_variable.env1", "value", "value1"),
+					resource.TestCheckResourceAttr("gitlab_group_variable.env2", "value", "value2"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccGitlabGroupVariable_scope(t *testing.T) {
 	var groupVariableA, groupVariableB gitlab.GroupVariable
 	rString := acctest.RandString(5)
