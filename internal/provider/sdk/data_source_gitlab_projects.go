@@ -206,10 +206,7 @@ func flattenProjects(projects []*gitlab.Project) (values []map[string]interface{
 				"infrastructure_access_level":                      string(project.InfrastructureAccessLevel),
 				"monitor_access_level":                             string(project.MonitorAccessLevel),
 				"ci_restrict_pipeline_cancellation_role":           string(project.CIRestrictPipelineCancellationRole),
-
-				// nolint:staticcheck // SA1019 ignore deprecated EmailsDisabled
-				"emails_disabled": project.EmailsDisabled,
-				"emails_enabled":  project.EmailsEnabled,
+				"emails_enabled":                                   project.EmailsEnabled,
 			}
 			values = append(values, v)
 		}
@@ -924,12 +921,6 @@ var _ = registerDataSource("gitlab_projects", func() *schema.Resource {
 						"container_registry_access_level": {
 							Description: fmt.Sprintf("Set visibility of container registry, for this project. Valid values are %s.", utils.RenderValueListForDocs(validProjectAccessLevels)),
 							Type:        schema.TypeString,
-							Computed:    true,
-						},
-						"emails_disabled": {
-							Description: "Disable email notifications.",
-							Type:        schema.TypeBool,
-							Deprecated:  "Use of `emails_disabled` is deprecated. Use `emails_enabled` instead.",
 							Computed:    true,
 						},
 						"emails_enabled": {

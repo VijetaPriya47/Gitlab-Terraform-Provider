@@ -903,13 +903,6 @@ func testAccCheckGitlabGroupAttributes(group *gitlab.Group, want *testAccGitlabG
 			return fmt.Errorf("got request_auto_devops_enabled: %t; want %t", group.AutoDevopsEnabled, *want.AutoDevopsEnabled)
 		}
 
-		// nolint:staticcheck // SA1019 ignore deprecated EmailsDisabled
-		if want.EmailsDisabled != nil && group.EmailsDisabled != *want.EmailsDisabled {
-
-			// nolint:staticcheck // SA1019 ignore deprecated EmailsDisabled
-			return fmt.Errorf("got request_emails_disabled: %t; want %t", group.EmailsDisabled, *want.EmailsDisabled)
-		}
-
 		if want.EmailsEnabled != nil && group.EmailsEnabled != *want.EmailsEnabled {
 			return fmt.Errorf("got request_emails_enabled: %t; want %t", group.EmailsEnabled, *want.EmailsEnabled)
 		}

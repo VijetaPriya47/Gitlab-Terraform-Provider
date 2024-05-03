@@ -105,7 +105,6 @@ Read-Only:
 - `custom_attributes` (List of Map of String)
 - `default_branch` (String)
 - `description` (String)
-- `emails_disabled` (Boolean)
 - `emails_enabled` (Boolean)
 - `empty_repo` (Boolean)
 - `environments_access_level` (String)

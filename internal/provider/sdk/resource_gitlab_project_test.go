@@ -1731,9 +1731,7 @@ func TestAccGitlabProject_SetDefaultFalseBooleansOnCreate(t *testing.T) {
 						resolve_outdated_diff_discussions   = false
 						auto_devops_enabled                 = false
 						autoclose_referenced_issues         = false
-
-						// Even though this is deprecated, leaving it alone to test the inversion logic.
-						emails_disabled                     = false
+						emails_enabled                      = true
 						public_jobs                         = false
 						merge_pipelines_enabled             = false
 						merge_trains_enabled                = false

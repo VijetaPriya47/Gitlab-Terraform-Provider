@@ -74,12 +74,6 @@ func gitlabGroupSchema() map[string]*schema.Schema {
 			Computed:    true,
 			Optional:    true,
 		},
-		"emails_disabled": {
-			Description: "",
-			Type:        schema.TypeBool,
-			Computed:    true,
-			Optional:    true,
-		},
 		"emails_enabled": {
 			Description: "",
 			Type:        schema.TypeBool,
@@ -210,9 +204,6 @@ func gitlabGroupToStateMap(group *gitlab.Group) map[string]interface{} {
 	stateMap["web_url"] = group.WebURL
 	stateMap["wiki_access_level"] = group.WikiAccessLevel
 	stateMap["shared_runners_setting"] = group.SharedRunnersSetting
-
-	// nolint:staticcheck // SA1019 ignore deprecated EmailsDisabled
-	stateMap["emails_disabled"] = group.EmailsDisabled
 	stateMap["emails_enabled"] = group.EmailsEnabled
 
 	return stateMap
