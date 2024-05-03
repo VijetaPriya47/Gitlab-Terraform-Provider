@@ -561,24 +561,11 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 		Computed:         true,
 		ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(validProjectAccessLevels, false)),
 	},
-	"emails_disabled": {
-		Description: "Disable email notifications.",
-		Type:        schema.TypeBool,
-		Optional:    true,
-		Computed:    true,
-		Deprecated:  "use `emails_enabled` instead.",
-		ConflictsWith: []string{
-			"emails_enabled",
-		},
-	},
 	"emails_enabled": {
 		Description: "Enable email notifications.",
 		Type:        schema.TypeBool,
 		Optional:    true,
 		Computed:    true,
-		ConflictsWith: []string{
-			"emails_disabled",
-		},
 	},
 	"external_authorization_classification_label": {
 		Description: "The classification label for the project.",
@@ -927,9 +914,6 @@ func resourceGitlabProjectSetToState(ctx context.Context, client *gitlab.Client,
 		return fmt.Errorf("error setting container_expiration_policy: %v", err)
 	}
 	d.Set("container_registry_access_level", string(project.ContainerRegistryAccessLevel))
-
-	// nolint:staticcheck // SA1019 ignore deprecated EmailsDisabled
-	d.Set("emails_disabled", project.EmailsDisabled)
 	d.Set("emails_enabled", project.EmailsEnabled)
 
 	d.Set("external_authorization_classification_label", project.ExternalAuthorizationClassificationLabel)
@@ -1436,11 +1420,6 @@ func resourceGitlabProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 
 	if d.HasChange("container_registry_access_level") {
 		options.ContainerRegistryAccessLevel = stringToAccessControlValue(d.Get("container_registry_access_level").(string))
-	}
-
-	if d.HasChange("emails_disabled") {
-		// GitLab 16.10 may cause issues with EmailsDisabled, do invert the config and use EmailsEnabled instead.
-		options.EmailsEnabled = gitlab.Ptr(!d.Get("emails_disabled").(bool))
 	}
 
 	if d.HasChange("emails_enabled") {
@@ -2098,12 +2077,6 @@ func createProject(ctx context.Context, d *schema.ResourceData, client *gitlab.C
 
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
-	if v, ok := d.GetOkExists("emails_disabled"); ok {
-		options.EmailsEnabled = gitlab.Ptr(!v.(bool))
-	}
-
-	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
-	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 	if v, ok := d.GetOkExists("emails_enabled"); ok {
 		options.EmailsEnabled = gitlab.Ptr(v.(bool))
 	}
@@ -2641,12 +2614,6 @@ func updatePostCreateEditOptions(ctx context.Context, editProjectOptions *gitlab
 
 		if v, ok := d.GetOk("container_registry_access_level"); ok {
 			editProjectOptions.ContainerRegistryAccessLevel = stringToAccessControlValue(v.(string))
-		}
-
-		// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
-		// lintignore: XR001 // TODO: replace with alternative for GetOkExists
-		if v, ok := d.GetOkExists("emails_disabled"); ok {
-			editProjectOptions.EmailsEnabled = gitlab.Ptr(!v.(bool))
 		}
 
 		// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
