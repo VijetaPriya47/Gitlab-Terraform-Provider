@@ -3,9 +3,9 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/xanzy/go-gitlab"
@@ -51,7 +51,7 @@ var _ = registerDataSource("gitlab_user_sshkeys", func() *schema.Resource {
 
 func dataSourceGitlabUserKeysRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
-	log.Printf("[INFO] Reading Gitlab user")
+	tflog.Info(ctx, "[INFO] Reading Gitlab user")
 
 	options := gitlab.ListSSHKeysForUserOptions{
 		PerPage: 2,

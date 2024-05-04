@@ -3,10 +3,10 @@ package sdk
 import (
 	"context"
 	"encoding/json"
-	"log"
 	"strings"
 
 	"github.com/hashicorp/go-retryablehttp"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/xanzy/go-gitlab"
@@ -43,13 +43,13 @@ var _ = registerResource("gitlab_application_settings", func() *schema.Resource 
 func resourceGitlabApplicationSettingsSet(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
-	log.Printf("[DEBUG] update GitLab Application Settings")
+	tflog.Debug(ctx, "[DEBUG] update GitLab Application Settings")
 	options := gitlabApplicationSettingsToUpdateOptions(d)
 
 	// Since there is logic included in passing "nil" as value to the `enabled_git_access_protocol` and we
 	// want to support that, we have to override that request value and make a separate call with a new struct
 	if options.EnabledGitAccessProtocol != nil && strings.ToLower(*options.EnabledGitAccessProtocol) == "nil" {
-		err := updateNilGitAccessSetting(ctx, client)
+		err := updateNilGitAccessSetting(client)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -75,7 +75,7 @@ func resourceGitlabApplicationSettingsRead(ctx context.Context, d *schema.Resour
 	}
 
 	client := meta.(*gitlab.Client)
-	log.Printf("[DEBUG] read GitLab Application settings")
+	tflog.Debug(ctx, "[DEBUG] read GitLab Application settings")
 	settings, _, err := client.Settings.GetSettings(gitlab.WithContext(ctx))
 	if err != nil {
 		return diag.FromErr(err)
@@ -89,12 +89,12 @@ func resourceGitlabApplicationSettingsRead(ctx context.Context, d *schema.Resour
 }
 
 func resourceGitlabApplicationSettingsDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] destroying the application settings does not yet do anything.")
+	tflog.Debug(ctx, "[DEBUG] destroying the application settings does not yet do anything.")
 	return nil
 }
 
 // Overrides the `omitempty` on the go-gitlab struct and sets the `enabled_git_access_protocol` to nil
-func updateNilGitAccessSetting(ctx context.Context, client *gitlab.Client) error {
+func updateNilGitAccessSetting(client *gitlab.Client) error {
 	// Empty struct required for the method call.
 	options := &gitlab.UpdateSettingsOptions{}
 

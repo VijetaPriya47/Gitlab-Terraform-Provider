@@ -2,8 +2,9 @@ package sdk
 
 import (
 	"context"
-	"log"
+	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/xanzy/go-gitlab"
@@ -69,7 +70,7 @@ func dataSourceGitlabReleaseLinksRead(ctx context.Context, d *schema.ResourceDat
 		options.Page = resp.NextPage
 	}
 
-	log.Printf("[DEBUG] get list release links project/tagName: %s/%s", project, tagName)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] get list release links project/tagName: %s/%s", project, tagName))
 	d.SetId(utils.BuildTwoPartID(&project, &tagName))
 	if err := d.Set("release_links", flattenGitlabReleaseLinks(project, tagName, releaseLinks)); err != nil {
 		return diag.Errorf("Failed to set release links to state: %v", err)

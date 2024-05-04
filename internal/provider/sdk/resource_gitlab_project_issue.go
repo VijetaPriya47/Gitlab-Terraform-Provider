@@ -3,10 +3,10 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/xanzy/go-gitlab"
@@ -138,7 +138,7 @@ func resourceGitlabProjectIssueRead(ctx context.Context, d *schema.ResourceData,
 	issue, _, err := client.Issues.GetIssue(project, issueIID, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[WARN] issue %d in project %s not found, removing from state", issueIID, project)
+			tflog.Warn(ctx, fmt.Sprintf("[WARN] issue %d in project %s not found, removing from state", issueIID, project))
 			d.SetId("")
 			return nil
 		}
@@ -219,13 +219,13 @@ func resourceGitlabProjectIssueDelete(ctx context.Context, d *schema.ResourceDat
 	deleteOnDestroy := d.Get("delete_on_destroy").(bool)
 
 	if deleteOnDestroy {
-		log.Printf("[DEBUG] Deleting issue %d in project %s for destroy", issueIID, project)
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Deleting issue %d in project %s for destroy", issueIID, project))
 		resp, err := client.Issues.DeleteIssue(project, issueIID, gitlab.WithContext(ctx))
 		if err != nil {
 			return diag.Errorf("%s failed to delete issue %d in project %s: (%s) %v", d.Id(), issueIID, project, resp.Status, err)
 		}
 	} else {
-		log.Printf("[DEBUG] Closing issue %d in project %s for destroy", issueIID, project)
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Closing issue %d in project %s for destroy", issueIID, project))
 		_, resp, err := client.Issues.UpdateIssue(project, issueIID, &gitlab.UpdateIssueOptions{StateEvent: gitlab.Ptr("close")}, gitlab.WithContext(ctx))
 		if err != nil {
 			return diag.Errorf("%s failed to delete issue %d in project %s: (%s) %v", d.Id(), issueIID, project, resp.Status, err)

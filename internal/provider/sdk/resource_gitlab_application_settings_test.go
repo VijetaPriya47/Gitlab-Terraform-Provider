@@ -4,10 +4,11 @@
 package sdk
 
 import (
-	"log"
+	"context"
 	"regexp"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
@@ -255,6 +256,6 @@ application settings nature and its inhability to be destroyed than simply using
 value in the acceptance test to satisfy the linter.
 */
 func testAccGitlabApplicationSettingsDestroy(state *terraform.State) error {
-	log.Printf("[DEBUG] destroying application settings does not do anything yet.")
+	tflog.Debug(context.Background(), "[DEBUG] destroying application settings does not do anything yet.")
 	return nil
 }

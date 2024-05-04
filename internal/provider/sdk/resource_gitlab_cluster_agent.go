@@ -3,9 +3,9 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/xanzy/go-gitlab"
@@ -47,7 +47,7 @@ func resourceGitlabClusterAgentCreate(ctx context.Context, d *schema.ResourceDat
 		Name: gitlab.Ptr(d.Get("name").(string)),
 	}
 
-	log.Printf("[DEBUG] create GitLab Agent for Kubernetes in project %s with name '%v'", project, options.Name)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create GitLab Agent for Kubernetes in project %s with name '%v'", project, options.Name))
 	clusterAgent, _, err := client.ClusterAgents.RegisterAgent(project, &options, gitlab.WithContext(ctx))
 	if err != nil {
 		return diag.FromErr(err)
@@ -64,11 +64,11 @@ func resourceGitlabClusterAgentRead(ctx context.Context, d *schema.ResourceData,
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] read GitLab Agent for Kubernetes in project %s with id %d", project, agentID)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read GitLab Agent for Kubernetes in project %s with id %d", project, agentID))
 	clusterAgent, _, err := client.ClusterAgents.GetAgent(project, agentID, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] read GitLab Agent for Kubernetes in project %s with id %d not found, removing from state", project, agentID)
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read GitLab Agent for Kubernetes in project %s with id %d not found, removing from state", project, agentID))
 			d.SetId("")
 			return nil
 		}
@@ -89,7 +89,7 @@ func resourceGitlabClusterAgentDelete(ctx context.Context, d *schema.ResourceDat
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] delete GitLab Agent for Kubernetes in project %s with id %d", project, agentID)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] delete GitLab Agent for Kubernetes in project %s with id %d", project, agentID))
 	if _, err := client.ClusterAgents.DeleteAgent(project, agentID, gitlab.WithContext(ctx)); err != nil {
 		return diag.FromErr(err)
 	}

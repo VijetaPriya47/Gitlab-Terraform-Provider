@@ -3,9 +3,9 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/xanzy/go-gitlab"
@@ -61,10 +61,10 @@ func resourceGitlabProjectMilestoneCreate(ctx context.Context, d *schema.Resourc
 		options.DueDate = parsedDueDate
 	}
 
-	log.Printf("[DEBUG] create gitlab milestone in project %s with title %s", project, title)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab milestone in project %s with title %s", project, title))
 	milestone, resp, err := client.Milestones.CreateMilestone(project, options, gitlab.WithContext(ctx))
 	if err != nil {
-		log.Printf("[WARN] failed to create gitlab milestone in project %s with title %s (response %v)", project, title, resp)
+		tflog.Warn(ctx, fmt.Sprintf("[WARN] failed to create gitlab milestone in project %s with title %s (response %v)", project, title, resp))
 		return diag.FromErr(err)
 	}
 	d.SetId(resourceGitLabProjectMilestoneBuildId(project, milestone.ID))
@@ -90,15 +90,15 @@ func resourceGitlabProjectMilestoneRead(ctx context.Context, d *schema.ResourceD
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] read gitlab milestone in project %s with ID %d", project, milestoneID)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab milestone in project %s with ID %d", project, milestoneID))
 	milestone, resp, err := client.Milestones.GetMilestone(project, milestoneID, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[WARN] recieved 404 for gitlab milestone ID %d in project %s, removing from state", milestoneID, project)
+			tflog.Warn(ctx, fmt.Sprintf("[WARN] recieved 404 for gitlab milestone ID %d in project %s, removing from state", milestoneID, project))
 			d.SetId("")
 			return nil
 		}
-		log.Printf("[WARN] failed to read gitlab milestone ID %d in project %s. Response %v", milestoneID, project, resp)
+		tflog.Warn(ctx, fmt.Sprintf("[WARN] failed to read gitlab milestone ID %d in project %s. Response %v", milestoneID, project, resp))
 		return diag.FromErr(err)
 	}
 
@@ -143,10 +143,10 @@ func resourceGitlabProjectMilestoneUpdate(ctx context.Context, d *schema.Resourc
 		options.StateEvent = gitlab.Ptr(milestoneStateToStateEvent[d.Get("state").(string)])
 	}
 
-	log.Printf("[DEBUG] update gitlab milestone in project %s with ID %d", project, milestoneID)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab milestone in project %s with ID %d", project, milestoneID))
 	_, _, err = client.Milestones.UpdateMilestone(project, milestoneID, options, gitlab.WithContext(ctx))
 	if err != nil {
-		log.Printf("[WARN] failed to update gitlab milestone in project %s with ID %d", project, milestoneID)
+		tflog.Warn(ctx, fmt.Sprintf("[WARN] failed to update gitlab milestone in project %s with ID %d", project, milestoneID))
 		return diag.FromErr(err)
 	}
 
@@ -160,10 +160,10 @@ func resourceGitlabProjectMilestoneDelete(ctx context.Context, d *schema.Resourc
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] delete gitlab milestone in project %s with ID %d", project, milestoneID)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] delete gitlab milestone in project %s with ID %d", project, milestoneID))
 	resp, err := client.Milestones.DeleteMilestone(project, milestoneID, gitlab.WithContext(ctx))
 	if err != nil {
-		log.Printf("[DEBUG] failed to delete gitlab milestone in project %s with ID %d. Response %v", project, milestoneID, resp)
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] failed to delete gitlab milestone in project %s with ID %d. Response %v", project, milestoneID, resp))
 		return diag.FromErr(err)
 	}
 	return nil

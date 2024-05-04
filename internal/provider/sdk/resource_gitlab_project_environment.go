@@ -3,10 +3,10 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -95,7 +95,7 @@ func resourceGitlabProjectEnvironmentCreate(ctx context.Context, d *schema.Resou
 
 	project := d.Get("project").(string)
 
-	log.Printf("[DEBUG] Project %s create gitlab environment %q", project, *options.Name)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Project %s create gitlab environment %q", project, *options.Name))
 
 	client := meta.(*gitlab.Client)
 
@@ -113,21 +113,21 @@ func resourceGitlabProjectEnvironmentCreate(ctx context.Context, d *schema.Resou
 }
 
 func resourceGitlabProjectEnvironmentRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] read gitlab environment %s", d.Id())
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab environment %s", d.Id()))
 
-	project, environmentID, err := resourceGitlabProjectEnvironmentParseID(d)
+	project, environmentID, err := resourceGitlabProjectEnvironmentParseID(ctx, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] Project %s read gitlab environment %d", project, environmentID)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Project %s read gitlab environment %d", project, environmentID))
 
 	client := meta.(*gitlab.Client)
 
 	environment, _, err := client.Environments.GetEnvironment(project, environmentID, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] Project %s gitlab environment %d not found, removing from state", project, environmentID)
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Project %s gitlab environment %d not found, removing from state", project, environmentID))
 			d.SetId("")
 			return nil
 		}
@@ -147,9 +147,9 @@ func resourceGitlabProjectEnvironmentRead(ctx context.Context, d *schema.Resourc
 }
 
 func resourceGitlabProjectEnvironmentUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] update gitlab environment %s", d.Id())
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab environment %s", d.Id()))
 
-	project, environmentID, err := resourceGitlabProjectEnvironmentParseID(d)
+	project, environmentID, err := resourceGitlabProjectEnvironmentParseID(ctx, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -162,7 +162,7 @@ func resourceGitlabProjectEnvironmentUpdate(ctx context.Context, d *schema.Resou
 		options.ExternalURL = gitlab.Ptr(d.Get("external_url").(string))
 	}
 
-	log.Printf("[DEBUG] Project %s update gitlab environment %d", project, environmentID)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Project %s update gitlab environment %d", project, environmentID))
 
 	client := meta.(*gitlab.Client)
 
@@ -175,12 +175,12 @@ func resourceGitlabProjectEnvironmentUpdate(ctx context.Context, d *schema.Resou
 
 func resourceGitlabProjectEnvironmentStop(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
-	project, environmentID, err := resourceGitlabProjectEnvironmentParseID(d)
+	project, environmentID, err := resourceGitlabProjectEnvironmentParseID(ctx, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] Stopping environment %d for Project %s", environmentID, project)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Stopping environment %d for Project %s", environmentID, project))
 	if _, _, err = client.Environments.StopEnvironment(project, environmentID, nil, gitlab.WithContext(ctx)); err != nil {
 		return diag.Errorf("error while stopping gitlab environment %q for project %s: %v", environmentID, project, err)
 	}
@@ -211,7 +211,7 @@ func resourceGitlabProjectEnvironmentStop(ctx context.Context, d *schema.Resourc
 
 func resourceGitlabProjectEnvironmentDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
-	project, environmentID, err := resourceGitlabProjectEnvironmentParseID(d)
+	project, environmentID, err := resourceGitlabProjectEnvironmentParseID(ctx, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -227,7 +227,7 @@ func resourceGitlabProjectEnvironmentDelete(ctx context.Context, d *schema.Resou
 	environment, _, err := client.Environments.GetEnvironment(project, environmentID, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] Project %s gitlab environment %d not found, removing from state", project, environmentID)
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Project %s gitlab environment %d not found, removing from state", project, environmentID))
 			d.SetId("")
 			return nil
 		}
@@ -245,18 +245,18 @@ func resourceGitlabProjectEnvironmentDelete(ctx context.Context, d *schema.Resou
 	return nil
 }
 
-func resourceGitlabProjectEnvironmentParseID(d *schema.ResourceData) (string, int, error) {
+func resourceGitlabProjectEnvironmentParseID(ctx context.Context, d *schema.ResourceData) (string, int, error) {
 	project, rawEnvironmentID, err := utils.ParseTwoPartID(d.Id())
 
 	if err != nil {
-		log.Printf("[ERROR] cannot get project and environment ID from input: %v", d.Id())
+		tflog.Error(ctx, fmt.Sprintf("[ERROR] cannot get project and environment ID from input: %v", d.Id()))
 		return "", 0, err
 	}
 
 	environmentID, err := strconv.Atoi(rawEnvironmentID)
 
 	if err != nil {
-		log.Printf("[ERROR] cannot convert environment ID to int: %v", err)
+		tflog.Error(ctx, fmt.Sprintf("[ERROR] cannot convert environment ID to int: %v", err))
 		return "", 0, err
 	}
 	return project, environmentID, nil

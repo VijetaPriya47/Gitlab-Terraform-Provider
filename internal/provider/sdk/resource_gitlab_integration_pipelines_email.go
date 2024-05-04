@@ -2,9 +2,10 @@ package sdk
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -86,7 +87,7 @@ func resourceGitlabIntegrationPipelinesEmailCreate(ctx context.Context, d *schem
 		BranchesToBeNotified:      gitlab.Ptr(d.Get("branches_to_be_notified").(string)),
 	}
 
-	log.Printf("[DEBUG] create gitlab pipelines emails integration for project %s", project)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab pipelines emails integration for project %s", project))
 
 	_, err := client.Services.SetPipelinesEmailService(project, options, gitlab.WithContext(ctx))
 	if err != nil {
@@ -100,12 +101,12 @@ func resourceGitlabIntegrationPipelinesEmailRead(ctx context.Context, d *schema.
 	client := meta.(*gitlab.Client)
 	project := d.Id()
 
-	log.Printf("[DEBUG] read gitlab pipelines emails integration for project %s", project)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab pipelines emails integration for project %s", project))
 
 	service, _, err := client.Services.GetPipelinesEmailService(project, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] gitlab pipelines emails integration not found for project %s", project)
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab pipelines emails integration not found for project %s", project))
 			d.SetId("")
 			return nil
 		}
@@ -121,7 +122,7 @@ func resourceGitlabIntegrationPipelinesEmailDelete(ctx context.Context, d *schem
 	client := meta.(*gitlab.Client)
 	project := d.Id()
 
-	log.Printf("[DEBUG] delete gitlab pipelines email integration for project %s", project)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] delete gitlab pipelines email integration for project %s", project))
 
 	_, err := client.Services.DeletePipelinesEmailService(project, gitlab.WithContext(ctx))
 	if err != nil {

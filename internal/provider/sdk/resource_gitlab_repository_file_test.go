@@ -89,7 +89,7 @@ func TestAccGitlabRepositoryFile_SeparateCreateUpdateCommitMessages(t *testing.T
 						FilePath: "meow.txt",
 						Content:  "bWVvdyBtZW93IG1lb3c=",
 					}),
-					testAccCheckGitlabRepositoryFileCommitMessage("gitlab_repository_file.this", &file, "feature: add launch codes"),
+					testAccCheckGitlabRepositoryFileCommitMessage("gitlab_repository_file.this", "feature: add launch codes"),
 					resource.TestCheckResourceAttr("gitlab_repository_file.this", "content", "bWVvdyBtZW93IG1lb3c="),
 				),
 			},
@@ -119,7 +119,7 @@ func TestAccGitlabRepositoryFile_SeparateCreateUpdateCommitMessages(t *testing.T
 						FilePath: "meow.txt",
 						Content:  "bWVvdyBtZW93IG1lb3cgbWVvdyBtZW93Cg==",
 					}),
-					testAccCheckGitlabRepositoryFileCommitMessage("gitlab_repository_file.this", &file, "update: updated launch codes"),
+					testAccCheckGitlabRepositoryFileCommitMessage("gitlab_repository_file.this", "update: updated launch codes"),
 					resource.TestCheckResourceAttr("gitlab_repository_file.this", "content", "bWVvdyBtZW93IG1lb3cgbWVvdyBtZW93Cg=="),
 				),
 			},
@@ -611,7 +611,7 @@ func testAccCheckGitlabRepositoryFileExists(n string, file *gitlab.File) resourc
 	}
 }
 
-func testAccCheckGitlabRepositoryFileCommitMessage(n string, file *gitlab.File, message string) resource.TestCheckFunc {
+func testAccCheckGitlabRepositoryFileCommitMessage(n string, message string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {

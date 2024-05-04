@@ -3,10 +3,10 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/xanzy/go-gitlab"
@@ -49,10 +49,10 @@ func resourceGitlabReleaseLinkCreate(ctx context.Context, d *schema.ResourceData
 		options.LinkType = &linkTypeValue
 	}
 
-	log.Printf("[DEBUG] create release link project/tagName/name: %s/%s/%s", project, tagName, name)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create release link project/tagName/name: %s/%s/%s", project, tagName, name))
 	releaseLink, resp, err := client.ReleaseLinks.CreateReleaseLink(project, tagName, options, gitlab.WithContext(ctx))
 	if err != nil {
-		log.Printf("[WARN] failed to create release link project/tagName/name: %s/%s/%s (response %v)", project, tagName, name, resp)
+		tflog.Warn(ctx, fmt.Sprintf("[WARN] failed to create release link project/tagName/name: %s/%s/%s (response %v)", project, tagName, name, resp))
 		return diag.FromErr(err)
 	}
 	d.SetId(resourceGitLabReleaseLinkBuildId(project, tagName, releaseLink.ID))
@@ -67,15 +67,15 @@ func resourceGitlabReleaseLinkRead(ctx context.Context, d *schema.ResourceData, 
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] read release link project/tagName/linkID: %s/%s/%d", project, tagName, linkID)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read release link project/tagName/linkID: %s/%s/%d", project, tagName, linkID))
 	releaseLink, resp, err := client.ReleaseLinks.GetReleaseLink(project, tagName, linkID, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[WARN] recieved 404 for release link project/tagName/linkID: %s/%s/%d. Removing from state", project, tagName, linkID)
+			tflog.Warn(ctx, fmt.Sprintf("[WARN] recieved 404 for release link project/tagName/linkID: %s/%s/%d. Removing from state", project, tagName, linkID))
 			d.SetId("")
 			return nil
 		}
-		log.Printf("[WARN] failed to read release link project/tagName/linkID: %s/%s/%d. Response %v", project, tagName, linkID, resp)
+		tflog.Warn(ctx, fmt.Sprintf("[WARN] failed to read release link project/tagName/linkID: %s/%s/%d. Response %v", project, tagName, linkID, resp))
 		return diag.FromErr(err)
 	}
 
@@ -108,10 +108,10 @@ func resourceGitlabReleaseLinkUpdate(ctx context.Context, d *schema.ResourceData
 		options.LinkType = &linkTypeValue
 	}
 
-	log.Printf("[DEBUG] update release link project/tagName/linkID: %s/%s/%d", project, tagName, linkID)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update release link project/tagName/linkID: %s/%s/%d", project, tagName, linkID))
 	_, _, err = client.ReleaseLinks.UpdateReleaseLink(project, tagName, linkID, options, gitlab.WithContext(ctx))
 	if err != nil {
-		log.Printf("[WARN] failed to update release link project/tagName/linkID: %s/%s/%d", project, tagName, linkID)
+		tflog.Warn(ctx, fmt.Sprintf("[WARN] failed to update release link project/tagName/linkID: %s/%s/%d", project, tagName, linkID))
 		return diag.FromErr(err)
 	}
 
@@ -125,10 +125,10 @@ func resourceGitlabReleaseLinkDelete(ctx context.Context, d *schema.ResourceData
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] delete release link project/tagName/linkID: %s/%s/%d", project, tagName, linkID)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] delete release link project/tagName/linkID: %s/%s/%d", project, tagName, linkID))
 	_, resp, err := client.ReleaseLinks.DeleteReleaseLink(project, tagName, linkID, gitlab.WithContext(ctx))
 	if err != nil {
-		log.Printf("[DEBUG] failed to delete release link project/tagName/linkID: %s/%s/%d. Response %v", project, tagName, linkID, resp)
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] failed to delete release link project/tagName/linkID: %s/%s/%d. Response %v", project, tagName, linkID, resp))
 		return diag.FromErr(err)
 	}
 	return nil
@@ -137,7 +137,7 @@ func resourceGitlabReleaseLinkDelete(ctx context.Context, d *schema.ResourceData
 func resourceGitLabReleaseLinkParseId(id string) (string, string, int, error) {
 	parts := strings.SplitN(id, ":", 3)
 	if len(parts) != 3 {
-		return "", "", 0, fmt.Errorf("Unexpected ID format (%q). Expected project:tagName:linkID", id)
+		return "", "", 0, fmt.Errorf("unexpected ID format (%q). Expected project:tagName:linkID", id)
 	}
 
 	linkID, err := strconv.Atoi(parts[2])

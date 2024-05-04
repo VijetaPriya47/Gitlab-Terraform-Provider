@@ -3,7 +3,6 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 
@@ -130,7 +129,7 @@ func resourceGitlabProjectMembershipCreate(ctx context.Context, d *schema.Resour
 		AccessLevel: &accessLevelId,
 		ExpiresAt:   &expiresAt,
 	}
-	log.Printf("[DEBUG] create gitlab project membership for %d in %s", options.UserID, project)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab project membership for %d in %s", options.UserID, project))
 
 	_, _, err := client.ProjectMembers.AddProjectMember(project, options, gitlab.WithContext(ctx))
 	if err != nil {
@@ -144,9 +143,9 @@ func resourceGitlabProjectMembershipCreate(ctx context.Context, d *schema.Resour
 func resourceGitlabProjectMembershipRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	id := d.Id()
-	log.Printf("[DEBUG] read gitlab project projectMember %s", id)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab project projectMember %s", id))
 
-	project, userId, err := projectAndUserIdFromId(id)
+	project, userId, err := projectAndUserIdFromId(ctx, id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -154,7 +153,7 @@ func resourceGitlabProjectMembershipRead(ctx context.Context, d *schema.Resource
 	projectMember, _, err := client.ProjectMembers.GetProjectMember(project, userId, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] gitlab project membership for %s not found so removing from state", d.Id())
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab project membership for %s not found so removing from state", d.Id()))
 			d.SetId("")
 			return nil
 		}
@@ -165,14 +164,14 @@ func resourceGitlabProjectMembershipRead(ctx context.Context, d *schema.Resource
 	return nil
 }
 
-func projectAndUserIdFromId(id string) (string, int, error) {
+func projectAndUserIdFromId(ctx context.Context, id string) (string, int, error) {
 	project, userIdString, err := utils.ParseTwoPartID(id)
 	userId, e := strconv.Atoi(userIdString)
 	if err != nil {
 		e = err
 	}
 	if e != nil {
-		log.Printf("[WARN] cannot get project member id from input: %v", id)
+		tflog.Warn(ctx, fmt.Sprintf("[WARN] cannot get project member id from input: %v", id))
 	}
 	return project, userId, e
 }
@@ -189,7 +188,7 @@ func resourceGitlabProjectMembershipUpdate(ctx context.Context, d *schema.Resour
 		AccessLevel: &accessLevelId,
 		ExpiresAt:   &expiresAt,
 	}
-	log.Printf("[DEBUG] update gitlab project membership %v for %s", userId, project)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab project membership %v for %s", userId, project))
 
 	_, _, err := client.ProjectMembers.EditProjectMember(project, userId, &options, gitlab.WithContext(ctx))
 	if err != nil {
@@ -202,12 +201,12 @@ func resourceGitlabProjectMembershipDelete(ctx context.Context, d *schema.Resour
 	client := meta.(*gitlab.Client)
 
 	id := d.Id()
-	project, userId, err := projectAndUserIdFromId(id)
+	project, userId, err := projectAndUserIdFromId(ctx, id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] Delete gitlab project membership %v for %s", userId, project)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Delete gitlab project membership %v for %s", userId, project))
 
 	_, err = client.ProjectMembers.DeleteProjectMember(project, userId, gitlab.WithContext(ctx))
 	if err != nil {

@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 
 	"github.com/hashicorp/go-retryablehttp"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/xanzy/go-gitlab"
@@ -61,14 +61,14 @@ func resourceGitLabGroupProjectFileTemplateRead(ctx context.Context, d *schema.R
 	group, _, err := client.Groups.GetGroup(groupID, nil, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] gitlab group %d not found, removing from state", groupID)
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab group %d not found, removing from state", groupID))
 			d.SetId("")
 			return nil
 		}
 		return diag.FromErr(err)
 	}
 	if group.MarkedForDeletionOn != nil {
-		log.Printf("[DEBUG] gitlab group %s is marked for deletion, removing from state", d.Id())
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab group %s is marked for deletion, removing from state", d.Id()))
 		d.SetId("")
 		return nil
 	}

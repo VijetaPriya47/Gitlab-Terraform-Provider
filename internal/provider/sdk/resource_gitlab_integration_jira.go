@@ -2,8 +2,9 @@ package sdk
 
 import (
 	"context"
-	"log"
+	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/xanzy/go-gitlab"
@@ -169,7 +170,7 @@ func resourceGitlabIntegrationJiraCreate(ctx context.Context, d *schema.Resource
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] Create Gitlab Jira integration")
+	tflog.Debug(ctx, "[DEBUG] Create Gitlab Jira integration")
 
 	if _, err := client.Services.SetJiraService(project, jiraOptions, gitlab.WithContext(ctx)); err != nil {
 		return diag.Errorf("couldn't create Gitlab Jira service: %v", err)
@@ -184,12 +185,12 @@ func resourceGitlabIntegrationJiraRead(ctx context.Context, d *schema.ResourceDa
 	client := meta.(*gitlab.Client)
 	project := d.Id()
 
-	log.Printf("[DEBUG] Read Gitlab Jira integration %s", project)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Read Gitlab Jira integration %s", project))
 
 	jiraService, _, err := client.Services.GetJiraService(project, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] gitlab jira integration not found %s, removing from state", project)
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab jira integration not found %s, removing from state", project))
 			d.SetId("")
 			return nil
 		}
@@ -231,7 +232,7 @@ func resourceGitlabIntegrationJiraDelete(ctx context.Context, d *schema.Resource
 
 	project := d.Get("project").(string)
 
-	log.Printf("[DEBUG] Delete Gitlab Jira integration %s", d.Id())
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Delete Gitlab Jira integration %s", d.Id()))
 
 	_, err := client.Services.DeleteJiraService(project, gitlab.WithContext(ctx))
 	if err != nil {

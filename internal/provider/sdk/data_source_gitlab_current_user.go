@@ -3,8 +3,8 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/xanzy/go-gitlab"
@@ -74,7 +74,7 @@ func dataSourceGitlabCurrentUserRead(ctx context.Context, d *schema.ResourceData
 	query := api.GraphQLQuery{
 		Query: `query {currentUser {name, bot, groupCount, id, namespace{id}, publicEmail, username}}`,
 	}
-	log.Printf("[DEBUG] executing GraphQL Query %s to retrieve current user", query.Query)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] executing GraphQL Query %s to retrieve current user", query.Query))
 
 	var response CurrentUserResponse
 	if _, err := api.SendGraphQLRequest(ctx, client, query, &response); err != nil {

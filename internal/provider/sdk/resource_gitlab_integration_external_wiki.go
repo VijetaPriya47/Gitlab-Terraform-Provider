@@ -2,9 +2,10 @@ package sdk
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -94,7 +95,7 @@ func resourceGitlabIntegrationExternalWikiCreate(ctx context.Context, d *schema.
 		ExternalWikiURL: gitlab.Ptr(d.Get("external_wiki_url").(string)),
 	}
 
-	log.Printf("[DEBUG] create gitlab external wiki service for project %s", project)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab external wiki service for project %s", project))
 
 	_, err := client.Services.SetExternalWikiService(project, options, gitlab.WithContext(ctx))
 	if err != nil {
@@ -108,12 +109,12 @@ func resourceGitlabIntegrationExternalWikiRead(ctx context.Context, d *schema.Re
 	client := meta.(*gitlab.Client)
 	project := d.Id()
 
-	log.Printf("[DEBUG] read gitlab external wiki service for project %s", project)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab external wiki service for project %s", project))
 
 	service, _, err := client.Services.GetExternalWikiService(project, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] gitlab external wiki service not found for project %s", project)
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab external wiki service not found for project %s", project))
 			d.SetId("")
 			return nil
 		}
@@ -137,7 +138,7 @@ func resourceGitlabIntegrationExternalWikiDelete(ctx context.Context, d *schema.
 	client := meta.(*gitlab.Client)
 	project := d.Id()
 
-	log.Printf("[DEBUG] delete gitlab external wiki service for project %s", project)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] delete gitlab external wiki service for project %s", project))
 
 	_, err := client.Services.DeleteExternalWikiService(project, gitlab.WithContext(ctx))
 	if err != nil {

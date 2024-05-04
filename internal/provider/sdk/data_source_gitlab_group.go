@@ -3,8 +3,8 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/xanzy/go-gitlab"
@@ -175,7 +175,7 @@ func dataSourceGitlabGroupRead(ctx context.Context, d *schema.ResourceData, meta
 	var group *gitlab.Group
 	var err error
 
-	log.Printf("[INFO] Reading Gitlab group")
+	tflog.Info(ctx, "[INFO] Reading Gitlab group")
 
 	groupIDData, groupIDOk := d.GetOk("group_id")
 	fullPathData, fullPathOk := d.GetOk("full_path")

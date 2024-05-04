@@ -4,11 +4,12 @@
 package sdk
 
 import (
+	"context"
 	"fmt"
-	"log"
 	"testing"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/xanzy/go-gitlab"
@@ -209,7 +210,7 @@ func testAccCheckGitlabProjectIssueExists(n string, issue *gitlab.Issue) resourc
 			return fmt.Errorf("Cannot get issue: %v", err)
 		}
 
-		log.Printf("[DEBUG] testAccCheckGitlabProjectIssueExists: %#v", gotIssue)
+		tflog.Debug(context.Background(), fmt.Sprintf("[DEBUG] testAccCheckGitlabProjectIssueExists: %#v", gotIssue))
 
 		*issue = *gotIssue
 		return nil

@@ -3,11 +3,11 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/xanzy/go-gitlab"
@@ -115,7 +115,7 @@ func resourceGitlabUserGPGKeyRead(ctx context.Context, d *schema.ResourceData, m
 	}
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("Could not find GPG key %d for user %d, removing from state", keyID, userID)
+			tflog.Warn(ctx, fmt.Sprintf("Could not find GPG key %d for user %d, removing from state", keyID, userID))
 			d.SetId("")
 			return nil
 		}

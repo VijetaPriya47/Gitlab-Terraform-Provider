@@ -2,7 +2,7 @@ package sdk
 
 import (
 	"context"
-	"log"
+	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -110,7 +110,7 @@ func resourceGitlabGroupLabelCreate(ctx context.Context, d *schema.ResourceData,
 		options.Description = gitlab.Ptr(v.(string))
 	}
 
-	log.Printf("[DEBUG] create gitlab group label %s", *options.Name)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab group label %s", *options.Name))
 
 	label, _, err := client.GroupLabels.CreateGroupLabel(group, options, gitlab.WithContext(ctx))
 	if err != nil {
@@ -129,12 +129,12 @@ func resourceGitlabGroupLabelRead(ctx context.Context, d *schema.ResourceData, m
 		return diag.Errorf("Failed to parse group label id %q: %s", d.Id(), err)
 	}
 
-	log.Printf("[DEBUG] read gitlab group label %s/%s", group, labelName)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab group label %s/%s", group, labelName))
 
 	label, _, err := client.GroupLabels.GetGroupLabel(group, labelName, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] failed to read gitlab label %s/%s, removing from state", group, labelName)
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] failed to read gitlab label %s/%s, removing from state", group, labelName))
 			d.SetId("")
 			return nil
 		}
@@ -164,7 +164,7 @@ func resourceGitlabGroupLabelUpdate(ctx context.Context, d *schema.ResourceData,
 		options.Description = gitlab.Ptr(d.Get("description").(string))
 	}
 
-	log.Printf("[DEBUG] update gitlab group label %s", d.Id())
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab group label %s", d.Id()))
 
 	_, _, err = client.GroupLabels.UpdateGroupLabel(group, options, gitlab.WithContext(ctx))
 	if err != nil {
@@ -182,7 +182,7 @@ func resourceGitlabGroupLabelDelete(ctx context.Context, d *schema.ResourceData,
 		return diag.Errorf("Failed to parse group label id %q: %s", d.Id(), err)
 	}
 
-	log.Printf("[DEBUG] Delete gitlab group label %s", d.Id())
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Delete gitlab group label %s", d.Id()))
 	_, err = client.GroupLabels.DeleteGroupLabel(group, labelName, nil, gitlab.WithContext(ctx))
 	return diag.FromErr(err)
 }

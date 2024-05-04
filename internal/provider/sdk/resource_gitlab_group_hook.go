@@ -3,9 +3,9 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/xanzy/go-gitlab"
@@ -57,7 +57,7 @@ func resourceGitlabGroupHookCreate(ctx context.Context, d *schema.ResourceData, 
 		options.Token = gitlab.Ptr(v.(string))
 	}
 
-	log.Printf("[DEBUG] create gitlab group hook %q", *options.URL)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab group hook %q", *options.URL))
 
 	hook, _, err := client.Groups.AddGroupHook(group, options, gitlab.WithContext(ctx))
 	if err != nil {
@@ -75,13 +75,13 @@ func resourceGitlabGroupHookRead(ctx context.Context, d *schema.ResourceData, me
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	log.Printf("[DEBUG] read gitlab group hook %s/%d", group, hookID)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab group hook %s/%d", group, hookID))
 
 	client := meta.(*gitlab.Client)
 	hook, _, err := client.Groups.GetGroupHook(group, hookID, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] gitlab group hook not found %s/%d, removing from state", group, hookID)
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab group hook not found %s/%d, removing from state", group, hookID))
 			d.SetId("")
 			return nil
 		}
@@ -126,7 +126,7 @@ func resourceGitlabGroupHookUpdate(ctx context.Context, d *schema.ResourceData, 
 		options.Token = gitlab.Ptr(d.Get("token").(string))
 	}
 
-	log.Printf("[DEBUG] update gitlab group hook %s", d.Id())
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab group hook %s", d.Id()))
 
 	_, _, err = client.Groups.EditGroupHook(group, hookID, options, gitlab.WithContext(ctx))
 	if err != nil {
@@ -141,7 +141,7 @@ func resourceGitlabGroupHookDelete(ctx context.Context, d *schema.ResourceData, 
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	log.Printf("[DEBUG] Delete gitlab group hook %s/%d", group, hookID)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Delete gitlab group hook %s/%d", group, hookID))
 
 	client := meta.(*gitlab.Client)
 	_, err = client.Groups.DeleteGroupHook(group, hookID, gitlab.WithContext(ctx))

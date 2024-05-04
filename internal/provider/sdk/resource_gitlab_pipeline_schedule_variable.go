@@ -3,7 +3,6 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 
@@ -99,7 +98,7 @@ func resourceGitlabPipelineScheduleVariableBuildId(project string, pipelineSched
 func resourceGitlabPipelineScheduleVariableParseId(id string) (string, int, string, error) {
 	parts := strings.SplitN(id, ":", 3)
 	if len(parts) != 3 {
-		return "", 0, "", fmt.Errorf("Unexpected ID format (%q). Expected project:pipelineScheduleId:key", id)
+		return "", 0, "", fmt.Errorf("unexpected ID format (%q). Expected project:pipelineScheduleId:key", id)
 	}
 
 	pipelineScheduleId, err := strconv.Atoi(parts[1])
@@ -120,7 +119,7 @@ func resourceGitlabPipelineScheduleVariableCreate(ctx context.Context, d *schema
 		Value: gitlab.Ptr(d.Get("value").(string)),
 	}
 
-	log.Printf("[DEBUG] create gitlab PipelineScheduleVariable %s:%s", *options.Key, *options.Value)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab PipelineScheduleVariable %s:%s", *options.Key, *options.Value))
 
 	scheduleVar, _, err := client.PipelineSchedules.CreatePipelineScheduleVariable(project, scheduleID, options, gitlab.WithContext(ctx))
 	if err != nil {
@@ -139,12 +138,12 @@ func resourceGitlabPipelineScheduleVariableRead(ctx context.Context, d *schema.R
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] read gitlab PipelineSchedule %s/%d", project, scheduleID)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab PipelineSchedule %s/%d", project, scheduleID))
 
 	pipelineSchedule, _, err := client.PipelineSchedules.GetPipelineSchedule(project, scheduleID, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] PipelineSchedule %d in project %s does not exist, removing the associated variable from state as deleting the pipeline also removes the variables", scheduleID, project)
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] PipelineSchedule %d in project %s does not exist, removing the associated variable from state as deleting the pipeline also removes the variables", scheduleID, project))
 			d.SetId("")
 			return nil
 		}
@@ -163,7 +162,7 @@ func resourceGitlabPipelineScheduleVariableRead(ctx context.Context, d *schema.R
 		}
 	}
 	if !found {
-		log.Printf("[DEBUG] pipeline schedule variable not found %s/%d/%s", project, scheduleID, pipelineVariableKey)
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] pipeline schedule variable not found %s/%d/%s", project, scheduleID, pipelineVariableKey))
 		d.SetId("")
 	}
 
@@ -182,7 +181,7 @@ func resourceGitlabPipelineScheduleVariableUpdate(ctx context.Context, d *schema
 			Value: gitlab.Ptr(d.Get("value").(string)),
 		}
 
-		log.Printf("[DEBUG] update gitlab PipelineScheduleVariable %s", d.Id())
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab PipelineScheduleVariable %s", d.Id()))
 
 		_, _, err := client.PipelineSchedules.EditPipelineScheduleVariable(project, scheduleID, variableKey, options, gitlab.WithContext(ctx))
 		if err != nil {

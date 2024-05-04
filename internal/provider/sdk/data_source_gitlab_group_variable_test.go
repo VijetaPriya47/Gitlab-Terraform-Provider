@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
@@ -62,4 +63,12 @@ func testAccDataSourceGitlabGroupVariable(src, n string) resource.TestCheckFunc 
 
 		return nil
 	}
+}
+
+func attributeNamesFromSchema(schema map[string]*schema.Schema) []string {
+	names := make([]string, 0, len(schema))
+	for name := range schema {
+		names = append(names, name)
+	}
+	return names
 }

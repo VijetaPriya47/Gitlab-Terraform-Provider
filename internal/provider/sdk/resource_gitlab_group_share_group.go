@@ -3,9 +3,9 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -70,7 +70,7 @@ func resourceGitlabGroupShareGroupCreate(ctx context.Context, d *schema.Resource
 	}
 
 	client := meta.(*gitlab.Client)
-	log.Printf("[DEBUG] create gitlab group share for %d in %s", shareGroupId, groupId)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab group share for %d in %s", shareGroupId, groupId))
 
 	_, _, err := client.GroupMembers.ShareWithGroup(groupId, options, gitlab.WithContext(ctx))
 	if err != nil {
@@ -86,7 +86,7 @@ func resourceGitlabGroupShareGroupCreate(ctx context.Context, d *schema.Resource
 func resourceGitlabGroupShareGroupRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	id := d.Id()
-	log.Printf("[DEBUG] read gitlab shared groups %s", id)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab shared groups %s", id))
 
 	groupId, sharedGroupId, err := groupIdsFromId(id)
 	if err != nil {
@@ -97,7 +97,7 @@ func resourceGitlabGroupShareGroupRead(ctx context.Context, d *schema.ResourceDa
 	group, _, err := client.Groups.GetGroup(groupId, nil, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] gitlab group %s not found so removing from state", groupId)
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab group %s not found so removing from state", groupId))
 			d.SetId("")
 			return nil
 		}
@@ -123,7 +123,7 @@ func resourceGitlabGroupShareGroupRead(ctx context.Context, d *schema.ResourceDa
 		}
 	}
 
-	log.Printf("[DEBUG] gitlab shared group %s not found so removing from state", id)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab shared group %s not found so removing from state", id))
 	d.SetId("")
 	return nil
 }
@@ -137,7 +137,7 @@ func resourceGitlabGroupShareGroupDelete(ctx context.Context, d *schema.Resource
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] Delete gitlab share group %d for %s", sharedGroupId, groupId)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Delete gitlab share group %d for %s", sharedGroupId, groupId))
 
 	_, err = client.GroupMembers.DeleteShareWithGroup(groupId, sharedGroupId, gitlab.WithContext(ctx))
 	if err != nil {
@@ -150,12 +150,12 @@ func resourceGitlabGroupShareGroupDelete(ctx context.Context, d *schema.Resource
 func groupIdsFromId(id string) (string, int, error) {
 	groupId, sharedGroupIdString, err := utils.ParseTwoPartID(id)
 	if err != nil {
-		return "", 0, fmt.Errorf("Error parsing ID: %s", id)
+		return "", 0, fmt.Errorf("error parsing ID: %s", id)
 	}
 
 	sharedGroupId, err := strconv.Atoi(sharedGroupIdString)
 	if err != nil {
-		return "", 0, fmt.Errorf("Can not determine shared group id: %s", sharedGroupIdString)
+		return "", 0, fmt.Errorf("can not determine shared group id: %s", sharedGroupIdString)
 	}
 
 	return groupId, sharedGroupId, nil

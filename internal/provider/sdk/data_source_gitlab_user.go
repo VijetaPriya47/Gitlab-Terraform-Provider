@@ -3,7 +3,6 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -196,7 +195,7 @@ func dataSourceGitlabUserRead(ctx context.Context, d *schema.ResourceData, meta 
 	var user *gitlab.User
 	var err error
 
-	log.Printf("[INFO] Reading Gitlab user")
+	tflog.Info(ctx, "[INFO] Reading Gitlab user")
 
 	userIDData, userIDOk := d.GetOk("user_id")
 	usernameData, usernameOk := d.GetOk("username")

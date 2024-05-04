@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"strconv"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -115,7 +115,7 @@ func resourceGitlabPersonalAccessTokenCreate(ctx context.Context, d *schema.Reso
 	}
 
 	userID := d.Get("user_id").(int)
-	log.Printf("[DEBUG] create gitlab PersonalAccessToken %s (scopes: %s) for user ID %d", *options.Name, options.Scopes, userID)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab PersonalAccessToken %s (scopes: %s) for user ID %d", *options.Name, options.Scopes, userID))
 
 	if v, ok := d.GetOk("expires_at"); ok {
 		parsedExpiresAt, err := parseISO8601Date(v.(string))
@@ -146,11 +146,11 @@ func resourceGitlabPersonalAccessTokenRead(ctx context.Context, d *schema.Resour
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] read gitlab PersonalAccessToken %d, user ID %d", tokenID, userID)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab PersonalAccessToken %d, user ID %d", tokenID, userID))
 
 	personalAccessToken, _, err := client.PersonalAccessTokens.GetSinglePersonalAccessTokenByID(tokenID)
 	if errors.Is(err, errResourceGitlabPersonalAccessTokenNotFound) {
-		log.Printf("[DEBUG] failed to read gitlab PersonalAccessToken %d, user ID %d", tokenID, userID)
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] failed to read gitlab PersonalAccessToken %d, user ID %d", tokenID, userID))
 		d.SetId("")
 
 		return nil
@@ -184,7 +184,7 @@ func resourceGitlabPersonalAccessTokenDelete(ctx context.Context, d *schema.Reso
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] Delete gitlab PersonalAccessToken %s", d.Id())
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Delete gitlab PersonalAccessToken %s", d.Id()))
 	_, err = client.PersonalAccessTokens.RevokePersonalAccessToken(tokenID, gitlab.WithContext(ctx))
 	if err != nil {
 		return diag.FromErr(err)

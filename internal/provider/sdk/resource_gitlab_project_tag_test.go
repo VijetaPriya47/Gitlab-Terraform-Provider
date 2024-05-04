@@ -32,8 +32,8 @@ func TestAccGitlabProjectTag_basic(t *testing.T) {
 			{
 				Config: testAccGitlabProjectTagConfig(rInt, rInt2, project.PathWithNamespace, branches[0].Name),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabProjectTagExists("foo", &tag, rInt),
-					testAccCheckGitlabProjectTagExists("foo2", &tag2, rInt2),
+					testAccCheckGitlabProjectTagExists("foo", &tag),
+					testAccCheckGitlabProjectTagExists("foo2", &tag2),
 					testAccCheckGitlabProjectTagAttributes("foo", &tag, &testAccGitlabProjectTagExpectedAttributes{
 						Name:    fmt.Sprintf("tag-%d", rInt),
 						Message: "",
@@ -57,7 +57,7 @@ func TestAccGitlabProjectTag_basic(t *testing.T) {
 			{
 				Config: testAccGitlabProjectTagConfig(rInt, rInt3, project.PathWithNamespace, branches[0].Name),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabProjectTagExists("foo2", &tag2, rInt3),
+					testAccCheckGitlabProjectTagExists("foo2", &tag2),
 					testAccCheckGitlabProjectTagAttributes("foo2", &tag2, &testAccGitlabProjectTagExpectedAttributes{
 						Name:    fmt.Sprintf("tag-%d", rInt3),
 						Message: fmt.Sprintf("tag-%d", rInt3),
@@ -119,7 +119,7 @@ func testAccCheckGitlabProjectTagAttributes(n string, tag *gitlab.Tag, want *tes
 	}
 }
 
-func testAccCheckGitlabProjectTagExists(n string, tag *gitlab.Tag, rInt int) resource.TestCheckFunc {
+func testAccCheckGitlabProjectTagExists(n string, tag *gitlab.Tag) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[fmt.Sprintf("gitlab_project_tag.%s", n)]
 		if !ok {

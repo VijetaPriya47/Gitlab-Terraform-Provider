@@ -1924,12 +1924,12 @@ func constructImportUrl(importURL string, username string, password string) (str
 
 	parsedURL, err := url.Parse(importURL)
 	if err != nil {
-		return "", fmt.Errorf("The given `import_url` is not a valid URL: %s", err)
+		return "", fmt.Errorf("the given `import_url` is not a valid URL: %s", err)
 	}
 
 	credentials := url.UserPassword(username, password)
 	if parsedURL.User != nil && parsedURL.User.String() != credentials.String() {
-		return "", fmt.Errorf("The `import_url` already contains credentials which don't match the credentials from `import_url_username` and `import_url_password`")
+		return "", fmt.Errorf("the `import_url` already contains credentials which don't match the credentials from `import_url_username` and `import_url_password`")
 	}
 
 	parsedURL.User = credentials

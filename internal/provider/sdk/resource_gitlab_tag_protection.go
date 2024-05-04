@@ -3,8 +3,8 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -110,7 +110,7 @@ func resourceGitlabTagProtectionCreate(ctx context.Context, d *schema.ResourceDa
 		AllowedToCreate:   &allowedToCreate,
 	}
 
-	log.Printf("[DEBUG] create gitlab tag protection on %v for project %s", options.Name, project)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab tag protection on %v for project %s", options.Name, project))
 
 	tp, _, err := client.ProtectedTags.ProtectRepositoryTags(project, options, gitlab.WithContext(ctx))
 	if err != nil {
@@ -146,17 +146,17 @@ func resourceGitlabTagProtectionCreate(ctx context.Context, d *schema.ResourceDa
 
 func resourceGitlabTagProtectionRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
-	project, tag, err := projectAndTagFromID(d.Id())
+	project, tag, err := projectAndTagFromID(ctx, d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] read gitlab tag protection for project %s, tag %s", project, tag)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab tag protection for project %s, tag %s", project, tag))
 
 	pt, _, err := client.ProtectedTags.GetProtectedTag(project, tag, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] gitlab tag protection not found %s/%s", project, tag)
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab tag protection not found %s/%s", project, tag))
 			d.SetId("")
 			return nil
 		}
@@ -186,7 +186,7 @@ func resourceGitlabTagProtectionDelete(ctx context.Context, d *schema.ResourceDa
 	project := d.Get("project").(string)
 	tag := d.Get("tag").(string)
 
-	log.Printf("[DEBUG] Delete gitlab protected tag %s for project %s", tag, project)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Delete gitlab protected tag %s for project %s", tag, project))
 
 	_, err := client.ProtectedTags.UnprotectRepositoryTags(project, tag, gitlab.WithContext(ctx))
 	if err != nil {
@@ -196,11 +196,11 @@ func resourceGitlabTagProtectionDelete(ctx context.Context, d *schema.ResourceDa
 	return nil
 }
 
-func projectAndTagFromID(id string) (string, string, error) {
+func projectAndTagFromID(ctx context.Context, id string) (string, string, error) {
 	project, tag, err := utils.ParseTwoPartID(id)
 
 	if err != nil {
-		log.Printf("[WARN] cannot get group member id from input: %v", id)
+		tflog.Warn(ctx, fmt.Sprintf("[WARN] cannot get group member id from input: %v", id))
 	}
 	return project, tag, err
 }

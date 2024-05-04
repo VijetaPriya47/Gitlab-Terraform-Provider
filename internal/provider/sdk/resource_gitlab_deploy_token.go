@@ -3,7 +3,6 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -160,7 +159,7 @@ func resourceGitlabDeployTokenBuildId(deployTokenType string, typeId string, dep
 func resourceGitlabDeployTokenParseId(id string) (string, string, int, error) {
 	parts := strings.SplitN(id, ":", 3)
 	if len(parts) != 3 {
-		return "", "", 0, fmt.Errorf("Unexpected ID format (%q). Expected deployKeyType:typeId:key", id)
+		return "", "", 0, fmt.Errorf("unexpected ID format (%q). Expected deployKeyType:typeId:key", id)
 	}
 
 	deployTokenId, err := strconv.Atoi(parts[2])
@@ -203,7 +202,7 @@ func resourceGitlabDeployTokenCreate(ctx context.Context, d *schema.ResourceData
 			Scopes:    scopes,
 		}
 
-		log.Printf("[DEBUG] Create GitLab deploy token %s in project %s", *options.Name, project.(string))
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Create GitLab deploy token %s in project %s", *options.Name, project.(string)))
 
 		deployToken, _, err = client.DeployTokens.CreateProjectDeployToken(project, options, gitlab.WithContext(ctx))
 	} else if isGroup {
@@ -216,7 +215,7 @@ func resourceGitlabDeployTokenCreate(ctx context.Context, d *schema.ResourceData
 			Scopes:    scopes,
 		}
 
-		log.Printf("[DEBUG] Create GitLab deploy token %s in group %s", *options.Name, group.(string))
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Create GitLab deploy token %s in group %s", *options.Name, group.(string)))
 
 		deployToken, _, err = client.DeployTokens.CreateGroupDeployToken(group, options, gitlab.WithContext(ctx))
 	}
@@ -244,17 +243,17 @@ func resourceGitlabDeployTokenRead(ctx context.Context, d *schema.ResourceData, 
 	switch deployTokenType {
 	case "project":
 		d.Set("project", typeId)
-		log.Printf("[DEBUG] Read GitLab deploy token %d in project %s", deployTokenId, typeId)
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Read GitLab deploy token %d in project %s", deployTokenId, typeId))
 		deployToken, _, err = client.DeployTokens.GetProjectDeployToken(typeId, deployTokenId, gitlab.WithContext(ctx))
 	case "group":
 		d.Set("group", typeId)
-		log.Printf("[DEBUG] Read GitLab deploy token %d in group %s", deployTokenId, typeId)
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Read GitLab deploy token %d in group %s", deployTokenId, typeId))
 		deployToken, _, err = client.DeployTokens.GetGroupDeployToken(typeId, deployTokenId, gitlab.WithContext(ctx))
 	}
 
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] GitLab deploy token %d in was not found, removing from state", deployTokenId)
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] GitLab deploy token %d in was not found, removing from state", deployTokenId))
 			d.SetId("")
 			return nil
 		}
@@ -286,10 +285,10 @@ func resourceGitlabDeployTokenDelete(ctx context.Context, d *schema.ResourceData
 
 	switch deployTokenType {
 	case "project":
-		log.Printf("[DEBUG] Delete GitLab deploy token %d in project %s", deployTokenId, typeId)
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Delete GitLab deploy token %d in project %s", deployTokenId, typeId))
 		_, err = client.DeployTokens.DeleteProjectDeployToken(typeId, deployTokenId, gitlab.WithContext(ctx))
 	case "group":
-		log.Printf("[DEBUG] Delete GitLab deploy token %d in group %s", deployTokenId, typeId)
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Delete GitLab deploy token %d in group %s", deployTokenId, typeId))
 		_, err = client.DeployTokens.DeleteGroupDeployToken(typeId, deployTokenId, gitlab.WithContext(ctx))
 	}
 	if err != nil {

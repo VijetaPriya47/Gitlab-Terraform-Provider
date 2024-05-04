@@ -33,14 +33,14 @@ func TestAccGitlabBranch_basic(t *testing.T) {
 			{
 				Config: testAccGitlabBranchConfig(rInt, project.PathWithNamespace),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabBranchExists("foo", &branch, rInt),
-					testAccCheckGitlabBranchExists("foo2", &branch2, rInt),
-					testAccCheckGitlabBranchAttributes("foo", &branch, &testAccGitlabBranchExpectedAttributes{
+					testAccCheckGitlabBranchExists("foo", &branch),
+					testAccCheckGitlabBranchExists("foo2", &branch2),
+					testAccCheckGitlabBranchAttributes(&branch, &testAccGitlabBranchExpectedAttributes{
 						Name:    fmt.Sprintf("testbranch-%d", rInt),
 						CanPush: true,
 						Commit:  true,
 					}),
-					testAccCheckGitlabBranchAttributes("foo2", &branch2, &testAccGitlabBranchExpectedAttributes{
+					testAccCheckGitlabBranchAttributes(&branch2, &testAccGitlabBranchExpectedAttributes{
 						Name:    fmt.Sprintf("testbranch2-%d", rInt),
 						CanPush: true,
 						Commit:  true,
@@ -61,14 +61,14 @@ func TestAccGitlabBranch_basic(t *testing.T) {
 			{
 				Config: testAccGitlabBranchConfig(rInt2, project.PathWithNamespace),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabBranchExists("foo", &branch, rInt2),
-					testAccCheckGitlabBranchExists("foo2", &branch2, rInt2),
-					testAccCheckGitlabBranchAttributes("foo", &branch, &testAccGitlabBranchExpectedAttributes{
+					testAccCheckGitlabBranchExists("foo", &branch),
+					testAccCheckGitlabBranchExists("foo2", &branch2),
+					testAccCheckGitlabBranchAttributes(&branch, &testAccGitlabBranchExpectedAttributes{
 						Name:    fmt.Sprintf("testbranch-%d", rInt2),
 						CanPush: true,
 						Commit:  true,
 					}),
-					testAccCheckGitlabBranchAttributes("foo2", &branch2, &testAccGitlabBranchExpectedAttributes{
+					testAccCheckGitlabBranchAttributes(&branch2, &testAccGitlabBranchExpectedAttributes{
 						Name:    fmt.Sprintf("testbranch2-%d", rInt2),
 						CanPush: true,
 						Commit:  true,
@@ -122,7 +122,7 @@ func testAccCheckGitlabBranchDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccCheckGitlabBranchAttributes(n string, branch *gitlab.Branch, want *testAccGitlabBranchExpectedAttributes) resource.TestCheckFunc {
+func testAccCheckGitlabBranchAttributes(branch *gitlab.Branch, want *testAccGitlabBranchExpectedAttributes) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if branch.WebURL == "" {
 			return errors.New("got empty web url")
@@ -155,7 +155,7 @@ func testAccCheckGitlabBranchAttributes(n string, branch *gitlab.Branch, want *t
 	}
 }
 
-func testAccCheckGitlabBranchExists(n string, branch *gitlab.Branch, rInt int) resource.TestCheckFunc {
+func testAccCheckGitlabBranchExists(n string, branch *gitlab.Branch) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[fmt.Sprintf("gitlab_branch.%s", n)]
 		if !ok {

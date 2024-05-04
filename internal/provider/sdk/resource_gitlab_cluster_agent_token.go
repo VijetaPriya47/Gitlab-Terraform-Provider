@@ -3,10 +3,10 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/xanzy/go-gitlab"
@@ -47,7 +47,7 @@ func resourceGitlabClusterAgentTokenCreate(ctx context.Context, d *schema.Resour
 		options.Description = gitlab.Ptr(v.(string))
 	}
 
-	log.Printf("[DEBUG] create token for GitLab Agent for Kubernetes %d in project %s with name '%v'", agentID, project, options.Name)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create token for GitLab Agent for Kubernetes %d in project %s with name '%v'", agentID, project, options.Name))
 	clusterAgentToken, _, err := client.ClusterAgents.CreateAgentToken(project, agentID, &options, gitlab.WithContext(ctx))
 	if err != nil {
 		return diag.FromErr(err)
@@ -66,11 +66,11 @@ func resourceGitlabClusterAgentTokenRead(ctx context.Context, d *schema.Resource
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] read token for GitLab Agent for Kubernetes %d in project %s with id %d", agentID, project, tokenID)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read token for GitLab Agent for Kubernetes %d in project %s with id %d", agentID, project, tokenID))
 	clusterAgentToken, _, err := client.ClusterAgents.GetAgentToken(project, agentID, tokenID, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] read token for GitLab Agent for Kubernetes %d in project %s with id %d not found, removing from state", agentID, project, tokenID)
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read token for GitLab Agent for Kubernetes %d in project %s with id %d not found, removing from state", agentID, project, tokenID))
 			d.SetId("")
 			return nil
 		}
@@ -91,7 +91,7 @@ func resourceGitlabClusterAgentTokenDelete(ctx context.Context, d *schema.Resour
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] delete token for GitLab Agent for Kubernetes %d in project %s with id %d", agentID, project, tokenID)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] delete token for GitLab Agent for Kubernetes %d in project %s with id %d", agentID, project, tokenID))
 	if _, err := client.ClusterAgents.RevokeAgentToken(project, agentID, tokenID, gitlab.WithContext(ctx)); err != nil {
 		return diag.FromErr(err)
 	}

@@ -2,7 +2,7 @@ package sdk
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -124,7 +124,7 @@ func resourceGitlabDeployKeyCreate(ctx context.Context, d *schema.ResourceData, 
 		CanPush: gitlab.Ptr(d.Get("can_push").(bool)),
 	}
 
-	log.Printf("[DEBUG] create gitlab deployment key %s", *options.Title)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab deployment key %s", *options.Title))
 
 	deployKey, _, err := client.DeployKeys.AddDeployKey(project, options, gitlab.WithContext(ctx))
 	if err != nil {
@@ -144,12 +144,12 @@ func resourceGitlabDeployKeyRead(ctx context.Context, d *schema.ResourceData, me
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] read gitlab deploy key %s/%d", project, deployKeyID)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab deploy key %s/%d", project, deployKeyID))
 
 	deployKey, _, err := client.DeployKeys.GetDeployKey(project, deployKeyID, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] gitlab deploy key not found %s/%d", project, deployKeyID)
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab deploy key not found %s/%d", project, deployKeyID))
 			d.SetId("")
 			return nil
 		}
@@ -173,7 +173,7 @@ func resourceGitlabDeployKeyDelete(ctx context.Context, d *schema.ResourceData, 
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] Delete gitlab deploy key %s", d.Id())
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Delete gitlab deploy key %s", d.Id()))
 
 	_, err = client.DeployKeys.DeleteDeployKey(project, deployKeyID, gitlab.WithContext(ctx))
 

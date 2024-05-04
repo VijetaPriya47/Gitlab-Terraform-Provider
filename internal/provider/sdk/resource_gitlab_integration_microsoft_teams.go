@@ -2,8 +2,9 @@ package sdk
 
 import (
 	"context"
-	"log"
+	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/xanzy/go-gitlab"
@@ -145,7 +146,7 @@ func resourceGitlabIntegrationMicrosoftTeamsCreate(ctx context.Context, d *schem
 		WikiPageEvents:            gitlab.Ptr(d.Get("wiki_page_events").(bool)),
 	}
 
-	log.Printf("[DEBUG] Create Gitlab Microsoft Teams integration")
+	tflog.Debug(ctx, "[DEBUG] Create Gitlab Microsoft Teams integration")
 
 	if _, err := client.Services.SetMicrosoftTeamsService(project, options, gitlab.WithContext(ctx)); err != nil {
 		return diag.Errorf("couldn't create Gitlab Microsoft Teams integration: %v", err)
@@ -158,12 +159,12 @@ func resourceGitlabIntegrationMicrosoftTeamsRead(ctx context.Context, d *schema.
 	client := meta.(*gitlab.Client)
 	project := d.Id()
 
-	log.Printf("[DEBUG] Read Gitlab Microsoft Teams integration for project %s", d.Id())
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Read Gitlab Microsoft Teams integration for project %s", d.Id()))
 
 	teamsService, _, err := client.Services.GetMicrosoftTeamsService(project, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] Unable to find Gitlab Microsoft Teams integration in project %s, removing from state", project)
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Unable to find Gitlab Microsoft Teams integration in project %s, removing from state", project))
 			d.SetId("")
 			return nil
 		}
@@ -202,7 +203,7 @@ func resourceGitlabIntegrationMicrosoftTeamsDelete(ctx context.Context, d *schem
 	client := meta.(*gitlab.Client)
 	project := d.Id()
 
-	log.Printf("[DEBUG] Delete Gitlab Microsoft Teams integration for project %s", d.Id())
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Delete Gitlab Microsoft Teams integration for project %s", d.Id()))
 
 	_, err := client.Services.DeleteMicrosoftTeamsService(project, gitlab.WithContext(ctx))
 	if err != nil {

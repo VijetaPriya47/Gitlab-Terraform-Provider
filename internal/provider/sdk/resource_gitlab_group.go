@@ -834,7 +834,7 @@ func editOrAddGroupPushRules(ctx context.Context, client *gitlab.Client, groupID
 		return nil
 	}
 
-	editOptions, err := expandEditGroupPushRuleOptions(ctx, client, d, pushRules)
+	editOptions, err := expandEditGroupPushRuleOptions(ctx, client, d)
 	if err != nil {
 		return err
 	}
@@ -855,7 +855,7 @@ func editOrAddGroupPushRules(ctx context.Context, client *gitlab.Client, groupID
 	return nil
 }
 
-func expandEditGroupPushRuleOptions(ctx context.Context, client *gitlab.Client, d *schema.ResourceData, currentPushRules *gitlab.GroupPushRules) (gitlab.EditGroupPushRuleOptions, error) {
+func expandEditGroupPushRuleOptions(ctx context.Context, client *gitlab.Client, d *schema.ResourceData) (gitlab.EditGroupPushRuleOptions, error) {
 	options := gitlab.EditGroupPushRuleOptions{}
 
 	// The API does not return 'commit_committer_check' or 'reject_unsigned_commits' if the GitLab version is < 16.4

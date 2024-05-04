@@ -2,7 +2,7 @@ package sdk
 
 import (
 	"context"
-	"log"
+	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -137,7 +137,7 @@ func resourceGitlabProjectLabelCreate(ctx context.Context, d *schema.ResourceDat
 		options.Description = gitlab.Ptr(v.(string))
 	}
 
-	log.Printf("[DEBUG] create gitlab label %s", *options.Name)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab label %s", *options.Name))
 
 	label, _, err := client.Labels.CreateLabel(project, options, gitlab.WithContext(ctx))
 	if err != nil {
@@ -154,12 +154,12 @@ func resourceGitlabProjectLabelRead(ctx context.Context, d *schema.ResourceData,
 	if err != nil {
 		return diag.Errorf("Failed to parse project label id %q: %s", d.Id(), err)
 	}
-	log.Printf("[DEBUG] read gitlab label %s/%s", project, labelName)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab label %s/%s", project, labelName))
 
 	label, _, err := client.Labels.GetLabel(project, labelName, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] failed to read gitlab label %s/%s", project, labelName)
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] failed to read gitlab label %s/%s", project, labelName))
 			d.SetId("")
 			return nil
 		}
@@ -189,7 +189,7 @@ func resourceGitlabProjectLabelUpdate(ctx context.Context, d *schema.ResourceDat
 		options.Description = gitlab.Ptr(d.Get("description").(string))
 	}
 
-	log.Printf("[DEBUG] update gitlab label %s", d.Id())
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab label %s", d.Id()))
 
 	_, _, err = client.Labels.UpdateLabel(project, options, gitlab.WithContext(ctx))
 	if err != nil {
@@ -206,7 +206,7 @@ func resourceGitlabProjectLabelDelete(ctx context.Context, d *schema.ResourceDat
 		return diag.Errorf("Failed to parse project label id %q: %s", d.Id(), err)
 	}
 
-	log.Printf("[DEBUG] Delete gitlab label %s", d.Id())
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Delete gitlab label %s", d.Id()))
 	_, err = client.Labels.DeleteLabel(project, labelName, nil, gitlab.WithContext(ctx))
 	return diag.FromErr(err)
 }

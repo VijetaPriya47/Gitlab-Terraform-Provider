@@ -2,10 +2,11 @@ package sdk
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"strconv"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/xanzy/go-gitlab"
@@ -74,7 +75,7 @@ func resourceGitlabGroupBadgeCreate(ctx context.Context, d *schema.ResourceData,
 		options.Name = gitlab.Ptr(v.(string))
 	}
 
-	log.Printf("[DEBUG] create gitlab group variable %s/%s", *options.LinkURL, *options.ImageURL)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab group variable %s/%s", *options.LinkURL, *options.ImageURL))
 
 	badge, _, err := client.GroupBadges.AddGroupBadge(groupID, options, gitlab.WithContext(ctx))
 	if err != nil {
@@ -97,12 +98,12 @@ func resourceGitlabGroupBadgeRead(ctx context.Context, d *schema.ResourceData, m
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] read gitlab group badge %s/%d", groupID, badgeID)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab group badge %s/%d", groupID, badgeID))
 
 	badge, _, err := client.GroupBadges.GetGroupBadge(groupID, badgeID, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] group badge %d in group %s doesn't exist anymore, removing from state", badgeID, groupID)
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] group badge %d in group %s doesn't exist anymore, removing from state", badgeID, groupID))
 			d.SetId("")
 			return nil
 		}
@@ -131,7 +132,7 @@ func resourceGitlabGroupBadgeUpdate(ctx context.Context, d *schema.ResourceData,
 		options.Name = gitlab.Ptr(d.Get("name").(string))
 	}
 
-	log.Printf("[DEBUG] update gitlab group badge %s/%d", groupID, badgeID)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab group badge %s/%d", groupID, badgeID))
 
 	_, _, err = client.GroupBadges.EditGroupBadge(groupID, badgeID, options, gitlab.WithContext(ctx))
 	if err != nil {
@@ -150,7 +151,7 @@ func resourceGitlabGroupBadgeDelete(ctx context.Context, d *schema.ResourceData,
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] Delete gitlab group badge %s/%d", groupID, badgeID)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Delete gitlab group badge %s/%d", groupID, badgeID))
 
 	_, err = client.GroupBadges.DeleteGroupBadge(groupID, badgeID, gitlab.WithContext(ctx))
 	if err != nil {

@@ -2,11 +2,12 @@ package sdk
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/xanzy/go-gitlab"
@@ -114,7 +115,7 @@ func resourceGitlabProjectMirrorCreate(ctx context.Context, d *schema.ResourceDa
 		KeepDivergentRefs:     &keepDivergentRefs,
 	}
 
-	log.Printf("[DEBUG] create gitlab project mirror for project %v", projectID)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab project mirror for project %v", projectID))
 
 	mirror, _, err := client.ProjectMirrors.AddProjectMirror(projectID, options, gitlab.WithContext(ctx))
 	if err != nil {
@@ -141,7 +142,7 @@ func resourceGitlabProjectMirrorUpdate(ctx context.Context, d *schema.ResourceDa
 		OnlyProtectedBranches: &onlyProtectedBranches,
 		KeepDivergentRefs:     &keepDivergentRefs,
 	}
-	log.Printf("[DEBUG] update gitlab project mirror %v for %s", mirrorID, projectID)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab project mirror %v for %s", mirrorID, projectID))
 
 	_, _, err := client.ProjectMirrors.EditProjectMirror(projectID, mirrorID, &options, gitlab.WithContext(ctx))
 	if err != nil {
@@ -162,7 +163,7 @@ func resourceGitlabProjectMirrorDelete(ctx context.Context, d *schema.ResourceDa
 	}
 
 	if isDeleteSupported {
-		log.Printf("[DEBUG] delete gitlab project mirror %v for %s", mirrorID, projectID)
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] delete gitlab project mirror %v for %s", mirrorID, projectID))
 
 		_, err := client.ProjectMirrors.DeleteProjectMirror(projectID, mirrorID, gitlab.WithContext(ctx))
 		if err != nil {
@@ -172,7 +173,7 @@ func resourceGitlabProjectMirrorDelete(ctx context.Context, d *schema.ResourceDa
 		// NOTE: this code only exists to support GitLab < 14.10.
 		//       It can be removed once ~ GitLab 15.2 is out and supported.
 		options := gitlab.EditProjectMirrorOptions{Enabled: gitlab.Ptr(false)}
-		log.Printf("[DEBUG] Disable gitlab project mirror %v for %s", mirrorID, projectID)
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Disable gitlab project mirror %v for %s", mirrorID, projectID))
 		_, _, err := client.ProjectMirrors.EditProjectMirror(projectID, mirrorID, &options, gitlab.WithContext(ctx))
 		if err != nil {
 			return diag.FromErr(err)
@@ -192,14 +193,14 @@ func resourceGitlabProjectMirrorRead(ctx context.Context, d *schema.ResourceData
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	log.Printf("[DEBUG] read gitlab project mirror %s id %v", projectID, mirrorID)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab project mirror %s id %v", projectID, mirrorID))
 	mirror, err := resourceGitLabProjectMirrorGetMirror(ctx, client, projectID, mirrorID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	if mirror == nil {
-		log.Printf("[DEBUG] mirror %d in project %s not found, removing from state", mirrorID, projectID)
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] mirror %d in project %s not found, removing from state", mirrorID, projectID))
 		d.SetId("")
 		return nil
 	}

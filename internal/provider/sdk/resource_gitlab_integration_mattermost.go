@@ -2,8 +2,9 @@ package sdk
 
 import (
 	"context"
-	"log"
+	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/xanzy/go-gitlab"
@@ -168,7 +169,7 @@ func resourceGitlabIntegrationMattermostCreate(ctx context.Context, d *schema.Re
 	project := d.Get("project").(string)
 	d.SetId(project)
 
-	log.Printf("[DEBUG] create gitlab mattermost integration for project %s", project)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab mattermost integration for project %s", project))
 
 	opts := &gitlab.SetMattermostServiceOptions{
 		WebHook: gitlab.Ptr(d.Get("webhook").(string)),
@@ -212,12 +213,12 @@ func resourceGitlabIntegrationMattermostRead(ctx context.Context, d *schema.Reso
 	client := meta.(*gitlab.Client)
 	project := d.Id()
 
-	log.Printf("[DEBUG] read gitlab mattermost integration for project %s", project)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab mattermost integration for project %s", project))
 
 	service, _, err := client.Services.GetMattermostService(project, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] gitlab mattermost integration not found %s", project)
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab mattermost integration not found %s", project))
 			d.SetId("")
 			return nil
 		}
@@ -266,7 +267,7 @@ func resourceGitlabIntegrationMattermostDelete(ctx context.Context, d *schema.Re
 	client := meta.(*gitlab.Client)
 	project := d.Id()
 
-	log.Printf("[DEBUG] delete gitlab mattermost service for project %s", project)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] delete gitlab mattermost service for project %s", project))
 
 	_, err := client.Services.DeleteMattermostService(project, gitlab.WithContext(ctx))
 	if err != nil {

@@ -2,8 +2,9 @@ package sdk
 
 import (
 	"context"
-	"log"
+	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/xanzy/go-gitlab"
@@ -53,10 +54,10 @@ func resourceGitlabProjectTagCreate(ctx context.Context, d *schema.ResourceData,
 		TagName: &name, Ref: &ref, Message: &message,
 	}
 
-	log.Printf("[DEBUG] create gitlab tag %s/%s with ref %s", project, name, ref)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab tag %s/%s with ref %s", project, name, ref))
 	_, resp, err := client.Tags.CreateTag(project, tagOptions, gitlab.WithContext(ctx))
 	if err != nil {
-		log.Printf("[DEBUG] failed to create gitlab tag %s/%s response %v", project, name, resp)
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] failed to create gitlab tag %s/%s response %v", project, name, resp))
 		return diag.FromErr(err)
 	}
 	d.SetId(utils.BuildTwoPartID(&project, &name))
@@ -71,15 +72,15 @@ func resourceGitlabProjectTagRead(ctx context.Context, d *schema.ResourceData, m
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] read gitlab tag %s/%s", project, name)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab tag %s/%s", project, name))
 	tag, resp, err := client.Tags.GetTag(project, name, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] recieved 404 for gitlab tag %s/%s, removing from state", project, name)
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] recieved 404 for gitlab tag %s/%s, removing from state", project, name))
 			d.SetId("")
 			return diag.FromErr(err)
 		}
-		log.Printf("[DEBUG] failed to read gitlab tag %s/%s response %v", project, name, resp)
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] failed to read gitlab tag %s/%s response %v", project, name, resp))
 		return diag.FromErr(err)
 	}
 	d.Set("name", tag.Name)
@@ -104,10 +105,10 @@ func resourceGitlabProjectTagDelete(ctx context.Context, d *schema.ResourceData,
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	log.Printf("[DEBUG] delete gitlab tag %s/%s", project, name)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] delete gitlab tag %s/%s", project, name))
 	resp, err := client.Tags.DeleteTag(project, name, gitlab.WithContext(ctx))
 	if err != nil {
-		log.Printf("[DEBUG] failed to delete gitlab tag %s/%s response %v", project, name, resp)
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] failed to delete gitlab tag %s/%s response %v", project, name, resp))
 		return diag.FromErr(err)
 	}
 	return nil

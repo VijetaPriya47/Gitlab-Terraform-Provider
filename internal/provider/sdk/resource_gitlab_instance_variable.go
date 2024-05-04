@@ -2,8 +2,9 @@ package sdk
 
 import (
 	"context"
-	"log"
+	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/xanzy/go-gitlab"
@@ -46,11 +47,11 @@ func resourceGitlabInstanceVariableCreate(ctx context.Context, d *schema.Resourc
 		Masked:       &masked,
 		Raw:          &raw,
 	}
-	log.Printf("[DEBUG] create gitlab instance level CI variable %s", key)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab instance level CI variable %s", key))
 
 	_, _, err := client.InstanceVariables.CreateVariable(&options, gitlab.WithContext(ctx))
 	if err != nil {
-		return augmentVariableClientError(d, err)
+		return augmentVariableClientError(ctx, d, err)
 	}
 
 	d.SetId(key)
@@ -62,16 +63,16 @@ func resourceGitlabInstanceVariableRead(ctx context.Context, d *schema.ResourceD
 
 	key := d.Id()
 
-	log.Printf("[DEBUG] read gitlab instance level CI variable %s", key)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab instance level CI variable %s", key))
 
 	v, _, err := client.InstanceVariables.GetVariable(key, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] gitlab instance level CI variable for %s not found so removing from state", d.Id())
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab instance level CI variable for %s not found so removing from state", d.Id()))
 			d.SetId("")
 			return nil
 		}
-		return augmentVariableClientError(d, err)
+		return augmentVariableClientError(ctx, d, err)
 	}
 
 	d.Set("key", v.Key)
@@ -105,11 +106,11 @@ func resourceGitlabInstanceVariableUpdate(ctx context.Context, d *schema.Resourc
 		Masked:       &masked,
 		Raw:          &raw,
 	}
-	log.Printf("[DEBUG] update gitlab instance level CI variable %s", key)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab instance level CI variable %s", key))
 
 	_, _, err := client.InstanceVariables.UpdateVariable(key, options, gitlab.WithContext(ctx))
 	if err != nil {
-		return augmentVariableClientError(d, err)
+		return augmentVariableClientError(ctx, d, err)
 	}
 	return resourceGitlabInstanceVariableRead(ctx, d, meta)
 }
@@ -117,11 +118,11 @@ func resourceGitlabInstanceVariableUpdate(ctx context.Context, d *schema.Resourc
 func resourceGitlabInstanceVariableDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	key := d.Get("key").(string)
-	log.Printf("[DEBUG] Delete gitlab instance level CI variable %s", key)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Delete gitlab instance level CI variable %s", key))
 
 	_, err := client.InstanceVariables.RemoveVariable(key, gitlab.WithContext(ctx))
 	if err != nil {
-		return augmentVariableClientError(d, err)
+		return augmentVariableClientError(ctx, d, err)
 	}
 
 	return nil

@@ -3,9 +3,9 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/xanzy/go-gitlab"
@@ -120,7 +120,7 @@ func dataSourceGitlabInstanceDeployKeysRead(ctx context.Context, d *schema.Resou
 		Public: gitlab.Ptr(d.Get("public").(bool)),
 	}
 
-	log.Printf("[INFO] Reading Instance Deploy Keys, with: %v", options)
+	tflog.Info(ctx, fmt.Sprintf("[INFO] Reading Instance Deploy Keys, with: %v", options))
 
 	var instanceDeployKeys []*gitlab.InstanceDeployKey
 	for options.Page != 0 {

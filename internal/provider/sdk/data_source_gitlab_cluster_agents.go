@@ -2,10 +2,11 @@ package sdk
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"strconv"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/xanzy/go-gitlab"
@@ -58,7 +59,7 @@ func dataSourceGitlabClusterAgentsRead(ctx context.Context, d *schema.ResourceDa
 		options.Page = resp.NextPage
 	}
 
-	log.Printf("[DEBUG] list GitLab Agents for Kubernetes in project %s", project)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] list GitLab Agents for Kubernetes in project %s", project))
 	d.SetId(project)
 	d.Set("project", project)
 	if err := d.Set("cluster_agents", flattenClusterAgentsForState(clusterAgents)); err != nil {
