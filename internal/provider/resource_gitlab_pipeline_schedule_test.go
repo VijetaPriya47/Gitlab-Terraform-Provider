@@ -77,10 +77,10 @@ func TestAccGitlabPipelineSchedule_SchemaMigration0_1(t *testing.T) {
 	resource "gitlab_pipeline_schedule" "schedule" {
 		project = "%d"
 		description = "Pipeline Schedule"
-		ref = "refs/heads/master"
+		ref = "%s"
 		cron = "0 1 * * *"
 	}
-		`, testProject.ID)
+		`, testProject.ID, testProject.DefaultBranch)
 
 	resource.ParallelTest(t, resource.TestCase{
 		CheckDestroy: testAccCheckGitlabPipelineScheduleDestroy,
@@ -127,11 +127,11 @@ func TestAccGitlabPipelineSchedule_takeOwnershipWithChanges(t *testing.T) {
 				resource "gitlab_pipeline_schedule" "schedule" {
 					project = "%d"
 					description = "Schedule"
-					ref = "refs/heads/main"
+					ref = "%s"
 					cron = "0 4 * * *"
 					active = false
 				}
-				`, userPAT.Token, project.ID),
+				`, userPAT.Token, project.ID, project.DefaultBranch),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabPipelineScheduleExists("gitlab_pipeline_schedule.schedule", &schedule),
 					resource.TestCheckResourceAttr("gitlab_pipeline_schedule.schedule", "owner", fmt.Sprintf("%d", user.ID)),
@@ -143,12 +143,12 @@ func TestAccGitlabPipelineSchedule_takeOwnershipWithChanges(t *testing.T) {
 				resource "gitlab_pipeline_schedule" "schedule" {
 					project = "%d"
 					description = "Schedule Updated"
-					ref = "refs/heads/main"
+					ref = "%s"
 					cron = "0 4 * * *"
 					active = false
 					take_ownership = true
 				}
-					`, project.ID),
+					`, project.ID, project.DefaultBranch),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabPipelineScheduleExists("gitlab_pipeline_schedule.schedule", &schedule),
 					resource.TestCheckResourceAttr("gitlab_pipeline_schedule.schedule", "owner", "1"),
@@ -195,12 +195,12 @@ func TestAccGitlabPipelineSchedule_takeOwnershipWithoutChanges(t *testing.T) {
 				resource "gitlab_pipeline_schedule" "schedule" {
 					project = "%d"
 					description = "Schedule"
-					ref = "refs/heads/main"
+					ref = "%s"
 					cron = "0 4 * * *"
 					active = false
 					take_ownership = true
 				}
-				`, userPAT.Token, project.ID),
+				`, userPAT.Token, project.ID, project.DefaultBranch),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabPipelineScheduleExists("gitlab_pipeline_schedule.schedule", &schedule),
 					resource.TestCheckResourceAttr("gitlab_pipeline_schedule.schedule", "owner", fmt.Sprintf("%d", user.ID)),
@@ -212,12 +212,12 @@ func TestAccGitlabPipelineSchedule_takeOwnershipWithoutChanges(t *testing.T) {
 				resource "gitlab_pipeline_schedule" "schedule" {
 					project = "%d"
 					description = "Schedule"
-					ref = "refs/heads/main"
+					ref = "%s"
 					cron = "0 4 * * *"
 					active = false
 					take_ownership = true
 				}
-					`, project.ID),
+					`, project.ID, project.DefaultBranch),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabPipelineScheduleExists("gitlab_pipeline_schedule.schedule", &schedule),
 					resource.TestCheckResourceAttr("gitlab_pipeline_schedule.schedule", "owner", "1"),
@@ -247,11 +247,11 @@ func TestAccGitlabPipelineSchedule_migrateFromSDKToFramework(t *testing.T) {
 		resource "gitlab_pipeline_schedule" "schedule" {
 			project = "%d"
 			description = "Schedule"
-			ref = "refs/heads/main"
+			ref = "%s"
 			cron = "0 4 * * *"
 			active = false
 		}
-		`, project.ID)
+		`, project.ID, project.DefaultBranch)
 
 	resource.ParallelTest(t, resource.TestCase{
 		CheckDestroy: testAccCheckGitlabPipelineScheduleDestroy,
@@ -301,14 +301,14 @@ func TestAccGitlabPipelineSchedule_basic(t *testing.T) {
 					  resource "gitlab_pipeline_schedule" "schedule" {
 						  project = "%d"
 						  description = "Pipeline Schedule"
-						  ref = "refs/heads/master"
+						  ref = "%s"
 						  cron = "0 1 * * *"
-					  }`, project.ID),
+					  }`, project.ID, project.DefaultBranch),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabPipelineScheduleExists("gitlab_pipeline_schedule.schedule", &schedule),
 					testAccCheckGitlabPipelineScheduleAttributes(&schedule, &testAccGitlabPipelineScheduleExpectedAttributes{
 						Description:  "Pipeline Schedule",
-						Ref:          "refs/heads/master",
+						Ref:          project.DefaultBranch,
 						Cron:         "0 1 * * *",
 						CronTimezone: "UTC",
 						Active:       true,
@@ -327,15 +327,15 @@ func TestAccGitlabPipelineSchedule_basic(t *testing.T) {
 				resource "gitlab_pipeline_schedule" "schedule" {
 				  project = "%d"
 				  description = "Schedule"
-				  ref = "refs/heads/master"
+				  ref = "%s"
 				  cron = "0 4 * * *"
 				  active = false
-				}`, project.ID),
+				}`, project.ID, project.DefaultBranch),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabPipelineScheduleExists("gitlab_pipeline_schedule.schedule", &schedule),
 					testAccCheckGitlabPipelineScheduleAttributes(&schedule, &testAccGitlabPipelineScheduleExpectedAttributes{
 						Description:  "Schedule",
-						Ref:          "refs/heads/master",
+						Ref:          project.DefaultBranch,
 						Cron:         "0 4 * * *",
 						CronTimezone: "UTC",
 						Active:       false,
@@ -354,14 +354,14 @@ func TestAccGitlabPipelineSchedule_basic(t *testing.T) {
 				resource "gitlab_pipeline_schedule" "schedule" {
 					project = "%d"
 					description = "Pipeline Schedule"
-					ref = "refs/heads/master"
+					ref = "%s"
 					cron = "0 1 * * *"
-				}`, project.ID),
+				}`, project.ID, project.DefaultBranch),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabPipelineScheduleExists("gitlab_pipeline_schedule.schedule", &schedule),
 					testAccCheckGitlabPipelineScheduleAttributes(&schedule, &testAccGitlabPipelineScheduleExpectedAttributes{
 						Description:  "Pipeline Schedule",
-						Ref:          "refs/heads/master",
+						Ref:          project.DefaultBranch,
 						Cron:         "0 1 * * *",
 						CronTimezone: "UTC",
 						Active:       true,
