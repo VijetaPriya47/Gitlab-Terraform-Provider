@@ -3,9 +3,9 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -148,7 +148,7 @@ func resourceGitLabRunnerCreate(ctx context.Context, d *schema.ResourceData, met
 	}
 
 	// Explicitly not printing the registration token here, even though it may make debugging a bit trickier, since it's a secret
-	log.Printf("[DEBUG] Update GitLab Runner using registration token in configuration")
+	tflog.Debug(ctx, "[DEBUG] Update GitLab Runner using registration token in configuration")
 	runner, _, err := client.Runners.RegisterNewRunner(options, gitlab.WithContext(ctx))
 	if err != nil {
 		return diag.FromErr(err)
@@ -230,7 +230,7 @@ func resourceGitLabRunnerUpdate(ctx context.Context, d *schema.ResourceData, met
 		options.MaximumTimeout = gitlab.Ptr(v.(int))
 	}
 
-	log.Printf("[DEBUG] Update GitLab Runner %s", d.Id())
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Update GitLab Runner %s", d.Id()))
 	_, _, err := client.Runners.UpdateRunnerDetails(runnerID, options, gitlab.WithContext(ctx))
 	if err != nil {
 		return diag.FromErr(err)
@@ -247,7 +247,7 @@ func resourceGitLabRunnerDelete(ctx context.Context, d *schema.ResourceData, met
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] Delete GitLab Runner %s", d.Id())
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Delete GitLab Runner %s", d.Id()))
 	_, err = client.Runners.DeleteRegisteredRunnerByID(runnerID, gitlab.WithContext(ctx))
 	if err != nil {
 		return diag.FromErr(err)

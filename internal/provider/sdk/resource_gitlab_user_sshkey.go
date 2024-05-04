@@ -3,10 +3,10 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/xanzy/go-gitlab"
@@ -119,7 +119,7 @@ func resourceGitlabUserSSHKeyRead(ctx context.Context, d *schema.ResourceData, m
 	}
 
 	if key == nil {
-		log.Printf("Could not find sshkey %d for user %d", keyID, userID)
+		tflog.Warn(ctx, fmt.Sprintf("Could not find sshkey %d for user %d", keyID, userID))
 		d.SetId("")
 		return nil
 	}

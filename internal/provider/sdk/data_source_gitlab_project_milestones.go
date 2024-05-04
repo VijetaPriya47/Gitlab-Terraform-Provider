@@ -3,8 +3,8 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -114,7 +114,7 @@ func dataSourceGitlabProjectMilestonesRead(ctx context.Context, d *schema.Resour
 		options.Page = resp.NextPage
 	}
 
-	log.Printf("[DEBUG] get gitlab milestones from project: %s", project)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] get gitlab milestones from project: %s", project))
 	d.SetId(fmt.Sprintf("%s:%d", project, optionsHash))
 	if err = d.Set("milestones", flattenGitlabProjectMilestones(project, milestones)); err != nil {
 		return diag.Errorf("Failed to set milestones to state: %v", err)

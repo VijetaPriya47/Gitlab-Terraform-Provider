@@ -3,7 +3,6 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -118,7 +117,7 @@ func resourceGitlabProjectFreezePeriodCreate(ctx context.Context, d *schema.Reso
 		CronTimezone: gitlab.Ptr(d.Get("cron_timezone").(string)),
 	}
 
-	log.Printf("[DEBUG] Project %s create gitlab project-level freeze period %+v", project, options)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Project %s create gitlab project-level freeze period %+v", project, options))
 
 	client := meta.(*gitlab.Client)
 	FreezePeriod, _, err := client.FreezePeriods.CreateFreezePeriodOptions(project, &options, gitlab.WithContext(ctx))
@@ -139,12 +138,12 @@ func resourceGitlabProjectFreezePeriodRead(ctx context.Context, d *schema.Resour
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] read gitlab FreezePeriod %s/%d", project, freezePeriodID)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab FreezePeriod %s/%d", project, freezePeriodID))
 
 	freezePeriod, _, err := client.FreezePeriods.GetFreezePeriod(project, freezePeriodID, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] project freeze period for %s not found so removing it from state", d.Id())
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] project freeze period for %s not found so removing it from state", d.Id()))
 			d.SetId("")
 			return nil
 		}
@@ -180,7 +179,7 @@ func resourceGitlabProjectFreezePeriodUpdate(ctx context.Context, d *schema.Reso
 		options.CronTimezone = gitlab.Ptr(d.Get("cron_timezone").(string))
 	}
 
-	log.Printf("[DEBUG] update gitlab FreezePeriod %s", d.Id())
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab FreezePeriod %s", d.Id()))
 
 	_, _, err = client.FreezePeriods.UpdateFreezePeriodOptions(project, freezePeriodID, options, gitlab.WithContext(ctx))
 	if err != nil {
@@ -193,7 +192,7 @@ func resourceGitlabProjectFreezePeriodUpdate(ctx context.Context, d *schema.Reso
 func resourceGitlabProjectFreezePeriodDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project, freezePeriodID, err := projectAndFreezePeriodIDFromID(d.Id())
-	log.Printf("[DEBUG] Delete gitlab FreezePeriod %s", d.Id())
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Delete gitlab FreezePeriod %s", d.Id()))
 
 	if err != nil {
 		return diag.Errorf("%s cannot be converted to int", d.Id())

@@ -2,9 +2,10 @@ package sdk
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"strconv"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/xanzy/go-gitlab"
@@ -48,7 +49,7 @@ func resourceGitlabProjectRunnerEnablementCreate(ctx context.Context, d *schema.
 		RunnerID: runnerID,
 	}
 
-	log.Printf("[DEBUG] create gitlab project runner %v/%v", projectID, runnerID)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab project runner %v/%v", projectID, runnerID))
 
 	_, _, err := client.Runners.EnableProjectRunner(projectID, options, gitlab.WithContext(ctx))
 	if err != nil {
@@ -63,12 +64,12 @@ func resourceGitlabProjectRunnerEnablementCreate(ctx context.Context, d *schema.
 
 func resourceGitlabProjectRunnerEnablementRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
-	project, runnerID, err := projectAndRunnerFromID(d.Id())
+	project, runnerID, err := projectAndRunnerFromID(ctx, d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] read gitlab project runner %s/%v", project, runnerID)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab project runner %s/%v", project, runnerID))
 
 	// Get the project id from `project`, which can be either the numeric ID or a name
 	projectDetails, _, err := client.Projects.GetProject(project, &gitlab.GetProjectOptions{}, gitlab.WithContext(ctx))
@@ -91,7 +92,7 @@ func resourceGitlabProjectRunnerEnablementRead(ctx context.Context, d *schema.Re
 	}
 
 	if !found {
-		log.Printf("[WARN] removing project runner: %v from state because it no longer exists in gitlab", runnerID)
+		tflog.Warn(ctx, fmt.Sprintf("[WARN] removing project runner: %v from state because it no longer exists in gitlab", runnerID))
 		d.SetId("")
 		return nil
 	}
@@ -102,17 +103,17 @@ func resourceGitlabProjectRunnerEnablementRead(ctx context.Context, d *schema.Re
 	return nil
 }
 
-func projectAndRunnerFromID(id string) (string, int, error) {
+func projectAndRunnerFromID(ctx context.Context, id string) (string, int, error) {
 	var runnerID int
 	projectID, runnerIDString, err := utils.ParseTwoPartID(id)
 	if err != nil {
-		log.Printf("[WARN] could not get project and runner ids from resource id %v", id)
+		tflog.Warn(ctx, fmt.Sprintf("[WARN] could not get project and runner ids from resource id %v", id))
 		return projectID, runnerID, err
 	}
 
 	runnerID, err = strconv.Atoi(runnerIDString)
 	if err != nil {
-		log.Printf("[WARN] could not convert runner id '%s' to integer", runnerIDString)
+		tflog.Warn(ctx, fmt.Sprintf("[WARN] could not convert runner id '%s' to integer", runnerIDString))
 		return projectID, runnerID, err
 	}
 	return projectID, runnerID, nil
@@ -122,12 +123,12 @@ func projectAndRunnerFromID(id string) (string, int, error) {
 func resourceGitlabProjectRunnerEnablementDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
-	projectID, runnerID, err := projectAndRunnerFromID(d.Id())
+	projectID, runnerID, err := projectAndRunnerFromID(ctx, d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] Delete gitlab project runner %s/%v", projectID, runnerID)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Delete gitlab project runner %s/%v", projectID, runnerID))
 
 	_, err = client.Runners.DisableProjectRunner(projectID, runnerID)
 	if err != nil {

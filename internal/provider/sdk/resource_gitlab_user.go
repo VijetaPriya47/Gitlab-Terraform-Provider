@@ -3,10 +3,10 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -162,7 +162,7 @@ func resourceGitlabUserCreate(ctx context.Context, d *schema.ResourceData, meta 
 		return diag.Errorf("At least one of either password or reset_password must be defined")
 	}
 
-	log.Printf("[DEBUG] create gitlab user %q", *options.Username)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab user %q", *options.Username))
 
 	user, _, err := client.Users.CreateUser(options, gitlab.WithContext(ctx))
 	if err != nil {
@@ -190,14 +190,14 @@ func resourceGitlabUserCreate(ctx context.Context, d *schema.ResourceData, meta 
 
 func resourceGitlabUserRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
-	log.Printf("[DEBUG] import -- read gitlab user %s", d.Id())
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] import -- read gitlab user %s", d.Id()))
 
 	id, _ := strconv.Atoi(d.Id())
 
 	user, _, err := client.Users.GetUser(id, gitlab.GetUsersOptions{}, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] gitlab user not found %d", id)
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab user not found %d", id))
 			d.SetId("")
 			return nil
 		}
@@ -246,7 +246,7 @@ func resourceGitlabUserUpdate(ctx context.Context, d *schema.ResourceData, meta 
 		options.Note = gitlab.Ptr(d.Get("note").(string))
 	}
 
-	log.Printf("[DEBUG] update gitlab user %s", d.Id())
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab user %s", d.Id()))
 
 	id, _ := strconv.Atoi(d.Id())
 
@@ -291,7 +291,7 @@ func resourceGitlabUserUpdate(ctx context.Context, d *schema.ResourceData, meta 
 
 func resourceGitlabUserDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
-	log.Printf("[DEBUG] Delete gitlab user %s", d.Id())
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Delete gitlab user %s", d.Id()))
 
 	id, _ := strconv.Atoi(d.Id())
 

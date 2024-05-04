@@ -3,7 +3,6 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -59,7 +58,7 @@ func resourceGitlabGroupVariableCreate(ctx context.Context, d *schema.ResourceDa
 
 	_, _, err := client.GroupVariables.CreateVariable(group, &options, gitlab.WithContext(ctx))
 	if err != nil {
-		return augmentVariableClientError(d, err)
+		return augmentVariableClientError(ctx, d, err)
 	}
 
 	keyScope := fmt.Sprintf("%s:%s", key, environmentScope)
@@ -93,11 +92,11 @@ func resourceGitlabGroupVariableRead(ctx context.Context, d *schema.ResourceData
 	)
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] gitlab group variable not found %s/%s", group, key)
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab group variable not found %s/%s", group, key))
 			d.SetId("")
 			return nil
 		}
-		return augmentVariableClientError(d, err)
+		return augmentVariableClientError(ctx, d, err)
 	}
 
 	stateMap := gitlabGroupVariableToStateMap(group, v)
@@ -139,7 +138,7 @@ func resourceGitlabGroupVariableUpdate(ctx context.Context, d *schema.ResourceDa
 		withEnvironmentScopeFilter(ctx, environmentScope),
 	)
 	if err != nil {
-		return augmentVariableClientError(d, err)
+		return augmentVariableClientError(ctx, d, err)
 	}
 	return resourceGitlabGroupVariableRead(ctx, d, meta)
 }
@@ -158,7 +157,7 @@ func resourceGitlabGroupVariableDelete(ctx context.Context, d *schema.ResourceDa
 		withEnvironmentScopeFilter(ctx, environmentScope),
 	)
 	if err != nil {
-		return augmentVariableClientError(d, err)
+		return augmentVariableClientError(ctx, d, err)
 	}
 
 	return nil

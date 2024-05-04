@@ -2,7 +2,7 @@ package sdk
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"strconv"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -101,7 +101,7 @@ func resourceGitlabProjectHookCreate(ctx context.Context, d *schema.ResourceData
 		options.Token = gitlab.Ptr(v.(string))
 	}
 
-	log.Printf("[DEBUG] create gitlab project hook %q", *options.URL)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab project hook %q", *options.URL))
 
 	hook, _, err := client.Projects.AddProjectHook(project, options, gitlab.WithContext(ctx))
 	if err != nil {
@@ -120,12 +120,12 @@ func resourceGitlabProjectHookRead(ctx context.Context, d *schema.ResourceData, 
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	log.Printf("[DEBUG] read gitlab project hook %s/%d", project, hookId)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab project hook %s/%d", project, hookId))
 
 	hook, _, err := client.Projects.GetProjectHook(project, hookId, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] gitlab project hook not found %s/%d, removing from state", project, hookId)
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab project hook not found %s/%d, removing from state", project, hookId))
 			d.SetId("")
 			return nil
 		}
@@ -168,7 +168,7 @@ func resourceGitlabProjectHookUpdate(ctx context.Context, d *schema.ResourceData
 		options.Token = gitlab.Ptr(d.Get("token").(string))
 	}
 
-	log.Printf("[DEBUG] update gitlab project hook %s", d.Id())
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab project hook %s", d.Id()))
 
 	_, _, err = client.Projects.EditProjectHook(project, hookId, options, gitlab.WithContext(ctx))
 	if err != nil {
@@ -184,10 +184,7 @@ func resourceGitlabProjectHookDelete(ctx context.Context, d *schema.ResourceData
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	log.Printf("[DEBUG] Delete gitlab project hook %s", d.Id())
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Delete gitlab project hook %s", d.Id()))
 
 	_, err = client.Projects.DeleteProjectHook(project, hookId, gitlab.WithContext(ctx))
 	if err != nil {

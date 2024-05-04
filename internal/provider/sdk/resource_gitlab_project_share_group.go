@@ -3,7 +3,6 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -98,7 +97,7 @@ func resourceGitlabProjectShareGroupCreate(ctx context.Context, d *schema.Resour
 		GroupID:     &groupId,
 		GroupAccess: &groupAccess,
 	}
-	log.Printf("[DEBUG] create gitlab project membership for %d in %s", options.GroupID, project)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab project membership for %d in %s", options.GroupID, project))
 
 	_, err := client.Projects.ShareProjectWithGroup(project, options, gitlab.WithContext(ctx))
 	if err != nil {
@@ -112,7 +111,7 @@ func resourceGitlabProjectShareGroupCreate(ctx context.Context, d *schema.Resour
 func resourceGitlabProjectShareGroupRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	id := d.Id()
-	log.Printf("[DEBUG] read gitlab project projectMember %s", id)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab project projectMember %s", id))
 
 	project, groupId, err := projectAndGroupIdFromId(id)
 	if err != nil {
@@ -122,7 +121,7 @@ func resourceGitlabProjectShareGroupRead(ctx context.Context, d *schema.Resource
 	projectInformation, _, err := client.Projects.GetProject(project, nil, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] failed to read gitlab project %s: %s", id, err)
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] failed to read gitlab project %s: %s", id, err))
 			d.SetId("")
 			return nil
 		}
@@ -139,7 +138,7 @@ func resourceGitlabProjectShareGroupRead(ctx context.Context, d *schema.Resource
 	}
 	// If we didn't find our group, we need to remove it from state
 	if !foundGroup {
-		log.Printf("[DEBUG] Gitlab project group share not found for group %v and project %s; removing from state.", groupId, project)
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Gitlab project group share not found for group %v and project %s; removing from state.", groupId, project))
 		d.SetId("")
 	}
 
@@ -149,12 +148,12 @@ func resourceGitlabProjectShareGroupRead(ctx context.Context, d *schema.Resource
 func projectAndGroupIdFromId(id string) (string, int, error) {
 	project, groupIdString, err := utils.ParseTwoPartID(id)
 	if err != nil {
-		return "", 0, fmt.Errorf("Error parsing ID: %s", id)
+		return "", 0, fmt.Errorf("error parsing ID: %s", id)
 	}
 
 	groupId, err := strconv.Atoi(groupIdString)
 	if err != nil {
-		return "", 0, fmt.Errorf("Can not determine group id: %v", id)
+		return "", 0, fmt.Errorf("can not determine group id: %v", id)
 	}
 
 	return project, groupId, nil
@@ -169,7 +168,7 @@ func resourceGitlabProjectShareGroupDelete(ctx context.Context, d *schema.Resour
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] Delete gitlab project membership %v for %s", groupId, projectId)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Delete gitlab project membership %v for %s", groupId, projectId))
 
 	_, err = client.Projects.DeleteSharedProjectFromGroup(projectId, groupId, gitlab.WithContext(ctx))
 	if err != nil {

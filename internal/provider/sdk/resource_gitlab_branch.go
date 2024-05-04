@@ -2,9 +2,10 @@ package sdk
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/xanzy/go-gitlab"
@@ -160,10 +161,10 @@ func resourceGitlabBranchCreate(ctx context.Context, d *schema.ResourceData, met
 		Branch: &name, Ref: &ref,
 	}
 
-	log.Printf("[DEBUG] create gitlab branch %s for project %s with ref %s", name, project, ref)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab branch %s for project %s with ref %s", name, project, ref))
 	branch, resp, err := client.Branches.CreateBranch(project, branchOptions, gitlab.WithContext(ctx))
 	if err != nil {
-		log.Printf("[DEBUG] failed to create gitlab branch %v response %v", branch, resp)
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] failed to create gitlab branch %v response %v", branch, resp))
 		return diag.FromErr(err)
 	}
 	d.Set("ref", ref)
@@ -178,15 +179,15 @@ func resourceGitlabBranchRead(ctx context.Context, d *schema.ResourceData, meta 
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] read gitlab branch %s", name)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab branch %s", name))
 	branch, resp, err := client.Branches.GetBranch(project, name, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] recieved 404 for gitlab branch %s, removing from state", name)
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] recieved 404 for gitlab branch %s, removing from state", name))
 			d.SetId("")
 			return nil
 		}
-		log.Printf("[DEBUG] failed to read gitlab branch %s response %v", name, resp)
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] failed to read gitlab branch %s response %v", name, resp))
 		return diag.FromErr(err)
 	}
 	d.SetId(utils.BuildTwoPartID(&project, &name))
@@ -212,10 +213,10 @@ func resourceGitlabBranchDelete(ctx context.Context, d *schema.ResourceData, met
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	log.Printf("[DEBUG] delete gitlab branch %s", name)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] delete gitlab branch %s", name))
 	resp, err := client.Branches.DeleteBranch(project, name, gitlab.WithContext(ctx))
 	if err != nil {
-		log.Printf("[DEBUG] failed to delete gitlab branch %s response %v", name, resp)
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] failed to delete gitlab branch %s response %v", name, resp))
 		return diag.FromErr(err)
 	}
 	return nil

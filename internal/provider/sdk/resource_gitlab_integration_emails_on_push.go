@@ -3,9 +3,9 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -143,7 +143,7 @@ func resourceGitlabIntegrationEmailsOnPushCreate(ctx context.Context, d *schema.
 	}
 
 	project := d.Get("project").(string)
-	log.Printf("[DEBUG] create gitlab emails on push service for project %s", project)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab emails on push service for project %s", project))
 
 	_, err := client.Services.SetEmailsOnPushService(project, options, gitlab.WithContext(ctx))
 	if err != nil {
@@ -158,12 +158,12 @@ func resourceGitlabIntegrationEmailsOnPushRead(ctx context.Context, d *schema.Re
 	client := meta.(*gitlab.Client)
 	project := d.Id()
 
-	log.Printf("[DEBUG] read gitlab emails on push service for project %s", project)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab emails on push service for project %s", project))
 
 	service, _, err := client.Services.GetEmailsOnPushService(project, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] gitlab emails on push service not found for project %s, removing from state", project)
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab emails on push service not found for project %s, removing from state", project))
 			d.SetId("")
 			return nil
 		}
@@ -192,7 +192,7 @@ func resourceGitlabIntegrationEmailsOnPushDelete(ctx context.Context, d *schema.
 	client := meta.(*gitlab.Client)
 	project := d.Id()
 
-	log.Printf("[DEBUG] delete gitlab emails on push service for project %s", project)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] delete gitlab emails on push service for project %s", project))
 
 	_, err := client.Services.DeleteEmailsOnPushService(project, gitlab.WithContext(ctx))
 	if err != nil {

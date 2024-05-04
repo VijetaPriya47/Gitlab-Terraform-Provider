@@ -2,8 +2,8 @@ package sdk
 
 import (
 	"context"
-	"log"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -87,7 +87,7 @@ var _ = registerDataSource("gitlab_project_branches", func() *schema.Resource {
 func dataSourceGitlabProjectBranchesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
-	log.Printf("[INFO] Reading Gitlab branches")
+	tflog.Info(ctx, "[INFO] Reading Gitlab branches")
 
 	project := d.Get("project").(string)
 

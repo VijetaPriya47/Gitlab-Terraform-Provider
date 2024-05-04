@@ -5,11 +5,11 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -135,12 +135,12 @@ func resourceGitlabRepositoryFileCreate(ctx context.Context, d *schema.ResourceD
 	project := d.Get("project").(string)
 	filePath := d.Get("file_path").(string)
 
-	log.Printf("[DEBUG] gitlab_repository_file: waiting for lock to create %s/%s", project, filePath)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab_repository_file: waiting for lock to create %s/%s", project, filePath))
 	if err := resourceGitlabRepositoryFileApiLock.lock(ctx); err != nil {
 		return diag.FromErr(err)
 	}
 	defer resourceGitlabRepositoryFileApiLock.unlock()
-	log.Printf("[DEBUG] gitlab_repository_file: got lock to create %s/%s", project, filePath)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab_repository_file: got lock to create %s/%s", project, filePath))
 
 	client := meta.(*gitlab.Client)
 	content := d.Get("content").(string)
@@ -187,7 +187,7 @@ func resourceGitlabRepositoryFileCreate(ctx context.Context, d *schema.ResourceD
 			}
 
 			if existingRepositoryFile != nil {
-				log.Printf("[DEBUG] %s already exists and overwrite_on_create is true. File will be overwritten.", filePath)
+				tflog.Debug(ctx, fmt.Sprintf("[DEBUG] %s already exists and overwrite_on_create is true. File will be overwritten.", filePath))
 
 				updateOptions := &gitlab.UpdateFileOptions{
 					Branch:      gitlab.Ptr(*options.Branch),
@@ -269,7 +269,7 @@ func resourceGitlabRepositoryFileRead(ctx context.Context, d *schema.ResourceDat
 	repositoryFile, _, err := client.RepositoryFiles.GetFile(project, filePath, options, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] file %s not found, removing from state", filePath)
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] file %s not found, removing from state", filePath))
 			d.SetId("")
 			return nil
 		}
@@ -277,7 +277,7 @@ func resourceGitlabRepositoryFileRead(ctx context.Context, d *schema.ResourceDat
 	}
 
 	configContent := d.Get("content").(string)
-	log.Printf("[DEBUG] gitlab_repository_file: comparing content of %s with %s", repositoryFile.Content, configContent)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab_repository_file: comparing content of %s with %s", repositoryFile.Content, configContent))
 
 	// check what our encoding is to determine if we need to decode the content for checking.
 	var configEncoding *string
@@ -309,12 +309,12 @@ func resourceGitlabRepositoryFileUpdate(ctx context.Context, d *schema.ResourceD
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] gitlab_repository_file: waiting for lock to update %s/%s", project, filePath)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab_repository_file: waiting for lock to update %s/%s", project, filePath))
 	if err := resourceGitlabRepositoryFileApiLock.lock(ctx); err != nil {
 		return diag.FromErr(err)
 	}
 	defer resourceGitlabRepositoryFileApiLock.unlock()
-	log.Printf("[DEBUG] gitlab_repository_file: got lock to update %s/%s", project, filePath)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab_repository_file: got lock to update %s/%s", project, filePath))
 
 	client := meta.(*gitlab.Client)
 
@@ -378,12 +378,12 @@ func resourceGitlabRepositoryFileDelete(ctx context.Context, d *schema.ResourceD
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] gitlab_repository_file: waiting for lock to delete %s/%s", project, filePath)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab_repository_file: waiting for lock to delete %s/%s", project, filePath))
 	if err := resourceGitlabRepositoryFileApiLock.lock(ctx); err != nil {
 		return diag.FromErr(err)
 	}
 	defer resourceGitlabRepositoryFileApiLock.unlock()
-	log.Printf("[DEBUG] gitlab_repository_file: got lock to delete %s/%s", project, filePath)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab_repository_file: got lock to delete %s/%s", project, filePath))
 
 	client := meta.(*gitlab.Client)
 
@@ -429,7 +429,7 @@ func resourceGitlabRepositoryFileDelete(ctx context.Context, d *schema.ResourceD
 func resourceGitLabRepositoryFileParseId(id string) (string, string, string, error) {
 	parts := strings.SplitN(id, ":", 3)
 	if len(parts) != 3 {
-		return "", "", "", fmt.Errorf("Unexpected ID format (%q). Expected project:branch:repository_file_path", id)
+		return "", "", "", fmt.Errorf("unexpected ID format (%q). Expected project:branch:repository_file_path", id)
 	}
 
 	return parts[0], parts[1], parts[2], nil

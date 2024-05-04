@@ -3,9 +3,9 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/xanzy/go-gitlab"
@@ -41,7 +41,7 @@ func resourceGitlabProjectIssueBoardCreate(ctx context.Context, d *schema.Resour
 		Name: gitlab.Ptr(d.Get("name").(string)),
 	}
 
-	log.Printf("[DEBUG] create Project Issue Board %q in project %q", *options.Name, project)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create Project Issue Board %q in project %q", *options.Name, project))
 	issueBoard, _, err := client.Boards.CreateIssueBoard(project, &options, gitlab.WithContext(ctx))
 	if err != nil {
 		return diag.FromErr(err)
@@ -65,7 +65,7 @@ func resourceGitlabProjectIssueBoardCreate(ctx context.Context, d *schema.Resour
 	}
 
 	if (gitlab.UpdateIssueBoardOptions{}) != updateOptions {
-		log.Printf("[DEBUG] update Project Issue Board %q in project %q after creation", *options.Name, project)
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update Project Issue Board %q in project %q after creation", *options.Name, project))
 		_, _, err = client.Boards.UpdateIssueBoard(project, issueBoard.ID, &updateOptions, gitlab.WithContext(ctx))
 		if err != nil {
 			return diag.FromErr(err)
@@ -88,11 +88,11 @@ func resourceGitlabProjectIssueBoardRead(ctx context.Context, d *schema.Resource
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] read Project Issue Board in project %q with id %q", project, issueBoardID)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read Project Issue Board in project %q with id %q", project, issueBoardID))
 	issueBoard, _, err := client.Boards.GetIssueBoard(project, issueBoardID, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] Project Issue Board in project %s with id %d not found, removing from state", project, issueBoardID)
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Project Issue Board in project %s with id %d not found, removing from state", project, issueBoardID))
 			d.SetId("")
 			return nil
 		}
@@ -131,7 +131,7 @@ func resourceGitlabProjectIssueBoardUpdate(ctx context.Context, d *schema.Resour
 		options.Weight = gitlab.Ptr(d.Get("weight").(int))
 	}
 
-	log.Printf("[DEBUG] update Project Issue Board %q in project %q", issueBoardID, project)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update Project Issue Board %q in project %q", issueBoardID, project))
 	updatedIssueBoard, _, err := client.Boards.UpdateIssueBoard(project, issueBoardID, options, gitlab.WithContext(ctx))
 	if err != nil {
 		return diag.FromErr(err)
@@ -139,15 +139,15 @@ func resourceGitlabProjectIssueBoardUpdate(ctx context.Context, d *schema.Resour
 
 	if d.HasChange("lists") {
 		// NOTE: since we do not have a straightforward way to know which lists have been changed, we just re-create all lists
-		log.Printf("[DEBUG] deleting lists for Project Issue Board %q in project %q", updatedIssueBoard.Name, project)
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] deleting lists for Project Issue Board %q in project %q", updatedIssueBoard.Name, project))
 		for _, list := range updatedIssueBoard.Lists {
-			log.Printf("[DEBUG] deleting list %d for Project Issue Board %q in project %q", list.ID, updatedIssueBoard.Name, project)
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] deleting list %d for Project Issue Board %q in project %q", list.ID, updatedIssueBoard.Name, project))
 			_, err := client.Boards.DeleteIssueBoardList(project, issueBoardID, list.ID, gitlab.WithContext(ctx))
 			if err != nil {
 				return diag.Errorf("failed to delete list %q for Project Issue Board %q in project %q: %s", list.ID, updatedIssueBoard.Name, project, err)
 			}
 		}
-		log.Printf("[DEBUG] deleted lists for Project Issue Board %q in project %q", updatedIssueBoard.Name, project)
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] deleted lists for Project Issue Board %q in project %q", updatedIssueBoard.Name, project))
 
 		if err = resourceGitlabProjectIssueBoardCreateLists(ctx, client, project, updatedIssueBoard, d.Get("lists").([]interface{})); err != nil {
 			return diag.FromErr(err)
@@ -164,7 +164,7 @@ func resourceGitlabProjectIssueBoardDelete(ctx context.Context, d *schema.Resour
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] delete Project Issue Board in project %q with id %q", project, issueBoardID)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] delete Project Issue Board in project %q with id %q", project, issueBoardID))
 	if _, err := client.Boards.DeleteIssueBoard(project, issueBoardID, gitlab.WithContext(ctx)); err != nil {
 		return diag.FromErr(err)
 	}
@@ -191,10 +191,10 @@ func resourceGitlabProjectIssueBoardParseID(id string) (string, int, error) {
 }
 
 func resourceGitlabProjectIssueBoardCreateLists(ctx context.Context, client *gitlab.Client, project string, issueBoard *gitlab.IssueBoard, lists []interface{}) error {
-	log.Printf("[DEBUG] creating lists for Project Issue Board %q in project %q", issueBoard.Name, project)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] creating lists for Project Issue Board %q in project %q", issueBoard.Name, project))
 	for i, listData := range lists {
 		position := i + 1
-		log.Printf("[DEBUG] creating list at position %d for Project Issue Board %q in project %q", position, issueBoard.Name, project)
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] creating list at position %d for Project Issue Board %q in project %q", position, issueBoard.Name, project))
 
 		listOptions := gitlab.CreateIssueBoardListOptions{}
 		if listData != nil {
@@ -215,7 +215,7 @@ func resourceGitlabProjectIssueBoardCreateLists(ctx context.Context, client *git
 			return fmt.Errorf("failed to create list at position %d for Project Issue Board %q in project %q: %s", position, issueBoard.Name, project, err)
 		}
 
-		log.Printf("[DEBUG] created list at position %d for Project Issue Board %q in project %q", list.Position, issueBoard.Name, project)
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] created list at position %d for Project Issue Board %q in project %q", list.Position, issueBoard.Name, project))
 	}
 
 	return nil

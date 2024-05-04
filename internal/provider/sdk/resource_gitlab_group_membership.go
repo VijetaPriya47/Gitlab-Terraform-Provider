@@ -3,10 +3,10 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -96,7 +96,7 @@ func resourceGitlabGroupMembershipCreate(ctx context.Context, d *schema.Resource
 		options.MemberRoleID = gitlab.Ptr(v.(int))
 	}
 
-	log.Printf("[DEBUG] create gitlab group groupMember for %d in %s", options.UserID, groupId)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab group groupMember for %d in %s", options.UserID, groupId))
 
 	groupMember, _, err := client.GroupMembers.AddGroupMember(groupId, options, gitlab.WithContext(ctx))
 	if err != nil {
@@ -110,9 +110,9 @@ func resourceGitlabGroupMembershipCreate(ctx context.Context, d *schema.Resource
 func resourceGitlabGroupMembershipRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	id := d.Id()
-	log.Printf("[DEBUG] read gitlab group groupMember %s", id)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab group groupMember %s", id))
 
-	groupId, userId, err := groupIdAndUserIdFromId(id)
+	groupId, userId, err := groupIdAndUserIdFromId(ctx, id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -120,7 +120,7 @@ func resourceGitlabGroupMembershipRead(ctx context.Context, d *schema.ResourceDa
 	groupMember, _, err := client.GroupMembers.GetGroupMember(groupId, userId, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] gitlab group membership for %s not found so removing from state", d.Id())
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab group membership for %s not found so removing from state", d.Id()))
 			d.SetId("")
 			return nil
 		}
@@ -131,14 +131,14 @@ func resourceGitlabGroupMembershipRead(ctx context.Context, d *schema.ResourceDa
 	return nil
 }
 
-func groupIdAndUserIdFromId(id string) (string, int, error) {
+func groupIdAndUserIdFromId(ctx context.Context, id string) (string, int, error) {
 	groupId, userIdString, err := utils.ParseTwoPartID(id)
 	userId, e := strconv.Atoi(userIdString)
 	if err != nil {
 		e = err
 	}
 	if e != nil {
-		log.Printf("[WARN] cannot get group member id from input: %v", id)
+		tflog.Warn(ctx, fmt.Sprintf("[WARN] cannot get group member id from input: %v", id))
 	}
 	return groupId, userId, e
 }
@@ -160,7 +160,7 @@ func resourceGitlabGroupMembershipUpdate(ctx context.Context, d *schema.Resource
 		options.MemberRoleID = gitlab.Ptr(v.(int))
 	}
 
-	log.Printf("[DEBUG] update gitlab group membership %v for %s", userId, groupId)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab group membership %v for %s", userId, groupId))
 
 	_, _, err := client.GroupMembers.EditGroupMember(groupId, userId, &options, gitlab.WithContext(ctx))
 	if err != nil {
@@ -174,7 +174,7 @@ func resourceGitlabGroupMembershipDelete(ctx context.Context, d *schema.Resource
 	client := meta.(*gitlab.Client)
 
 	id := d.Id()
-	groupId, userId, err := groupIdAndUserIdFromId(id)
+	groupId, userId, err := groupIdAndUserIdFromId(ctx, id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -184,7 +184,7 @@ func resourceGitlabGroupMembershipDelete(ctx context.Context, d *schema.Resource
 		UnassignIssuables: gitlab.Ptr(d.Get("unassign_issuables_on_destroy").(bool)),
 	}
 
-	log.Printf("[DEBUG] Delete gitlab group membership %v for %s with options: %+v", userId, groupId, options)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Delete gitlab group membership %v for %s with options: %+v", userId, groupId, options))
 
 	_, err = client.GroupMembers.RemoveGroupMember(groupId, userId, &options, gitlab.WithContext(ctx))
 	if err != nil {

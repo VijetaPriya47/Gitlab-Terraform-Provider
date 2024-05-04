@@ -3,9 +3,9 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/xanzy/go-gitlab"
@@ -71,7 +71,7 @@ func resourceGitlabDeployKeyEnableCreate(ctx context.Context, d *schema.Resource
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] enable gitlab deploy key %s/%d", project, key_id)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] enable gitlab deploy key %s/%d", project, key_id))
 
 	deployKey, _, err := client.DeployKeys.EnableDeployKey(project, key_id, gitlab.WithContext(ctx))
 	if err != nil {
@@ -99,12 +99,12 @@ func resourceGitlabDeployKeyEnableRead(ctx context.Context, d *schema.ResourceDa
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] read gitlab deploy key %s/%d", project, deployKeyID)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab deploy key %s/%d", project, deployKeyID))
 
 	deployKey, _, err := client.DeployKeys.GetDeployKey(project, deployKeyID, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] gitlab deploy key not found %s/%d", project, deployKeyID)
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab deploy key not found %s/%d", project, deployKeyID))
 			d.SetId("")
 			return nil
 		}
@@ -128,7 +128,7 @@ func resourceGitlabDeployKeyEnableDelete(ctx context.Context, d *schema.Resource
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] Delete gitlab deploy key %s/%d", project, deployKeyID)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Delete gitlab deploy key %s/%d", project, deployKeyID))
 
 	response, err := client.DeployKeys.DeleteDeployKey(project, deployKeyID, gitlab.WithContext(ctx))
 

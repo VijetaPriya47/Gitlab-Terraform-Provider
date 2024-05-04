@@ -3,10 +3,10 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/xanzy/go-gitlab"
@@ -72,7 +72,7 @@ func resourceGitlabProjectBadgeCreate(ctx context.Context, d *schema.ResourceDat
 		Name:     gitlab.Ptr(d.Get("name").(string)),
 	}
 
-	log.Printf("[DEBUG] create gitlab project badge %q / %q", *options.LinkURL, *options.ImageURL)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab project badge %q / %q", *options.LinkURL, *options.ImageURL))
 
 	badge, _, err := client.ProjectBadges.AddProjectBadge(projectID, options, gitlab.WithContext(ctx))
 	if err != nil {
@@ -93,12 +93,12 @@ func resourceGitlabProjectBadgeRead(ctx context.Context, d *schema.ResourceData,
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] read gitlab project badge %s/%d", projectID, badgeID)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab project badge %s/%d", projectID, badgeID))
 
 	badge, _, err := client.ProjectBadges.GetProjectBadge(projectID, badgeID, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] project badge %d in project %s doesn't exist anymore, removing from state", badgeID, projectID)
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] project badge %d in project %s doesn't exist anymore, removing from state", badgeID, projectID))
 			d.SetId("")
 			return nil
 		}
@@ -122,7 +122,7 @@ func resourceGitlabProjectBadgeUpdate(ctx context.Context, d *schema.ResourceDat
 		Name:     gitlab.Ptr(d.Get("name").(string)),
 	}
 
-	log.Printf("[DEBUG] update gitlab project badge %s/%d", projectID, badgeID)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab project badge %s/%d", projectID, badgeID))
 
 	_, _, err = client.ProjectBadges.EditProjectBadge(projectID, badgeID, options, gitlab.WithContext(ctx))
 	if err != nil {
@@ -139,7 +139,7 @@ func resourceGitlabProjectBadgeDelete(ctx context.Context, d *schema.ResourceDat
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] Delete gitlab project badge %s/%d", projectID, badgeID)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Delete gitlab project badge %s/%d", projectID, badgeID))
 
 	_, err = client.ProjectBadges.DeleteProjectBadge(projectID, badgeID, gitlab.WithContext(ctx))
 	if err != nil {

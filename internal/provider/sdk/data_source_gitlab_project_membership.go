@@ -3,10 +3,10 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/xanzy/go-gitlab"
@@ -105,7 +105,7 @@ func dataSourceGitlabProjectMembershipRead(ctx context.Context, d *schema.Resour
 	var project *gitlab.Project
 	var err error
 
-	log.Printf("[INFO] Reading Gitlab project")
+	tflog.Info(ctx, "[INFO] Reading Gitlab project")
 
 	var pid interface{}
 	if v, ok := d.GetOk("project_id"); ok {
@@ -128,7 +128,7 @@ func dataSourceGitlabProjectMembershipRead(ctx context.Context, d *schema.Resour
 		query = &s
 	}
 
-	log.Printf("[INFO] Reading Gitlab project memberships")
+	tflog.Info(ctx, "[INFO] Reading Gitlab project memberships")
 
 	// Get project memberships
 	listOptions := &gitlab.ListProjectMembersOptions{
@@ -168,14 +168,14 @@ func dataSourceGitlabProjectMembershipRead(ctx context.Context, d *schema.Resour
 	d.Set("project_id", project.ID)
 	d.Set("full_path", project.PathWithNamespace)
 
-	if err := d.Set("members", flattenGitlabProjectMembers(d, allPMs)); err != nil {
+	if err := d.Set("members", flattenGitlabProjectMembers(allPMs)); err != nil {
 		return diag.FromErr(err)
 	}
 
 	return nil
 }
 
-func flattenGitlabProjectMembers(d *schema.ResourceData, members []*gitlab.ProjectMember) []interface{} {
+func flattenGitlabProjectMembers(members []*gitlab.ProjectMember) []interface{} {
 	membersList := make([]interface{}, 0, len(members))
 	for _, member := range members {
 		values := map[string]interface{}{

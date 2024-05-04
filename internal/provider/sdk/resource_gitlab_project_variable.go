@@ -2,9 +2,10 @@ package sdk
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/xanzy/go-gitlab"
@@ -92,11 +93,11 @@ func resourceGitlabProjectVariableCreate(ctx context.Context, d *schema.Resource
 
 	id := strings.Join([]string{project, key, environmentScope}, ":")
 
-	log.Printf("[DEBUG] create gitlab project variable %q", id)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab project variable %q", id))
 
 	_, _, err := client.ProjectVariables.CreateVariable(project, &options, gitlab.WithContext(ctx))
 	if err != nil {
-		return augmentVariableClientError(d, err)
+		return augmentVariableClientError(ctx, d, err)
 	}
 
 	d.SetId(id)
@@ -118,16 +119,16 @@ func resourceGitlabProjectVariableRead(ctx context.Context, d *schema.ResourceDa
 	key = parts[1]
 	environmentScope = parts[2]
 
-	log.Printf("[DEBUG] read gitlab project variable %q", d.Id())
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab project variable %q", d.Id()))
 
 	variable, _, err := client.ProjectVariables.GetVariable(project, key, nil, gitlab.WithContext(ctx), withEnvironmentScopeFilter(ctx, environmentScope))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] read gitlab project variable %q was not found, removing from state", d.Id())
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab project variable %q was not found, removing from state", d.Id()))
 			d.SetId("")
 			return nil
 		}
-		return augmentVariableClientError(d, err)
+		return augmentVariableClientError(ctx, d, err)
 	}
 
 	stateMap := gitlabProjectVariableToStateMap(project, variable)
@@ -159,11 +160,11 @@ func resourceGitlabProjectVariableUpdate(ctx context.Context, d *schema.Resource
 		Raw:              &raw,
 		Description:      &description,
 	}
-	log.Printf("[DEBUG] update gitlab project variable %q", d.Id())
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab project variable %q", d.Id()))
 
 	_, _, err := client.ProjectVariables.UpdateVariable(project, key, options, withEnvironmentScopeFilter(ctx, environmentScope))
 	if err != nil {
-		return augmentVariableClientError(d, err)
+		return augmentVariableClientError(ctx, d, err)
 	}
 
 	return resourceGitlabProjectVariableRead(ctx, d, meta)
@@ -174,12 +175,12 @@ func resourceGitlabProjectVariableDelete(ctx context.Context, d *schema.Resource
 	project := d.Get("project").(string)
 	key := d.Get("key").(string)
 	environmentScope := d.Get("environment_scope").(string)
-	log.Printf("[DEBUG] Delete gitlab project variable %q", d.Id())
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Delete gitlab project variable %q", d.Id()))
 
 	// Note that the environment_scope filter is added here to support GitLab versions >= 13.4,
 	// but it will be ignored in prior versions, causing nondeterministic destroy behavior when
 	// destroying or updating scoped variables.
 	// ref: https://gitlab.com/gitlab-org/gitlab/-/merge_requests/39209
 	_, err := client.ProjectVariables.RemoveVariable(project, key, nil, withEnvironmentScopeFilter(ctx, environmentScope))
-	return augmentVariableClientError(d, err)
+	return augmentVariableClientError(ctx, d, err)
 }

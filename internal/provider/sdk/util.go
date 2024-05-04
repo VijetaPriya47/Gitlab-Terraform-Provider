@@ -314,14 +314,6 @@ func constructSchema(schemas ...map[string]*schema.Schema) map[string]*schema.Sc
 	return schema
 }
 
-func attributeNamesFromSchema(schema map[string]*schema.Schema) []string {
-	names := make([]string, 0, len(schema))
-	for name := range schema {
-		names = append(names, name)
-	}
-	return names
-}
-
 // datasourceSchemaFromResourceSchema is a recursive func that
 // converts an existing Resource schema to a Datasource schema.
 // All schema elements are copied, but certain attributes are ignored or changed:

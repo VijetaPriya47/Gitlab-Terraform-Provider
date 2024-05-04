@@ -3,10 +3,10 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -169,7 +169,7 @@ func resourceGitlabProjectClusterCreate(ctx context.Context, d *schema.ResourceD
 		options.ManagementProjectID = gitlab.Ptr(v.(string))
 	}
 
-	log.Printf("[DEBUG] create gitlab project cluster %q/%q", project, *options.Name)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab project cluster %q/%q", project, *options.Name))
 
 	cluster, _, err := client.ProjectCluster.AddCluster(project, options, gitlab.WithContext(ctx))
 
@@ -191,12 +191,12 @@ func resourceGitlabProjectClusterRead(ctx context.Context, d *schema.ResourceDat
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] read gitlab project cluster %q/%d", project, clusterId)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab project cluster %q/%d", project, clusterId))
 
 	cluster, _, err := client.ProjectCluster.GetCluster(project, clusterId, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] gitlab project cluster not found %s/%d", project, clusterId)
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab project cluster not found %s/%d", project, clusterId))
 			d.SetId("")
 			return nil
 		}
@@ -275,7 +275,7 @@ func resourceGitlabProjectClusterUpdate(ctx context.Context, d *schema.ResourceD
 	}
 
 	if *options != (gitlab.EditClusterOptions{}) {
-		log.Printf("[DEBUG] update gitlab project cluster %q/%d", project, clusterId)
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab project cluster %q/%d", project, clusterId))
 		_, _, err := client.ProjectCluster.EditCluster(project, clusterId, options, gitlab.WithContext(ctx))
 		if err != nil {
 			return diag.FromErr(err)
@@ -292,7 +292,7 @@ func resourceGitlabProjectClusterDelete(ctx context.Context, d *schema.ResourceD
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] delete gitlab project cluster %q/%d", project, clusterId)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] delete gitlab project cluster %q/%d", project, clusterId))
 
 	_, err = client.ProjectCluster.DeleteCluster(project, clusterId, gitlab.WithContext(ctx))
 	if err != nil {

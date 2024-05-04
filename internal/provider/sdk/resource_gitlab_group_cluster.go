@@ -3,10 +3,10 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -160,7 +160,7 @@ func resourceGitlabGroupClusterCreate(ctx context.Context, d *schema.ResourceDat
 		options.ManagementProjectID = gitlab.Ptr(v.(string))
 	}
 
-	log.Printf("[DEBUG] create gitlab group cluster %q/%q", group, *options.Name)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab group cluster %q/%q", group, *options.Name))
 
 	cluster, _, err := client.GroupCluster.AddCluster(group, options, gitlab.WithContext(ctx))
 
@@ -182,12 +182,12 @@ func resourceGitlabGroupClusterRead(ctx context.Context, d *schema.ResourceData,
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] read gitlab group cluster %q/%d", group, clusterId)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab group cluster %q/%d", group, clusterId))
 
 	cluster, _, err := client.GroupCluster.GetCluster(group, clusterId, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] gitlab group cluster not found %s/%d", group, clusterId)
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab group cluster not found %s/%d", group, clusterId))
 			d.SetId("")
 			return nil
 		}
@@ -261,7 +261,7 @@ func resourceGitlabGroupClusterUpdate(ctx context.Context, d *schema.ResourceDat
 	}
 
 	if *options != (gitlab.EditGroupClusterOptions{}) {
-		log.Printf("[DEBUG] update gitlab group cluster %q/%d", group, clusterId)
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab group cluster %q/%d", group, clusterId))
 		_, _, err := client.GroupCluster.EditCluster(group, clusterId, options, gitlab.WithContext(ctx))
 		if err != nil {
 			return diag.FromErr(err)
@@ -278,7 +278,7 @@ func resourceGitlabGroupClusterDelete(ctx context.Context, d *schema.ResourceDat
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] delete gitlab group cluster %q/%d", group, clusterId)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] delete gitlab group cluster %q/%d", group, clusterId))
 
 	_, err = client.GroupCluster.DeleteCluster(group, clusterId, gitlab.WithContext(ctx))
 	if err != nil {

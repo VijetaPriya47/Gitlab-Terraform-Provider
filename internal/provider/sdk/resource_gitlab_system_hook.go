@@ -3,10 +3,10 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/xanzy/go-gitlab"
@@ -121,7 +121,7 @@ func resourceGitlabSystemHookCreate(ctx context.Context, d *schema.ResourceData,
 		options.EnableSSLVerification = gitlab.Ptr(v.(bool))
 	}
 
-	log.Printf("[DEBUG] create gitlab system hook %q", *options.URL)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab system hook %q", *options.URL))
 
 	hook, _, err := client.SystemHooks.AddHook(options, gitlab.WithContext(ctx))
 	if err != nil {
@@ -139,12 +139,12 @@ func resourceGitlabSystemHookRead(ctx context.Context, d *schema.ResourceData, m
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	log.Printf("[DEBUG] read gitlab system hook %d", hookID)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab system hook %d", hookID))
 
 	hook, _, err := client.SystemHooks.GetHook(hookID, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] gitlab system hook not found %d, removing from state", hookID)
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab system hook not found %d, removing from state", hookID))
 			d.SetId("")
 			return nil
 		}
@@ -167,7 +167,7 @@ func resourceGitlabSystemHookDelete(ctx context.Context, d *schema.ResourceData,
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	log.Printf("[DEBUG] Delete gitlab system hook %s", d.Id())
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Delete gitlab system hook %s", d.Id()))
 
 	_, err = client.SystemHooks.DeleteHook(hookID, gitlab.WithContext(ctx))
 	if err != nil {

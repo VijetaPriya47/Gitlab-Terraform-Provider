@@ -4,6 +4,7 @@
 package sdk
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"testing"
@@ -372,7 +373,7 @@ func testAccCheckGitlabTagProtectionExists(n string, pt *gitlab.ProtectedTag) re
 		if !ok {
 			return fmt.Errorf("Not Found: %s", n)
 		}
-		project, tag, err := projectAndTagFromID(rs.Primary.ID)
+		project, tag, err := projectAndTagFromID(context.Background(), rs.Primary.ID)
 		if err != nil {
 			return fmt.Errorf("Error in Splitting Project and Tag Ids")
 		}

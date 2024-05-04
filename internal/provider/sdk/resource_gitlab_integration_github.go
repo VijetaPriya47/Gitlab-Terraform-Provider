@@ -3,8 +3,8 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/xanzy/go-gitlab"
@@ -109,7 +109,7 @@ func resourceGitlabIntegrationGithubCreate(ctx context.Context, d *schema.Resour
 	client := meta.(*gitlab.Client)
 	project := d.Get("project").(string)
 
-	log.Printf("[DEBUG] create gitlab github service for project %s", project)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab github service for project %s", project))
 
 	opts := &gitlab.SetGithubServiceOptions{
 		Token:         gitlab.Ptr(d.Get("token").(string)),
@@ -129,15 +129,15 @@ func resourceGitlabIntegrationGithubRead(ctx context.Context, d *schema.Resource
 	client := meta.(*gitlab.Client)
 	project := d.Get("project").(string)
 
-	log.Printf("[DEBUG] read gitlab github service for project %s", project)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab github service for project %s", project))
 
 	service, _, err := client.Services.GetGithubService(project, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] gitlab service github not found %s / %s / %s",
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab service github not found %s / %s / %s",
 				project,
 				service.Title,
-				service.Properties.RepositoryURL)
+				service.Properties.RepositoryURL))
 			d.SetId("")
 			return nil
 		}
@@ -157,7 +157,7 @@ func resourceGitlabIntegrationGithubDelete(ctx context.Context, d *schema.Resour
 	client := meta.(*gitlab.Client)
 	project := d.Get("project").(string)
 
-	log.Printf("[DEBUG] delete gitlab github service for project %s", project)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] delete gitlab github service for project %s", project))
 
 	_, err := client.Services.DeleteGithubService(project, gitlab.WithContext(ctx))
 	if err != nil {

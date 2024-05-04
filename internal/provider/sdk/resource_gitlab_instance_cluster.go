@@ -3,10 +3,10 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -157,7 +157,7 @@ func resourceGitlabInstanceClusterCreate(ctx context.Context, d *schema.Resource
 		options.ManagementProjectID = gitlab.Ptr(v.(string))
 	}
 
-	log.Printf("[DEBUG] create gitlab instance cluster %q", *options.Name)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab instance cluster %q", *options.Name))
 
 	cluster, _, err := client.InstanceCluster.AddCluster(options, gitlab.WithContext(ctx))
 
@@ -179,12 +179,12 @@ func resourceGitlabInstanceClusterRead(ctx context.Context, d *schema.ResourceDa
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] read gitlab instance cluster %d", clusterId)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab instance cluster %d", clusterId))
 
 	cluster, _, err := client.InstanceCluster.GetCluster(clusterId, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] gitlab instance cluster not found %d", clusterId)
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab instance cluster not found %d", clusterId))
 			d.SetId("")
 			return nil
 		}
@@ -262,7 +262,7 @@ func resourceGitlabInstanceClusterUpdate(ctx context.Context, d *schema.Resource
 	}
 
 	if *options != (gitlab.EditClusterOptions{}) {
-		log.Printf("[DEBUG] update gitlab instance cluster %d", clusterId)
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab instance cluster %d", clusterId))
 		_, _, err := client.InstanceCluster.EditCluster(clusterId, options, gitlab.WithContext(ctx))
 		if err != nil {
 			return diag.FromErr(err)
@@ -279,7 +279,7 @@ func resourceGitlabInstanceClusterDelete(ctx context.Context, d *schema.Resource
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] delete gitlab instance cluster %d", clusterId)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] delete gitlab instance cluster %d", clusterId))
 
 	_, err = client.InstanceCluster.DeleteCluster(clusterId, gitlab.WithContext(ctx))
 	if err != nil {

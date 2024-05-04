@@ -3,10 +3,10 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -107,7 +107,7 @@ func dataSourceGitlabGroupMembershipRead(ctx context.Context, d *schema.Resource
 	var group *gitlab.Group
 	var err error
 
-	log.Printf("[INFO] Reading Gitlab group")
+	tflog.Info(ctx, "[INFO] Reading Gitlab group")
 
 	groupIDData, groupIDOk := d.GetOk("group_id")
 	fullPathData, fullPathOk := d.GetOk("full_path")
@@ -128,7 +128,7 @@ func dataSourceGitlabGroupMembershipRead(ctx context.Context, d *schema.Resource
 		return diag.Errorf("one and only one of group_id or full_path must be set")
 	}
 
-	log.Printf("[INFO] Reading Gitlab group memberships")
+	tflog.Info(ctx, "[INFO] Reading Gitlab group memberships")
 
 	// Get group memberships
 	listOptions := &gitlab.ListGroupMembersOptions{

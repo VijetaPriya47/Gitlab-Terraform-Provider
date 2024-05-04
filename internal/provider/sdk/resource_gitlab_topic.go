@@ -3,9 +3,9 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/xanzy/go-gitlab"
@@ -88,7 +88,7 @@ func resourceGitlabTopicCreate(ctx context.Context, d *schema.ResourceData, meta
 		}
 	}
 
-	log.Printf("[DEBUG] create gitlab topic %s", *options.Name)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab topic %s", *options.Name))
 
 	topic, _, err := client.Topics.CreateTopic(options, gitlab.WithContext(ctx))
 	if err != nil {
@@ -106,12 +106,12 @@ func resourceGitlabTopicRead(ctx context.Context, d *schema.ResourceData, meta i
 	if err != nil {
 		return diag.Errorf("Failed to convert topic id %s to int: %s", d.Id(), err)
 	}
-	log.Printf("[DEBUG] read gitlab topic %d", topicID)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab topic %d", topicID))
 
 	topic, _, err := client.Topics.GetTopic(topicID, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] gitlab group %s not found so removing from state", d.Id())
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab group %s not found so removing from state", d.Id()))
 			d.SetId("")
 			return nil
 		}
@@ -156,7 +156,7 @@ func resourceGitlabTopicUpdate(ctx context.Context, d *schema.ResourceData, meta
 		}
 	}
 
-	log.Printf("[DEBUG] update gitlab topic %s", d.Id())
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab topic %s", d.Id()))
 
 	topicID, err := strconv.Atoi(d.Id())
 	if err != nil {
@@ -188,7 +188,7 @@ func resourceGitlabTopicDelete(ctx context.Context, d *schema.ResourceData, meta
 	// NOTE: the `soft_destroy` field is deprecated and will be removed in a future version.
 	//       It was only introduced because GitLab prior to 14.9 didn't support topic deletion.
 	if softDestroy {
-		log.Printf("[WARN] Not deleting gitlab topic %s. Instead emptying its description", d.Id())
+		tflog.Warn(ctx, fmt.Sprintf("[WARN] Not deleting gitlab topic %s. Instead emptying its description", d.Id()))
 
 		options := &gitlab.UpdateTopicOptions{
 			Description: gitlab.Ptr(""),
@@ -202,7 +202,7 @@ func resourceGitlabTopicDelete(ctx context.Context, d *schema.ResourceData, meta
 		return nil
 	}
 
-	log.Printf("[DEBUG] delete gitlab topic %s", d.Id())
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] delete gitlab topic %s", d.Id()))
 
 	if _, err = client.Topics.DeleteTopic(topicID, gitlab.WithContext(ctx)); err != nil {
 		return diag.Errorf("Failed to delete topic %d: %s", topicID, err)
@@ -218,7 +218,7 @@ func resourceGitlabTopicEnsureTitleSupport(ctx context.Context, client *gitlab.C
 	}
 
 	if _, ok := d.GetOk("title"); isTitleSupported && !ok {
-		return fmt.Errorf("title is a required attribute for GitLab 15.0 and newer. Please specify it in the configuration.")
+		return fmt.Errorf("title is a required attribute for GitLab 15.0 and newer. Please specify it in the configuration")
 	} else if !isTitleSupported && ok {
 		return fmt.Errorf("title is not supported by your version of GitLab. At least GitLab 15.0 is required")
 	}

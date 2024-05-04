@@ -3,8 +3,8 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -70,7 +70,7 @@ func resourceGitlabGroupSamlLinkCreate(ctx context.Context, d *schema.ResourceDa
 		AccessLevel:   gitlab.Ptr(accessLevel),
 	}
 
-	log.Printf("[DEBUG] Create GitLab Group SAML Link for group %q with name %q", group, samlGroupName)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Create GitLab Group SAML Link for group %q with name %q", group, samlGroupName))
 	SamlLink, _, err := client.Groups.AddGroupSAMLLink(group, options, gitlab.WithContext(ctx))
 	if err != nil {
 		return diag.FromErr(err)
@@ -88,11 +88,11 @@ func resourceGitlabGroupSamlLinkRead(ctx context.Context, d *schema.ResourceData
 	}
 
 	// Try to fetch all group links from GitLab
-	log.Printf("[DEBUG] Read GitLab Group SAML Link for group %q", group)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Read GitLab Group SAML Link for group %q", group))
 	samlLink, _, err := client.Groups.GetGroupSAMLLink(group, samlGroupName, nil, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] GitLab SAML Group Link %s for group ID %s not found, removing from state", samlGroupName, group)
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] GitLab SAML Group Link %s for group ID %s not found, removing from state", samlGroupName, group))
 			d.SetId("")
 			return nil
 		}
@@ -113,11 +113,11 @@ func resourceGitlabGroupSamlLinkDelete(ctx context.Context, d *schema.ResourceDa
 		return diag.FromErr(parse_err)
 	}
 
-	log.Printf("[DEBUG] Delete GitLab Group SAML Link for group %q with name %q", group, samlGroupName)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Delete GitLab Group SAML Link for group %q with name %q", group, samlGroupName))
 	_, err := client.Groups.DeleteGroupSAMLLink(group, samlGroupName, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[WARNING] %s", err)
+			tflog.Warn(ctx, fmt.Sprintf("[WARN] %s", err))
 		} else {
 			return diag.FromErr(err)
 		}

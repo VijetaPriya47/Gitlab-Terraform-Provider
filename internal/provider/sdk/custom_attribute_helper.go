@@ -3,10 +3,10 @@ package sdk
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/xanzy/go-gitlab"
@@ -31,7 +31,7 @@ func CreateCustomAttributeResource(idName string, createGetter CreateGetter, cre
 	readFunc := func(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 		client := meta.(*gitlab.Client)
 		getter := createGetter(client)
-		log.Printf("[DEBUG] read Custom Attribute %s", d.Id())
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read Custom Attribute %s", d.Id()))
 
 		id, key, err := parseId(d.Id())
 		if err != nil {
@@ -57,7 +57,7 @@ func CreateCustomAttributeResource(idName string, createGetter CreateGetter, cre
 			Value: d.Get("value").(string),
 		}
 
-		log.Printf("[DEBUG] set (create or update) Custom Attribute %s with value %s for %s %d", options.Key, options.Value, idName, id)
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] set (create or update) Custom Attribute %s with value %s for %s %d", options.Key, options.Value, idName, id))
 
 		customAttribute, _, err := setter(id, *options, gitlab.WithContext(ctx))
 		if err != nil {
@@ -71,7 +71,7 @@ func CreateCustomAttributeResource(idName string, createGetter CreateGetter, cre
 	deleteFunc := func(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 		client := meta.(*gitlab.Client)
 		deleter := createDeleter(client)
-		log.Printf("[DEBUG] delete Custom Attribute %s", d.Id())
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] delete Custom Attribute %s", d.Id()))
 
 		id, key, err := parseId(d.Id())
 		if err != nil {

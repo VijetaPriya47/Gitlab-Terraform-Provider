@@ -2,8 +2,9 @@ package sdk
 
 import (
 	"context"
-	"log"
+	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/xanzy/go-gitlab"
@@ -214,7 +215,7 @@ func resourceGitlabIntegrationSlackCreate(ctx context.Context, d *schema.Resourc
 	project := d.Get("project").(string)
 	d.SetId(project)
 
-	log.Printf("[DEBUG] create gitlab slack integration for project %s", project)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab slack integration for project %s", project))
 
 	opts := &gitlab.SetSlackServiceOptions{
 		WebHook: gitlab.Ptr(d.Get("webhook").(string)),
@@ -269,12 +270,12 @@ func resourceGitlabIntegrationSlackRead(ctx context.Context, d *schema.ResourceD
 	client := meta.(*gitlab.Client)
 	project := d.Id()
 
-	log.Printf("[DEBUG] read gitlab slack integration for project %s", project)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab slack integration for project %s", project))
 
 	service, _, err := client.Services.GetSlackService(project, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			log.Printf("[DEBUG] gitlab slack integration not found %s", project)
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab slack integration not found %s", project))
 			d.SetId("")
 			return nil
 		}
@@ -332,7 +333,7 @@ func resourceGitlabIntegrationSlackDelete(ctx context.Context, d *schema.Resourc
 	client := meta.(*gitlab.Client)
 	project := d.Id()
 
-	log.Printf("[DEBUG] delete gitlab slack service for project %s", project)
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] delete gitlab slack service for project %s", project))
 
 	_, err := client.Services.DeleteSlackService(project, gitlab.WithContext(ctx))
 	if err != nil {
