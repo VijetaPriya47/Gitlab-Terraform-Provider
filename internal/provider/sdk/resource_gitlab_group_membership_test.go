@@ -100,6 +100,10 @@ func TestAccGitlabGroupMembership_useCustomRole(t *testing.T) {
 	// custom roles only available to EE ultimate
 	testutil.SkipIfCE(t)
 
+	// Group level custom roles don't work on self managed, so we can't test them without a SaaS project.
+	// See https://gitlab.com/gitlab-org/gitlab/-/issues/439284 for more details
+	t.Skip()
+
 	// create a user
 	user := testutil.CreateUsers(t, 1)[0]
 	// create a group to give them a membership to
