@@ -252,6 +252,12 @@ var _ = registerResource("gitlab_group", func() *schema.Resource {
 							Optional:    true,
 							Computed:    true,
 						},
+						"commit_committer_name_check": {
+							Description: "Users can only push commits to this repository if the commit author name is consistent with their GitLab account name.",
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Computed:    true,
+						},
 						"deny_delete_tag": {
 							Description: "Deny deleting a tag.",
 							Type:        schema.TypeBool,
@@ -858,18 +864,11 @@ func editOrAddGroupPushRules(ctx context.Context, client *gitlab.Client, groupID
 func expandEditGroupPushRuleOptions(ctx context.Context, client *gitlab.Client, d *schema.ResourceData) (gitlab.EditGroupPushRuleOptions, error) {
 	options := gitlab.EditGroupPushRuleOptions{}
 
-	// The API does not return 'commit_committer_check' or 'reject_unsigned_commits' if the GitLab version is < 16.4
-	// so do not allow those attributes to be set, otherwise it will result in a perpetual plan
-	// https://gitlab.com/gitlab-org/gitlab/-/issues/422905
-	if apiReturnsCommitterCheck, err := api.IsGitLabVersionAtLeast(ctx, client, "16.4")(); err != nil {
-		return options, err
-	} else if apiReturnsCommitterCheck {
-		if d.HasChange("push_rules.0.commit_committer_check") {
-			options.CommitCommitterCheck = gitlab.Ptr(d.Get("push_rules.0.commit_committer_check").(bool))
-		}
-		if d.HasChange("push_rules.0.reject_unsigned_commits") {
-			options.RejectUnsignedCommits = gitlab.Ptr(d.Get("push_rules.0.reject_unsigned_commits").(bool))
-		}
+	if d.HasChange("push_rules.0.commit_committer_check") {
+		options.CommitCommitterCheck = gitlab.Ptr(d.Get("push_rules.0.commit_committer_check").(bool))
+	}
+	if d.HasChange("push_rules.0.reject_unsigned_commits") {
+		options.RejectUnsignedCommits = gitlab.Ptr(d.Get("push_rules.0.reject_unsigned_commits").(bool))
 	}
 
 	if d.HasChange("push_rules.0.author_email_regex") {
@@ -890,6 +889,10 @@ func expandEditGroupPushRuleOptions(ctx context.Context, client *gitlab.Client, 
 
 	if d.HasChange("push_rules.0.file_name_regex") {
 		options.FileNameRegex = gitlab.Ptr(d.Get("push_rules.0.file_name_regex").(string))
+	}
+
+	if d.HasChange("push_rules.0.commit_committer_name_check") {
+		options.CommitCommitterNameCheck = gitlab.Ptr(d.Get("push_rules.0.commit_committer_name_check").(bool))
 	}
 
 	if d.HasChange("push_rules.0.deny_delete_tag") {
@@ -914,18 +917,11 @@ func expandEditGroupPushRuleOptions(ctx context.Context, client *gitlab.Client, 
 func expandAddGroupPushRuleOptions(ctx context.Context, client *gitlab.Client, d *schema.ResourceData) (gitlab.AddGroupPushRuleOptions, error) {
 	options := gitlab.AddGroupPushRuleOptions{}
 
-	// The API does not return 'commit_committer_check' or 'reject_unsigned_commits' if the GitLab version is < 16.4
-	// so do not allow those attributes to be set, otherwise it will result in a perpetual plan
-	// https://gitlab.com/gitlab-org/gitlab/-/issues/422905
-	if apiReturnsCommitterCheck, err := api.IsGitLabVersionAtLeast(ctx, client, "16.4")(); err != nil {
-		return options, err
-	} else if apiReturnsCommitterCheck {
-		if v, ok := d.GetOk("push_rules.0.commit_committer_check"); ok {
-			options.CommitCommitterCheck = gitlab.Ptr(v.(bool))
-		}
-		if v, ok := d.GetOk("push_rules.0.reject_unsigned_commits"); ok {
-			options.RejectUnsignedCommits = gitlab.Ptr(v.(bool))
-		}
+	if v, ok := d.GetOk("push_rules.0.commit_committer_check"); ok {
+		options.CommitCommitterCheck = gitlab.Ptr(v.(bool))
+	}
+	if v, ok := d.GetOk("push_rules.0.reject_unsigned_commits"); ok {
+		options.RejectUnsignedCommits = gitlab.Ptr(v.(bool))
 	}
 
 	if v, ok := d.GetOk("push_rules.0.author_email_regex"); ok {
@@ -946,6 +942,10 @@ func expandAddGroupPushRuleOptions(ctx context.Context, client *gitlab.Client, d
 
 	if v, ok := d.GetOk("push_rules.0.file_name_regex"); ok {
 		options.FileNameRegex = gitlab.Ptr(v.(string))
+	}
+
+	if v, ok := d.GetOk("push_rules.0.commit_committer_name_check"); ok {
+		options.CommitCommitterNameCheck = gitlab.Ptr(v.(bool))
 	}
 
 	if v, ok := d.GetOk("push_rules.0.deny_delete_tag"); ok {
@@ -972,41 +972,21 @@ func flattenGroupPushRules(ctx context.Context, client *gitlab.Client, pushRules
 		return []map[string]interface{}{}, nil
 	}
 
-	// The API does not return 'commit_committer_check' or 'reject_unsigned_commits' if the GitLab version is < 16.4
-	// so do not allow those attributes to be set, otherwise it will result in a perpetual plan
-	// https://gitlab.com/gitlab-org/gitlab/-/issues/422905
-	if apiReturnsCommitterCheck, err := api.IsGitLabVersionAtLeast(ctx, client, "16.4")(); err != nil {
-		return nil, err
-	} else if apiReturnsCommitterCheck {
-		values = []map[string]interface{}{
-			{
-				"author_email_regex":            pushRules.AuthorEmailRegex,
-				"branch_name_regex":             pushRules.BranchNameRegex,
-				"commit_message_regex":          pushRules.CommitMessageRegex,
-				"commit_message_negative_regex": pushRules.CommitMessageNegativeRegex,
-				"file_name_regex":               pushRules.FileNameRegex,
-				"commit_committer_check":        pushRules.CommitCommitterCheck,
-				"deny_delete_tag":               pushRules.DenyDeleteTag,
-				"member_check":                  pushRules.MemberCheck,
-				"prevent_secrets":               pushRules.PreventSecrets,
-				"reject_unsigned_commits":       pushRules.RejectUnsignedCommits,
-				"max_file_size":                 pushRules.MaxFileSize,
-			},
-		}
-	} else {
-		values = []map[string]interface{}{
-			{
-				"author_email_regex":            pushRules.AuthorEmailRegex,
-				"branch_name_regex":             pushRules.BranchNameRegex,
-				"commit_message_regex":          pushRules.CommitMessageRegex,
-				"commit_message_negative_regex": pushRules.CommitMessageNegativeRegex,
-				"file_name_regex":               pushRules.FileNameRegex,
-				"deny_delete_tag":               pushRules.DenyDeleteTag,
-				"member_check":                  pushRules.MemberCheck,
-				"prevent_secrets":               pushRules.PreventSecrets,
-				"max_file_size":                 pushRules.MaxFileSize,
-			},
-		}
+	values = []map[string]interface{}{
+		{
+			"author_email_regex":            pushRules.AuthorEmailRegex,
+			"branch_name_regex":             pushRules.BranchNameRegex,
+			"commit_message_regex":          pushRules.CommitMessageRegex,
+			"commit_message_negative_regex": pushRules.CommitMessageNegativeRegex,
+			"file_name_regex":               pushRules.FileNameRegex,
+			"commit_committer_check":        pushRules.CommitCommitterCheck,
+			"commit_committer_name_check":   pushRules.CommitCommitterNameCheck,
+			"deny_delete_tag":               pushRules.DenyDeleteTag,
+			"member_check":                  pushRules.MemberCheck,
+			"prevent_secrets":               pushRules.PreventSecrets,
+			"reject_unsigned_commits":       pushRules.RejectUnsignedCommits,
+			"max_file_size":                 pushRules.MaxFileSize,
+		},
 	}
 
 	return values, nil
