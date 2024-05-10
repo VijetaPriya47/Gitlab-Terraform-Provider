@@ -110,7 +110,6 @@ func flattenProjects(projects []*gitlab.Project) (values []map[string]interface{
 			"id":                                project.ID,
 			"description":                       project.Description,
 			"default_branch":                    project.DefaultBranch,
-			"public":                            project.Public,
 			"visibility":                        string(project.Visibility),
 			"ssh_url_to_repo":                   project.SSHURLToRepo,
 			"http_url_to_repo":                  project.HTTPURLToRepo,
@@ -312,7 +311,8 @@ var _ = registerDataSource("gitlab_projects", func() *schema.Resource {
 				ValidateFunc: validation.StringInSlice([]string{
 					"public",
 					"private",
-					"internal"}, true),
+					"internal",
+				}, true),
 			},
 			"with_issues_enabled": {
 				Description: "Limit by projects with issues feature enabled. Default is `false`.",
@@ -403,11 +403,6 @@ var _ = registerDataSource("gitlab_projects", func() *schema.Resource {
 						"default_branch": {
 							Description: "The default branch name of the project.",
 							Type:        schema.TypeString,
-							Computed:    true,
-						},
-						"public": {
-							Description: "Whether the project is public.",
-							Type:        schema.TypeBool,
 							Computed:    true,
 						},
 						"visibility": {

@@ -149,7 +149,6 @@ Read-Only:
 - `path` (String)
 - `path_with_namespace` (String)
 - `permissions` (List of Object) (see [below for nested schema](#nestedobjatt--projects--permissions))
-- `public` (Boolean)
 - `public_builds` (Boolean)
 - `readme_url` (String)
 - `releases_access_level` (String)
