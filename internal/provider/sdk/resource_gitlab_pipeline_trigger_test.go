@@ -9,7 +9,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/xanzy/go-gitlab"
@@ -98,7 +97,8 @@ func TestAccGitlabPipelineTrigger_SchemaMigration0_1(t *testing.T) {
 
 func TestAccGitlabPipelineTrigger_basic(t *testing.T) {
 	var trigger gitlab.PipelineTrigger
-	rInt := acctest.RandInt()
+
+	project := testutil.CreateProject(t)
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
@@ -106,7 +106,12 @@ func TestAccGitlabPipelineTrigger_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create a project and pipeline trigger with default options
 			{
-				Config: testAccGitlabPipelineTriggerConfig(rInt),
+				Config: fmt.Sprintf(`				
+				resource "gitlab_pipeline_trigger" "trigger" {
+					project = "%d"
+					description = "External Pipeline Trigger"
+				}
+					`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabPipelineTriggerExists("gitlab_pipeline_trigger.trigger", &trigger),
 					testAccCheckGitlabPipelineTriggerAttributes(&trigger, &testAccGitlabPipelineTriggerExpectedAttributes{
@@ -125,7 +130,12 @@ func TestAccGitlabPipelineTrigger_basic(t *testing.T) {
 			},
 			// Update the pipeline trigger to change the parameters
 			{
-				Config: testAccGitlabPipelineTriggerUpdateConfig(rInt),
+				Config: fmt.Sprintf(`				
+				resource "gitlab_pipeline_trigger" "trigger" {
+				  project = "%d"
+				  description = "Trigger"
+				}
+					`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabPipelineTriggerExists("gitlab_pipeline_trigger.trigger", &trigger),
 					testAccCheckGitlabPipelineTriggerAttributes(&trigger, &testAccGitlabPipelineTriggerExpectedAttributes{
@@ -144,7 +154,12 @@ func TestAccGitlabPipelineTrigger_basic(t *testing.T) {
 			},
 			// Update the pipeline trigger to get back to initial settings
 			{
-				Config: testAccGitlabPipelineTriggerConfig(rInt),
+				Config: fmt.Sprintf(`				
+				resource "gitlab_pipeline_trigger" "trigger" {
+					project = "%d"
+					description = "External Pipeline Trigger"
+				}
+					`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabPipelineTriggerExists("gitlab_pipeline_trigger.trigger", &trigger),
 					testAccCheckGitlabPipelineTriggerAttributes(&trigger, &testAccGitlabPipelineTriggerExpectedAttributes{
@@ -280,40 +295,4 @@ func testAccCheckGitlabPipelineTriggerDestroy(s *terraform.State) error {
 		return nil
 	}
 	return nil
-}
-
-func testAccGitlabPipelineTriggerConfig(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "foo" {
-  name = "foo-%d"
-  description = "Terraform acceptance tests"
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-
-resource "gitlab_pipeline_trigger" "trigger" {
-	project = "${gitlab_project.foo.id}"
-	description = "External Pipeline Trigger"
-}
-	`, rInt)
-}
-
-func testAccGitlabPipelineTriggerUpdateConfig(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "foo" {
-  name = "foo-%d"
-  description = "Terraform acceptance tests"
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-
-resource "gitlab_pipeline_trigger" "trigger" {
-  project = "${gitlab_project.foo.id}"
-  description = "Trigger"
-}
-	`, rInt)
 }

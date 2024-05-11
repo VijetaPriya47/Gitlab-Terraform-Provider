@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/xanzy/go-gitlab"
@@ -18,7 +17,7 @@ import (
 
 func TestAccGitlabIntegrationSlack_basic(t *testing.T) {
 	var slackService gitlab.SlackService
-	rInt := acctest.RandInt()
+	project := testutil.CreateProject(t)
 	slackResourceName := "gitlab_integration_slack.slack"
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -27,7 +26,12 @@ func TestAccGitlabIntegrationSlack_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create a project and a slack integration with minimal settings
 			{
-				Config: testAccGitlabIntegrationSlackMinimalConfig(rInt),
+				Config: fmt.Sprintf(`				
+				resource "gitlab_integration_slack" "slack" {
+				  project                      = "%d"
+				  webhook                      = "https://test.com"
+				}
+				`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabSlackIntegrationExists(slackResourceName, &slackService),
 					resource.TestCheckResourceAttr(slackResourceName, "webhook", "https://test.com"),
@@ -46,7 +50,32 @@ func TestAccGitlabIntegrationSlack_basic(t *testing.T) {
 			},
 			// Update slack integration with more settings
 			{
-				Config: testAccGitlabIntegrationSlackConfig(rInt),
+				Config: fmt.Sprintf(`			
+				resource "gitlab_integration_slack" "slack" {
+				  project                      = "%d"
+				  webhook                      = "https://test.com"
+				  username                     = "test"
+				  push_events                  = true
+				  push_channel                 = "test"
+				  issues_events                = true
+				  issue_channel                = "test"
+				  confidential_issues_events   = true
+				  confidential_issue_channel   = "test"
+				  confidential_note_events     = true
+				  merge_requests_events        = true
+				  merge_request_channel        = "test"
+				  tag_push_events              = true
+				  tag_push_channel             = "test"
+				  note_events                  = true
+				  note_channel                 = "test"
+				  pipeline_events              = true
+				  pipeline_channel             = "test"
+				  wiki_page_events             = true
+				  wiki_page_channel            = "test"
+				  notify_only_broken_pipelines = true
+				  branches_to_be_notified      = "all"
+				}
+				`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabSlackIntegrationExists(slackResourceName, &slackService),
 					resource.TestCheckResourceAttr(slackResourceName, "webhook", "https://test.com"),
@@ -73,7 +102,32 @@ func TestAccGitlabIntegrationSlack_basic(t *testing.T) {
 			},
 			// Update the slack integration
 			{
-				Config: testAccGitlabIntegrationSlackUpdateConfig(rInt),
+				Config: fmt.Sprintf(`				
+				resource "gitlab_integration_slack" "slack" {
+				  project                      = "%d"
+				  webhook                      = "https://testwebhook.com"
+				  username                     = "test username"
+				  push_events                  = false
+				  push_channel                 = "test push_channel"
+				  issues_events                = false
+				  issue_channel                = "test issue_channel"
+				  confidential_issues_events   = false
+				  confidential_issue_channel   = "test confidential_issue_channel"
+				  confidential_note_events     = false
+				  merge_requests_events        = false
+				  merge_request_channel        = "test merge_request_channel"
+				  tag_push_events              = false
+				  tag_push_channel             = "test tag_push_channel"
+				  note_events                  = false
+				  note_channel                 = "test note_channel"
+				  pipeline_events              = false
+				  pipeline_channel             = "test pipeline_channel"
+				  wiki_page_events             = false
+				  wiki_page_channel            = "test wiki_page_channel"
+				  notify_only_broken_pipelines = false
+				  branches_to_be_notified      = "all"
+				}
+				`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabSlackIntegrationExists(slackResourceName, &slackService),
 					resource.TestCheckResourceAttr(slackResourceName, "webhook", "https://testwebhook.com"),
@@ -95,7 +149,32 @@ func TestAccGitlabIntegrationSlack_basic(t *testing.T) {
 			},
 			// Update the slack integration to get back to previous settings
 			{
-				Config: testAccGitlabIntegrationSlackConfig(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_integration_slack" "slack" {
+				  project                      = "%d"
+				  webhook                      = "https://test.com"
+				  username                     = "test"
+				  push_events                  = true
+				  push_channel                 = "test"
+				  issues_events                = true
+				  issue_channel                = "test"
+				  confidential_issues_events   = true
+				  confidential_issue_channel   = "test"
+				  confidential_note_events     = true
+				  merge_requests_events        = true
+				  merge_request_channel        = "test"
+				  tag_push_events              = true
+				  tag_push_channel             = "test"
+				  note_events                  = true
+				  note_channel                 = "test"
+				  pipeline_events              = true
+				  pipeline_channel             = "test"
+				  wiki_page_events             = true
+				  wiki_page_channel            = "test"
+				  notify_only_broken_pipelines = true
+				  branches_to_be_notified      = "all"
+				}
+				`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabSlackIntegrationExists(slackResourceName, &slackService),
 					resource.TestCheckResourceAttr(slackResourceName, "webhook", "https://test.com"),
@@ -117,7 +196,12 @@ func TestAccGitlabIntegrationSlack_basic(t *testing.T) {
 			},
 			// Update the slack integration to get back to minimal settings
 			{
-				Config: testAccGitlabIntegrationSlackMinimalConfig(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_integration_slack" "slack" {
+				  project                      = "%d"
+				  webhook                      = "https://test.com"
+				}
+				`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabSlackIntegrationExists(slackResourceName, &slackService),
 					resource.TestCheckResourceAttr(slackResourceName, "webhook", "https://test.com"),
@@ -142,7 +226,8 @@ func TestAccGitlabIntegrationSlack_basic(t *testing.T) {
 
 func TestAccGitlabIntegrationSlack_backwardsCompatibility(t *testing.T) {
 	var slackService gitlab.SlackService
-	rInt := acctest.RandInt()
+
+	project := testutil.CreateProject(t)
 	slackResourceName := "gitlab_service_slack.slack"
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -151,18 +236,12 @@ func TestAccGitlabIntegrationSlack_backwardsCompatibility(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create a project and a slack integration with minimal settings
 			{
-				Config: fmt.Sprintf(`
-				resource "gitlab_project" "foo" {
-				  name        = "foo-%d"
-				  description = "Terraform acceptance tests"
-				  visibility_level = "public"
-				}
-				
+				Config: fmt.Sprintf(`			
 				resource "gitlab_service_slack" "slack" {
-				  project                      = "${gitlab_project.foo.id}"
+				  project                      = "%d"
 				  webhook                      = "https://test.com"
 				}
-				`, rInt),
+				`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabSlackIntegrationExists(slackResourceName, &slackService),
 					resource.TestCheckResourceAttr(slackResourceName, "webhook", "https://test.com"),
@@ -212,8 +291,9 @@ func testAccCheckGitlabServiceSlackDestroy(s *terraform.State) error {
 
 		project := rs.Primary.ID
 
-		_, _, err := testutil.TestGitlabClient.Services.GetSlackService(project)
-		if err == nil {
+		service, _, err := testutil.TestGitlabClient.Services.GetSlackService(project)
+		// If we don't get and the service is still active, then this should return an error
+		if err == nil && service.Active {
 			return fmt.Errorf("Slack Integration in project %s still exists", project)
 		}
 		if !api.Is404(err) {
@@ -238,99 +318,4 @@ func getSlackProjectID(n string) resource.ImportStateIdFunc {
 
 		return project, nil
 	}
-}
-
-func testAccGitlabIntegrationSlackMinimalConfig(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "foo" {
-  name        = "foo-%d"
-  description = "Terraform acceptance tests"
-  visibility_level = "public"
-}
-
-resource "gitlab_integration_slack" "slack" {
-  project                      = "${gitlab_project.foo.id}"
-  webhook                      = "https://test.com"
-}
-`, rInt)
-}
-
-func testAccGitlabIntegrationSlackConfig(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "foo" {
-  name        = "foo-%d"
-  description = "Terraform acceptance tests"
-  visibility_level = "public"
-}
-
-resource "gitlab_integration_slack" "slack" {
-  project                      = "${gitlab_project.foo.id}"
-  webhook                      = "https://test.com"
-  username                     = "test"
-  push_events                  = true
-  push_channel                 = "test"
-  issues_events                = true
-  issue_channel                = "test"
-  confidential_issues_events   = true
-  confidential_issue_channel   = "test"
-  confidential_note_events     = true
-// TODO: Currently, GitLab doesn't correctly implement the API, so this is
-//       impossible to implement here at the moment.
-//       see https://gitlab.com/gitlab-org/gitlab/-/issues/28903
-//   deployment_channel           = "test"
-//   deployment_events            = true
-  merge_requests_events        = true
-  merge_request_channel        = "test"
-  tag_push_events              = true
-  tag_push_channel             = "test"
-  note_events                  = true
-  note_channel                 = "test"
-  pipeline_events              = true
-  pipeline_channel             = "test"
-  wiki_page_events             = true
-  wiki_page_channel            = "test"
-  notify_only_broken_pipelines = true
-  branches_to_be_notified      = "all"
-}
-`, rInt)
-}
-
-func testAccGitlabIntegrationSlackUpdateConfig(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "foo" {
-  name        = "foo-%d"
-  description = "Terraform acceptance tests"
-  visibility_level = "public"
-}
-
-resource "gitlab_integration_slack" "slack" {
-  project                      = "${gitlab_project.foo.id}"
-  webhook                      = "https://testwebhook.com"
-  username                     = "test username"
-  push_events                  = false
-  push_channel                 = "test push_channel"
-  issues_events                = false
-  issue_channel                = "test issue_channel"
-  confidential_issues_events   = false
-  confidential_issue_channel   = "test confidential_issue_channel"
-  confidential_note_events     = false
-// TODO: Currently, GitLab doesn't correctly implement the API, so this is
-//       impossible to implement here at the moment.
-//       see https://gitlab.com/gitlab-org/gitlab/-/issues/28903
-//   deployment_channel           = "test deployment_channel"
-//   deployment_events            = false
-  merge_requests_events        = false
-  merge_request_channel        = "test merge_request_channel"
-  tag_push_events              = false
-  tag_push_channel             = "test tag_push_channel"
-  note_events                  = false
-  note_channel                 = "test note_channel"
-  pipeline_events              = false
-  pipeline_channel             = "test pipeline_channel"
-  wiki_page_events             = false
-  wiki_page_channel            = "test wiki_page_channel"
-  notify_only_broken_pipelines = false
-  branches_to_be_notified      = "all"
-}
-`, rInt)
 }

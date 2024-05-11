@@ -77,7 +77,7 @@ func TestAccGitlabPipelineSchedule_SchemaMigration0_1(t *testing.T) {
 	resource "gitlab_pipeline_schedule" "schedule" {
 		project = "%d"
 		description = "Pipeline Schedule"
-		ref = "%s"
+		ref = "refs/heads/%s"
 		cron = "0 1 * * *"
 	}
 		`, testProject.ID, testProject.DefaultBranch)
@@ -127,7 +127,7 @@ func TestAccGitlabPipelineSchedule_takeOwnershipWithChanges(t *testing.T) {
 				resource "gitlab_pipeline_schedule" "schedule" {
 					project = "%d"
 					description = "Schedule"
-					ref = "%s"
+					ref = "refs/heads/%s"
 					cron = "0 4 * * *"
 					active = false
 				}
@@ -143,7 +143,7 @@ func TestAccGitlabPipelineSchedule_takeOwnershipWithChanges(t *testing.T) {
 				resource "gitlab_pipeline_schedule" "schedule" {
 					project = "%d"
 					description = "Schedule Updated"
-					ref = "%s"
+					ref = "refs/heads/%s"
 					cron = "0 4 * * *"
 					active = false
 					take_ownership = true
@@ -195,7 +195,7 @@ func TestAccGitlabPipelineSchedule_takeOwnershipWithoutChanges(t *testing.T) {
 				resource "gitlab_pipeline_schedule" "schedule" {
 					project = "%d"
 					description = "Schedule"
-					ref = "%s"
+					ref = "refs/heads/%s"
 					cron = "0 4 * * *"
 					active = false
 					take_ownership = true
@@ -212,7 +212,7 @@ func TestAccGitlabPipelineSchedule_takeOwnershipWithoutChanges(t *testing.T) {
 				resource "gitlab_pipeline_schedule" "schedule" {
 					project = "%d"
 					description = "Schedule"
-					ref = "%s"
+					ref = "refs/heads/%s"
 					cron = "0 4 * * *"
 					active = false
 					take_ownership = true
@@ -247,7 +247,7 @@ func TestAccGitlabPipelineSchedule_migrateFromSDKToFramework(t *testing.T) {
 		resource "gitlab_pipeline_schedule" "schedule" {
 			project = "%d"
 			description = "Schedule"
-			ref = "%s"
+			ref = "refs/heads/%s"
 			cron = "0 4 * * *"
 			active = false
 		}
@@ -301,14 +301,14 @@ func TestAccGitlabPipelineSchedule_basic(t *testing.T) {
 					  resource "gitlab_pipeline_schedule" "schedule" {
 						  project = "%d"
 						  description = "Pipeline Schedule"
-						  ref = "%s"
+						  ref = "refs/heads/%s"
 						  cron = "0 1 * * *"
 					  }`, project.ID, project.DefaultBranch),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabPipelineScheduleExists("gitlab_pipeline_schedule.schedule", &schedule),
 					testAccCheckGitlabPipelineScheduleAttributes(&schedule, &testAccGitlabPipelineScheduleExpectedAttributes{
 						Description:  "Pipeline Schedule",
-						Ref:          project.DefaultBranch,
+						Ref:          fmt.Sprintf("refs/heads/%s", project.DefaultBranch),
 						Cron:         "0 1 * * *",
 						CronTimezone: "UTC",
 						Active:       true,
@@ -327,7 +327,7 @@ func TestAccGitlabPipelineSchedule_basic(t *testing.T) {
 				resource "gitlab_pipeline_schedule" "schedule" {
 				  project = "%d"
 				  description = "Schedule"
-				  ref = "%s"
+				  ref = "refs/heads/%s"
 				  cron = "0 4 * * *"
 				  active = false
 				}`, project.ID, project.DefaultBranch),
@@ -335,7 +335,7 @@ func TestAccGitlabPipelineSchedule_basic(t *testing.T) {
 					testAccCheckGitlabPipelineScheduleExists("gitlab_pipeline_schedule.schedule", &schedule),
 					testAccCheckGitlabPipelineScheduleAttributes(&schedule, &testAccGitlabPipelineScheduleExpectedAttributes{
 						Description:  "Schedule",
-						Ref:          project.DefaultBranch,
+						Ref:          fmt.Sprintf("refs/heads/%s", project.DefaultBranch),
 						Cron:         "0 4 * * *",
 						CronTimezone: "UTC",
 						Active:       false,
@@ -354,14 +354,14 @@ func TestAccGitlabPipelineSchedule_basic(t *testing.T) {
 				resource "gitlab_pipeline_schedule" "schedule" {
 					project = "%d"
 					description = "Pipeline Schedule"
-					ref = "%s"
+					ref = "refs/heads/%s"
 					cron = "0 1 * * *"
 				}`, project.ID, project.DefaultBranch),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabPipelineScheduleExists("gitlab_pipeline_schedule.schedule", &schedule),
 					testAccCheckGitlabPipelineScheduleAttributes(&schedule, &testAccGitlabPipelineScheduleExpectedAttributes{
 						Description:  "Pipeline Schedule",
-						Ref:          project.DefaultBranch,
+						Ref:          fmt.Sprintf("refs/heads/%s", project.DefaultBranch),
 						Cron:         "0 1 * * *",
 						CronTimezone: "UTC",
 						Active:       true,
