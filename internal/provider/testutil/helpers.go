@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -907,13 +908,18 @@ func CreateComplianceFramework(t *testing.T, group *gitlab.Group) *api.GraphQLCo
 	return &response.Data.CreateComplianceFramework.Framework
 }
 
-func CreateScheduledPipeline(t *testing.T, project int) (*gitlab.PipelineSchedule, error) {
+func CreateScheduledPipeline(t *testing.T, project int, branch string) (*gitlab.PipelineSchedule, error) {
 	t.Helper()
+
+	// check if the branch is a full ref value, otherwise add "refs/heads/" to the front
+	if !strings.HasPrefix(branch, "refs/heads") {
+		branch = fmt.Sprintf("refs/heads/%s", branch)
+	}
 
 	var pipeline *gitlab.PipelineSchedule
 	pipeline, _, err := TestGitlabClient.PipelineSchedules.CreatePipelineSchedule(project, &gitlab.CreatePipelineScheduleOptions{
 		Description:  gitlab.Ptr("test"),
-		Ref:          gitlab.Ptr("master"),
+		Ref:          gitlab.Ptr(branch),
 		Cron:         gitlab.Ptr("0 1 * * *"),
 		CronTimezone: gitlab.Ptr("UTC"),
 	})

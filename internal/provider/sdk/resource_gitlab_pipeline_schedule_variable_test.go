@@ -88,7 +88,7 @@ func TestAccGitlabPipelineScheduleVariable_StateUpgradeV0(t *testing.T) {
 
 func TestAccGitlabPipelineScheduleVariable_SchemaMigration0_1(t *testing.T) {
 	project := testutil.CreateProject(t)
-	schedule, err := testutil.CreateScheduledPipeline(t, project.ID)
+	schedule, err := testutil.CreateScheduledPipeline(t, project.ID, project.DefaultBranch)
 	if err != nil {
 		t.Fatalf("Failed to create dependent resources %v", err)
 	}
@@ -132,7 +132,7 @@ func TestAccGitlabPipelineScheduleVariable_SchemaMigration0_1(t *testing.T) {
 func TestAccGitlabPipelineScheduleVariable_basic(t *testing.T) {
 	var variable gitlab.PipelineVariable
 	project := testutil.CreateProject(t)
-	schedule, err := testutil.CreateScheduledPipeline(t, project.ID)
+	schedule, err := testutil.CreateScheduledPipeline(t, project.ID, project.DefaultBranch)
 	if err != nil {
 		t.Fatalf("Failed to create dependent resources %v", err)
 	}
@@ -218,7 +218,7 @@ func TestAccGitlabPipelineScheduleVariable_deletedPipeline(t *testing.T) {
 	var variable gitlab.PipelineVariable
 
 	project := testutil.CreateProject(t)
-	schedule, err := testutil.CreateScheduledPipeline(t, project.ID)
+	schedule, err := testutil.CreateScheduledPipeline(t, project.ID, project.DefaultBranch)
 	if err != nil {
 		t.Fatalf("Failed to create dependent resources %v", err)
 	}
