@@ -23,6 +23,12 @@ func gitlabInstanceVariableGetSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Required:    true,
 		},
+		"description": {
+			Description:      "The description of the variable. Maximum of 255 characters.",
+			Type:             schema.TypeString,
+			Optional:         true,
+			ValidateDiagFunc: validation.ToDiagFunc(validation.StringLenBetween(0, 255)),
+		},
 		"variable_type": {
 			Description:      fmt.Sprintf("The type of a variable. Valid values are: %s. Default is `env_var`.", utils.RenderValueListForDocs(gitlabVariableTypeValues)),
 			Type:             schema.TypeString,
@@ -55,6 +61,7 @@ func gitlabInstanceVariableToStateMap(variable *gitlab.InstanceVariable) map[str
 	stateMap := make(map[string]interface{})
 	stateMap["key"] = variable.Key
 	stateMap["value"] = variable.Value
+	stateMap["description"] = variable.Description
 	stateMap["variable_type"] = variable.VariableType
 	stateMap["protected"] = variable.Protected
 	stateMap["masked"] = variable.Masked

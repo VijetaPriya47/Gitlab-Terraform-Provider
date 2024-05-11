@@ -27,7 +27,14 @@ func TestAccGitlabInstanceVariable_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create a variable with default options
 			{
-				Config: testAccGitlabInstanceVariableConfig(rString),
+				Config: fmt.Sprintf(`
+					resource "gitlab_instance_variable" "foo" {
+				  		key = "key_%s"
+				  		value = "value-%s"
+				  		variable_type = "file"
+				  		masked = false
+					}
+				`, rString, rString),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabInstanceVariableExists("gitlab_instance_variable.foo", &instanceVariable),
 					testAccCheckGitlabInstanceVariableAttributes(&instanceVariable, &testAccGitlabInstanceVariableExpectedAttributes{
@@ -38,7 +45,14 @@ func TestAccGitlabInstanceVariable_basic(t *testing.T) {
 			},
 			// Update the instance variable to toggle all the values to their inverse
 			{
-				Config: testAccGitlabInstanceVariableUpdateConfig(rString),
+				Config: fmt.Sprintf(`
+					resource "gitlab_instance_variable" "foo" {
+				  		key = "key_%s"
+				  		value = "value-inverse-%s"
+				  		protected = true
+				  		masked = false
+					}
+				`, rString, rString),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabInstanceVariableExists("gitlab_instance_variable.foo", &instanceVariable),
 					testAccCheckGitlabInstanceVariableAttributes(&instanceVariable, &testAccGitlabInstanceVariableExpectedAttributes{
@@ -50,7 +64,14 @@ func TestAccGitlabInstanceVariable_basic(t *testing.T) {
 			},
 			// Update the instance variable to toggle the options back
 			{
-				Config: testAccGitlabInstanceVariableConfig(rString),
+				Config: fmt.Sprintf(`
+					resource "gitlab_instance_variable" "foo" {
+				  		key = "key_%s"
+				  		value = "value-%s"
+				  		variable_type = "file"
+				  		masked = false
+					}
+				`, rString, rString),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabInstanceVariableExists("gitlab_instance_variable.foo", &instanceVariable),
 					testAccCheckGitlabInstanceVariableAttributes(&instanceVariable, &testAccGitlabInstanceVariableExpectedAttributes{
@@ -63,7 +84,16 @@ func TestAccGitlabInstanceVariable_basic(t *testing.T) {
 			// Update the instance variable to enable "masked" for a value that does not meet masking requirements, and expect an error with no state change.
 			// ref: https://docs.gitlab.com/ce/ci/variables/README.html#masked-variable-requirements
 			{
-				Config: testAccGitlabInstanceVariableUpdateConfigMaskedBad(rString),
+				Config: fmt.Sprintf(`
+					resource "gitlab_instance_variable" "foo" {
+				  		key = "key_%s"
+				  		value = <<EOF
+						value-%s"
+						i am multiline
+						EOF
+				  		masked = true
+					}
+				`, rString, rString),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabInstanceVariableExists("gitlab_instance_variable.foo", &instanceVariable),
 					testAccCheckGitlabInstanceVariableAttributes(&instanceVariable, &testAccGitlabInstanceVariableExpectedAttributes{
@@ -78,7 +108,13 @@ func TestAccGitlabInstanceVariable_basic(t *testing.T) {
 			// Update the instance variable to to enable "masked" and meet masking requirements
 			// ref: https://docs.gitlab.com/ce/ci/variables/README.html#masked-variable-requirements
 			{
-				Config: testAccGitlabInstanceVariableUpdateConfigMaskedGood(rString),
+				Config: fmt.Sprintf(`
+					resource "gitlab_instance_variable" "foo" {
+				  		key = "key_%s"
+				  		value = "value-%s"
+				  		masked = true
+					}
+				`, rString, rString),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabInstanceVariableExists("gitlab_instance_variable.foo", &instanceVariable),
 					testAccCheckGitlabInstanceVariableAttributes(&instanceVariable, &testAccGitlabInstanceVariableExpectedAttributes{
@@ -90,13 +126,40 @@ func TestAccGitlabInstanceVariable_basic(t *testing.T) {
 			},
 			// Update the instance variable to toggle the options back
 			{
-				Config: testAccGitlabInstanceVariableConfig(rString),
+				Config: fmt.Sprintf(`
+					resource "gitlab_instance_variable" "foo" {
+				  		key = "key_%s"
+				  		value = "value-%s"
+				  		variable_type = "file"
+				  		masked = false
+					}
+				`, rString, rString),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabInstanceVariableExists("gitlab_instance_variable.foo", &instanceVariable),
 					testAccCheckGitlabInstanceVariableAttributes(&instanceVariable, &testAccGitlabInstanceVariableExpectedAttributes{
 						Key:       fmt.Sprintf("key_%s", rString),
 						Value:     fmt.Sprintf("value-%s", rString),
 						Protected: false,
+					}),
+				),
+			},
+			// Update the instance variable to set the description
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_instance_variable" "foo" {
+				  		key = "key_%s"
+				  		value = "value-%s"
+				  		description = "description-%s"
+				  		variable_type = "file"
+				  		masked = false
+					}
+				`, rString, rString, rString),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabInstanceVariableExists("gitlab_instance_variable.foo", &instanceVariable),
+					testAccCheckGitlabInstanceVariableAttributes(&instanceVariable, &testAccGitlabInstanceVariableExpectedAttributes{
+						Key:         fmt.Sprintf("key_%s", rString),
+						Value:       fmt.Sprintf("value-%s", rString),
+						Description: fmt.Sprintf("description-%s", rString),
 					}),
 				),
 			},
@@ -149,11 +212,12 @@ func testAccCheckGitlabInstanceVariableDestroy(s *terraform.State) error {
 }
 
 type testAccGitlabInstanceVariableExpectedAttributes struct {
-	Key       string
-	Value     string
-	Protected bool
-	Masked    bool
-	Raw       bool
+	Key         string
+	Value       string
+	Description string
+	Protected   bool
+	Masked      bool
+	Raw         bool
 }
 
 func testAccCheckGitlabInstanceVariableAttributes(variable *gitlab.InstanceVariable, want *testAccGitlabInstanceVariableExpectedAttributes) resource.TestCheckFunc {
@@ -166,6 +230,10 @@ func testAccCheckGitlabInstanceVariableAttributes(variable *gitlab.InstanceVaria
 			return fmt.Errorf("got value %s; value %s", variable.Value, want.Value)
 		}
 
+		if variable.Description != want.Description {
+			return fmt.Errorf("got description %s; description %s", variable.Description, want.Description)
+		}
+
 		if variable.Protected != want.Protected {
 			return fmt.Errorf("got protected %t; want %t", variable.Protected, want.Protected)
 		}
@@ -176,49 +244,4 @@ func testAccCheckGitlabInstanceVariableAttributes(variable *gitlab.InstanceVaria
 
 		return nil
 	}
-}
-
-func testAccGitlabInstanceVariableConfig(rString string) string {
-	return fmt.Sprintf(`
-resource "gitlab_instance_variable" "foo" {
-  key = "key_%s"
-  value = "value-%s"
-  variable_type = "file"
-  masked = false
-}
-	`, rString, rString)
-}
-
-func testAccGitlabInstanceVariableUpdateConfig(rString string) string {
-	return fmt.Sprintf(`
-resource "gitlab_instance_variable" "foo" {
-  key = "key_%s"
-  value = "value-inverse-%s"
-  protected = true
-  masked = false
-}
-	`, rString, rString)
-}
-
-func testAccGitlabInstanceVariableUpdateConfigMaskedBad(rString string) string {
-	return fmt.Sprintf(`
-resource "gitlab_instance_variable" "foo" {
-  key = "key_%s"
-  value = <<EOF
-value-%s"
-i am multiline
-EOF
-  masked = true
-}
-	`, rString, rString)
-}
-
-func testAccGitlabInstanceVariableUpdateConfigMaskedGood(rString string) string {
-	return fmt.Sprintf(`
-resource "gitlab_instance_variable" "foo" {
-  key = "key_%s"
-  value = "value-%s"
-  masked = true
-}
-	`, rString, rString)
 }

@@ -158,7 +158,7 @@ func CreateProjectWithNamespace(t *testing.T, namespaceID int) *gitlab.Project {
 		InitializeWithReadme: gitlab.Ptr(true),
 	}
 
-	//Apply a namespace if one is passed in.
+	// Apply a namespace if one is passed in.
 	if namespaceID != 0 {
 		options.NamespaceID = gitlab.Ptr(namespaceID)
 	}
@@ -597,7 +597,6 @@ func AddGroupMembers(t *testing.T, gid interface{}, users []*gitlab.User) {
 
 // GroupShareGroup shares a group with another group with a developer access level and finite date.
 func GroupShareGroup(t *testing.T, parentGid interface{}, sharedGid *int) *gitlab.Group {
-
 	t.Helper()
 
 	endDate := time.Date(2023, 12, 21, 0, 0, 0, 0, time.UTC)
@@ -782,8 +781,9 @@ func CreateGroupVariable(t *testing.T, groupID int) *gitlab.GroupVariable {
 
 func CreateInstanceVariable(t *testing.T) *gitlab.InstanceVariable {
 	variable, _, err := TestGitlabClient.InstanceVariables.CreateVariable(&gitlab.CreateInstanceVariableOptions{
-		Key:   gitlab.Ptr(fmt.Sprintf("test_key_%d", acctest.RandInt())),
-		Value: gitlab.Ptr("test_value"),
+		Key:         gitlab.Ptr(fmt.Sprintf("test_key_%d", acctest.RandInt())),
+		Value:       gitlab.Ptr("test_value"),
+		Description: gitlab.Ptr("test_description"),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -799,7 +799,6 @@ func CreateInstanceVariable(t *testing.T) *gitlab.InstanceVariable {
 }
 
 func CreateProjectFile(t *testing.T, projectID int, fileContent string, filePath string, branch string) *gitlab.FileInfo {
-
 	file, _, err := TestGitlabClient.RepositoryFiles.CreateFile(projectID, filePath, &gitlab.CreateFileOptions{
 		Branch:        &branch,
 		Encoding:      gitlab.Ptr("base64"),
@@ -923,7 +922,6 @@ func CreateScheduledPipeline(t *testing.T, project int) (*gitlab.PipelineSchedul
 	})
 
 	return pipeline, err
-
 }
 
 // Function for easily calculating the expiry days from the current time.

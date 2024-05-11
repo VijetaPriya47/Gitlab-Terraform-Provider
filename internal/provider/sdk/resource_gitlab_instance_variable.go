@@ -34,6 +34,7 @@ func resourceGitlabInstanceVariableCreate(ctx context.Context, d *schema.Resourc
 
 	key := d.Get("key").(string)
 	value := d.Get("value").(string)
+	description := d.Get("description").(string)
 	variableType := stringToVariableType(d.Get("variable_type").(string))
 	protected := d.Get("protected").(bool)
 	masked := d.Get("masked").(bool)
@@ -42,6 +43,7 @@ func resourceGitlabInstanceVariableCreate(ctx context.Context, d *schema.Resourc
 	options := gitlab.CreateInstanceVariableOptions{
 		Key:          &key,
 		Value:        &value,
+		Description:  &description,
 		VariableType: variableType,
 		Protected:    &protected,
 		Masked:       &masked,
@@ -77,6 +79,7 @@ func resourceGitlabInstanceVariableRead(ctx context.Context, d *schema.ResourceD
 
 	d.Set("key", v.Key)
 	d.Set("value", v.Value)
+	d.Set("description", v.Description)
 	d.Set("variable_type", v.VariableType)
 	d.Set("protected", v.Protected)
 	d.Set("masked", v.Masked)
@@ -94,6 +97,7 @@ func resourceGitlabInstanceVariableUpdate(ctx context.Context, d *schema.Resourc
 
 	key := d.Get("key").(string)
 	value := d.Get("value").(string)
+	description := d.Get("description").(string)
 	variableType := stringToVariableType(d.Get("variable_type").(string))
 	protected := d.Get("protected").(bool)
 	masked := d.Get("masked").(bool)
@@ -101,6 +105,7 @@ func resourceGitlabInstanceVariableUpdate(ctx context.Context, d *schema.Resourc
 
 	options := &gitlab.UpdateInstanceVariableOptions{
 		Value:        &value,
+		Description:  &description,
 		Protected:    &protected,
 		VariableType: variableType,
 		Masked:       &masked,
