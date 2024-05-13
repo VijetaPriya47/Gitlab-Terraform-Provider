@@ -6,9 +6,8 @@ resource "gitlab_project_environment" "this" {
 
 # Example with deployment access level
 resource "gitlab_project_protected_environment" "example_with_access_level" {
-  project                 = gitlab_project_environment.this.project
-  required_approval_count = 1
-  environment             = gitlab_project_environment.this.name
+  project     = gitlab_project_environment.this.project
+  environment = gitlab_project_environment.this.name
 
   deploy_access_levels {
     access_level = "developer"
@@ -37,9 +36,8 @@ resource "gitlab_project_protected_environment" "example_with_user" {
 
 # Example with multiple deployment access levels
 resource "gitlab_project_protected_environment" "example_with_multiple" {
-  project                 = gitlab_project_environment.this.project
-  required_approval_count = 2
-  environment             = gitlab_project_environment.this.name
+  project     = gitlab_project_environment.this.project
+  environment = gitlab_project_environment.this.name
 
   deploy_access_levels {
     access_level = "developer"
@@ -56,9 +54,8 @@ resource "gitlab_project_protected_environment" "example_with_multiple" {
 
 # Example with access-level based approval rules
 resource "gitlab_project_protected_environment" "example_with_multiple" {
-  project                 = gitlab_project_environment.this.project
-  required_approval_count = 2
-  environment             = gitlab_project_environment.this.name
+  project     = gitlab_project_environment.this.project
+  environment = gitlab_project_environment.this.name
 
   deploy_access_levels {
     access_level = "developer"
@@ -66,16 +63,16 @@ resource "gitlab_project_protected_environment" "example_with_multiple" {
 
   approval_rules = [
     {
-      access_level = "developer"
+      access_level       = "developer"
+      required_approvals = 2
     }
   ]
 }
 
 # Example with multiple approval rules, using access level, user, and group
 resource "gitlab_project_protected_environment" "example_with_multiple" {
-  project                 = gitlab_project_environment.this.project
-  required_approval_count = 2
-  environment             = gitlab_project_environment.this.name
+  project     = gitlab_project_environment.this.project
+  environment = gitlab_project_environment.this.name
 
   deploy_access_levels {
     access_level = "developer"
@@ -86,7 +83,8 @@ resource "gitlab_project_protected_environment" "example_with_multiple" {
       user_id = 789
     },
     {
-      access_level = "developer"
+      access_level       = "developer"
+      required_approvals = 2
     },
     {
       group_id = 456

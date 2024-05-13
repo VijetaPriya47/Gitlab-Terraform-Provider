@@ -1,8 +1,7 @@
 # Example with deployment access level
 resource "gitlab_group_protected_environment" "example_with_access_level" {
-  group                   = 12345
-  required_approval_count = 1
-  environment             = "production"
+  group       = 12345
+  environment = "production"
 
   deploy_access_levels = [
     {
@@ -37,13 +36,13 @@ resource "gitlab_group_protected_environment" "example_with_user" {
 
 # Example with multiple deployment access levels
 resource "gitlab_group_protected_environment" "example_with_multiple" {
-  group                   = 12345
-  required_approval_count = 2
-  environment             = "development"
+  group       = 12345
+  environment = "development"
 
   deploy_access_levels = [
     {
-      access_level = "developer"
+      access_level       = "developer"
+      required_approvals = 2
     },
     {
       group_id = 456
@@ -56,9 +55,8 @@ resource "gitlab_group_protected_environment" "example_with_multiple" {
 
 # Example with access-level based approval rules
 resource "gitlab_group_protected_environment" "example_with_multiple" {
-  group                   = 12345
-  required_approval_count = 2
-  environment             = "testing"
+  group       = 12345
+  environment = "testing"
 
   deploy_access_levels = [
     {
@@ -68,16 +66,16 @@ resource "gitlab_group_protected_environment" "example_with_multiple" {
 
   approval_rules = [
     {
-      access_level = "developer"
+      access_level       = "developer"
+      required_approvals = 2
     }
   ]
 }
 
 # Example with multiple approval rules, using access level, user, and group
 resource "gitlab_group_protected_environment" "example_with_multiple" {
-  group                   = 12345
-  required_approval_count = 2
-  environment             = "production"
+  group       = 12345
+  environment = "production"
 
   deploy_access_levels = [
     {
@@ -90,7 +88,8 @@ resource "gitlab_group_protected_environment" "example_with_multiple" {
       user_id = 789
     },
     {
-      access_level = "developer"
+      access_level       = "developer"
+      required_approvals = 2
     },
     {
       group_id = 456

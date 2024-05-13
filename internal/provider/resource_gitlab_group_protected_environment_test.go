@@ -46,7 +46,6 @@ func TestAcc_GitlabGroupProtectedEnvironment_basic(t *testing.T) {
 				}`, group.ID, environment),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("gitlab_group_protected_environment.this", "deploy_access_levels.0.access_level_description"),
-					resource.TestCheckResourceAttr("gitlab_group_protected_environment.this", "required_approval_count", "0"),
 				),
 			},
 			// Verify upstream attributes with an import.
@@ -73,7 +72,6 @@ func TestAcc_GitlabGroupProtectedEnvironment_basic(t *testing.T) {
 				}`, group.ID, environment),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("gitlab_group_protected_environment.this", "deploy_access_levels.0.access_level_description"),
-					resource.TestCheckResourceAttr("gitlab_group_protected_environment.this", "required_approval_count", "0"),
 					resource.TestCheckResourceAttr("gitlab_group_protected_environment.this", "approval_rules.0.access_level", "maintainer"),
 					resource.TestCheckResourceAttr("gitlab_group_protected_environment.this", "approval_rules.0.required_approvals", "2"),
 				),
@@ -90,7 +88,6 @@ func TestAcc_GitlabGroupProtectedEnvironment_basic(t *testing.T) {
 				resource "gitlab_group_protected_environment" "this" {
 					group       = %d
 					environment = %q
-					required_approval_count = 1
 
 					deploy_access_levels = [
 						{
@@ -113,7 +110,6 @@ func TestAcc_GitlabGroupProtectedEnvironment_basic(t *testing.T) {
 					resource.TestCheckResourceAttrSet("gitlab_group_protected_environment.this", "deploy_access_levels.0.access_level_description"),
 					resource.TestCheckResourceAttrSet("gitlab_group_protected_environment.this", "deploy_access_levels.1.access_level_description"),
 					resource.TestCheckResourceAttrSet("gitlab_group_protected_environment.this", "deploy_access_levels.2.access_level_description"),
-					resource.TestCheckResourceAttr("gitlab_group_protected_environment.this", "required_approval_count", "1"),
 					resource.TestCheckResourceAttrSet("gitlab_group_protected_environment.this", "approval_rules.0.access_level_description"),
 				),
 			},
@@ -129,7 +125,6 @@ func TestAcc_GitlabGroupProtectedEnvironment_basic(t *testing.T) {
 				resource "gitlab_group_protected_environment" "this" {
 					group       = %d
 					environment = %q
-					required_approval_count = 1
 
 					deploy_access_levels = [
 						{
@@ -161,7 +156,6 @@ func TestAcc_GitlabGroupProtectedEnvironment_basic(t *testing.T) {
 					resource.TestCheckResourceAttrSet("gitlab_group_protected_environment.this", "deploy_access_levels.0.access_level_description"),
 					resource.TestCheckResourceAttrSet("gitlab_group_protected_environment.this", "deploy_access_levels.1.access_level_description"),
 					resource.TestCheckResourceAttrSet("gitlab_group_protected_environment.this", "deploy_access_levels.2.access_level_description"),
-					resource.TestCheckResourceAttr("gitlab_group_protected_environment.this", "required_approval_count", "1"),
 					resource.TestCheckResourceAttrSet("gitlab_group_protected_environment.this", "approval_rules.0.access_level_description"),
 					resource.TestCheckResourceAttrSet("gitlab_group_protected_environment.this", "approval_rules.1.access_level_description"),
 					resource.TestCheckResourceAttrSet("gitlab_group_protected_environment.this", "approval_rules.2.access_level_description"),
@@ -233,7 +227,6 @@ func TestAcc_GitlabGroupProtectedEnvironment_GroupInheritanceType(t *testing.T) 
 				}`, group.ID, environment, subGroup.ID),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("gitlab_group_protected_environment.this", "deploy_access_levels.0.access_level_description"),
-					resource.TestCheckResourceAttr("gitlab_group_protected_environment.this", "required_approval_count", "0"),
 				),
 			},
 			// Verify upstream attributes with an import.
@@ -248,7 +241,6 @@ func TestAcc_GitlabGroupProtectedEnvironment_GroupInheritanceType(t *testing.T) 
 				resource "gitlab_group_protected_environment" "this" {
 					group       = %d
 					environment = %q
-					required_approval_count = 1
 
 					deploy_access_levels = [
 						{
@@ -266,7 +258,6 @@ func TestAcc_GitlabGroupProtectedEnvironment_GroupInheritanceType(t *testing.T) 
 				}`, group.ID, environment, subGroup.ID, subGroup.ID),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("gitlab_group_protected_environment.this", "deploy_access_levels.0.access_level_description"),
-					resource.TestCheckResourceAttr("gitlab_group_protected_environment.this", "required_approval_count", "1"),
 					resource.TestCheckResourceAttrSet("gitlab_group_protected_environment.this", "approval_rules.0.access_level_description"),
 					resource.TestCheckResourceAttr("gitlab_group_protected_environment.this", "approval_rules.0.group_inheritance_type", "1"),
 				),
@@ -305,7 +296,6 @@ func TestAcc_GitlabGroupProtectedEnvironment_GroupInheritanceType(t *testing.T) 
 				resource "gitlab_group_protected_environment" "this" {
 					group       = %d
 					environment = %q
-					required_approval_count = 1
 
 					deploy_access_levels = [
 						{
@@ -323,7 +313,6 @@ func TestAcc_GitlabGroupProtectedEnvironment_GroupInheritanceType(t *testing.T) 
 				}`, group.ID, environment, subGroup.ID, subGroup.ID),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("gitlab_group_protected_environment.this", "deploy_access_levels.0.access_level_description"),
-					resource.TestCheckResourceAttr("gitlab_group_protected_environment.this", "required_approval_count", "1"),
 					resource.TestCheckResourceAttrSet("gitlab_group_protected_environment.this", "approval_rules.0.access_level_description"),
 					resource.TestCheckResourceAttr("gitlab_group_protected_environment.this", "deploy_access_levels.0.group_inheritance_type", "1"),
 				),
@@ -361,7 +350,6 @@ func TestAcc_GitlabGroupProtectedEnvironment_approvalRules_InvalidGroupInheritan
 				resource "gitlab_group_protected_environment" "this" {
 					group       = %d
 					environment = %q
-					required_approval_count = 1
 
 					deploy_access_levels = [
 						{
@@ -412,7 +400,6 @@ func TestAcc_GitlabGroupProtectedEnvironment_deployAccessLevels_InvalidGroupInhe
 				resource "gitlab_group_protected_environment" "this" {
 					group       = %d
 					environment = %q
-					required_approval_count = 1
 
 					deploy_access_levels = [
 						{

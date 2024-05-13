@@ -44,10 +44,9 @@ type gitlabGroupProtectedEnvironmentResource struct {
 }
 
 type gitlabGroupProtectedEnvironmentResourceModel struct {
-	Id                    types.String `tfsdk:"id"`
-	Group                 types.String `tfsdk:"group"`
-	Environment           types.String `tfsdk:"environment"`
-	RequiredApprovalCount types.Int64  `tfsdk:"required_approval_count"`
+	Id          types.String `tfsdk:"id"`
+	Group       types.String `tfsdk:"group"`
+	Environment types.String `tfsdk:"environment"`
 
 	// Set objects
 	DeployAccessLevels types.Set `tfsdk:"deploy_access_levels"`
@@ -109,14 +108,6 @@ func (r *gitlabGroupProtectedEnvironmentResource) Schema(ctx context.Context, re
 				PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 				Validators: []validator.String{
 					stringvalidator.OneOf(validEnvironments...),
-				},
-			},
-			"required_approval_count": schema.Int64Attribute{
-				MarkdownDescription: "The number of approvals required to deploy to this environment.",
-				Optional:            true,
-				Computed:            true,
-				PlanModifiers: []planmodifier.Int64{
-					int64planmodifier.UseStateForUnknown(),
 				},
 			},
 			"deploy_access_levels": groupDeployAccessLevelSchema(),
@@ -312,10 +303,6 @@ func (r *gitlabGroupProtectedEnvironmentResource) Create(ctx context.Context, re
 		Name: gitlab.Ptr(environmentName),
 	}
 
-	if !data.RequiredApprovalCount.IsNull() {
-		options.RequiredApprovalCount = gitlab.Ptr(int(data.RequiredApprovalCount.ValueInt64()))
-	}
-
 	// deploy access levels
 	deployAccessLevels := make([]*gitlabGroupProtectedEnvironmentDeployAccessLevelModel, 0, len(data.DeployAccessLevels.Elements()))
 	resp.Diagnostics.Append(data.DeployAccessLevels.ElementsAs(ctx, &deployAccessLevels, false)...)
@@ -362,11 +349,11 @@ func (r *gitlabGroupProtectedEnvironmentResource) Create(ctx context.Context, re
 		if !v.GroupId.IsNull() && v.GroupId.ValueInt64() != 0 {
 			approvalRuleOptions.GroupID = gitlab.Ptr(int(v.GroupId.ValueInt64()))
 		}
-		if !v.RequiredApprovals.IsNull() && v.RequiredApprovals.ValueInt64() != 0 {
-			approvalRuleOptions.RequiredApprovalCount = gitlab.Ptr(int(v.RequiredApprovals.ValueInt64()))
-		}
 		if !v.GroupInheritanceType.IsNull() && v.GroupInheritanceType.ValueInt64() != 0 {
 			approvalRuleOptions.GroupInheritanceType = gitlab.Ptr(int(v.GroupInheritanceType.ValueInt64()))
+		}
+		if !v.RequiredApprovals.IsNull() && v.RequiredApprovals.ValueInt64() != 0 {
+			approvalRuleOptions.RequiredApprovalCount = gitlab.Ptr(int(v.RequiredApprovals.ValueInt64()))
 		}
 
 		approvalRulesOption[i] = approvalRuleOptions
@@ -490,10 +477,6 @@ func (r *gitlabGroupProtectedEnvironmentResource) Update(ctx context.Context, re
 		Name: gitlab.Ptr(environmentName),
 	}
 
-	if !data.RequiredApprovalCount.IsNull() {
-		options.RequiredApprovalCount = gitlab.Ptr(int(data.RequiredApprovalCount.ValueInt64()))
-	}
-
 	// deploy access levels
 	deployAccessLevels := make([]*gitlabGroupProtectedEnvironmentDeployAccessLevelModel, 0, len(data.DeployAccessLevels.Elements()))
 	resp.Diagnostics.Append(data.DeployAccessLevels.ElementsAs(ctx, &deployAccessLevels, false)...)
@@ -566,6 +549,7 @@ func (r *gitlabGroupProtectedEnvironmentResource) Update(ctx context.Context, re
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
 	approvalRulesOptionSlice := make([]*gitlab.UpdateGroupEnvironmentApprovalRuleOptions, 0)
 	for _, v := range approvalRules {
 		approvalRuleOptions := &gitlab.UpdateGroupEnvironmentApprovalRuleOptions{}
@@ -584,11 +568,11 @@ func (r *gitlabGroupProtectedEnvironmentResource) Update(ctx context.Context, re
 		if !v.GroupId.IsNull() && v.GroupId.ValueInt64() != 0 {
 			approvalRuleOptions.GroupID = gitlab.Ptr(int(v.GroupId.ValueInt64()))
 		}
-		if !v.RequiredApprovals.IsNull() && v.RequiredApprovals.ValueInt64() != 0 {
-			approvalRuleOptions.RequiredApprovalCount = gitlab.Ptr(int(v.RequiredApprovals.ValueInt64()))
-		}
 		if !v.GroupInheritanceType.IsNull() && v.GroupInheritanceType.ValueInt64() != 0 {
 			approvalRuleOptions.GroupInheritanceType = gitlab.Ptr(int(v.GroupInheritanceType.ValueInt64()))
+		}
+		if !v.RequiredApprovals.IsNull() && v.RequiredApprovals.ValueInt64() != 0 {
+			approvalRuleOptions.RequiredApprovalCount = gitlab.Ptr(int(v.RequiredApprovals.ValueInt64()))
 		}
 
 		approvalRulesOptionSlice = append(approvalRulesOptionSlice, approvalRuleOptions)
@@ -694,7 +678,6 @@ func (r *gitlabGroupProtectedEnvironmentResource) ImportState(ctx context.Contex
 func (r *gitlabGroupProtectedEnvironmentResource) protectedEnvironmentToStateModel(ctx context.Context, existingDiag diag.Diagnostics, groupID string, protectedEnvironment *gitlab.GroupProtectedEnvironment, data *gitlabGroupProtectedEnvironmentResourceModel) {
 	data.Group = types.StringValue(groupID)
 	data.Environment = types.StringValue(protectedEnvironment.Name)
-	data.RequiredApprovalCount = types.Int64Value(int64(protectedEnvironment.RequiredApprovalCount))
 
 	deployAccessLevelsData := make([]gitlabGroupProtectedEnvironmentDeployAccessLevelModel, 0)
 	for _, v := range protectedEnvironment.DeployAccessLevels {
@@ -738,11 +721,11 @@ func (r *gitlabGroupProtectedEnvironmentResource) protectedEnvironmentToStateMod
 		if obj.GroupID != 0 {
 			approvalRuleData.GroupId = types.Int64Value(int64(obj.GroupID))
 		}
-		if obj.RequiredApprovalCount != 0 {
-			approvalRuleData.RequiredApprovals = types.Int64Value(int64(obj.RequiredApprovalCount))
-		}
 		if obj.GroupInheritanceType != 0 {
 			approvalRuleData.GroupInheritanceType = types.Int64Value(int64(obj.GroupInheritanceType))
+		}
+		if obj.RequiredApprovalCount != 0 {
+			approvalRuleData.RequiredApprovals = types.Int64Value(int64(obj.RequiredApprovalCount))
 		}
 
 		approvalRulesData = append(approvalRulesData, approvalRuleData)
