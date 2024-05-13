@@ -5,6 +5,7 @@ package provider
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 	"testing"
 	"time"
@@ -224,6 +225,92 @@ func TestAccGitlabProjectAccessToken_rotationUsingExpiresAt(t *testing.T) {
 					`, project.ID, secondUpdateExpires),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("gitlab_project_access_token.this", "expires_at", secondUpdateExpires),
+				),
+			},
+			// Verify upstream resource with an import.
+			{
+				ResourceName:      "gitlab_project_access_token.this",
+				ImportState:       true,
+				ImportStateVerify: true,
+				// The token is only known during creating. We explicitly mention this limitation in the docs.
+				ImportStateVerifyIgnore: []string{"token", "rotation_configuration"},
+			},
+		},
+	})
+}
+
+// This test checks that when a date is sufficiently in the future, the token
+// will rotate automatically. This is done by mocking the time using
+// the `GITLAB_TESTING_TIME` environment variable, which is parsed by
+// `api.CurrentTime()`, which the resource uses instead of time.Now()
+func TestAccGitlabProjectAccessToken_rotationUsingDate(t *testing.T) {
+	project := testutil.CreateProject(t)
+
+	futureDate := testutil.GetCurrentTimestampPlusDays(t, 10).Format(time.RFC3339)
+	tokenToCheck := ""
+
+	// Not parallel since "os.Setenv" leaks test state otherwise.
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		CheckDestroy:             testAccCheckGitlabProjectAccessTokenDestroy,
+		Steps: []resource.TestStep{
+			// Create a Project Access Token
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_access_token" "this" {
+				  name = "my project token"
+				  project = %d
+				  access_level = "developer"
+				  scopes = ["api"]
+
+				  // Create a token good for 3 days, that rotates after 1 days
+				  rotation_configuration = {
+					  expiration_days = 3
+					  rotate_before_days = 1
+				  }
+				}
+					`, project.ID),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project_access_token.this", "rotation_configuration.expiration_days", "3"),
+					resource.TestCheckResourceAttrWith("gitlab_project_access_token.this", "token", func(value string) error {
+						// Set the token that we have in state
+						tokenToCheck = value
+						return nil
+					}),
+				),
+			},
+			// Mock the date to ensure that the token properly rotates in the future
+			{
+				PreConfig: func() {
+					os.Setenv("GITLAB_TESTING_TIME", futureDate)
+					t.Cleanup(func() {
+						os.Unsetenv("GITLAB_TESTING_TIME")
+					})
+				},
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_access_token" "this" {
+				  name = "my new project token"
+				  project = %d
+				  access_level = "maintainer"
+				  scopes = ["api"]
+
+				  // Create a token good for 3 days, that rotates after 1 days
+				  rotation_configuration = {
+					  expiration_days = 3
+					  rotate_before_days = 1
+				  }
+				}
+					`, project.ID),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project_access_token.this", "rotation_configuration.expiration_days", "3"),
+					resource.TestCheckResourceAttrWith("gitlab_project_access_token.this", "token", func(value string) error {
+						// The token shouldn't match what we have from the previous apply. It should have been rotated
+						if value == tokenToCheck {
+							return fmt.Errorf("token did not rotate")
+						}
+
+						return nil
+					}),
 				),
 			},
 			// Verify upstream resource with an import.
