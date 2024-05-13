@@ -59,7 +59,6 @@ func TestAcc_GitlabProjectProtectedEnvironment_deployAndApprovalRules(t *testing
 				}`, project.ID, environment.Name),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("gitlab_project_protected_environment.this", "deploy_access_levels.0.access_level_description"),
-					resource.TestCheckResourceAttr("gitlab_project_protected_environment.this", "required_approval_count", "0"),
 				),
 			},
 			// Verify upstream attributes with an import.
@@ -86,7 +85,6 @@ func TestAcc_GitlabProjectProtectedEnvironment_deployAndApprovalRules(t *testing
 				}`, project.ID, environment.Name),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("gitlab_project_protected_environment.this", "deploy_access_levels.0.access_level_description"),
-					resource.TestCheckResourceAttr("gitlab_project_protected_environment.this", "required_approval_count", "0"),
 					resource.TestCheckResourceAttr("gitlab_project_protected_environment.this", "approval_rules.0.access_level", "maintainer"),
 					resource.TestCheckResourceAttr("gitlab_project_protected_environment.this", "approval_rules.0.required_approvals", "2"),
 				),
@@ -103,7 +101,6 @@ func TestAcc_GitlabProjectProtectedEnvironment_deployAndApprovalRules(t *testing
 				resource "gitlab_project_protected_environment" "this" {
 					project     = %d
 					environment = %q
-					required_approval_count = 1
 
 					deploy_access_levels {
 						access_level = "maintainer"
@@ -126,7 +123,6 @@ func TestAcc_GitlabProjectProtectedEnvironment_deployAndApprovalRules(t *testing
 					resource.TestCheckResourceAttrSet("gitlab_project_protected_environment.this", "deploy_access_levels.0.access_level_description"),
 					resource.TestCheckResourceAttrSet("gitlab_project_protected_environment.this", "deploy_access_levels.1.access_level_description"),
 					resource.TestCheckResourceAttrSet("gitlab_project_protected_environment.this", "deploy_access_levels.2.access_level_description"),
-					resource.TestCheckResourceAttr("gitlab_project_protected_environment.this", "required_approval_count", "1"),
 					resource.TestCheckResourceAttrSet("gitlab_project_protected_environment.this", "approval_rules.0.access_level_description"),
 				),
 			},
@@ -142,7 +138,6 @@ func TestAcc_GitlabProjectProtectedEnvironment_deployAndApprovalRules(t *testing
 				resource "gitlab_project_protected_environment" "this" {
 					project     = %d
 					environment = %q
-					required_approval_count = 1
 
 					deploy_access_levels {
 						access_level = "maintainer"
@@ -174,7 +169,6 @@ func TestAcc_GitlabProjectProtectedEnvironment_deployAndApprovalRules(t *testing
 					resource.TestCheckResourceAttrSet("gitlab_project_protected_environment.this", "deploy_access_levels.0.access_level_description"),
 					resource.TestCheckResourceAttrSet("gitlab_project_protected_environment.this", "deploy_access_levels.1.access_level_description"),
 					resource.TestCheckResourceAttrSet("gitlab_project_protected_environment.this", "deploy_access_levels.2.access_level_description"),
-					resource.TestCheckResourceAttr("gitlab_project_protected_environment.this", "required_approval_count", "1"),
 					resource.TestCheckResourceAttrSet("gitlab_project_protected_environment.this", "approval_rules.0.access_level_description"),
 					resource.TestCheckResourceAttrSet("gitlab_project_protected_environment.this", "approval_rules.1.access_level_description"),
 					resource.TestCheckResourceAttrSet("gitlab_project_protected_environment.this", "approval_rules.2.access_level_description"),
