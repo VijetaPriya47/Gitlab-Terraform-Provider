@@ -99,6 +99,7 @@ Optional:
 - `author_email_regex` (String) All commit author emails must match this regex, e.g. `@my-company.com$`.
 - `branch_name_regex` (String) All branch names must match this regex, e.g. `(feature|hotfix)\/*`.
 - `commit_committer_check` (Boolean) Only commits pushed using verified emails are allowed.  **Note** This attribute is only supported in GitLab versions >= 16.4.
+- `commit_committer_name_check` (Boolean) Users can only push commits to this repository if the commit author name is consistent with their GitLab account name.
 - `commit_message_negative_regex` (String) No commit message is allowed to match this regex, for example `ssh\:\/\/`.
 - `commit_message_regex` (String) All commit messages must match this regex, e.g. `Fixed \d+\..*`.
 - `deny_delete_tag` (Boolean) Deny deleting a tag.

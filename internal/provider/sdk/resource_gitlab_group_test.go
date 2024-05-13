@@ -176,10 +176,8 @@ func TestAccGitlabGroup_basicPushRulesEE(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
-			// Add all push rules to an existing group, setting 'commit_committer_check' & 'reject_unsigned_commits' to true
-			// these attributes are not returned on GitLab versions < 16.4 so skip test if not running >= 16.4
+			// Add all push rules to an existing group
 			{
-				SkipFunc: api.IsGitLabVersionLessThan(context.TODO(), testutil.TestGitlabClient, "16.4"),
 				Config: fmt.Sprintf(`
 				resource "gitlab_group" "foo" {
 				  name = "foo-name-%d"
@@ -197,6 +195,7 @@ func TestAccGitlabGroup_basicPushRulesEE(t *testing.T) {
 				    commit_message_negative_regex = "foo_not_commit"
 				    file_name_regex = "foo_file"
 				    commit_committer_check = true
+					commit_committer_name_check = true
 				    deny_delete_tag = true
 				    member_check = true
 				    prevent_secrets = true
@@ -213,6 +212,7 @@ func TestAccGitlabGroup_basicPushRulesEE(t *testing.T) {
 					CommitMessageNegativeRegex: "foo_not_commit",
 					FileNameRegex:              "foo_file",
 					CommitCommitterCheck:       gitlab.Ptr(true),
+					CommitCommitterNameCheck:   gitlab.Ptr(true),
 					DenyDeleteTag:              gitlab.Ptr(true),
 					MemberCheck:                gitlab.Ptr(true),
 					PreventSecrets:             gitlab.Ptr(true),
@@ -222,15 +222,12 @@ func TestAccGitlabGroup_basicPushRulesEE(t *testing.T) {
 			},
 			// Test import with a all push rules defined (checks read function)
 			{
-				SkipFunc:          api.IsGitLabVersionLessThan(context.TODO(), testutil.TestGitlabClient, "16.4"),
 				ResourceName:      "gitlab_group.foo",
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
-			// Update some push rules but not others, setting 'commit_committer_check' & 'reject_unsigned_commits' to true
-			// these attributes are not returned on GitLab versions < 16.4 so skip test if not running >= 16.4
+			// Update some push rules but not others
 			{
-				SkipFunc: api.IsGitLabVersionLessThan(context.TODO(), testutil.TestGitlabClient, "16.4"),
 				Config: fmt.Sprintf(`
 				resource "gitlab_group" "foo" {
 				  name = "foo-name-%d"
@@ -248,6 +245,7 @@ func TestAccGitlabGroup_basicPushRulesEE(t *testing.T) {
 				    commit_message_negative_regex = "foo_not_commit"
 				    file_name_regex = "foo_file_2"
 				    commit_committer_check = true
+					commit_committer_name_check = false
 				    deny_delete_tag = true
 				    member_check = false
 				    prevent_secrets = true
@@ -264,6 +262,7 @@ func TestAccGitlabGroup_basicPushRulesEE(t *testing.T) {
 					CommitMessageNegativeRegex: "foo_not_commit",
 					FileNameRegex:              "foo_file_2",
 					CommitCommitterCheck:       gitlab.Ptr(true),
+					CommitCommitterNameCheck:   gitlab.Ptr(false),
 					DenyDeleteTag:              gitlab.Ptr(true),
 					MemberCheck:                gitlab.Ptr(false),
 					PreventSecrets:             gitlab.Ptr(true),
@@ -290,6 +289,7 @@ func TestAccGitlabGroup_basicPushRulesEE(t *testing.T) {
 				    commit_message_negative_regex = "foo_not_commit"
 				    file_name_regex = "foo_file"
 				    commit_committer_check = false
+					commit_committer_name_check = true
 				    deny_delete_tag = true
 				    member_check = true
 				    prevent_secrets = true
@@ -306,6 +306,7 @@ func TestAccGitlabGroup_basicPushRulesEE(t *testing.T) {
 					CommitMessageNegativeRegex: "foo_not_commit",
 					FileNameRegex:              "foo_file",
 					CommitCommitterCheck:       gitlab.Ptr(false),
+					CommitCommitterNameCheck:   gitlab.Ptr(true),
 					DenyDeleteTag:              gitlab.Ptr(true),
 					MemberCheck:                gitlab.Ptr(true),
 					PreventSecrets:             gitlab.Ptr(true),
@@ -338,6 +339,7 @@ func TestAccGitlabGroup_basicPushRulesEE(t *testing.T) {
 				    commit_message_negative_regex = "foo_not_commit"
 				    file_name_regex = "foo_file_2"
 				    commit_committer_check = false
+					commit_committer_name_check = true
 				    deny_delete_tag = true
 				    member_check = false
 				    prevent_secrets = true
@@ -354,6 +356,7 @@ func TestAccGitlabGroup_basicPushRulesEE(t *testing.T) {
 					CommitMessageNegativeRegex: "foo_not_commit",
 					FileNameRegex:              "foo_file_2",
 					CommitCommitterCheck:       gitlab.Ptr(false),
+					CommitCommitterNameCheck:   gitlab.Ptr(true),
 					DenyDeleteTag:              gitlab.Ptr(true),
 					MemberCheck:                gitlab.Ptr(false),
 					PreventSecrets:             gitlab.Ptr(true),
@@ -990,6 +993,7 @@ type testAccGitlabGroupPushRuleExpectedAttributes struct {
 	FileNameRegex              string
 	MaxFileSize                *int
 	CommitCommitterCheck       *bool
+	CommitCommitterNameCheck   *bool
 	RejectUnsignedCommits      *bool
 }
 
@@ -1035,6 +1039,11 @@ func testAccCheckGitlabGroupPushRules(name string, wantPushRules *testAccGitlabG
 		if wantPushRules.CommitCommitterCheck != nil && gotPushRules.CommitCommitterCheck != *wantPushRules.CommitCommitterCheck {
 			messages = append(messages, fmt.Sprintf("commit_committer_check (got: %t, wanted: %t)",
 				gotPushRules.CommitCommitterCheck, *wantPushRules.CommitCommitterCheck))
+		}
+
+		if wantPushRules.CommitCommitterNameCheck != nil && gotPushRules.CommitCommitterNameCheck != *wantPushRules.CommitCommitterNameCheck {
+			messages = append(messages, fmt.Sprintf("commit_committer_name_check (got: %t, wanted: %t)",
+				gotPushRules.CommitCommitterNameCheck, *wantPushRules.CommitCommitterNameCheck))
 		}
 
 		if wantPushRules.DenyDeleteTag != nil && gotPushRules.DenyDeleteTag != *wantPushRules.DenyDeleteTag {
