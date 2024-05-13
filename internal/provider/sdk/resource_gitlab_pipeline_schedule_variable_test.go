@@ -82,7 +82,6 @@ func TestAccGitlabPipelineScheduleVariable_StateUpgradeV0(t *testing.T) {
 				t.Fatalf("\n\nexpected:\n\n%#v\n\ngot:\n\n%#v\n\n", tc.expectedV1State, actualV1State)
 			}
 		})
-
 	}
 }
 
@@ -153,8 +152,9 @@ func TestAccGitlabPipelineScheduleVariable_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabPipelineScheduleVariableExists("gitlab_pipeline_schedule_variable.schedule_var", &variable),
 					testAccCheckGitlabPipelineScheduleVariableAttributes(&variable, &testAccGitlabPipelineScheduleVariableExpectedAttributes{
-						Key:   "TERRAFORMED_TEST_VALUE",
-						Value: "test",
+						Key:          "TERRAFORMED_TEST_VALUE",
+						Value:        "test",
+						VariableType: "env_var",
 					}),
 				),
 			},
@@ -176,8 +176,9 @@ func TestAccGitlabPipelineScheduleVariable_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabPipelineScheduleVariableExists("gitlab_pipeline_schedule_variable.schedule_var", &variable),
 					testAccCheckGitlabPipelineScheduleVariableAttributes(&variable, &testAccGitlabPipelineScheduleVariableExpectedAttributes{
-						Key:   "TERRAFORMED_TEST_VALUE",
-						Value: "test_updated",
+						Key:          "TERRAFORMED_TEST_VALUE",
+						Value:        "test_updated",
+						VariableType: "env_var",
 					}),
 				),
 			},
@@ -199,8 +200,34 @@ func TestAccGitlabPipelineScheduleVariable_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabPipelineScheduleVariableExists("gitlab_pipeline_schedule_variable.schedule_var", &variable),
 					testAccCheckGitlabPipelineScheduleVariableAttributes(&variable, &testAccGitlabPipelineScheduleVariableExpectedAttributes{
-						Key:   "TERRAFORMED_TEST_VALUE",
-						Value: "test",
+						Key:          "TERRAFORMED_TEST_VALUE",
+						Value:        "test",
+						VariableType: "env_var",
+					}),
+				),
+			},
+			// Verify Import
+			{
+				ResourceName:      "gitlab_pipeline_schedule_variable.schedule_var",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_pipeline_schedule_variable" "schedule_var" {
+					project = "%d"
+					pipeline_schedule_id = "%d"
+					key = "TERRAFORMED_TEST_VALUE"
+					value = "test"
+					variable_type = "file"
+				}
+				`, project.ID, schedule.ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabPipelineScheduleVariableExists("gitlab_pipeline_schedule_variable.schedule_var", &variable),
+					testAccCheckGitlabPipelineScheduleVariableAttributes(&variable, &testAccGitlabPipelineScheduleVariableExpectedAttributes{
+						Key:          "TERRAFORMED_TEST_VALUE",
+						Value:        "test",
+						VariableType: "file",
 					}),
 				),
 			},
@@ -281,14 +308,23 @@ func testAccCheckGitlabPipelineScheduleVariableExists(n string, variable *gitlab
 }
 
 type testAccGitlabPipelineScheduleVariableExpectedAttributes struct {
-	Key   string
-	Value string
+	Key          string
+	Value        string
+	VariableType string
 }
 
 func testAccCheckGitlabPipelineScheduleVariableAttributes(variable *gitlab.PipelineVariable, want *testAccGitlabPipelineScheduleVariableExpectedAttributes) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if variable.Key != want.Key {
 			return fmt.Errorf("got key %q; want %q", variable.Key, want.Key)
+		}
+
+		if variable.Value != want.Value {
+			return fmt.Errorf("got value %s; want %s", variable.Value, want.Value)
+		}
+
+		if variable.VariableType != want.VariableType {
+			return fmt.Errorf("got variable_type %s; want %s", variable.VariableType, want.VariableType)
 		}
 
 		return nil

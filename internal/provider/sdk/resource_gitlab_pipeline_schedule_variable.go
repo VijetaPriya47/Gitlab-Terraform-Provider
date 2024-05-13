@@ -9,8 +9,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/xanzy/go-gitlab"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
+	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
 
 var _ = registerResource("gitlab_pipeline_schedule_variable", func() *schema.Resource {
@@ -62,6 +64,13 @@ func gitlabPipelineScheduleVariableSchema() map[string]*schema.Schema {
 			Description: "Value of the variable.",
 			Type:        schema.TypeString,
 			Required:    true,
+		},
+		"variable_type": {
+			Description:      fmt.Sprintf("The type of a variable. Available types are: %s. Default is `env_var`.", utils.RenderValueListForDocs(gitlabVariableTypeValues)),
+			Type:             schema.TypeString,
+			Optional:         true,
+			Computed:         true,
+			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(gitlabVariableTypeValues, false)),
 		},
 	}
 }
@@ -119,6 +128,10 @@ func resourceGitlabPipelineScheduleVariableCreate(ctx context.Context, d *schema
 		Value: gitlab.Ptr(d.Get("value").(string)),
 	}
 
+	if v, ok := d.GetOk("variable_type"); v != nil && ok {
+		options.VariableType = gitlab.Ptr(v.(string))
+	}
+
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab PipelineScheduleVariable %s:%s", *options.Key, *options.Value))
 
 	scheduleVar, _, err := client.PipelineSchedules.CreatePipelineScheduleVariable(project, scheduleID, options, gitlab.WithContext(ctx))
@@ -157,6 +170,7 @@ func resourceGitlabPipelineScheduleVariableRead(ctx context.Context, d *schema.R
 			d.Set("key", pipelineVariable.Key)
 			d.Set("value", pipelineVariable.Value)
 			d.Set("pipeline_schedule_id", scheduleID)
+			d.Set("variable_type", pipelineVariable.VariableType)
 			found = true
 			break
 		}
@@ -176,9 +190,13 @@ func resourceGitlabPipelineScheduleVariableUpdate(ctx context.Context, d *schema
 		return diag.FromErr(err)
 	}
 
-	if d.HasChange("value") {
+	if d.HasChanges("value", "variable_type") {
 		options := &gitlab.EditPipelineScheduleVariableOptions{
 			Value: gitlab.Ptr(d.Get("value").(string)),
+		}
+
+		if v, ok := d.GetOk("variable_type"); v != nil && ok {
+			options.VariableType = gitlab.Ptr(v.(string))
 		}
 
 		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab PipelineScheduleVariable %s", d.Id()))
