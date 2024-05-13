@@ -1,10 +1,14 @@
 package api
 
 import (
+	"context"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/xanzy/go-gitlab"
 )
 
@@ -43,4 +47,19 @@ func ExtractIIDFromGlobalID(globalID string) (int, error) {
 		return 0, fmt.Errorf("unable to extract iid from global id %q. Was looking for an integer after the last slash (/).", globalID)
 	}
 	return iid, nil
+}
+
+// CurrentTime returns the current time or a testing time based on an environment variable.
+// If the environment variable GITLAB_TESTING_TIME is set, it will be used as the current time.
+// This function is used to test time-dependent resources, so that the current time can be mocked
+// if needed.
+func CurrentTime() time.Time {
+	testingTime, err := time.Parse(time.RFC3339, os.Getenv("GITLAB_TESTING_TIME"))
+	if err == nil {
+		tflog.Warn(context.Background(), "[WARNING] Use of `GITLAB_TESTING_TIME` detected. Using mocked time instead of system time. Disable for production use.", map[string]interface{}{
+			"testing_time": testingTime.Format(time.RFC3339),
+		})
+		return testingTime
+	}
+	return time.Now()
 }

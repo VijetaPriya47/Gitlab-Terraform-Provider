@@ -936,3 +936,9 @@ func GetCurrentTimePlusDays(t *testing.T, days int) gitlab.ISOTime {
 	expiryDate := now.AddDate(0, 0, days)
 	return gitlab.ISOTime(expiryDate)
 }
+
+// Function for easily calculating a new timestamp value from the current time.
+func GetCurrentTimestampPlusDays(t *testing.T, days int) time.Time {
+	now := time.Now()
+	return now.AddDate(0, 0, days)
+}

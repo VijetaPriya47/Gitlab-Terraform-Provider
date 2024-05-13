@@ -270,6 +270,17 @@ func (r *gitlabGroupAccessTokenResource) ModifyPlan(ctx context.Context, req res
 	// If expiration (or ANY state) has never been set yet (we're in a "Create" plan), ensure we calculate and set the first time.
 	// This should also run if the expiration date has changed between plan and state, to ensure the ID is set to unknown.
 	if stateData == nil || stateData.ExpiresAt.IsNull() || stateData.ExpiresAt.IsUnknown() || stateData.ExpiresAt != planData.ExpiresAt {
+		// Log some information for debugging later.
+		expiresAt := ""
+		if stateData != nil {
+			expiresAt = stateData.ExpiresAt.ValueString()
+		}
+		tflog.Debug(ctx, "[GroupAccessToken] State is not populated, or the expires_at value is nil. Creating the token for the first time.", map[string]interface{}{
+			"is_state_nil": stateData == nil,
+			"expires_at":   expiresAt,
+		})
+
+		// set token for rotation
 		shouldSetExpiration = true
 
 		// Otherwise, execute the logic if rotation configuration is present
@@ -289,14 +300,23 @@ func (r *gitlabGroupAccessTokenResource) ModifyPlan(ctx context.Context, req res
 		// Subtract the rotation days
 		// This is done using `Add` because it returns "time.Time" instead of `Sub` which returns time.Duration. For some reason.
 		gapTime := rotateBeforeTime.Add(-time.Duration(planData.RotationConfiguration.RotateBeforeDays.ValueInt64()) * 24 * time.Hour)
-		if gapTime.Before(time.Now()) {
+		if gapTime.Before(api.CurrentTime()) {
 			shouldSetExpiration = true
 		}
+
+		// Logs for assisting with support
+		tflog.Debug(ctx, "[GroupAccessToken] State is populated, and a rotation configuration is detected. Determining if token should be rotated.", map[string]interface{}{
+			"expires_at":             rotateBefore,
+			"detected_current_time":  api.CurrentTime(),
+			"detected_rotation_date": gapTime,
+			"rotate_before_days":     planData.RotationConfiguration.RotateBeforeDays.ValueInt64(),
+			"should_rotate":          shouldSetExpiration,
+		})
 	}
 
 	if shouldSetExpiration {
 		// We need to re-calculate the expiryDate, and set it in the plan
-		expiryDate, err := r.determinExpiryDate(planData)
+		expiryDate, err := r.determineExpiryDate(planData)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Error determining new expiry date",
@@ -311,8 +331,18 @@ func (r *gitlabGroupAccessTokenResource) ModifyPlan(ctx context.Context, req res
 		if stateData != nil && expiryDate.String() != stateData.ExpiresAt.ValueString() {
 			// Set the new expiration date in the plan
 			planData.ExpiresAt = types.StringValue(expiryDate.String())
-			// Set ID to unknown since it will change as part of rotation
+			// Set several attributes to unknown since they will change as part of rotation
 			planData.ID = types.StringUnknown()
+			planData.Token = types.StringUnknown()
+			planData.CreatedAt = types.StringUnknown()
+
+			// Logs for assisting with support
+			tflog.Debug(ctx, "[GroupAccessToken] Rotation is required, settings plan data", map[string]interface{}{
+				"new_expires_at": expiryDate.String(),
+				"expires_at":     stateData.ExpiresAt.ValueString(),
+				"group":          planData.Group.ValueString(),
+				"name":           planData.Name.ValueString(),
+			})
 
 			resp.Diagnostics.Append(resp.Plan.Set(ctx, planData)...)
 		}
@@ -403,7 +433,7 @@ func (r *gitlabGroupAccessTokenResource) Create(ctx context.Context, req resourc
 	}
 
 	// Get the valid expiry date from the `expires_at` or `rotation_configuration`
-	expiryDate, err := r.determinExpiryDate(data)
+	expiryDate, err := r.determineExpiryDate(data)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error determining expiry date",
@@ -448,7 +478,7 @@ func (r *gitlabGroupAccessTokenResource) Update(ctx context.Context, req resourc
 	}
 
 	// determine the new expires_at from the config
-	expiresAt, err := r.determinExpiryDate(data)
+	expiresAt, err := r.determineExpiryDate(data)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Failed to parse expires_at value into a valid ISOTime",
@@ -533,11 +563,11 @@ func (r *gitlabGroupAccessTokenResource) Delete(ctx context.Context, req resourc
 // Takes in a resource model, and checks with the `expiry_date` or the `rotation_configuration` to determine what
 // value should be set into the `expiry_date` field for the options.
 // Returns a gitlab.ISOTime object of what should be set into the `expiry_date` field.
-func (r *gitlabGroupAccessTokenResource) determinExpiryDate(data *gitlabGroupAccessTokenResourceModel) (*gitlab.ISOTime, error) {
+func (r *gitlabGroupAccessTokenResource) determineExpiryDate(data *gitlabGroupAccessTokenResourceModel) (*gitlab.ISOTime, error) {
 
 	// If `expires_at` is set, then attempt to parse the time, and return the isoTime value if it
 	// successfully parses
-	if !data.ExpiresAt.IsNull() && !data.ExpiresAt.IsUnknown() {
+	if !data.ExpiresAt.IsNull() && !data.ExpiresAt.IsUnknown() && data.RotationConfiguration == nil {
 
 		isoTime, err := gitlab.ParseISOTime(data.ExpiresAt.ValueString())
 		if err != nil {
@@ -549,7 +579,7 @@ func (r *gitlabGroupAccessTokenResource) determinExpiryDate(data *gitlabGroupAcc
 	// If `expires_at` is not set, then use the `rotation_configuration.expiration_days` if possible to to add the duration
 	// to the current date to determine expiration, and return that instead. Otherwise, simply return nil, and let the default take.
 	if data.RotationConfiguration != nil && !data.RotationConfiguration.ExpirationDays.IsNull() && !data.RotationConfiguration.ExpirationDays.IsUnknown() {
-		now := time.Now()
+		now := api.CurrentTime()
 		expiryDate := now.AddDate(0, 0, int(data.RotationConfiguration.ExpirationDays.ValueInt64()))
 		expiryIsoTime, err := gitlab.ParseISOTime(expiryDate.Format(api.Iso8601))
 
