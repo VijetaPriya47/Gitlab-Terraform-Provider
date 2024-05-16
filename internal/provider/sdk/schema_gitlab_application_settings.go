@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/xanzy/go-gitlab"
+	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
 
@@ -1769,7 +1770,7 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 	}
 }
 
-func gitlabApplicationSettingsToStateMap(settings *gitlab.Settings) map[string]interface{} {
+func gitlabApplicationSettingsToStateMap(settings *api.Settings) map[string]interface{} {
 	stateMap := make(map[string]interface{})
 	stateMap["admin_mode"] = settings.AdminMode
 	stateMap["abuse_notification_email"] = settings.AbuseNotificationEmail
