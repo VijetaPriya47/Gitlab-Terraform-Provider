@@ -287,6 +287,7 @@ testacc:ce:nightly:
   extends: .testacc
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_MERGE_REQUEST_LABELS =~ /run-nightly-tests/
   variables:
     GITLAB_EDITION: ce
     GITLAB_VERSION: nightly
@@ -295,6 +296,7 @@ testacc:ee:nightly:
   extends: .testacc
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $ENABLE_EE_ACCEPTANCE_TESTS == "true" && $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_MERGE_REQUEST_LABELS =~ /run-nightly-tests/
   variables:
     GITLAB_EDITION: ee
     GITLAB_VERSION: nightly
@@ -303,6 +305,7 @@ testacc:ce:nightly:flakey:
   extends: .testacc
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_MERGE_REQUEST_LABELS =~ /run-nightly-tests/
   retry: 2
   variables:
     GITLAB_EDITION: ce
@@ -313,6 +316,7 @@ testacc:ee:nightly:flakey:
   extends: .testacc
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $ENABLE_EE_ACCEPTANCE_TESTS == "true" && $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_MERGE_REQUEST_LABELS =~ /run-nightly-tests/
   retry: 2
   variables:
     GITLAB_EDITION: ee

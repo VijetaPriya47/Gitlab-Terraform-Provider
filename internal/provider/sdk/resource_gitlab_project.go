@@ -1904,7 +1904,7 @@ func expectDefaultBranchProtection(ctx context.Context, client *gitlab.Client, p
 
 	if isAdmin {
 		// If the project is not part of a group it may have default branch protection disabled because of the instance-wide application settings
-		settings, _, err := client.Settings.GetSettings(nil, gitlab.WithContext(ctx))
+		settings, _, err := api.GetSettings(client, gitlab.WithContext(ctx))
 		if err != nil {
 			return false, err
 		}

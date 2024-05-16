@@ -1172,17 +1172,17 @@ func TestAccGitlabProject_InstanceBranchProtectionDisabled(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				PreConfig: func() {
-					settings, _, err := testutil.TestGitlabClient.Settings.GetSettings()
+					settings, _, err := api.GetSettings(testutil.TestGitlabClient)
 					if err != nil {
 						t.Fatalf("failed to get settings: %v", err)
 					}
 					t.Cleanup(func() {
-						if _, _, err := testutil.TestGitlabClient.Settings.UpdateSettings(&gitlab.UpdateSettingsOptions{DefaultBranchProtection: gitlab.Ptr(settings.DefaultBranchProtection)}); err != nil {
+						if _, _, err := api.UpdateSettings(testutil.TestGitlabClient, &gitlab.UpdateSettingsOptions{DefaultBranchProtection: gitlab.Ptr(settings.DefaultBranchProtection)}); err != nil {
 							t.Fatalf("failed to update instance-wide default branch protection setting to default: %v", err)
 						}
 					})
 
-					if _, _, err := testutil.TestGitlabClient.Settings.UpdateSettings(&gitlab.UpdateSettingsOptions{DefaultBranchProtection: gitlab.Ptr(0)}); err != nil {
+					if _, _, err := api.UpdateSettings(testutil.TestGitlabClient, &gitlab.UpdateSettingsOptions{DefaultBranchProtection: gitlab.Ptr(0)}); err != nil {
 						t.Fatalf("failed to update instance-wide default branch protection setting: %v", err)
 					}
 				},
