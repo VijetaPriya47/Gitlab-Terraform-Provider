@@ -25,7 +25,6 @@ func TestAccGitlabGroupSamlLink_basic(t *testing.T) {
 		ProtoV6ProviderFactories: providerFactoriesV6,
 		CheckDestroy:             testAccCheckGitlabGroupSamlLinkDestroy,
 		Steps: []resource.TestStep{
-
 			// Create a group SAML link as a developer
 			{
 				Config: fmt.Sprintf(`
@@ -51,6 +50,52 @@ func TestAccGitlabGroupSamlLink_basic(t *testing.T) {
 						access_level 	= "maintainer"
 						saml_group_name = "test_saml_group"
 
+					}
+				`, testGroup.ID),
+			},
+		},
+	})
+}
+
+func TestAccGitlabGroupSamlLink_customRole(t *testing.T) {
+	// Group level custom roles don't work on self managed, so we can't test them without a SaaS project.
+	// See https://gitlab.com/gitlab-org/gitlab/-/issues/439284 for more details
+	t.Skip()
+
+	testutil.SkipIfCE(t)
+	testutil.RunIfAtLeast(t, "16.8")
+
+	testGroup := testutil.CreateGroups(t, 1)[0]
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabGroupSamlLinkDestroy,
+		Steps: []resource.TestStep{
+			// Create a group SAML link as a developer with a custom role
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_group_saml_link" "this" {
+						group   	= "%d"
+						access_level 	= "developer"
+						saml_group_name = "test_saml_group"
+						member_role_id  = 123
+					}
+				`, testGroup.ID),
+			},
+			// Verify Import
+			{
+				ResourceName:      "gitlab_group_saml_link.this",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Update the group SAML link to change the custom role
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_group_saml_link" "this" {
+						group   	= "%d"
+						access_level 	= "developer"
+						saml_group_name = "test_saml_group"
+						member_role_id  = 456
 					}
 				`, testGroup.ID),
 			},
