@@ -54,6 +54,12 @@ var _ = registerResource("gitlab_group_saml_link", func() *schema.Resource {
 				Required:         true,
 				ForceNew:         true,
 			},
+			"member_role_id": {
+				Description: "The ID of a custom member role. Only available for Ultimate instances.",
+				Type:        schema.TypeInt,
+				Optional:    true,
+				ForceNew:    true,
+			},
 		},
 	}
 })
@@ -68,6 +74,10 @@ func resourceGitlabGroupSamlLinkCreate(ctx context.Context, d *schema.ResourceDa
 	options := &gitlab.AddGroupSAMLLinkOptions{
 		SAMLGroupName: gitlab.Ptr(samlGroupName),
 		AccessLevel:   gitlab.Ptr(accessLevel),
+	}
+
+	if v, ok := d.GetOk("member_role_id"); v != nil && ok {
+		options.MemberRoleID = gitlab.Ptr(v.(int))
 	}
 
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Create GitLab Group SAML Link for group %q with name %q", group, samlGroupName))
@@ -102,6 +112,7 @@ func resourceGitlabGroupSamlLinkRead(ctx context.Context, d *schema.ResourceData
 	d.Set("group", group)
 	d.Set("access_level", api.AccessLevelValueToName[samlLink.AccessLevel])
 	d.Set("saml_group_name", samlLink.Name)
+	d.Set("member_role_id", samlLink.MemberRoleID)
 
 	return nil
 }
