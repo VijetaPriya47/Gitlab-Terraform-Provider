@@ -1,0 +1,43 @@
+---
+# Settings for generating changelogs using the GitLab API. See
+# https://docs.gitlab.com/ee/api/repositories.html#generate-changelog-data for
+# more information.
+
+# Categories from https://developer.hashicorp.com/terraform/plugin/best-practices/versioning#categorization
+categories:
+  # This section documents in brief any incompatible changes and how to handle them. This should only be present in major version upgrades.
+  breaking: BREAKING CHANGES
+  # Additional information for potentially unexpected upgrade behavior, upcoming deprecations, or to highlight very important crash fixes (e.g. due to upstream API changes)
+  note: NOTES
+  # These are major new improvements that deserve a special highlight, such as a new resource or data source.
+  feature: FEATURES
+  # Smaller features added to the project such as a new attribute for a resource.
+  improvement: IMPROVEMENTS
+  # Any bugs that were fixed.
+  fixed: BUG FIXES
+
+include_groups:
+  - gitlab-org/gitlab-core-team/community-members
+
+template: |
+  {% if categories %}
+  {% each categories %}
+  ### {{ title }} ({% if single_change %}1 change{% else %}{{ count }} changes{% end %})
+
+  {% each entries %}
+  -\
+  {% if commit.trailers.Subsystem %} {{ commit.trailers.Subsystem }}: {% end %}\
+   [{{ title }}]({{ commit.reference }})\
+  {% if author.credit %} by {{ author.reference }}{% end %}\
+  {% if merge_request %} ([merge request]({{ merge_request.reference }})) {% end %}\
+
+  {% end %}
+
+  {% end %}
+  {% else %}
+  No changes.
+  {% end %}
+
+# Semantic Versioning
+tag_regex: '^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:-(?P<pre>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?P<meta>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$'
+
