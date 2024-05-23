@@ -31,17 +31,17 @@ func init() {
 	registerResource(NewGitLabProjectJobTokenScopesResource)
 }
 
-// NewGitLabProjectJobTokenScopeResource is a helper function to simplify the provider implementation.
+// NewGitLabProjectJobTokensResource is a helper function to simplify the provider implementation.
 func NewGitLabProjectJobTokenScopesResource() resource.Resource {
 	return &gitlabProjectJobTokenScopesResource{}
 }
 
-// gitlabProjectJobTokenScopeResource defines the resource implementation.
+// gitlabProjectJobTokenScopesResource defines the resource implementation.
 type gitlabProjectJobTokenScopesResource struct {
 	client *gitlab.Client
 }
 
-// gitlabProjectJobTokenScopeResourceModel describes the resource data model.
+// gitlabProjectJobTokenScopesResourceModel describes the resource data model.
 type gitlabProjectJobTokenScopesResourceModel struct {
 	Id        types.String `tfsdk:"id"`
 	ProjectID types.Int64  `tfsdk:"project_id"`
@@ -189,7 +189,6 @@ func (r *gitlabProjectJobTokenScopesResource) Delete(ctx context.Context, req re
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
 }
 
 // ImportState imports the resource into the Terraform state.
@@ -203,7 +202,6 @@ func (r *gitlabProjectJobTokenScopesResource) ImportState(ctx context.Context, r
 //   - Removes scopes on the project, but not in the list
 //   - Leaves all other scopes alone.
 func (r *gitlabProjectJobTokenScopesResource) setProjectCIJobScopes(ctx context.Context, project int, data *gitlabProjectJobTokenScopesResourceModel) diag.Diagnostic {
-
 	// Get a list of existing CI project scopes for the project
 	projects, err := r.getProjectCIJobScopes(ctx, project)
 	if err != nil {
