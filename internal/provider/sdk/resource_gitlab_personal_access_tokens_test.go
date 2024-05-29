@@ -71,6 +71,64 @@ func TestAccGitlabPersonalAccessToken_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("gitlab_personal_access_token.foo", "user_id", fmt.Sprintf("%d", user.ID)),
 				),
 			},
+			// Recreate the access token with no expiry date
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_personal_access_token" "foo" {
+					user_id    = %d
+					name       = "foo"
+					scopes     = ["api", "read_api"]
+				}
+				`, user.ID),
+				// Check computed and default attributes.
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_personal_access_token.foo", "active", "true"),
+					resource.TestCheckResourceAttr("gitlab_personal_access_token.foo", "revoked", "false"),
+					resource.TestCheckResourceAttrSet("gitlab_personal_access_token.foo", "token"),
+					resource.TestCheckResourceAttrSet("gitlab_personal_access_token.foo", "created_at"),
+					resource.TestCheckResourceAttrSet("gitlab_personal_access_token.foo", "expires_at"),
+					resource.TestCheckResourceAttr("gitlab_personal_access_token.foo", "user_id", fmt.Sprintf("%d", user.ID)),
+				),
+			},
+			// Recreate the access token with no expiry date and check if it creates a new one
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_personal_access_token" "foo" {
+					user_id    = %d
+					name       = "foo"
+					scopes     = ["api", "read_api", "read_repository"]
+				}
+				`, user.ID),
+				// Check computed and default attributes.
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_personal_access_token.foo", "active", "true"),
+					resource.TestCheckResourceAttr("gitlab_personal_access_token.foo", "revoked", "false"),
+					resource.TestCheckResourceAttrSet("gitlab_personal_access_token.foo", "token"),
+					resource.TestCheckResourceAttrSet("gitlab_personal_access_token.foo", "created_at"),
+					resource.TestCheckResourceAttrSet("gitlab_personal_access_token.foo", "expires_at"),
+					resource.TestCheckResourceAttr("gitlab_personal_access_token.foo", "user_id", fmt.Sprintf("%d", user.ID)),
+				),
+			},
+			// Recreate the access token with expiry and check if it creates a new one
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_personal_access_token" "foo" {
+					user_id    = %d
+					name       = "foo"
+					scopes     = ["api", "read_api", "read_repository"]
+					
+					expires_at = %q
+				}
+				`, user.ID, time.Now().Add(time.Hour*48).Format("2006-01-02")),
+				// Check computed and default attributes.
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_personal_access_token.foo", "active", "true"),
+					resource.TestCheckResourceAttr("gitlab_personal_access_token.foo", "revoked", "false"),
+					resource.TestCheckResourceAttrSet("gitlab_personal_access_token.foo", "token"),
+					resource.TestCheckResourceAttrSet("gitlab_personal_access_token.foo", "created_at"),
+					resource.TestCheckResourceAttr("gitlab_personal_access_token.foo", "user_id", fmt.Sprintf("%d", user.ID)),
+				),
+			},
 			// Verify upstream resource with an import.
 			{
 				ResourceName:      "gitlab_personal_access_token.foo",
