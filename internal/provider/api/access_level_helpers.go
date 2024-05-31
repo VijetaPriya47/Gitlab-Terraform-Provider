@@ -112,6 +112,7 @@ var ValidAccessTokenScopes = []string{
 	"read_repository",
 	"write_repository",
 	"create_runner",
+	"manage_runner",
 	"ai_features",
 	"k8s_proxy",
 	"read_observability",
