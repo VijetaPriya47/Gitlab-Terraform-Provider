@@ -263,7 +263,7 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 		Optional:    true,
 	},
 	"initialize_with_readme": {
-		Description:   "Create main branch with first commit containing a README.md file.",
+		Description:   "Create main branch with first commit containing a README.md file. Must be set to `true` if importing an uninitialized project with a different `default_branch`.",
 		Type:          schema.TypeBool,
 		Optional:      true,
 		ConflictsWith: []string{"import_url", "forked_from_project_id"},
