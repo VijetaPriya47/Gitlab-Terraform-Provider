@@ -94,14 +94,12 @@ func resourceGitlabIntegrationSlackSchema(description string) *schema.Resource {
 				Optional:    true,
 				Computed:    true,
 			},
-			// TODO: Currently, GitLab ignores this option (not implemented yet?), so
-			// there is no way to set it. Uncomment when this is fixed.
-			// See: https://gitlab.com/gitlab-org/gitlab-ce/issues/49730
-			// "confidential_note_channel": {
-			// 	Description: "The name of the channel to receive confidential note events notifications.",
-			// 	Type:        schema.TypeString,
-			// 	Optional:    true,
-			// },
+			"confidential_note_channel": {
+				Description: "The name of the channel to receive confidential note events notifications.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
 			"confidential_note_events": {
 				Description: "Enable notifications for confidential note events.",
 				Type:        schema.TypeBool,
@@ -230,10 +228,7 @@ func resourceGitlabIntegrationSlackCreate(ctx context.Context, d *schema.Resourc
 	// opts.CommitEvents = gitlab.Ptr(d.Get("commit_events").(bool))
 	opts.ConfidentialIssueChannel = gitlab.Ptr(d.Get("confidential_issue_channel").(string))
 	opts.ConfidentialIssuesEvents = gitlab.Ptr(d.Get("confidential_issues_events").(bool))
-	// TODO: Currently, GitLab ignores this option (not implemented yet?), so
-	// there is no way to set it. Uncomment when this is fixed.
-	// See: https://gitlab.com/gitlab-org/gitlab-ce/issues/49730
-	// opts.ConfidentialNoteChannel = gitlab.Ptr(d.Get("confidential_note_channel").(string))
+	opts.ConfidentialNoteChannel = gitlab.Ptr(d.Get("confidential_note_channel").(string))
 	opts.ConfidentialNoteEvents = gitlab.Ptr(d.Get("confidential_note_events").(bool))
 	// TODO: Currently, GitLab doesn't correctly implement the API, so this is
 	//       impossible to implement here at the moment.
@@ -294,10 +289,7 @@ func resourceGitlabIntegrationSlackRead(ctx context.Context, d *schema.ResourceD
 	d.Set("branches_to_be_notified", service.Properties.BranchesToBeNotified)
 	d.Set("confidential_issue_channel", service.Properties.ConfidentialIssueChannel)
 	d.Set("confidential_issues_events", service.ConfidentialIssuesEvents)
-	// TODO: Currently, GitLab ignores this option (not implemented yet?), so
-	// there is no way to set it. Uncomment when this is fixed.
-	// See: https://gitlab.com/gitlab-org/gitlab-ce/issues/49730
-	// d.Set("confidential_note_channel", service.Properties.ConfidentialNoteChannel)
+	d.Set("confidential_note_channel", service.Properties.ConfidentialNoteChannel)
 	d.Set("confidential_note_events", service.ConfidentialNoteEvents)
 	// TODO: Currently, GitLab doesn't correctly implement the API, so this is
 	//       impossible to implement here at the moment.
