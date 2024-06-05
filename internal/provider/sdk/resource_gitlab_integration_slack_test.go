@@ -62,6 +62,7 @@ func TestAccGitlabIntegrationSlack_basic(t *testing.T) {
 				  confidential_issues_events   = true
 				  confidential_issue_channel   = "test"
 				  confidential_note_events     = true
+				  confidential_note_channel	   = "test"
 				  merge_requests_events        = true
 				  merge_request_channel        = "test"
 				  tag_push_events              = true
@@ -114,6 +115,7 @@ func TestAccGitlabIntegrationSlack_basic(t *testing.T) {
 				  confidential_issues_events   = false
 				  confidential_issue_channel   = "test confidential_issue_channel"
 				  confidential_note_events     = false
+				  confidential_note_channel	   = "test confidential_note_channel"
 				  merge_requests_events        = false
 				  merge_request_channel        = "test merge_request_channel"
 				  tag_push_events              = false
@@ -161,6 +163,7 @@ func TestAccGitlabIntegrationSlack_basic(t *testing.T) {
 				  confidential_issues_events   = true
 				  confidential_issue_channel   = "test"
 				  confidential_note_events     = true
+				  confidential_note_channel	   = "test"
 				  merge_requests_events        = true
 				  merge_request_channel        = "test"
 				  tag_push_events              = true
