@@ -26,6 +26,7 @@ func ApplyLogMaskingToContext(ctx context.Context) context.Context {
 	}
 	subSystemName := "GitLab"
 
+	ctx = tflog.NewSubsystem(ctx, subSystemName)
 	for _, maskRegex := range maskRegexes {
 		// Configure the "root" logger within the context
 		// This will mask any logging done directly using the tflog command that doesn't explicitly call a subsystem.
@@ -34,7 +35,6 @@ func ApplyLogMaskingToContext(ctx context.Context) context.Context {
 		ctx = tflog.MaskAllFieldValuesRegexes(ctx, maskRegex)
 
 		// The "GitLab" subsystem is what is used for logging API messages, so configure it here as well.
-		ctx = tflog.NewSubsystem(ctx, subSystemName)
 		ctx = tflog.SubsystemMaskMessageRegexes(ctx, subSystemName, maskRegex)
 		ctx = tflog.SubsystemMaskLogRegexes(ctx, subSystemName, maskRegex)
 		ctx = tflog.SubsystemMaskAllFieldValuesRegexes(ctx, subSystemName, maskRegex)
