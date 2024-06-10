@@ -333,7 +333,7 @@ func (r *gitlabProjectAccessTokenResource) ModifyPlan(ctx context.Context, req r
 		// If the newly calculated expiryDate is different than what's in state, modify the plan
 		// This check is required to prevent the ID being unknown on every apply with rotation_configuration even
 		// if the calculated date is exactly the same as it currently is
-		if stateData != nil && expiryDate.String() != stateData.ExpiresAt.ValueString() {
+		if stateData != nil && expiryDate != nil && expiryDate.String() != stateData.ExpiresAt.ValueString() {
 			// Set the new expiration date in the plan
 			planData.ExpiresAt = types.StringValue(expiryDate.String())
 			// Set several attributes to unknown since they will change as part of rotation

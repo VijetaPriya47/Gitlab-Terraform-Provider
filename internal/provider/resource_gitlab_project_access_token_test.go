@@ -239,6 +239,69 @@ func TestAccGitlabProjectAccessToken_rotationUsingExpiresAt(t *testing.T) {
 	})
 }
 
+// This test checks an issue where using the `expires` to change the rotation would only work when
+// `time_offset` isn't used. Prior to introducing rotation, `time_offset` was a common method
+// for rotating the token automatically, so many users are likely using it when upgrading.
+func TestAccGitlabProjectAccessToken_rotationUsingExpiresAtTimeOffset(t *testing.T) {
+	project := testutil.CreateProject(t)
+
+	// lintignore:AT004  // we need the provider configuration for the time provider
+	config := fmt.Sprintf(`
+		provider "time" {}
+
+		resource "time_offset" "year" {
+			offset_days = 364
+		}
+
+		resource "gitlab_project_access_token" "token" {
+			project      = %d
+			name         = "token"
+			expires_at   = split("T", time_offset.year.rfc3339)[0]
+			access_level = "developer"
+			scopes       = ["read_api"]
+		}
+		`, project.ID)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ExternalProviders: map[string]resource.ExternalProvider{
+			"time": {
+				Source: "hashicorp/time",
+			},
+		},
+		CheckDestroy: testAccCheckGitlabProjectAccessTokenDestroy,
+		Steps: []resource.TestStep{
+			// Create a Project Access Token
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("gitlab_project_access_token.token", "expires_at"),
+				),
+			},
+			// Taint the timeoffset to have it re-create the token
+			{
+				Config: config,
+				Taint:  []string{"time_offset.year"},
+			},
+			// Re-run the config for a Project Access Token
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("gitlab_project_access_token.token", "expires_at"),
+				),
+			},
+			// Verify upstream resource with an import.
+			{
+				ResourceName:      "gitlab_project_access_token.token",
+				ImportState:       true,
+				ImportStateVerify: true,
+				// The token is only known during creating. We explicitly mention this limitation in the docs.
+				ImportStateVerifyIgnore: []string{"token", "rotation_configuration"},
+			},
+		},
+	})
+}
+
 // This test checks that when a date is sufficiently in the future, the token
 // will rotate automatically. This is done by mocking the time using
 // the `GITLAB_TESTING_TIME` environment variable, which is parsed by
