@@ -102,11 +102,11 @@ func AccessControlLevelValueToName(input string) gitlab.AccessControlValue {
 }
 
 // Valid scopes for project and group access tokens
+// See: https://docs.gitlab.com/ee/user/project/settings/project_access_tokens.html#scopes-for-a-project-access-token
+// See: https://docs.gitlab.com/ee/user/group/settings/group_access_tokens.html#scopes-for-a-group-access-token
 var ValidAccessTokenScopes = []string{
 	"api",
 	"read_api",
-	"read_user",
-	"k8s_proxy",
 	"read_registry",
 	"write_registry",
 	"read_repository",
