@@ -216,9 +216,9 @@ func (r *gitlabGroupAccessTokenResource) Configure(ctx context.Context, req reso
 	r.client = req.ProviderData.(*gitlab.Client)
 }
 
-func (r *gitlabGroupAccessTokenResource) groupAccessTokenToStateModel(data *gitlabGroupAccessTokenResourceModel, token *gitlab.GroupAccessToken, project string) diag.Diagnostics {
+func (r *gitlabGroupAccessTokenResource) groupAccessTokenToStateModel(data *gitlabGroupAccessTokenResourceModel, token *gitlab.GroupAccessToken, group string) diag.Diagnostics {
 
-	data.Group = types.StringValue(project)
+	data.Group = types.StringValue(group)
 	data.Name = types.StringValue(token.Name)
 	data.ExpiresAt = types.StringValue(token.ExpiresAt.String())
 	data.CreatedAt = types.StringValue(token.CreatedAt.String())

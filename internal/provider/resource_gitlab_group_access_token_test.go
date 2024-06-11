@@ -21,7 +21,7 @@ import (
 )
 
 func TestAccGitlabGroupAccessToken_migrateFromSDKToFramework(t *testing.T) {
-	// Set up project
+	// Set up group
 	group := testutil.CreateGroups(t, 1)[0]
 
 	// Create common config for testing
@@ -36,7 +36,7 @@ func TestAccGitlabGroupAccessToken_migrateFromSDKToFramework(t *testing.T) {
 	`, group.ID, time.Now().Add(time.Hour*48).Format(api.Iso8601))
 
 	resource.ParallelTest(t, resource.TestCase{
-		CheckDestroy: testAccCheckGitlabPipelineScheduleDestroy,
+		CheckDestroy: testAccCheckGitlabGroupAccessTokenDestroy,
 		Steps: []resource.TestStep{
 			// Create the pipeline in the old provider version
 			{
@@ -222,9 +222,9 @@ func TestAccGitlabGroupAccessToken_rotationUsingDate(t *testing.T) {
 	// Not parallel since "os.Setenv" leaks test state otherwise.
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
-		CheckDestroy:             testAccCheckGitlabProjectAccessTokenDestroy,
+		CheckDestroy:             testAccCheckGitlabGroupAccessTokenDestroy,
 		Steps: []resource.TestStep{
-			// Create a Project Access Token
+			// Create a Group Access Token
 			{
 				Config: fmt.Sprintf(`
 				resource "gitlab_group_access_token" "this" {
@@ -438,7 +438,7 @@ func TestAccGitlabGroupAccessToken_rotationConfiguration(t *testing.T) {
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		CheckDestroy:             testAccCheckGitlabProjectAccessTokenDestroy,
+		CheckDestroy:             testAccCheckGitlabGroupAccessTokenDestroy,
 		Steps: []resource.TestStep{
 			// Create a basic access token.
 			{
@@ -537,7 +537,7 @@ func TestAccGitlabGroupAccessToken_attributeValidation(t *testing.T) {
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		CheckDestroy:             testAccCheckGitlabProjectAccessTokenDestroy,
+		CheckDestroy:             testAccCheckGitlabGroupAccessTokenDestroy,
 		Steps: []resource.TestStep{
 			// Validate expires_at and rotation_configuration conflict
 			{
@@ -700,22 +700,24 @@ func testAccCheckGitlabGroupAccessTokenAttributes(gatWrap *testAccGitlabGroupAcc
 
 func testAccCheckGitlabGroupAccessTokenDestroy(s *terraform.State) error {
 	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "gitlab_group" {
+		if rs.Type != "gitlab_group_access_token" {
 			continue
 		}
 
-		group, resp, err := testutil.TestGitlabClient.Groups.GetGroup(rs.Primary.ID, nil)
-		if err == nil {
-			if group != nil && fmt.Sprintf("%d", group.ID) == rs.Primary.ID {
-				if group.MarkedForDeletionOn == nil {
-					return fmt.Errorf("Group still exists")
-				}
-			}
-		}
-		if resp.StatusCode != 404 {
+		group := rs.Primary.Attributes["group"]
+		name := rs.Primary.Attributes["name"]
+
+		tokens, _, err := testutil.TestGitlabClient.GroupAccessTokens.ListGroupAccessTokens(group, nil)
+		if err != nil {
 			return err
 		}
-		return nil
+
+		for _, token := range tokens {
+			if token.Name == name {
+				return fmt.Errorf("group %q access token with name %q still exists", group, name)
+			}
+		}
 	}
+
 	return nil
 }

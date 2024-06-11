@@ -34,7 +34,7 @@ func TestAccGitlabProjectAccessToken_migrateFromSDKToFramework(t *testing.T) {
 	`, project.ID, time.Now().Add(time.Hour*48).Format(api.Iso8601))
 
 	resource.ParallelTest(t, resource.TestCase{
-		CheckDestroy: testAccCheckGitlabPipelineScheduleDestroy,
+		CheckDestroy: testAccCheckGitlabProjectAccessTokenDestroy,
 		Steps: []resource.TestStep{
 			// Create the pipeline in the old provider version
 			{
@@ -112,10 +112,10 @@ func TestAccGitlabProjectAccessToken_basic(t *testing.T) {
 					scopes  = [
 						"api",
 						"read_api",
-						"read_repository",
-						"write_repository",
 						"read_registry",
 						"write_registry",
+						"read_repository",
+						"write_repository",
 						"ai_features",
 						"k8s_proxy",
 						"read_observability",
