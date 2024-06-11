@@ -14,10 +14,6 @@ import (
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
 
-var validBranchesToBeNotified = []string{
-	"all", "default", "protected", "default_and_protected",
-}
-
 var _ = registerResource("gitlab_integration_emails_on_push", func() *schema.Resource {
 	return resourceGitLabIntegrationEmailOnPushResource(
 		`The ` + "`gitlab_integration_emails_on_push`" + ` resource allows to manage the lifecycle of a project integration with Emails on Push Service.
@@ -85,11 +81,11 @@ func resourceGitLabIntegrationEmailOnPushResource(description string) *schema.Re
 				Optional:    true,
 			},
 			"branches_to_be_notified": {
-				Description:      fmt.Sprintf("Branches to send notifications for. Valid options are %s. Notifications are always fired for tag pushes.", utils.RenderValueListForDocs(validBranchesToBeNotified)),
+				Description:      fmt.Sprintf("Branches to send notifications for. Valid options are %s. Notifications are always fired for tag pushes.", utils.RenderValueListForDocs(api.ValidBranchesToBeNotified)),
 				Type:             schema.TypeString,
 				Optional:         true,
 				Default:          "all",
-				ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(validBranchesToBeNotified, false)),
+				ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(api.ValidBranchesToBeNotified, false)),
 			},
 			"title": {
 				Description: "Title of the integration.",
