@@ -1,7 +1,5 @@
 include:
-  - project: "gitlab-org/quality/pipeline-common"
-    file:
-      - "/ci/danger-review.yml"
+  - component: ${CI_SERVER_FQDN}/gitlab-org/components/danger-review/danger-review@1.2.0
 
 stages:
   - lint
@@ -70,11 +68,8 @@ cache:
 #     - if: $CI_COMMIT_TAG
 
 danger-review:
-  needs: []
   stage: lint
   allow_failure: true
-  variables:
-    GITLAB_DANGERFILES_VERSION: "3.6.4"
 
 make:lint:
   needs: []
