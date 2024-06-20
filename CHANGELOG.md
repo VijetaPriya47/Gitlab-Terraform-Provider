@@ -1,5 +1,5 @@
 
-## 7.1.0 (2024-06-20)
+## 17.1.0 (2024-06-20)
 
 This release was tested against GitLab 17.1, 17.0, and 16.11 for both CE and EE
 
