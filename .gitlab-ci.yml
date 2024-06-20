@@ -322,13 +322,18 @@ goreleaser:build-verification:
   stage: acceptance-test
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_MERGE_REQUEST_LABELS =~ /run-nightly-tests/
   image:
-    name: goreleaser/goreleaser:v1.27.0-nightly
+    name: golang:${GOLANG_IMAGE_VERSION}
     entrypoint: [""]
   variables:
     # Disable shallow cloning so that goreleaser can diff between tags to validate
     GIT_DEPTH: 0
     GITLAB_TOKEN: $CI_JOB_TOKEN
+  before_script:
+    - echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | tee /etc/apt/sources.list.d/goreleaser.list
+    - apt update
+    - apt install -y goreleaser
   script:
     # Skip `git` validation so we don't get git commit mismatches from tags since this job
     # won't always run on a tag. Since we're not calling `release`, nothing is published
@@ -372,7 +377,7 @@ goreleaser:
   only:
     - tags
   image:
-    name: goreleaser/goreleaser:v1.27.0-nightly
+    name: golang:${GOLANG_IMAGE_VERSION}
     entrypoint: [""]
   variables:
     # Disable shallow cloning so that goreleaser can diff between tags to
@@ -380,7 +385,9 @@ goreleaser:
     GIT_DEPTH: 0
     GITLAB_TOKEN: $CI_JOB_TOKEN
   before_script:
-    - apk add gpg-agent
+    - echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | tee /etc/apt/sources.list.d/goreleaser.list
+    - apt update
+    - apt install -y goreleaser gpg-agent
     - gpg --batch --no-tty --import $GPG_PRIVATE_KEY
     - "export GPG_FINGERPRINT=$(gpg --with-colons --list-keys | awk -F: '/^pub/ { print $5 }')"
   script:
