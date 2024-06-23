@@ -118,3 +118,22 @@ var ValidAccessTokenScopes = []string{
 	"read_observability",
 	"write_observability",
 }
+
+// Valid scopes for personal access tokens
+// See: https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html#personal-access-token-scopes
+var ValidPersonalAccessTokenScopes = []string{
+	"api",
+	"read_user",
+	"read_api",
+	"read_repository",
+	"write_repository",
+	"read_registry",
+	"write_registry",
+	"sudo",
+	"admin_mode",
+	"create_runner",
+	"manage_runner",
+	"ai_features",
+	"k8s_proxy",
+	"read_service_ping",
+}
