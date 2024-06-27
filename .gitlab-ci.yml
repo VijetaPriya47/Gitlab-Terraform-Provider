@@ -156,7 +156,7 @@ go:test:
 .testacc:
   stage: acceptance-test
   services:
-    - docker:27.0.1-dind
+    - docker:27.0.2-dind
   variables:
     DOCKER_HOST: tcp://docker:2376/
     DOCKER_TLS_VERIFY: 1
