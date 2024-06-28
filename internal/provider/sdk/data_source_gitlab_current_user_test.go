@@ -13,18 +13,22 @@ import (
 )
 
 func TestAccDataSourceGitlabCurrentUser_basic(t *testing.T) {
-	//The root user has no public email by default, set the public email so it shows up properly.
-	_, _, _ = testutil.TestGitlabClient.Users.ModifyUser(1, &gitlab.ModifyUserOptions{
-		// The public email MUST match an email on record for the user, or it gets a bad request.
-		PublicEmail: gitlab.Ptr("admin@example.com"),
-	})
 
-	t.Cleanup(func() {
-		_, _, _ = testutil.TestGitlabClient.Users.ModifyUser(1, &gitlab.ModifyUserOptions{
-			//Set back to the empty state on test completion.
-			PublicEmail: gitlab.Ptr(""),
-		})
+	// Get the user so we can get the verified email that's randomly generated for them
+	user, _, err := testutil.TestGitlabClient.Users.GetUser(1, gitlab.GetUsersOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	//The root user has no public email by default, set the public email so it shows up properly.
+	_, _, err = testutil.TestGitlabClient.Users.ModifyUser(1, &gitlab.ModifyUserOptions{
+		// The public email MUST match an email on record for the user, or it gets a bad request.
+		PrivateProfile: gitlab.Ptr(false),
+		PublicEmail:    gitlab.Ptr(user.Email),
 	})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
@@ -39,9 +43,10 @@ func TestAccDataSourceGitlabCurrentUser_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("data.gitlab_current_user.this", "bot", "false"),
 					resource.TestCheckResourceAttr("data.gitlab_current_user.this", "namespace_id", "1"),
 					resource.TestCheckResourceAttr("data.gitlab_current_user.this", "global_namespace_id", "gid://gitlab/Namespaces::UserNamespace/1"),
-					//resource.TestCheckResourceAttr("data.gitlab_current_user.this", "public_email", "admin@example.com"),
 					// Check only if this attribute is _set_, since other tests may modify it and we can't create a clean user for this test.
 					resource.TestCheckResourceAttrSet("data.gitlab_current_user.this", "group_count"),
+					// Check that public_email is set; we can't change it because it only allows verified email changes now.
+					resource.TestCheckResourceAttrSet("data.gitlab_current_user.this", "public_email"),
 				),
 			},
 		},
