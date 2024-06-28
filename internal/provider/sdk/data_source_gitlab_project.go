@@ -2,9 +2,7 @@ package sdk
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"net/http"
 	"regexp"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -610,8 +608,7 @@ func dataSourceGitlabProjectRead(ctx context.Context, d *schema.ResourceData, me
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Reading Gitlab project %q push rules", d.Id()))
 
 	pushRules, _, err := client.Projects.GetProjectPushRules(d.Id(), gitlab.WithContext(ctx))
-	var httpError *gitlab.ErrorResponse
-	if errors.As(err, &httpError) && (httpError.Response.StatusCode == http.StatusNotFound || httpError.Response.StatusCode == http.StatusForbidden) {
+	if api.Is404(err) || api.Is403(err) {
 		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Failed to get push rules for project %q: %v", d.Id(), err))
 	} else if err != nil {
 		return diag.Errorf("Failed to get push rules for project %q: %v", d.Id(), err)

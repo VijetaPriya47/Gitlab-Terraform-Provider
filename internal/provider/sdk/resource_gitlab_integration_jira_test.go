@@ -4,10 +4,10 @@
 package sdk
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/xanzy/go-gitlab"
@@ -18,8 +18,9 @@ import (
 
 func TestAcc_GitlabIntegrationJira_basic(t *testing.T) {
 	var jiraService gitlab.JiraService
-	rInt := acctest.RandInt()
 	jiraResourceName := "gitlab_integration_jira.jira"
+
+	project := testutil.CreateProject(t)
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
@@ -27,7 +28,17 @@ func TestAcc_GitlabIntegrationJira_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create a project and a jira service
 			{
-				Config: testAccGitlabIntegrationJiraConfig(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_integration_jira" "jira" {
+				  project  = "%d"
+				  url      = "https://test.com"
+				  username = "user1"
+				  password = "mypass"
+				  commit_events = true
+				  merge_requests_events    = false
+				  comment_on_event_enabled = false
+				}
+				`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabIntegrationJiraExists(jiraResourceName, &jiraService),
 					resource.TestCheckResourceAttr(jiraResourceName, "url", "https://test.com"),
@@ -49,7 +60,19 @@ func TestAcc_GitlabIntegrationJira_basic(t *testing.T) {
 			},
 			// Update the jira service
 			{
-				Config: testAccGitlabIntegrationJiraUpdateConfig(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_integration_jira" "jira" {
+				  project  = "%d"
+				  url      = "https://testurl.com"
+				  api_url  = "https://testurl.com/rest"
+				  username = "user2"
+				  password = "mypass_update"
+				  jira_issue_transition_id = "3"
+				  commit_events = false
+				  merge_requests_events    = true
+				  comment_on_event_enabled = true
+				}
+				`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabIntegrationJiraExists(jiraResourceName, &jiraService),
 					resource.TestCheckResourceAttr(jiraResourceName, "url", "https://testurl.com"),
@@ -73,7 +96,17 @@ func TestAcc_GitlabIntegrationJira_basic(t *testing.T) {
 			},
 			// Update the jira service to get back to previous settings
 			{
-				Config: testAccGitlabIntegrationJiraConfig(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_integration_jira" "jira" {
+				  project  = "%d"
+				  url      = "https://test.com"
+				  username = "user1"
+				  password = "mypass"
+				  commit_events = true
+				  merge_requests_events    = false
+				  comment_on_event_enabled = false
+				}
+				`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabIntegrationJiraExists(jiraResourceName, &jiraService),
 					resource.TestCheckResourceAttr(jiraResourceName, "url", "https://test.com"),
@@ -98,10 +131,24 @@ func TestAcc_GitlabIntegrationJira_basic(t *testing.T) {
 	})
 }
 
-func TestAcc_GitlabIntegrationJira_backwardsCompatibility(t *testing.T) {
+func TestAcc_GitlabIntegrationJira_projectKey(t *testing.T) {
 	var jiraService gitlab.JiraService
-	rInt := acctest.RandInt()
-	jiraResourceName := "gitlab_service_jira.jira"
+	jiraResourceName := "gitlab_integration_jira.jira"
+	project := testutil.CreateProject(t)
+
+	importSkipAttributes := []string{
+		"password",
+	}
+
+	isVersionUnder17, err := api.IsGitLabVersionLessThan(context.Background(), testutil.TestGitlabClient, "17.0")()
+	if err != nil {
+		t.Fatal("Failed to read GitLab version")
+	}
+
+	// We need to skip import validation on project key when we're below 17.0
+	if isVersionUnder17 {
+		importSkipAttributes = append(importSkipAttributes, "project_key")
+	}
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
@@ -109,15 +156,47 @@ func TestAcc_GitlabIntegrationJira_backwardsCompatibility(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create a project and a jira service
 			{
-				Config: fmt.Sprintf(`
-				resource "gitlab_project" "foo" {
-				  name        = "foo-%d"
-				  description = "Terraform acceptance tests"
-				  visibility_level = "public"
-				}
-				
+				Config: fmt.Sprintf(
+					`resource "gitlab_integration_jira" "jira" {
+					  project  = "%d"
+					  url      = "https://test.com"
+					  username = "user1"
+					  password = "mypass"
+					  project_key = "TEST"
+					  commit_events = true
+					  merge_requests_events    = false
+					  comment_on_event_enabled = false
+					}`, project.ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabIntegrationJiraExists(jiraResourceName, &jiraService),
+				),
+			},
+			// Verify Import
+			{
+				ResourceName:            jiraResourceName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: importSkipAttributes,
+			},
+		},
+	})
+}
+
+func TestAcc_GitlabIntegrationJira_backwardsCompatibility(t *testing.T) {
+	var jiraService gitlab.JiraService
+	jiraResourceName := "gitlab_service_jira.jira"
+
+	project := testutil.CreateProject(t)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabIntegrationJiraDestroy,
+		Steps: []resource.TestStep{
+			// Create a project and a jira service
+			{
+				Config: fmt.Sprintf(`				
 				resource "gitlab_service_jira" "jira" {
-				  project  = "${gitlab_project.foo.id}"
+				  project  = "%d"
 				  url      = "https://test.com"
 				  username = "user1"
 				  password = "mypass"
@@ -125,7 +204,7 @@ func TestAcc_GitlabIntegrationJira_backwardsCompatibility(t *testing.T) {
 				  merge_requests_events    = false
 				  comment_on_event_enabled = false
 				}
-				`, rInt),
+				`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabIntegrationJiraExists(jiraResourceName, &jiraService),
 					resource.TestCheckResourceAttr(jiraResourceName, "url", "https://test.com"),
@@ -178,8 +257,8 @@ func testAccCheckGitlabIntegrationJiraDestroy(s *terraform.State) error {
 
 		project := rs.Primary.ID
 
-		_, _, err := testutil.TestGitlabClient.Services.GetJiraService(project)
-		if err == nil {
+		service, _, err := testutil.TestGitlabClient.Services.GetJiraService(project)
+		if err == nil && service.Active {
 			return fmt.Errorf("Jira Integration in project %s still exists", project)
 		}
 		if !api.Is404(err) {
@@ -188,46 +267,4 @@ func testAccCheckGitlabIntegrationJiraDestroy(s *terraform.State) error {
 		return nil
 	}
 	return nil
-}
-
-func testAccGitlabIntegrationJiraConfig(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "foo" {
-  name        = "foo-%d"
-  description = "Terraform acceptance tests"
-  visibility_level = "public"
-}
-
-resource "gitlab_integration_jira" "jira" {
-  project  = "${gitlab_project.foo.id}"
-  url      = "https://test.com"
-  username = "user1"
-  password = "mypass"
-  commit_events = true
-  merge_requests_events    = false
-  comment_on_event_enabled = false
-}
-`, rInt)
-}
-
-func testAccGitlabIntegrationJiraUpdateConfig(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "foo" {
-  name        = "foo-%d"
-  description = "Terraform acceptance tests"
-  visibility_level = "public"
-}
-
-resource "gitlab_integration_jira" "jira" {
-  project  = "${gitlab_project.foo.id}"
-  url      = "https://testurl.com"
-  api_url  = "https://testurl.com/rest"
-  username = "user2"
-  password = "mypass_update"
-  jira_issue_transition_id = "3"
-  commit_events = false
-  merge_requests_events    = true
-  comment_on_event_enabled = true
-}
-`, rInt)
 }

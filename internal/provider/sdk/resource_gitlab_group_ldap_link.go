@@ -281,21 +281,15 @@ func resourceGitlabGroupLdapLinkDeleteWithID(ctx context.Context, group, ldapPro
 	}
 
 	if _, err := client.Groups.DeleteGroupLDAPLinkWithCNOrFilter(group, &options, gitlab.WithContext(ctx)); err != nil {
-		switch err := err.(type) {
-		case *gitlab.ErrorResponse:
-
-			// Ignore LDAP links that don't exist
-			if strings.Contains(err.Message, "Linked LDAP group not found") || api.Is403(err) {
-				tflog.Warn(ctx, "Linked LDAP group not found. Was the LDAP link or its group deleted outside TF?", map[string]interface{}{
-					"group":         group,
-					"ldap_provider": ldapProvider,
-					"cn":            cn,
-					"filter":        filter,
-				})
-			} else {
-				return diag.FromErr(err)
-			}
-		default:
+		// Ignore LDAP links that don't exist
+		if api.Is404(err) || api.Is403(err) {
+			tflog.Warn(ctx, "Linked LDAP group not found. Was the LDAP link or its group deleted outside TF?", map[string]interface{}{
+				"group":         group,
+				"ldap_provider": ldapProvider,
+				"cn":            cn,
+				"filter":        filter,
+			})
+		} else {
 			return diag.FromErr(err)
 		}
 	}
