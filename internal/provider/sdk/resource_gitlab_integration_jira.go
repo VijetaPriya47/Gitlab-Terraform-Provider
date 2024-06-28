@@ -171,7 +171,6 @@ func resourceGitlabIntegrationJiraCreate(ctx context.Context, d *schema.Resource
 	}
 
 	tflog.Debug(ctx, "[DEBUG] Create Gitlab Jira integration")
-
 	if _, err := client.Services.SetJiraService(project, jiraOptions, gitlab.WithContext(ctx)); err != nil {
 		return diag.Errorf("couldn't create Gitlab Jira service: %v", err)
 	}
@@ -201,7 +200,6 @@ func resourceGitlabIntegrationJiraRead(ctx context.Context, d *schema.ResourceDa
 	d.Set("url", jiraService.Properties.URL)
 	d.Set("api_url", jiraService.Properties.APIURL)
 	d.Set("username", jiraService.Properties.Username)
-	d.Set("project_key", jiraService.Properties.ProjectKey)
 	d.Set("title", jiraService.Title)
 	d.Set("created_at", jiraService.CreatedAt.String())
 	d.Set("updated_at", jiraService.UpdatedAt.String())
@@ -215,6 +213,22 @@ func resourceGitlabIntegrationJiraRead(ctx context.Context, d *schema.ResourceDa
 	d.Set("note_events", jiraService.NoteEvents)
 	d.Set("pipeline_events", jiraService.PipelineEvents)
 	d.Set("job_events", jiraService.JobEvents)
+
+	// Match pre-existing behavior of a single key until we support the new multi-key approach.
+	// If we're running before 17.0, we have to use the deprecated ProjectKey (singular)
+	isVersionAtLeast17, err := api.IsGitLabVersionAtLeast(ctx, client, "17.0")()
+	if err != nil {
+		return diag.FromErr(fmt.Errorf("unable to determine version of GitLab. Cannot determine which API property to read from. Error: %v", err))
+	}
+	if isVersionAtLeast17 {
+		if jiraService.Properties.ProjectKeys != nil && len(jiraService.Properties.ProjectKeys) > 0 {
+			d.Set("project_key", jiraService.Properties.ProjectKeys[0])
+		}
+	} else {
+		// While technically the TF provider seemed to support project_key pre 17, it's not documented in the 16.11
+		// API documentation, and even when passed into the API it returns blank from the read API, so it causes issues.
+		tflog.Debug(ctx, "Skipping setting JIRA Project Key since it isn't supported pre-GitLab 17.0")
+	}
 
 	// Note for support - if someone is using provider version 16.0+, it's not compatible with GitLab 15.2-, because there
 	// was an issue with how the JIRA transition IDs were formatted in the API. Support for that was removed in 16.0.
@@ -245,9 +259,11 @@ func resourceGitlabIntegrationJiraDelete(ctx context.Context, d *schema.Resource
 func expandJiraOptions(d *schema.ResourceData) (*gitlab.SetJiraServiceOptions, error) {
 	setJiraServiceOptions := gitlab.SetJiraServiceOptions{}
 
+	jiraProjectKey := d.Get("project_key").(string)
+
 	// Set required properties
 	setJiraServiceOptions.URL = gitlab.Ptr(d.Get("url").(string))
-	setJiraServiceOptions.ProjectKey = gitlab.Ptr(d.Get("project_key").(string))
+	setJiraServiceOptions.ProjectKeys = &[]string{jiraProjectKey}
 	setJiraServiceOptions.Username = gitlab.Ptr(d.Get("username").(string))
 	setJiraServiceOptions.Password = gitlab.Ptr(d.Get("password").(string))
 	setJiraServiceOptions.CommitEvents = gitlab.Ptr(d.Get("commit_events").(bool))
