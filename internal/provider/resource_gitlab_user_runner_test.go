@@ -6,6 +6,7 @@ package provider
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -114,6 +115,7 @@ func TestAcc_GitlabUserRunner_basicProjectRunner(t *testing.T) {
 					`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("gitlab_user_runner.this", "token"),
+					resource.TestCheckResourceAttr("gitlab_user_runner.this", "project_id", strconv.Itoa(project.ID)),
 				),
 			},
 			// Verify Import
@@ -121,7 +123,7 @@ func TestAcc_GitlabUserRunner_basicProjectRunner(t *testing.T) {
 				ResourceName:            "gitlab_user_runner.this",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"token"}, // doesn't import
+				ImportStateVerifyIgnore: []string{"token", "group_id", "project_id"}, // doesn't import
 			},
 			{
 				// Update the runner with a bunch of optional attributes
@@ -146,7 +148,7 @@ func TestAcc_GitlabUserRunner_basicProjectRunner(t *testing.T) {
 				ResourceName:            "gitlab_user_runner.this",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"token"}, // doesn't import
+				ImportStateVerifyIgnore: []string{"token", "group_id", "project_id"}, // doesn't import
 			},
 		},
 	})
@@ -190,6 +192,7 @@ func TestAcc_GitlabUserRunner_basicGroupRunner(t *testing.T) {
 					`, group.ID),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("gitlab_user_runner.this", "token"),
+					resource.TestCheckResourceAttr("gitlab_user_runner.this", "group_id", strconv.Itoa(group.ID)),
 				),
 			},
 			// Verify Import
@@ -197,7 +200,7 @@ func TestAcc_GitlabUserRunner_basicGroupRunner(t *testing.T) {
 				ResourceName:            "gitlab_user_runner.this",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"token"}, // doesn't import
+				ImportStateVerifyIgnore: []string{"token", "group_id", "project_id"}, // doesn't import
 			},
 			{
 				// Update the runner with a bunch of optional attributes
@@ -215,14 +218,17 @@ func TestAcc_GitlabUserRunner_basicGroupRunner(t *testing.T) {
 						maximum_timeout = 600
 					 }
 					`, group.ID),
-				Check: resource.TestCheckResourceAttrSet("gitlab_user_runner.this", "token"), // rest of attributes checked by import
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("gitlab_user_runner.this", "token"), // rest of attributes checked by import
+					resource.TestCheckResourceAttr("gitlab_user_runner.this", "group_id", strconv.Itoa(group.ID)),
+				),
 			},
 			// Verify Import
 			{
 				ResourceName:            "gitlab_user_runner.this",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"token"}, // doesn't import
+				ImportStateVerifyIgnore: []string{"token", "group_id", "project_id"}, // doesn't import
 			},
 		},
 	})
@@ -271,7 +277,7 @@ func TestAcc_GitlabUserRunner_createWithMaxTimeoutErrors(t *testing.T) {
 				ResourceName:            "gitlab_user_runner.this",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"token"}, // doesn't import
+				ImportStateVerifyIgnore: []string{"token", "group_id", "project_id"}, // doesn't import
 			},
 		},
 	})
@@ -310,7 +316,7 @@ func TestAcc_GitlabUserRunner_createWithOptions(t *testing.T) {
 				ResourceName:            "gitlab_user_runner.instance_runner",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"token"}, // doesn't import
+				ImportStateVerifyIgnore: []string{"token", "group_id", "project_id"}, // doesn't import
 			},
 			{
 				// test that validation of group and no ID works
@@ -337,7 +343,7 @@ func TestAcc_GitlabUserRunner_createWithOptions(t *testing.T) {
 				ResourceName:            "gitlab_user_runner.group_runner",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"token"}, // doesn't import
+				ImportStateVerifyIgnore: []string{"token", "group_id", "project_id"}, // doesn't import
 			},
 			{
 				// test that validation of group and no ID works
@@ -364,7 +370,7 @@ func TestAcc_GitlabUserRunner_createWithOptions(t *testing.T) {
 				ResourceName:            "gitlab_user_runner.project_runner",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"token"}, // doesn't import
+				ImportStateVerifyIgnore: []string{"token", "group_id", "project_id"}, // doesn't import
 			},
 		},
 	})
