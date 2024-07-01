@@ -256,7 +256,7 @@ func (r *gitlabUserRunnerResource) Read(ctx context.Context, req resource.ReadRe
 	runner, _, err := r.client.Runners.GetRunnerDetails(runnerId)
 	if err != nil {
 		if api.Is404(err) {
-			tflog.Debug(ctx, "[DEBUG] gitlab runnernot found", map[string]interface{}{
+			tflog.Debug(ctx, "[DEBUG] gitlab runner not found", map[string]interface{}{
 				"runnerId": runnerId,
 			})
 			resp.State.RemoveResource(ctx)
@@ -431,18 +431,6 @@ func (d *gitlabUserRunnerModel) modelToStateModel(r *gitlab.RunnerDetails, ctx c
 	list, diag := types.SetValueFrom(ctx, types.StringType, r.TagList)
 	if diag != nil {
 		return diag
-	}
-
-	// If the runner type is "project", grab the project ID from the associated projects
-	if len(r.Projects) > 0 && r.RunnerType == "project_type" {
-		projectId := r.Projects[0].ID
-		d.ProjectID = types.Int64Value(int64(projectId))
-	}
-
-	// If the runner type is "group", grab the group ID from the associated groups
-	if len(r.Groups) > 0 && r.RunnerType == "group_type" {
-		groupId := r.Groups[0].ID
-		d.GroupID = types.Int64Value(int64(groupId))
 	}
 
 	d.TagList = list
