@@ -1,5 +1,8 @@
 include:
   - component: ${CI_SERVER_FQDN}/gitlab-org/components/danger-review/danger-review@1.4.1
+    inputs:
+      job_stage: "lint"
+      job_allow_failure: true
 
 stages:
   - lint
@@ -66,10 +69,6 @@ cache:
 #   rules:
 #     - if: $CI_DEFAULT_BRANCH == $CI_COMMIT_REF_NAME
 #     - if: $CI_COMMIT_TAG
-
-danger-review:
-  stage: lint
-  allow_failure: true
 
 make:lint:
   needs: []
