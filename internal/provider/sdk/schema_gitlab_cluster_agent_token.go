@@ -66,6 +66,7 @@ func gitlabClusterAgentTokenSchema() map[string]*schema.Schema {
 			Description: "The secret token for the agent. The `token` is not available in imported resources.",
 			Type:        schema.TypeString,
 			Computed:    true,
+			Sensitive:   true,
 		},
 	}
 }
