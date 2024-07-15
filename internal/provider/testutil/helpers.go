@@ -822,6 +822,29 @@ func CreateProjectFile(t *testing.T, projectID int, fileContent string, filePath
 	return file
 }
 
+func CreateProjectFilePlaintext(t *testing.T, projectID int, fileContent string, filePath string, branch string) *gitlab.FileInfo {
+	file, _, err := TestGitlabClient.RepositoryFiles.CreateFile(projectID, filePath, &gitlab.CreateFileOptions{
+		Branch:        &branch,
+		Encoding:      gitlab.Ptr("text"),
+		Content:       &fileContent,
+		CommitMessage: gitlab.Ptr(fmt.Sprintf("Random_Commit_Message_%d", acctest.RandInt())),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() {
+		if _, err := TestGitlabClient.RepositoryFiles.DeleteFile(projectID, filePath, &gitlab.DeleteFileOptions{
+			Branch:        &branch,
+			CommitMessage: gitlab.Ptr(fmt.Sprintf("Delete_Random_Commit_Message_%d", acctest.RandInt())),
+		}); err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	return file
+}
+
 func CopyFile(src, dst string) error {
 	in, err := os.Open(src)
 	if err != nil {
