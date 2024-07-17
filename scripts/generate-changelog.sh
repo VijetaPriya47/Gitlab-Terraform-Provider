@@ -38,7 +38,7 @@ curl \
   --request POST \
   --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
   'https://gitlab.com/api/v4/projects/gitlab-org%2Fterraform-provider-gitlab/repository/branches' \
-  --data "branch=$release_branch&ref=$default_branch" | true
+  --data "branch=$release_branch" --data-urlencode "ref=$default_branch" | true
 echo " OK"
 
 echo -n "Creating changelog in $release_branch ... "
@@ -48,7 +48,7 @@ curl \
   --request POST \
   --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
   'https://gitlab.com/api/v4/projects/gitlab-org%2Fterraform-provider-gitlab/repository/changelog' \
-  --data "version=$VERSION&branch=$release_branch&message=Add changelog for $VERSION" > /dev/null
+  --data "version=$VERSION" --data-urlencode "branch=$release_branch" --data "message=Add changelog for $VERSION" > /dev/null
 echo " OK"
 
 echo -n "Creating merge request ... "
