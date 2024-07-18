@@ -967,6 +967,10 @@ func TestAccGitlabProject_importURL_privateRepository(t *testing.T) {
 }
 
 func TestAccGitlabProject_initializeWithReadmeAndCustomDefaultBranch(t *testing.T) {
+	// There is a bug with the caching logic in 17.2 that makes this test fail even though
+	// it's created properly, so disabling this until 17.3
+	t.Skip()
+
 	var project gitlab.Project
 	rInt := acctest.RandInt()
 
