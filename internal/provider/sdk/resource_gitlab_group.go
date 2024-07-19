@@ -540,6 +540,8 @@ func resourceGitlabGroupRead(ctx context.Context, d *schema.ResourceData, meta i
 	d.Set("parent_id", group.ParentID)
 	d.Set("runners_token", group.RunnersToken)
 	d.Set("share_with_group_lock", group.ShareWithGroupLock)
+
+	// nolint:staticcheck // SA1019 ignore deprecated DefaultBranchProtection
 	d.Set("default_branch_protection", group.DefaultBranchProtection)
 	d.Set("prevent_forking_outside_group", group.PreventForkingOutsideGroup)
 	d.Set("membership_lock", group.MembershipLock)
@@ -658,6 +660,7 @@ func resourceGitlabGroupUpdate(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	if d.HasChange("default_branch_protection") {
+		// nolint:staticcheck // SA1019 ignore deprecated DefaultBranchProtection
 		options.DefaultBranchProtection = gitlab.Ptr(d.Get("default_branch_protection").(int))
 	}
 

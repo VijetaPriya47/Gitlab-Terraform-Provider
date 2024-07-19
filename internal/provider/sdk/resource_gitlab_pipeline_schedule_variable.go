@@ -129,7 +129,12 @@ func resourceGitlabPipelineScheduleVariableCreate(ctx context.Context, d *schema
 	}
 
 	if v, ok := d.GetOk("variable_type"); v != nil && ok {
-		options.VariableType = gitlab.Ptr(v.(string))
+		val := v.(string)
+		if val == "env_var" {
+			options.VariableType = gitlab.Ptr(gitlab.EnvVariableType)
+		} else if val == "file" {
+			options.VariableType = gitlab.Ptr(gitlab.FileVariableType)
+		}
 	}
 
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab PipelineScheduleVariable %s:%s", *options.Key, *options.Value))
@@ -196,7 +201,12 @@ func resourceGitlabPipelineScheduleVariableUpdate(ctx context.Context, d *schema
 		}
 
 		if v, ok := d.GetOk("variable_type"); v != nil && ok {
-			options.VariableType = gitlab.Ptr(v.(string))
+			val := v.(string)
+			if val == "env_var" {
+				options.VariableType = gitlab.Ptr(gitlab.EnvVariableType)
+			} else if val == "file" {
+				options.VariableType = gitlab.Ptr(gitlab.FileVariableType)
+			}
 		}
 
 		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab PipelineScheduleVariable %s", d.Id()))

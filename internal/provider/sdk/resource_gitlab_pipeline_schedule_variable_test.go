@@ -310,7 +310,7 @@ func testAccCheckGitlabPipelineScheduleVariableExists(n string, variable *gitlab
 type testAccGitlabPipelineScheduleVariableExpectedAttributes struct {
 	Key          string
 	Value        string
-	VariableType string
+	VariableType gitlab.VariableTypeValue
 }
 
 func testAccCheckGitlabPipelineScheduleVariableAttributes(variable *gitlab.PipelineVariable, want *testAccGitlabPipelineScheduleVariableExpectedAttributes) resource.TestCheckFunc {
