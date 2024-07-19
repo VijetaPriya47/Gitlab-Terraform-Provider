@@ -182,18 +182,20 @@ func flattenGitlabGroups(groups []*gitlab.Group) []interface{} {
 
 	for _, group := range groups {
 		values := map[string]interface{}{
-			"group_id":                      group.ID,
-			"full_path":                     group.FullPath,
-			"name":                          group.Name,
-			"full_name":                     group.Name,
-			"web_url":                       group.WebURL,
-			"path":                          group.Path,
-			"description":                   group.Description,
-			"lfs_enabled":                   group.LFSEnabled,
-			"request_access_enabled":        group.RequestAccessEnabled,
-			"visibility_level":              group.Visibility,
-			"parent_id":                     group.ParentID,
-			"runners_token":                 group.RunnersToken,
+			"group_id":               group.ID,
+			"full_path":              group.FullPath,
+			"name":                   group.Name,
+			"full_name":              group.Name,
+			"web_url":                group.WebURL,
+			"path":                   group.Path,
+			"description":            group.Description,
+			"lfs_enabled":            group.LFSEnabled,
+			"request_access_enabled": group.RequestAccessEnabled,
+			"visibility_level":       group.Visibility,
+			"parent_id":              group.ParentID,
+			"runners_token":          group.RunnersToken,
+
+			// nolint:staticcheck // SA1019 ignore deprecated DefaultBranchProtection
 			"default_branch_protection":     group.DefaultBranchProtection,
 			"prevent_forking_outside_group": group.PreventForkingOutsideGroup,
 			"wiki_access_level":             group.WikiAccessLevel,

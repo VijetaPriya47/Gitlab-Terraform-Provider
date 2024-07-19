@@ -938,6 +938,7 @@ func testAccCheckGitlabGroupAttributes(group *gitlab.Group, want *testAccGitlabG
 			return fmt.Errorf("got share_with_group_lock %t; want %t", group.ShareWithGroupLock, *want.ShareWithGroupLock)
 		}
 
+		// nolint:staticcheck // SA1019 ignore deprecated DefaultBranchProtection
 		if want.DefaultBranchProtection != nil && group.DefaultBranchProtection != *want.DefaultBranchProtection {
 			return fmt.Errorf("got default_branch_protection %d; want %d", group.DefaultBranchProtection, *want.DefaultBranchProtection)
 		}

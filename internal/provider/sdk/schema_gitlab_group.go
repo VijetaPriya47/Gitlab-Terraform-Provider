@@ -182,6 +182,8 @@ func gitlabGroupToStateMap(group *gitlab.Group) map[string]interface{} {
 	stateMap["auto_devops_enabled"] = group.AutoDevopsEnabled
 	stateMap["avatar_url"] = group.AvatarURL
 	stateMap["created_at"] = group.CreatedAt.Format(time.RFC3339)
+
+	// nolint:staticcheck // SA1019 ignore deprecated DefaultBranchProtection
 	stateMap["default_branch_protection"] = group.DefaultBranchProtection
 	stateMap["description"] = group.Description
 	stateMap["file_template_project_id"] = group.FileTemplateProjectID

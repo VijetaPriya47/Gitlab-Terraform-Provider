@@ -216,7 +216,6 @@ func dataSourceGitlabGroupRead(ctx context.Context, d *schema.ResourceData, meta
 	d.Set("visibility_level", group.Visibility)
 	d.Set("parent_id", group.ParentID)
 	d.Set("runners_token", group.RunnersToken)
-	d.Set("default_branch_protection", group.DefaultBranchProtection)
 	d.Set("prevent_forking_outside_group", group.PreventForkingOutsideGroup)
 	d.Set("membership_lock", group.MembershipLock)
 	d.Set("extra_shared_runners_minutes_limit", group.ExtraSharedRunnersMinutesLimit)
@@ -226,6 +225,9 @@ func dataSourceGitlabGroupRead(ctx context.Context, d *schema.ResourceData, meta
 	if err := d.Set("shared_with_groups", flattenSharedWithGroups(group)); err != nil {
 		return diag.FromErr(err)
 	}
+
+	// nolint:staticcheck // SA1019 ignore deprecated DefaultBranchProtection
+	d.Set("default_branch_protection", group.DefaultBranchProtection)
 
 	d.SetId(fmt.Sprintf("%d", group.ID))
 

@@ -1894,6 +1894,7 @@ func expectDefaultBranchProtection(ctx context.Context, client *gitlab.Client, p
 			return false, err
 		}
 
+		// nolint:staticcheck // SA1019 ignore deprecated DefaultBranchProtection
 		return group.DefaultBranchProtection != 0, nil
 	}
 
