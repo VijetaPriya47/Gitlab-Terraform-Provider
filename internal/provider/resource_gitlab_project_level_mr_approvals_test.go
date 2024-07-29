@@ -8,61 +8,12 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/xanzy/go-gitlab"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
-
-// This test actually tests two different things:
-// 1 - it tests that resources created with the old SDK implementation still work in the framework implementation
-// 2 - it tests that the framework state migrator works properly, since 15.11.0 used state v0. That's why the config uses `project_id` instead of `project`
-// This is because the old SDK resource handled a migration, and we can't assume every user has migrated, so we need to maintain that migration in the new
-// framework resource.
-func TestAccGitlabProjectLevelMRApprovals_UpgradeFromSDKToFramework(t *testing.T) {
-	testutil.SkipIfCE(t)
-	testProject := testutil.CreateProject(t)
-
-	resource.ParallelTest(t, resource.TestCase{
-		CheckDestroy: testAccCheckGitlabProjectLevelMRApprovalsDestroy,
-		Steps: []resource.TestStep{
-			{
-
-				ExternalProviders: map[string]resource.ExternalProvider{
-					"gitlab": {
-						VersionConstraint: "~> 15.11.0",
-						Source:            "gitlabhq/gitlab",
-					},
-				},
-				Config: fmt.Sprintf(`
-				resource "gitlab_project_level_mr_approvals" "foo" {
-					project_id                                        = "%d"
-					reset_approvals_on_push                        = true
-					disable_overriding_approvers_per_merge_request = true
-					merge_requests_author_approval                 = true
-					merge_requests_disable_committers_approval     = true
-					require_password_to_approve                    = true
-				}
-			`, testProject.ID),
-			},
-			{
-				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-				Config: fmt.Sprintf(`
-				resource "gitlab_project_level_mr_approvals" "foo" {
-					project                                        = "%d"
-					reset_approvals_on_push                        = true
-					disable_overriding_approvers_per_merge_request = true
-					merge_requests_author_approval                 = true
-					merge_requests_disable_committers_approval     = true
-					require_password_to_approve                    = true
-				}
-			`, testProject.ID),
-				PlanOnly: true,
-			},
-		},
-	})
-}
 
 func TestAccGitlabProjectLevelMRApprovals_basic(t *testing.T) {
 	testutil.SkipIfCE(t)
