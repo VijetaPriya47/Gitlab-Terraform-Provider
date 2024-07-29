@@ -1002,6 +1002,13 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 
+		"max_terraform_state_size_bytes": {
+			Description: "Maximum size in bytes of the Terraform state files. Set this to 0 for unlimited file size.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
+		},
+
 		"metrics_method_call_threshold": {
 			Description: "A method call is only tracked when it takes longer than the given amount of milliseconds.",
 			Type:        schema.TypeInt,
@@ -1906,6 +1913,7 @@ func gitlabApplicationSettingsToStateMap(settings *api.Settings) map[string]inte
 	stateMap["max_pages_size"] = settings.MaxPagesSize
 	stateMap["max_personal_access_token_lifetime"] = settings.MaxPersonalAccessTokenLifetime
 	stateMap["max_ssh_key_lifetime"] = settings.MaxSSHKeyLifetime
+	stateMap["max_terraform_state_size_bytes"] = settings.MaxTerraformStateSizeBytes
 	stateMap["metrics_method_call_threshold"] = settings.MetricsMethodCallThreshold
 	stateMap["max_number_of_repository_downloads"] = settings.MaxNumberOfRepositoryDownloads
 	stateMap["max_number_of_repository_downloads_within_time_period"] = settings.MaxNumberOfRepositoryDownloadsWithinTimePeriod
@@ -2555,6 +2563,10 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 
 	if d.HasChange("max_ssh_key_lifetime") {
 		options.MaxSSHKeyLifetime = gitlab.Ptr(d.Get("max_ssh_key_lifetime").(int))
+	}
+
+	if d.HasChange("max_terraform_state_size_bytes") {
+		options.MaxTerraformStateSizeBytes = gitlab.Ptr(d.Get("max_terraform_state_size_bytes").(int))
 	}
 
 	if d.HasChange("metrics_method_call_threshold") {
