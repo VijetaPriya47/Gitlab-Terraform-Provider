@@ -53,7 +53,7 @@ func createAvatarableTestCase_WithoutAvatarHash(t *testing.T, resourceName strin
 				ImportState:       true,
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{
-					"avatar", "avatar_hash",
+					"avatar", "avatar_hash", "permanently_remove_on_delete",
 				},
 			},
 			// Update the avatar image, but keep the filename to test the `CustomizeDiff` function
@@ -68,7 +68,7 @@ func createAvatarableTestCase_WithoutAvatarHash(t *testing.T, resourceName strin
 				ImportState:       true,
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{
-					"avatar", "avatar_hash",
+					"avatar", "avatar_hash", "permanently_remove_on_delete",
 				},
 			},
 		},
@@ -97,7 +97,7 @@ func createAvatarableTestCase_WithAvatar(t *testing.T, resourceName string, base
 				ImportState:       true,
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{
-					"avatar", "avatar_hash",
+					"avatar", "avatar_hash", "permanently_remove_on_delete",
 				},
 			},
 			// Update avatar
@@ -117,7 +117,7 @@ func createAvatarableTestCase_WithAvatar(t *testing.T, resourceName string, base
 				ImportState:       true,
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{
-					"avatar", "avatar_hash",
+					"avatar", "avatar_hash", "permanently_remove_on_delete",
 				},
 			},
 			// Update avatar back to default
@@ -137,7 +137,7 @@ func createAvatarableTestCase_WithAvatar(t *testing.T, resourceName string, base
 				ImportState:       true,
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{
-					"avatar", "avatar_hash",
+					"avatar", "avatar_hash", "permanently_remove_on_delete",
 				},
 			},
 			// Update the avatar image, but keep the filename to test the `CustomizeDiff` function
@@ -171,7 +171,7 @@ func createAvatarableTestCase_WithAvatar(t *testing.T, resourceName string, base
 				ImportState:       true,
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{
-					"avatar", "avatar_hash",
+					"avatar", "avatar_hash", "permanently_remove_on_delete",
 				},
 			},
 		},

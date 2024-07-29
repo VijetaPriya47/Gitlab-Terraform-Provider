@@ -5,6 +5,7 @@ package sdk
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -42,9 +43,10 @@ func TestAccGitlabGroup_basic(t *testing.T) {
 			},
 			// Verify Import
 			{
-				ResourceName:      "gitlab_group.foo",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "gitlab_group.foo",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"permanently_remove_on_delete"},
 			},
 			// Update the group to change the description
 			{
@@ -68,9 +70,10 @@ func TestAccGitlabGroup_basic(t *testing.T) {
 			},
 			// Verify Import
 			{
-				ResourceName:      "gitlab_group.foo",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "gitlab_group.foo",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"permanently_remove_on_delete"},
 			},
 			// Update the group to use zero-value `default_branch_protection`
 			{
@@ -94,9 +97,10 @@ func TestAccGitlabGroup_basic(t *testing.T) {
 			},
 			// Verify Import
 			{
-				ResourceName:      "gitlab_group.foo",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "gitlab_group.foo",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"permanently_remove_on_delete"},
 			},
 			// Update the group to use new value 4 for `default_branch_protection`
 			{
@@ -121,9 +125,10 @@ func TestAccGitlabGroup_basic(t *testing.T) {
 			},
 			// Verify Import
 			{
-				ResourceName:      "gitlab_group.foo",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "gitlab_group.foo",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"permanently_remove_on_delete"},
 			},
 			// Update the group to put the name and description back
 			{
@@ -139,12 +144,80 @@ func TestAccGitlabGroup_basic(t *testing.T) {
 			},
 			// Verify Import
 			{
-				ResourceName:      "gitlab_group.foo",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "gitlab_group.foo",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"permanently_remove_on_delete"},
 			},
 		},
 	})
+}
+
+func TestAccGitlabGroup_permanentlyRemove(t *testing.T) {
+	// Deletion Protection only works in EE. Otherwise
+	// the tests passes 100% of the time.
+	testutil.SkipIfCE(t)
+
+	var group gitlab.Group
+	rInt := acctest.RandInt()
+
+	rootGroup := testutil.CreateGroups(t, 1)[0]
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabGroupDestroy,
+		Steps: []resource.TestStep{
+			// Create a group
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+					name = "test%d"
+					path = "test%d"
+
+					parent_id = %d
+
+					permanently_remove_on_delete = true
+				}
+				`, rInt, rInt, rootGroup.ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabGroupExists("gitlab_group.foo", &group),
+				),
+			},
+			// Verify Import
+			{
+				ResourceName:            "gitlab_group.foo",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"permanently_remove_on_delete"},
+			},
+			// destroy the group
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+					name = "test%d"
+					path = "test%d"
+
+					parent_id = %d
+
+					permanently_remove_on_delete = true
+				}
+				`, rInt, rInt, rootGroup.ID),
+				Destroy: true,
+				Check: func(*terraform.State) error {
+					_, resp, err := testutil.TestGitlabClient.Groups.GetGroup(group.ID, nil)
+					if resp.StatusCode == 200 {
+						return errors.New("Group still exists")
+					}
+					if err != nil && !api.Is404(err) {
+						return err
+					}
+
+					return nil
+				},
+			},
+		},
+	})
+
 }
 
 func TestAccGitlabGroup_basicPushRulesEE(t *testing.T) {
@@ -172,9 +245,10 @@ func TestAccGitlabGroup_basicPushRulesEE(t *testing.T) {
 			},
 			// Verify Import
 			{
-				ResourceName:      "gitlab_group.foo",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "gitlab_group.foo",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"permanently_remove_on_delete"},
 			},
 			// Add all push rules to an existing group
 			{
@@ -222,9 +296,10 @@ func TestAccGitlabGroup_basicPushRulesEE(t *testing.T) {
 			},
 			// Test import with a all push rules defined (checks read function)
 			{
-				ResourceName:      "gitlab_group.foo",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "gitlab_group.foo",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"permanently_remove_on_delete"},
 			},
 			// Update some push rules but not others
 			{
@@ -316,9 +391,10 @@ func TestAccGitlabGroup_basicPushRulesEE(t *testing.T) {
 			},
 			// Test import with a all push rules defined (checks read function)
 			{
-				ResourceName:      "gitlab_group.foo",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "gitlab_group.foo",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"permanently_remove_on_delete"},
 			},
 			// Update some push rules but not others, 'commit_committer_check' & 'reject_unsigned_commits' set to false
 			{
@@ -443,9 +519,10 @@ func TestAccGitlabGroup_basicPushRulesCE(t *testing.T) {
 			},
 			// Verify Import
 			{
-				ResourceName:      "gitlab_group.foo",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "gitlab_group.foo",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"permanently_remove_on_delete"},
 			},
 			// Try to add push rules to an existing group in CE
 			{
@@ -500,10 +577,11 @@ func TestAccGitlabGroup_IPRestricted(t *testing.T) {
 			},
 			// Verify Import
 			{
-				SkipFunc:          testutil.IsRunningInCE,
-				ResourceName:      "gitlab_group.this",
-				ImportState:       true,
-				ImportStateVerify: true,
+				SkipFunc:                testutil.IsRunningInCE,
+				ResourceName:            "gitlab_group.this",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"permanently_remove_on_delete"},
 			},
 			// Update the group to generate a comma in the ranges
 			{
@@ -527,10 +605,11 @@ func TestAccGitlabGroup_IPRestricted(t *testing.T) {
 			},
 			// Verify Import
 			{
-				SkipFunc:          testutil.IsRunningInCE,
-				ResourceName:      "gitlab_group.this",
-				ImportState:       true,
-				ImportStateVerify: true,
+				SkipFunc:                testutil.IsRunningInCE,
+				ResourceName:            "gitlab_group.this",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"permanently_remove_on_delete"},
 			},
 			// Update the group back to unrestricted
 			{
@@ -554,10 +633,11 @@ func TestAccGitlabGroup_IPRestricted(t *testing.T) {
 			},
 			// Verify Import
 			{
-				SkipFunc:          testutil.IsRunningInCE,
-				ResourceName:      "gitlab_group.this",
-				ImportState:       true,
-				ImportStateVerify: true,
+				SkipFunc:                testutil.IsRunningInCE,
+				ResourceName:            "gitlab_group.this",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"permanently_remove_on_delete"},
 			},
 		},
 	})
@@ -670,9 +750,10 @@ func TestAccGitlabGroup_EE(t *testing.T) {
 			},
 			// Verify import
 			{
-				ResourceName:      "gitlab_group.this",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "gitlab_group.this",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"permanently_remove_on_delete"},
 			},
 			{
 				Config: fmt.Sprintf(`
@@ -689,9 +770,10 @@ func TestAccGitlabGroup_EE(t *testing.T) {
 			},
 			// Verify import
 			{
-				ResourceName:      "gitlab_group.this",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "gitlab_group.this",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"permanently_remove_on_delete"},
 			},
 		},
 	})
@@ -747,9 +829,10 @@ func TestAccGitlabGroup_SetDefaultFalseBooleansOnCreate(t *testing.T) {
 					}`, rInt, rInt),
 			},
 			{
-				ResourceName:      "gitlab_group.this",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "gitlab_group.this",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"permanently_remove_on_delete"},
 			},
 		},
 	})
@@ -810,9 +893,10 @@ func TestAccGitlabGroup_sharedRunnersSetting(t *testing.T) {
 			},
 			// Verify Import
 			{
-				ResourceName:      "gitlab_group.foo",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "gitlab_group.foo",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"permanently_remove_on_delete"},
 			},
 			// Update the group to change the shared_runners_setting
 			{
@@ -830,9 +914,10 @@ func TestAccGitlabGroup_sharedRunnersSetting(t *testing.T) {
 			},
 			// Verify Import
 			{
-				ResourceName:      "gitlab_group.foo",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "gitlab_group.foo",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"permanently_remove_on_delete"},
 			},
 		},
 	})

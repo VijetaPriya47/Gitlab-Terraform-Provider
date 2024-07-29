@@ -208,6 +208,12 @@ var _ = registerResource("gitlab_group", func() *schema.Resource {
 				Computed:     true,
 				ValidateFunc: validation.StringInSlice(validSharedRunnersSettings, false),
 			},
+			"permanently_remove_on_delete": {
+				Description: "Whether the group should be permanently removed during a `delete` operation. This only works with subgroups. Must be configured via an `apply` before the `destroy` is run.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+			},
 			"push_rules": {
 				Description: "Push rules for the group.",
 				Type:        schema.TypeList,
@@ -448,7 +454,6 @@ func resourceGitlabGroupCreate(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	// Our group has been created, we can now update it.
-
 	d.SetId(fmt.Sprintf("%d", group.ID))
 
 	if _, ok := d.GetOk("push_rules"); ok {
@@ -540,9 +545,6 @@ func resourceGitlabGroupRead(ctx context.Context, d *schema.ResourceData, meta i
 	d.Set("parent_id", group.ParentID)
 	d.Set("runners_token", group.RunnersToken)
 	d.Set("share_with_group_lock", group.ShareWithGroupLock)
-
-	// nolint:staticcheck // SA1019 ignore deprecated DefaultBranchProtection
-	d.Set("default_branch_protection", group.DefaultBranchProtection)
 	d.Set("prevent_forking_outside_group", group.PreventForkingOutsideGroup)
 	d.Set("membership_lock", group.MembershipLock)
 	d.Set("extra_shared_runners_minutes_limit", group.ExtraSharedRunnersMinutesLimit)
@@ -551,6 +553,9 @@ func resourceGitlabGroupRead(ctx context.Context, d *schema.ResourceData, meta i
 	d.Set("wiki_access_level", group.WikiAccessLevel)
 	d.Set("shared_runners_setting", group.SharedRunnersSetting)
 	d.Set("emails_enabled", group.EmailsEnabled)
+
+	// nolint:staticcheck // SA1019 ignore deprecated DefaultBranchProtection
+	d.Set("default_branch_protection", group.DefaultBranchProtection)
 
 	// The value comes back from the API as a comma separated string, and stores in TF as a set.
 	// We need to set the value only if it's "", otherwise the split gives up [""] which will result
@@ -811,6 +816,51 @@ func resourceGitlabGroupDelete(ctx context.Context, d *schema.ResourceData, meta
 	if err != nil {
 		return diag.Errorf("error waiting for group (%s) to become deleted: %s", d.Id(), err)
 	}
+
+	// If permanent deletion is selected, issue a second "permanently delete" API call
+	if d.Get("permanently_remove_on_delete").(bool) && d.Get("full_path").(string) != "" {
+		tflog.Debug(ctx, "Attempting to permanently delete the group", map[string]interface{}{
+			"group": d.Get("full_path").(string),
+		})
+
+		opts := &gitlab.DeleteGroupOptions{}
+		opts.PermanentlyRemove = gitlab.Ptr(d.Get("permanently_remove_on_delete").(bool))
+		opts.FullPath = gitlab.Ptr(d.Get("full_path").(string))
+
+		_, err = client.Groups.DeleteGroup(d.Id(), opts, gitlab.WithContext(ctx))
+		if err != nil {
+			return diag.Errorf("group (%s) was marked for deletion, but permanent deletion of the group failed.", d.Id())
+		}
+
+		// Group Deletion happens in the background, so we should wait until we get a 404 when reading the group:
+		// Wait for the group to be deleted.
+		stateConf := &retry.StateChangeConf{
+			Pending: []string{"Deleting"},
+			Target:  []string{"Deleted"},
+			Refresh: func() (interface{}, string, error) {
+				out, response, err := client.Groups.GetGroup(d.Id(), nil, gitlab.WithContext(ctx))
+				if err != nil {
+					if response != nil && response.StatusCode == 404 {
+						return out, "Deleted", nil
+					}
+					tflog.Error(ctx, "Received error", map[string]interface{}{
+						"error": err,
+					})
+					return out, "Error", err
+				}
+				return out, "Deleting", nil
+			},
+
+			Timeout:    10 * time.Minute,
+			MinTimeout: 3 * time.Second,
+			Delay:      5 * time.Second,
+		}
+		_, err = stateConf.WaitForStateContext(ctx)
+		if err != nil {
+			return diag.Errorf("error waiting for group (%s) to become permanently deleted: %s", d.Id(), err)
+		}
+	}
+
 	return nil
 }
 
