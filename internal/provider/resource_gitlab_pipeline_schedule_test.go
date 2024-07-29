@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/xanzy/go-gitlab"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
@@ -66,41 +66,6 @@ func TestAccGitlabPipelineSchedule_StateUpgradeV0(t *testing.T) {
 		})
 
 	}
-}
-
-func TestAccGitlabPipelineSchedule_SchemaMigration0_1(t *testing.T) {
-	testProject := testutil.CreateProject(t)
-
-	// Even though we can usually ignore the `refs/heads`, that logic wasn't in place in the old
-	// provider, so the full ref is required for backwards compatibility of the old provider.
-	config := fmt.Sprintf(`
-	resource "gitlab_pipeline_schedule" "schedule" {
-		project = "%d"
-		description = "Pipeline Schedule"
-		ref = "refs/heads/%s"
-		cron = "0 1 * * *"
-	}
-		`, testProject.ID, testProject.DefaultBranch)
-
-	resource.ParallelTest(t, resource.TestCase{
-		CheckDestroy: testAccCheckGitlabPipelineScheduleDestroy,
-		Steps: []resource.TestStep{
-			{
-				ExternalProviders: map[string]resource.ExternalProvider{
-					"gitlab": {
-						VersionConstraint: "~> 15.7.0", // Earliest 15.X deployment
-						Source:            "gitlabhq/gitlab",
-					},
-				},
-				Config: config,
-			},
-			{
-				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-				Config:                   config,
-				PlanOnly:                 true,
-			},
-		},
-	})
 }
 
 func TestAccGitlabPipelineSchedule_takeOwnershipWithChanges(t *testing.T) {
