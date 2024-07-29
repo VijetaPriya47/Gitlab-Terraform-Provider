@@ -29,8 +29,10 @@ func TestAccGitlabApplicationSettings_basic(t *testing.T) {
 				Config: `
 					resource "gitlab_application_settings" "this" {
 						after_sign_up_text = "Welcome to GitLab!"
+						max_terraform_state_size_bytes = 512
 					}
 				`,
+				Check: resource.TestCheckResourceAttr("gitlab_application_settings.this", "max_terraform_state_size_bytes", "512"),
 			},
 		},
 	})
