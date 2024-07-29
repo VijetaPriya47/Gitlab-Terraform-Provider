@@ -31,6 +31,12 @@ resource "gitlab_project_job_token_scopes" "allowed_multiple_project" {
   target_project_ids = [123, 456, 789]
 }
 
+resource "gitlab_project_job_token_scopes" "allowed_multiple_groups" {
+  project_id         = 111
+  target_project_ids = []
+  target_group_ids   = [321, 654]
+}
+
 # This will remove all job token scopes, even if added outside of TF.
 resource "gitlab_project_job_token_scopes" "explicit_deny" {
   project_id         = 111
@@ -44,6 +50,10 @@ resource "gitlab_project_job_token_scopes" "explicit_deny" {
 ### Required
 
 - `project_id` (Number) The ID of the project.
+
+### Optional
+
+- `target_group_ids` (Set of Number) A set of group IDs that are in the CI/CD job token inbound allowlist.
 - `target_project_ids` (Set of Number) A set of project IDs that are in the CI/CD job token inbound allowlist.
 
 ### Read-Only

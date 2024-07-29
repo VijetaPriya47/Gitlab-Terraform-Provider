@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/dcarbone/terraform-plugin-framework-utils/v3/conv"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -47,7 +48,8 @@ type gitlabProjectJobTokenScopesResourceModel struct {
 	ProjectID types.Int64  `tfsdk:"project_id"`
 
 	// types.Set in the schema
-	TargetProjectIDs []types.Int64 `tfsdk:"target_project_ids"`
+	TargetProjectIDs types.Set `tfsdk:"target_project_ids"`
+	TargetGroupIDs   types.Set `tfsdk:"target_group_ids"`
 }
 
 func (r *gitlabProjectJobTokenScopesResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -77,7 +79,17 @@ Any project not within the defined set in this attribute will be removed, which 
 			},
 			"target_project_ids": schema.SetAttribute{
 				MarkdownDescription: "A set of project IDs that are in the CI/CD job token inbound allowlist.",
-				Required:            true,
+				Optional:            true,
+				Computed:            true,
+				PlanModifiers: []planmodifier.Set{
+					setplanmodifier.UseStateForUnknown(),
+				},
+				ElementType: types.Int64Type,
+			},
+			"target_group_ids": schema.SetAttribute{
+				MarkdownDescription: "A set of group IDs that are in the CI/CD job token inbound allowlist.",
+				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.Set{
 					setplanmodifier.UseStateForUnknown(),
 				},
@@ -181,7 +193,13 @@ func (r *gitlabProjectJobTokenScopesResource) Delete(ctx context.Context, req re
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
 	// Set the expected target project Ids to empty
-	data.TargetProjectIDs = []types.Int64{}
+	projectSet, diag := types.SetValueFrom(ctx, types.Int64Type, []types.Int64{})
+	resp.Diagnostics.Append(diag...)
+	data.TargetProjectIDs = projectSet
+
+	groupSet, diag := types.SetValueFrom(ctx, types.Int64Type, []types.Int64{})
+	resp.Diagnostics.Append(diag...)
+	data.TargetGroupIDs = groupSet
 
 	// Run the set to empty out project Ids
 	r.setProjectCIJobScopes(ctx, int(data.ProjectID.ValueInt64()), data)
@@ -196,7 +214,7 @@ func (r *gitlabProjectJobTokenScopesResource) ImportState(ctx context.Context, r
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
-// Helper function for this resource that takes in a list of int64 project IDs, and sets the project
+// Helper function for this resource that takes in lists of int64 projects and groups IDs, and sets the project
 // CI token scope to exactly match that list. That means it performs the following actions:
 //   - Adds any scopes not already on the project
 //   - Removes scopes on the project, but not in the list
@@ -211,47 +229,14 @@ func (r *gitlabProjectJobTokenScopesResource) setProjectCIJobScopes(ctx context.
 		)
 	}
 
-	// actions is a map of project ID to action
-	actions := map[string][]int{
-		"delete": {}, // initialize with empty slice so it's easier to append later.
-		"create": {},
+	currentProjectsIDs := make([]int, 0, len(projects))
+	for _, p := range projects {
+		currentProjectsIDs = append(currentProjectsIDs, p.ID)
 	}
 
-	// Identify projects to delete. They should be deleted if they exist in `projects`, and not in `data.TargetProjectIDs`
-	projectToApply := data.TargetProjectIDs
-	for _, v := range projects {
-
-		shouldDelete := true
-		for _, id := range projectToApply {
-			if id.ValueInt64() == int64(v.ID) {
-				shouldDelete = false
-				break
-			}
-		}
-
-		if shouldDelete {
-			actions["delete"] = append(actions["delete"], v.ID)
-		}
-	}
-
-	// Identify projects to create. They should be created if they exist in `data.TargetProjectIDs`, and not in `projects`
-	for _, id := range data.TargetProjectIDs {
-		shouldCreate := true
-		for _, v := range projects {
-			if id.ValueInt64() == int64(v.ID) {
-				shouldCreate = false
-				break
-			}
-		}
-
-		if shouldCreate {
-			actions["create"] = append(actions["create"], int(id.ValueInt64()))
-		}
-	}
-
-	// Delete all projects in the "delete" action
-	for _, projectID := range actions["delete"] {
-		_, err := r.client.JobTokenScope.RemoveProjectFromJobScopeAllowList(project, projectID, gitlab.WithContext(ctx))
+	createTargetProjects, deleteTargetProjects := r.compareAndGenerateActions(conv.Int64SetToInts(data.TargetProjectIDs), currentProjectsIDs)
+	for _, currentProjectID := range deleteTargetProjects {
+		_, err := r.client.JobTokenScope.RemoveProjectFromJobScopeAllowList(project, currentProjectID, gitlab.WithContext(ctx))
 		if err != nil {
 			return diag.NewErrorDiagnostic(
 				fmt.Sprintf("GitLab API error occured when removing job scopes from project %d", project),
@@ -259,11 +244,9 @@ func (r *gitlabProjectJobTokenScopesResource) setProjectCIJobScopes(ctx context.
 			)
 		}
 	}
-
-	// Create all projects in the "delete" action
-	for _, projectID := range actions["create"] {
+	for _, targetProjectID := range createTargetProjects {
 		options := &gitlab.JobTokenInboundAllowOptions{
-			TargetProjectID: gitlab.Ptr(projectID),
+			TargetProjectID: gitlab.Ptr(targetProjectID),
 		}
 		_, _, err := r.client.JobTokenScope.AddProjectToJobScopeAllowList(project, options, gitlab.WithContext(ctx))
 		if err != nil {
@@ -274,8 +257,77 @@ func (r *gitlabProjectJobTokenScopesResource) setProjectCIJobScopes(ctx context.
 		}
 	}
 
+	// Get a list of existing CI groups scopes for the project
+	groups, err := r.getProjectCIJobScopesGroups(ctx, project)
+	if err != nil {
+		return diag.NewErrorDiagnostic(
+			"GitLab API error occured when retrieving existing groups scopes to compare",
+			err.Error(),
+		)
+	}
+
+	groupsIDs := make([]int, 0, len(groups))
+	for _, g := range groups {
+		groupsIDs = append(groupsIDs, g.ID)
+	}
+
+	createTargetGroups, deleteTargetGroups := r.compareAndGenerateActions(conv.Int64SetToInts(data.TargetGroupIDs), groupsIDs)
+	for _, groupID := range deleteTargetGroups {
+		_, err := r.client.JobTokenScope.RemoveGroupFromJobTokenAllowlist(project, groupID, gitlab.WithContext(ctx))
+		if err != nil {
+			return diag.NewErrorDiagnostic(
+				fmt.Sprintf("GitLab API error occured when removing group from job scopes for project %d", project),
+				err.Error(),
+			)
+		}
+	}
+	for _, groupID := range createTargetGroups {
+		options := &gitlab.AddGroupToJobTokenAllowlistOptions{
+			TargetGroupID: gitlab.Ptr(groupID),
+		}
+		_, _, err := r.client.JobTokenScope.AddGroupToJobTokenAllowlist(project, options, gitlab.WithContext(ctx))
+		if err != nil {
+			return diag.NewErrorDiagnostic(
+				fmt.Sprintf("GitLab API error occured when adding group to job scopes for project %d", project),
+				err.Error(),
+			)
+		}
+	}
+
 	// Everything is successful, return no diagnostic.
 	return nil
+}
+
+// compareAndGenerateActions compares the difference between the desired slice and the current slice of IDs,
+// and returns slices of IDs that need to be created and deleted.
+func (r *gitlabProjectJobTokenScopesResource) compareAndGenerateActions(desiredIDs []int, currentIDs []int) (create []int, delete []int) {
+	for _, cid := range currentIDs {
+		shouldDelete := true
+		for _, did := range desiredIDs {
+			if did == cid {
+				shouldDelete = false
+				break
+			}
+		}
+		if shouldDelete {
+			delete = append(delete, int(cid))
+		}
+	}
+
+	for _, did := range desiredIDs {
+		shouldCreate := true
+		for _, cid := range currentIDs {
+			if cid == did {
+				shouldCreate = false
+				break
+			}
+		}
+
+		if shouldCreate {
+			create = append(create, did)
+		}
+	}
+	return create, delete
 }
 
 // Retrieves a comprehensive list of CI project scope targets
@@ -317,16 +369,72 @@ func (r *gitlabProjectJobTokenScopesResource) getProjectCIJobScopes(ctx context.
 	return projectScopes, nil
 }
 
+// Retrieves a comprehensive list of CI groups scope targets
+func (r *gitlabProjectJobTokenScopesResource) getProjectCIJobScopesGroups(ctx context.Context, projectID int) ([]*gitlab.Group, error) {
+	var groupsScopes []*gitlab.Group
+
+	options := gitlab.GetJobTokenAllowlistGroupsOptions{
+		ListOptions: gitlab.ListOptions{
+			PerPage: 20,
+			Page:    1,
+		},
+	}
+	for options.Page != 0 {
+		paginatedGroups, resp, err := r.client.JobTokenScope.GetJobTokenAllowlistGroups(projectID, &options, gitlab.WithContext(ctx))
+		if err != nil {
+			return nil, fmt.Errorf("unable to read CI/CD Job Token inbound groups_allowlist. %s", err)
+		}
+
+		groupsScopes = append(groupsScopes, paginatedGroups...)
+		options.Page = resp.NextPage
+
+		tflog.Debug(ctx, "Read CI/CD Job Token inbound groups_allowlist for project", map[string]interface{}{
+			"project":                     projectID,
+			"page":                        options.Page,
+			"number_of_groups_identified": len(paginatedGroups),
+		})
+	}
+
+	return groupsScopes, nil
+}
+
 // Retrieves a comprehensive list of CI project scope targets
 func (r *gitlabProjectJobTokenScopesResource) readIntoState(ctx context.Context, project int, data *gitlabProjectJobTokenScopesResourceModel) diag.Diagnostic {
+
 	// re-read the project IDs from the API to set to state since we don't get them back in one request
 	projects, err := r.getProjectCIJobScopes(ctx, project)
 	if err != nil {
 		return diag.NewErrorDiagnostic("Error reading project scopes", err.Error())
 	}
-	data.TargetProjectIDs = []types.Int64{}
+
+	// build the slice of projects
+	projectIds := []types.Int64{}
 	for _, p := range projects {
-		data.TargetProjectIDs = append(data.TargetProjectIDs, types.Int64Value(int64(p.ID)))
+		projectIds = append(projectIds, types.Int64Value(int64(p.ID)))
 	}
+	// convert the slice to a set, and assign it
+	projectIdSet, diags := types.SetValueFrom(ctx, types.Int64Type, projectIds)
+	if diags.HasError() {
+		return diags[0]
+	}
+	data.TargetProjectIDs = projectIdSet
+
+	// re-read the group IDs from the API to set to state since we don't get them back in one request
+	groups, err := r.getProjectCIJobScopesGroups(ctx, project)
+	if err != nil {
+		return diag.NewErrorDiagnostic("Error reading groups for project scopes", err.Error())
+	}
+
+	// build the slice of groups
+	groupIds := []types.Int64{}
+	for _, p := range groups {
+		groupIds = append(groupIds, types.Int64Value(int64(p.ID)))
+	}
+	// convert the slice to a set, and assign it
+	groupIdSet, diags := types.SetValueFrom(ctx, types.Int64Type, groupIds)
+	if diags.HasError() {
+		return diags[0]
+	}
+	data.TargetGroupIDs = groupIdSet
 	return nil
 }

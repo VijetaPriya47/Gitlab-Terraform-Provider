@@ -23,6 +23,8 @@ func TestAcc_GitlabProjectJobTokenScopes_basic(t *testing.T) {
 	linkProject := testutil.CreateProject(t)
 	linkTwoProject := testutil.CreateProject(t)
 
+	linkGroups := testutil.CreateGroups(t, 2)
+
 	// Create a project to add outside TF to ensure it's removed
 	updateProject := testutil.CreateProject(t)
 
@@ -44,6 +46,7 @@ func TestAcc_GitlabProjectJobTokenScopes_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "id", strconv.Itoa(project.ID)),
 					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "project_id", strconv.Itoa(project.ID)),
 					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "target_project_ids.#", "2"),
+					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "target_group_ids.#", "0"),
 				),
 			},
 			// Verify upstream attributes with an import.
@@ -76,6 +79,7 @@ func TestAcc_GitlabProjectJobTokenScopes_basic(t *testing.T) {
 				// After apply, the same 2 projects should be present.
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "target_project_ids.#", "2"),
+					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "target_group_ids.#", "0"),
 				),
 			},
 			// Verify upstream attributes with an import.
@@ -94,6 +98,7 @@ func TestAcc_GitlabProjectJobTokenScopes_basic(t *testing.T) {
 				// After apply, no projects should be present.
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "target_project_ids.#", "0"),
+					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "target_group_ids.#", "0"),
 				),
 			},
 			// Verify upstream attributes with an import.
@@ -112,6 +117,41 @@ func TestAcc_GitlabProjectJobTokenScopes_basic(t *testing.T) {
 				// After apply, the same 2 projects should be present.
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "target_project_ids.#", "1"),
+					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "target_group_ids.#", "0"),
+				),
+			},
+			// Add groups only
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_job_token_scopes" "this" {
+					project_id = %d
+					target_project_ids = []
+					target_group_ids = [%d, %d]
+				}`, project.ID, linkGroups[0].ID, linkGroups[1].ID),
+				// After apply, 2 groups should be present
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "target_project_ids.#", "0"),
+					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "target_group_ids.#", "2"),
+				),
+			},
+			// Verify upstream attributes with an import.
+			{
+				ResourceName:      "gitlab_project_job_token_scopes.this",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Remove groups
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_job_token_scopes" "this" {
+					project_id = %d
+					target_project_ids = [%d]
+					target_group_ids = []
+				}`, project.ID, linkProject.ID),
+				// After apply, 2 groups should be present
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "target_project_ids.#", "1"),
+					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "target_group_ids.#", "0"),
 				),
 			},
 		},
@@ -131,6 +171,13 @@ func testAcc_GitlabProjectJobTokenScopes_CheckDestroy(s *terraform.State) error 
 				return fmt.Errorf("Failed to destroy token scopes. Except the one for the project itself, all tokens should be removed when finished.")
 			}
 
+			groups, _, err := testutil.TestGitlabClient.JobTokenScope.GetJobTokenAllowlistGroups(projectID, nil, nil)
+			if err != nil {
+				return fmt.Errorf("Failed to fetch groups CI/CD Job Token Scope: %w", err)
+			}
+			if len(groups) > 0 {
+				return fmt.Errorf("Error destroying token scopes for groups: unexpected group found in token scopes (%v)", groups)
+			}
 			return nil
 		}
 	}
