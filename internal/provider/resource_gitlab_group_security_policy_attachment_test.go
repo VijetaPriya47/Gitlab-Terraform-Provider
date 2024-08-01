@@ -64,6 +64,15 @@ func TestAcc_GitlabGroupSecurityPolicyAttachment_basic(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
+			// Destroy the security policy
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group_security_policy_attachment" "this" {
+					group          = %d
+					policy_project = %d
+				}`, group.ID, secondSecurityPolicyProject.ID),
+				Destroy: true,
+			},
 		},
 	})
 }
