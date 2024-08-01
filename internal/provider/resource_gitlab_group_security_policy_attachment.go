@@ -22,36 +22,36 @@ import (
 
 // Ensure provider defined types fully satisfy framework interfaces
 var (
-	_ resource.Resource                = &gitlabProjectSecurityPolicyAttachmentResource{}
-	_ resource.ResourceWithConfigure   = &gitlabProjectSecurityPolicyAttachmentResource{}
-	_ resource.ResourceWithImportState = &gitlabProjectSecurityPolicyAttachmentResource{}
+	_ resource.Resource                = &gitlabGroupSecurityPolicyAttachmentResource{}
+	_ resource.ResourceWithConfigure   = &gitlabGroupSecurityPolicyAttachmentResource{}
+	_ resource.ResourceWithImportState = &gitlabGroupSecurityPolicyAttachmentResource{}
 )
 
 func init() {
-	registerResource(NewGitlabProjectSecurityPolicyAttachmentResource)
+	registerResource(NewGitlabGroupSecurityPolicyAttachmentResource)
 }
 
-func NewGitlabProjectSecurityPolicyAttachmentResource() resource.Resource {
+func NewGitlabGroupSecurityPolicyAttachmentResource() resource.Resource {
 	return &gitlabProjectSecurityPolicyAttachmentResource{}
 }
 
-type gitlabProjectSecurityPolicyAttachmentResource struct {
+type gitlabGroupSecurityPolicyAttachmentResource struct {
 	client *gitlab.Client
 }
 
-type gitlabProjectSecurityPolicyAttachmentResourceModel struct {
+type gitlabGroupSecurityPolicyAttachmentResourceModel struct {
 	Id                     types.String `tfsdk:"id"`
-	Project                types.String `tfsdk:"project"`
+	Group                  types.String `tfsdk:"group"`
 	PolicyProject          types.String `tfsdk:"policy_project"`
 	PolicyProjectGraphQLId types.String `tfsdk:"policy_project_graphql_id"`
 	ProjectGraphQLId       types.String `tfsdk:"project_graphql_id"`
 }
 
-func (r *gitlabProjectSecurityPolicyAttachmentResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+func (r *gitlabGroupSecurityPolicyAttachmentResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_project_security_policy_attachment"
 }
 
-func (r *gitlabProjectSecurityPolicyAttachmentResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *gitlabGroupSecurityPolicyAttachmentResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_project_security_policy_attachment`" + ` resource allows to attach a security policy project to a project.
@@ -61,11 +61,11 @@ func (r *gitlabProjectSecurityPolicyAttachmentResource) Schema(ctx context.Conte
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:            true,
-				MarkdownDescription: "The ID of this Terraform resource. In the format of `<project>:<policy_project>`.",
+				MarkdownDescription: "The ID of this Terraform resource. In the format of `<group>:<policy_project>`.",
 				PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
-			"project": schema.StringAttribute{
-				MarkdownDescription: "The ID or Full Path of the project which will have the security policy project assigned to it.",
+			"group": schema.StringAttribute{
+				MarkdownDescription: "The ID or Full Path of the group which will have the security policy project assigned to it.",
 				Required:            true,
 				PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
@@ -80,15 +80,15 @@ func (r *gitlabProjectSecurityPolicyAttachmentResource) Schema(ctx context.Conte
 				MarkdownDescription: "The GraphQL ID of the security policy project.",
 				Computed:            true,
 			},
-			"project_graphql_id": schema.StringAttribute{
-				MarkdownDescription: "The GraphQL ID of the project to which the security policty project will be attached.",
+			"group_graphql_id": schema.StringAttribute{
+				MarkdownDescription: "The GraphQL ID of the group to which the security policty project will be attached.",
 				Computed:            true,
 			},
 		},
 	}
 }
 
-func (d *gitlabProjectSecurityPolicyAttachmentResource) Configure(ctx context.Context, req resource.ConfigureRequest, _ *resource.ConfigureResponse) {
+func (d *gitlabGroupSecurityPolicyAttachmentResource) Configure(ctx context.Context, req resource.ConfigureRequest, _ *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -96,11 +96,11 @@ func (d *gitlabProjectSecurityPolicyAttachmentResource) Configure(ctx context.Co
 	d.client = req.ProviderData.(*gitlab.Client)
 }
 
-func (d *gitlabProjectSecurityPolicyAttachmentResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (d *gitlabGroupSecurityPolicyAttachmentResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
-func (d *gitlabProjectSecurityPolicyAttachmentResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (d *gitlabGroupSecurityPolicyAttachmentResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var data *gitlabProjectSecurityPolicyAttachmentResourceModel
 
 	// Read Terraform plan data into the model
@@ -128,7 +128,7 @@ func (d *gitlabProjectSecurityPolicyAttachmentResource) Create(ctx context.Conte
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (d *gitlabProjectSecurityPolicyAttachmentResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (d *gitlabGroupSecurityPolicyAttachmentResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var data *gitlabProjectSecurityPolicyAttachmentResourceModel
 
 	// Read Terraform plan data into the model
@@ -200,7 +200,7 @@ func (d *gitlabProjectSecurityPolicyAttachmentResource) Read(ctx context.Context
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (d *gitlabProjectSecurityPolicyAttachmentResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (d *gitlabGroupSecurityPolicyAttachmentResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var data *gitlabProjectSecurityPolicyAttachmentResourceModel
 
 	// Read Terraform plan data into the model
@@ -230,7 +230,7 @@ func (d *gitlabProjectSecurityPolicyAttachmentResource) Update(ctx context.Conte
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (d *gitlabProjectSecurityPolicyAttachmentResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (d *gitlabGroupSecurityPolicyAttachmentResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 
 	var data *gitlabProjectSecurityPolicyAttachmentResourceModel
 
@@ -276,7 +276,7 @@ func (d *gitlabProjectSecurityPolicyAttachmentResource) Delete(ctx context.Conte
 }
 
 // Update the security policy associated to the group
-func (d *gitlabProjectSecurityPolicyAttachmentResource) updatePolicy(ctx context.Context, data *gitlabProjectSecurityPolicyAttachmentResourceModel, ids *api.ProjectIdentifiers) error {
+func (d *gitlabGroupSecurityPolicyAttachmentResource) updatePolicy(ctx context.Context, data *gitlabProjectSecurityPolicyAttachmentResourceModel, ids *api.ProjectIdentifiers) error {
 	// Read the policy project
 	query := fmt.Sprintf(`
 		mutation {
@@ -300,28 +300,8 @@ func (d *gitlabProjectSecurityPolicyAttachmentResource) updatePolicy(ctx context
 	return nil
 }
 
-type SecurityProjectAssignResponse struct {
-	Data struct {
-		SecurityPolicyProjectAssign struct {
-			Errors []struct {
-				Message string `json:"message"`
-			} `json:"errors"`
-		} `json:"securityPolicyProjectAssign"`
-	} `json:"data"`
-}
-
-type SecurityProjectUnassignResponse struct {
-	Data struct {
-		SecurityPolicyProjectUnassign struct {
-			Errors []struct {
-				Message string `json:"message"`
-			} `json:"errors"`
-		} `json:"securityPolicyProjectUnassign"`
-	} `json:"data"`
-}
-
 // Get the GraphQL IDs for the project
-func (d *gitlabProjectSecurityPolicyAttachmentResource) parseGraphQLIds(ctx context.Context, data *gitlabProjectSecurityPolicyAttachmentResourceModel) (*api.ProjectIdentifiers, error) {
+func (d *gitlabGroupSecurityPolicyAttachmentResource) parseGraphQLIds(ctx context.Context, data *gitlabProjectSecurityPolicyAttachmentResourceModel) (*api.ProjectIdentifiers, error) {
 	// Get the GraphQL of the project Id
 	projectGid, err := api.GetProjectGIDFromID(ctx, d.client, data.Project.ValueString())
 	if err != nil {
@@ -341,14 +321,14 @@ func (d *gitlabProjectSecurityPolicyAttachmentResource) parseGraphQLIds(ctx cont
 	return projectGid, nil
 }
 
-type GetSecurityPolicyProjectResponse struct {
+type GetGroupSecurityPolicyProjectResponse struct {
 	Data struct {
-		Project *struct {
+		Group *struct {
 			SecurityPolicyProject *struct {
 				ID string `json:"id"`
 			} `json:"securityPolicyProject"`
 			ID string `json:"id"`
-		} `json:"project"`
+		} `json:"group"`
 	} `json:"data"`
 	Errors []struct {
 		Message string `json:"message"`
