@@ -27,7 +27,7 @@ func TestAcc_GitlabGroupSecurityPolicyAttachment_basic(t *testing.T) {
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		CheckDestroy:             testAcc_GitlabProjectSecurityPolicyAttachment_CheckDestroy,
+		CheckDestroy:             testAcc_GitlabGroupSecurityPolicyAttachment_CheckDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
