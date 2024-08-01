@@ -18,7 +18,7 @@ import (
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
 
-func TestAcc_GitlabGroupSecurityPolicyAttachment_basic(t *testing.T) {
+func TestAcc_GitlabProjectSecurityPolicyAttachment_basic(t *testing.T) {
 	testutil.SkipIfCE(t)
 
 	securityPolicyProject := testutil.CreateProject(t)

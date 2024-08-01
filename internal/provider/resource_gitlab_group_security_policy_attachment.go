@@ -32,7 +32,7 @@ func init() {
 }
 
 func NewGitlabGroupSecurityPolicyAttachmentResource() resource.Resource {
-	return &gitlabProjectSecurityPolicyAttachmentResource{}
+	return &gitlabGroupSecurityPolicyAttachmentResource{}
 }
 
 type gitlabGroupSecurityPolicyAttachmentResource struct {
