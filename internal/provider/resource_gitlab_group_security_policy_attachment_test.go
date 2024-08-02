@@ -18,68 +18,68 @@ import (
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
 
-func TestAcc_GitlabProjectSecurityPolicyAttachment_basic(t *testing.T) {
+func TestAcc_GitlabGroupSecurityPolicyAttachment_basic(t *testing.T) {
 	testutil.SkipIfCE(t)
 
-	securityPolicyProject := testutil.CreateProject(t)
+	group := testutil.CreateGroups(t, 1)[0]
+	policyProject := testutil.CreateProject(t)
 	secondSecurityPolicyProject := testutil.CreateProject(t)
-	project := testutil.CreateProject(t)
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		CheckDestroy:             testAcc_GitlabProjectSecurityPolicyAttachment_CheckDestroy,
+		CheckDestroy:             testAcc_GitlabGroupSecurityPolicyAttachment_CheckDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
-				resource "gitlab_project_security_policy_attachment" "this" {
-					project          = %d
+				resource "gitlab_group_security_policy_attachment" "this" {
+					group          = %d
 					policy_project = %d
-				}`, project.ID, securityPolicyProject.ID),
+				}`, group.ID, policyProject.ID),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("gitlab_project_security_policy_attachment.this", "project", strconv.Itoa(project.ID)),
-					resource.TestCheckResourceAttr("gitlab_project_security_policy_attachment.this", "policy_project", strconv.Itoa(securityPolicyProject.ID)),
+					resource.TestCheckResourceAttr("gitlab_group_security_policy_attachment.this", "group", strconv.Itoa(group.ID)),
+					resource.TestCheckResourceAttr("gitlab_group_security_policy_attachment.this", "policy_project", strconv.Itoa(policyProject.ID)),
 				),
 			},
 			// Verify upstream attributes with an import.
 			{
-				ResourceName:      "gitlab_project_security_policy_attachment.this",
+				ResourceName:      "gitlab_group_security_policy_attachment.this",
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
 			// Update the security policy
 			{
 				Config: fmt.Sprintf(`
-				resource "gitlab_project_security_policy_attachment" "this" {
-					project          = %d
+				resource "gitlab_group_security_policy_attachment" "this" {
+					group          = %d
 					policy_project = %d
-				}`, project.ID, secondSecurityPolicyProject.ID),
+				}`, group.ID, secondSecurityPolicyProject.ID),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("gitlab_project_security_policy_attachment.this", "project", strconv.Itoa(project.ID)),
-					resource.TestCheckResourceAttr("gitlab_project_security_policy_attachment.this", "policy_project", strconv.Itoa(secondSecurityPolicyProject.ID)),
+					resource.TestCheckResourceAttr("gitlab_group_security_policy_attachment.this", "group", strconv.Itoa(group.ID)),
+					resource.TestCheckResourceAttr("gitlab_group_security_policy_attachment.this", "policy_project", strconv.Itoa(secondSecurityPolicyProject.ID)),
 				),
 			},
 			// Verify upstream attributes with an import.
 			{
-				ResourceName:      "gitlab_project_security_policy_attachment.this",
+				ResourceName:      "gitlab_group_security_policy_attachment.this",
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
 			// Destroy the security policy
 			{
 				Config: fmt.Sprintf(`
-				resource "gitlab_project_security_policy_attachment" "this" {
-					project          = %d
+				resource "gitlab_group_security_policy_attachment" "this" {
+					group          = %d
 					policy_project = %d
-				}`, project.ID, secondSecurityPolicyProject.ID),
+				}`, group.ID, secondSecurityPolicyProject.ID),
 				Destroy: true,
 			},
 		},
 	})
 }
 
-func testAcc_GitlabProjectSecurityPolicyAttachment_CheckDestroy(s *terraform.State) error {
+func testAcc_GitlabGroupSecurityPolicyAttachment_CheckDestroy(s *terraform.State) error {
 	for _, rs := range s.RootModule().Resources {
-		if rs.Type == "gitlab_project_security_policy_attachment" {
+		if rs.Type == "gitlab_group_security_policy_attachment" {
 			id := rs.Primary.ID
 
 			project, _, err := utils.ParseTwoPartID(id)
@@ -87,29 +87,29 @@ func testAcc_GitlabProjectSecurityPolicyAttachment_CheckDestroy(s *terraform.Sta
 				return err
 			}
 
-			projectIds, err := api.GetProjectGIDFromID(context.Background(), testutil.TestGitlabClient, project)
+			groupGid, err := api.GetGroupGIDFromID(context.Background(), testutil.TestGitlabClient, project)
 			if err != nil {
 				return err
 			}
 
 			query := fmt.Sprintf(`
 			query {
-				project(fullPath:"%s") {
+				group(fullPath:"%s") {
 					id,
 					securityPolicyProject {id}
 				}
 			}
-				`, projectIds.ProjectFullPath)
+				`, groupGid.GroupFullPath)
 
-			var response GetSecurityPolicyProjectResponse
+			var response GetGroupSecurityPolicyProjectResponse
 			_, err = api.SendGraphQLRequest(context.Background(), testutil.TestGitlabClient, api.GraphQLQuery{Query: query}, &response)
 			if err != nil {
 				return err
 			}
 
-			if response.Data.Project.SecurityPolicyProject != nil && response.Data.Project.SecurityPolicyProject.ID != "" {
+			if response.Data.Group.SecurityPolicyProject != nil && response.Data.Group.SecurityPolicyProject.ID != "" {
 				jsonString, _ := json.Marshal(response)
-				tflog.Debug(context.Background(), "Security Policy Project was still present in check destroy step.", map[string]interface{}{
+				tflog.Debug(context.Background(), "Security Policy Project was still present for the group in check destroy step.", map[string]interface{}{
 					"response": string(jsonString),
 				})
 
