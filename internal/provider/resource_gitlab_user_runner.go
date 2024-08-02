@@ -371,7 +371,7 @@ func (r *gitlabUserRunnerResource) ValidateConfig(ctx context.Context, req resou
 		if data.GroupID.IsNull() {
 			resp.Diagnostics.AddAttributeError(path.Root("group_id"),
 				`Group ID not provided when Runner Type is set to "group_type".`,
-				`When creating a Group Runner, a Group ID must be provided. The Group ID was not provided, but the Runner Type value was set to "groupd_type". Please provide a Group ID!`,
+				`When creating a Group Runner, a Group ID must be provided. The Group ID was not provided, but the Runner Type value was set to "group_type". Please provide a Group ID!`,
 			)
 		}
 
