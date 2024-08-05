@@ -6,6 +6,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -66,7 +67,8 @@ func (r *gitlabProjectPushRulesResource) Schema(ctx context.Context, req resourc
 		MarkdownDescription: `The ` + "`gitlab_project_push_rules`" + ` resource allows to manage the lifecycle of push rules on a project.
 
 ~> This resource will compete with the ` + "`gitlab_project`" + ` resource if push rules are also defined as 
-   part of that resource. It is recommended to define push rules using this resource OR in the ` + "`gitlab_project`" + ` resource, 
+   part of that resource, since this resource will take over ownership of the project push rules created for the referenced project.
+   It is recommended to define push rules using this resource OR in the ` + "`gitlab_project`" + ` resource, 
    but not in both as it may result in terraform identifying changes with every "plan" operation.
 
 -> This resource requires a GitLab Enterprise instance with a Premium license to set the push rules on a project.
@@ -261,65 +263,77 @@ func (r *gitlabProjectPushRulesResource) Create(ctx context.Context, req resourc
 	projectID := data.Project.ValueString()
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab project %q push rules", projectID))
 
-	options := gitlab.AddProjectPushRuleOptions{}
+	// check for existing push rules; if found then update, otherwise add new
+	existingPushRules, _, err := r.client.Projects.GetProjectPushRules(projectID, gitlab.WithContext(ctx))
+	if err == nil && existingPushRules.ID != 0 {
+		// push rules exist, update them
+		err := r.update(ctx, data, &resp.Diagnostics)
+		if err != nil {
+			resp.Diagnostics.AddError("Failed to update project push rules", err.Error())
+		}
+	} else {
+		// add new
+		options := gitlab.AddProjectPushRuleOptions{}
 
-	if !data.AuthorEmailRegex.IsNull() && !data.AuthorEmailRegex.IsUnknown() {
-		options.AuthorEmailRegex = data.AuthorEmailRegex.ValueStringPointer()
+		if !data.AuthorEmailRegex.IsNull() && !data.AuthorEmailRegex.IsUnknown() {
+			options.AuthorEmailRegex = data.AuthorEmailRegex.ValueStringPointer()
+		}
+
+		if !data.BranchNameRegex.IsNull() && !data.BranchNameRegex.IsUnknown() {
+			options.BranchNameRegex = data.BranchNameRegex.ValueStringPointer()
+		}
+
+		if !data.CommitCommitterCheck.IsNull() && !data.CommitCommitterCheck.IsUnknown() {
+			options.CommitCommitterCheck = data.CommitCommitterCheck.ValueBoolPointer()
+		}
+
+		if !data.CommitCommitterNameCheck.IsNull() && !data.CommitCommitterNameCheck.IsUnknown() {
+			options.CommitCommitterNameCheck = data.CommitCommitterNameCheck.ValueBoolPointer()
+		}
+
+		if !data.CommitMessageNegativeRegex.IsNull() && !data.CommitMessageNegativeRegex.IsUnknown() {
+			options.CommitMessageNegativeRegex = data.CommitMessageNegativeRegex.ValueStringPointer()
+		}
+
+		if !data.CommitMessageRegex.IsNull() && !data.CommitMessageRegex.IsUnknown() {
+			options.CommitMessageRegex = data.CommitMessageRegex.ValueStringPointer()
+		}
+
+		if !data.DenyDeleteTag.IsNull() && !data.DenyDeleteTag.IsUnknown() {
+			options.DenyDeleteTag = data.DenyDeleteTag.ValueBoolPointer()
+		}
+
+		if !data.FileNameRegex.IsNull() && !data.FileNameRegex.IsUnknown() {
+			options.FileNameRegex = data.FileNameRegex.ValueStringPointer()
+		}
+
+		if !data.MaxFileSize.IsNull() && !data.MaxFileSize.IsUnknown() {
+			options.MaxFileSize = gitlab.Ptr(int(data.MaxFileSize.ValueInt64()))
+		}
+
+		if !data.MemberCheck.IsNull() && !data.MemberCheck.IsUnknown() {
+			options.MemberCheck = data.MemberCheck.ValueBoolPointer()
+		}
+
+		if !data.PreventSecrets.IsNull() && !data.PreventSecrets.IsUnknown() {
+			options.PreventSecrets = data.PreventSecrets.ValueBoolPointer()
+		}
+
+		if !data.RejectUnsignedCommits.IsNull() && !data.RejectUnsignedCommits.IsUnknown() {
+			options.RejectUnsignedCommits = data.RejectUnsignedCommits.ValueBoolPointer()
+		}
+
+		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Creating new push rules for project %q", projectID))
+		pushRules, _, err := r.client.Projects.AddProjectPushRule(projectID, &options, gitlab.WithContext(ctx))
+		if err != nil {
+			resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to add project push rules details: %s", err.Error()))
+			return
+		}
+
+		// persist API response in state model
+		r.projectPushRulesToStateModel(projectID, pushRules, data)
+
 	}
-
-	if !data.BranchNameRegex.IsNull() && !data.BranchNameRegex.IsUnknown() {
-		options.BranchNameRegex = data.BranchNameRegex.ValueStringPointer()
-	}
-
-	if !data.CommitCommitterCheck.IsNull() && !data.CommitCommitterCheck.IsUnknown() {
-		options.CommitCommitterCheck = data.CommitCommitterCheck.ValueBoolPointer()
-	}
-
-	if !data.CommitCommitterNameCheck.IsNull() && !data.CommitCommitterNameCheck.IsUnknown() {
-		options.CommitCommitterNameCheck = data.CommitCommitterNameCheck.ValueBoolPointer()
-	}
-
-	if !data.CommitMessageNegativeRegex.IsNull() && !data.CommitMessageNegativeRegex.IsUnknown() {
-		options.CommitMessageNegativeRegex = data.CommitMessageNegativeRegex.ValueStringPointer()
-	}
-
-	if !data.CommitMessageRegex.IsNull() && !data.CommitMessageRegex.IsUnknown() {
-		options.CommitMessageRegex = data.CommitMessageRegex.ValueStringPointer()
-	}
-
-	if !data.DenyDeleteTag.IsNull() && !data.DenyDeleteTag.IsUnknown() {
-		options.DenyDeleteTag = data.DenyDeleteTag.ValueBoolPointer()
-	}
-
-	if !data.FileNameRegex.IsNull() && !data.FileNameRegex.IsUnknown() {
-		options.FileNameRegex = data.FileNameRegex.ValueStringPointer()
-	}
-
-	if !data.MaxFileSize.IsNull() && !data.MaxFileSize.IsUnknown() {
-		options.MaxFileSize = gitlab.Ptr(int(data.MaxFileSize.ValueInt64()))
-	}
-
-	if !data.MemberCheck.IsNull() && !data.MemberCheck.IsUnknown() {
-		options.MemberCheck = data.MemberCheck.ValueBoolPointer()
-	}
-
-	if !data.PreventSecrets.IsNull() && !data.PreventSecrets.IsUnknown() {
-		options.PreventSecrets = data.PreventSecrets.ValueBoolPointer()
-	}
-
-	if !data.RejectUnsignedCommits.IsNull() && !data.RejectUnsignedCommits.IsUnknown() {
-		options.RejectUnsignedCommits = data.RejectUnsignedCommits.ValueBoolPointer()
-	}
-
-	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Creating new push rules for project %q", projectID))
-	pushRules, _, err := r.client.Projects.AddProjectPushRule(projectID, &options, gitlab.WithContext(ctx))
-	if err != nil {
-		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to add project push rules details: %s", err.Error()))
-		return
-	}
-
-	// persist API response in state model
-	r.projectPushRulesToStateModel(projectID, pushRules, data)
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -336,6 +350,42 @@ func (r *gitlabProjectPushRulesResource) Update(ctx context.Context, req resourc
 		return
 	}
 
+	err := r.update(ctx, data, &resp.Diagnostics)
+	if err != nil {
+		resp.Diagnostics.AddError("Failed to update project push rules", err.Error())
+	}
+
+	// Save updated data into Terraform state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+
+// Delete removes the resource.
+func (r *gitlabProjectPushRulesResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var data *gitlabProjectPushRulesResourceModel
+
+	// Read Terraform prior state data into the model
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	projectID := data.ID.ValueString()
+
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Deleting push rules for project %q", projectID))
+	_, err := r.client.Projects.DeleteProjectPushRule(projectID, gitlab.WithContext(ctx))
+	if err != nil {
+		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to delete project push rules details: %s", err.Error()))
+		return
+	}
+}
+
+func (r *gitlabProjectPushRulesResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+// Update existing push rules on a project
+func (r *gitlabProjectPushRulesResource) update(ctx context.Context, data *gitlabProjectPushRulesResourceModel, diags *diag.Diagnostics) error {
 	projectID := data.Project.ValueString()
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab project %q push rules", projectID))
 
@@ -392,38 +442,12 @@ func (r *gitlabProjectPushRulesResource) Update(ctx context.Context, req resourc
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Updating push rules for project %q", projectID))
 	pushRules, _, err := r.client.Projects.EditProjectPushRule(projectID, &options, gitlab.WithContext(ctx))
 	if err != nil {
-		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to add project push rules details: %s", err.Error()))
-		return
+		diags.AddError("GitLab API error occurred", fmt.Sprintf("Unable to update project push rules details: %s", err.Error()))
+		return err
 	}
 
 	// persist API response in state model
 	r.projectPushRulesToStateModel(projectID, pushRules, data)
 
-	// Save updated data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
-}
-
-// Delete removes the resource.
-func (r *gitlabProjectPushRulesResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var data *gitlabProjectPushRulesResourceModel
-
-	// Read Terraform prior state data into the model
-	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
-
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	projectID := data.ID.ValueString()
-
-	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Deleting push rules for project %q", projectID))
-	_, err := r.client.Projects.DeleteProjectPushRule(projectID, gitlab.WithContext(ctx))
-	if err != nil {
-		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to delete project push rules details: %s", err.Error()))
-		return
-	}
-}
-
-func (r *gitlabProjectPushRulesResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+	return nil
 }

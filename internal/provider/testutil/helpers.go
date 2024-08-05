@@ -145,7 +145,7 @@ func CreateProject(t *testing.T) *gitlab.Project {
 	return CreateProjectWithNamespace(t, 0)
 }
 
-// CreateProjectWithNamespace is a test helper for creating a project. This method accepts a namespace to great a project
+// CreateProjectWithNamespace is a test helper for creating a project. This method accepts a namespace to create a project
 // within a group
 func CreateProjectWithNamespace(t *testing.T, namespaceID int) *gitlab.Project {
 	t.Helper()
@@ -181,6 +181,58 @@ func CreateProjectWithOptions(t *testing.T, opts *gitlab.CreateProjectOptions) *
 			t.Fatalf("could not cleanup test project: %v", err)
 		}
 	})
+
+	return project
+}
+
+func CreateProjectWithDefaultPushRules(t *testing.T, namespaceID int) *gitlab.Project {
+	t.Helper()
+
+	project := CreateProjectWithNamespace(t, namespaceID)
+
+	/*
+		Setting the default options based on what is set on gitlab.com
+		when a new project is created.  The following are the push rules
+		returned via the push_rule API after a project is created:
+
+			{
+			"id": 123,
+			"project_id": 42,
+			"created_at": "2024-07-25T15:49:50.119Z",
+			"commit_message_regex": "",
+			"commit_message_negative_regex": null,
+			"branch_name_regex": null,
+			"deny_delete_tag": false,
+			"member_check": false,
+			"prevent_secrets": false,
+			"author_email_regex": "",
+			"file_name_regex": "",
+			"max_file_size": 0,
+			"commit_committer_check": null,
+			"commit_committer_name_check": false,
+			"reject_unsigned_commits": null,
+			"reject_non_dco_commits": null
+			}
+	*/
+	options := &gitlab.AddProjectPushRuleOptions{
+		AuthorEmailRegex:           nil,
+		BranchNameRegex:            nil,
+		CommitCommitterCheck:       nil,
+		CommitCommitterNameCheck:   gitlab.Ptr(false),
+		CommitMessageNegativeRegex: nil,
+		CommitMessageRegex:         nil,
+		DenyDeleteTag:              gitlab.Ptr(false),
+		FileNameRegex:              nil,
+		MaxFileSize:                gitlab.Ptr(0),
+		MemberCheck:                gitlab.Ptr(false),
+		PreventSecrets:             gitlab.Ptr(false),
+		RejectUnsignedCommits:      nil,
+	}
+
+	_, _, err := TestGitlabClient.Projects.AddProjectPushRule(project.ID, options)
+	if err != nil {
+		t.Fatalf("could not create test project with default push rules")
+	}
 
 	return project
 }
