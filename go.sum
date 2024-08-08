@@ -18,8 +18,8 @@ github.com/cyphar/filepath-securejoin v0.2.4/go.mod h1:aPGpWjXOXUn2NCNjFvBE6aRxG
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/dcarbone/terraform-plugin-framework-utils/v3 v3.6.0 h1:ElfHbk3JZ2g6Ut6L+yUGw13lF9aMWzawYb0DvyBFYiA=
-github.com/dcarbone/terraform-plugin-framework-utils/v3 v3.6.0/go.mod h1:VrdwTHG3lgWDw0+gj60LWYPF+/utSLQ9+FN07mfQpu4=
+github.com/dcarbone/terraform-plugin-framework-utils/v3 v3.7.0 h1:8aJpqYDOC2wxb03M6v9tRE9ujG+XnTrQkXutIwDptP8=
+github.com/dcarbone/terraform-plugin-framework-utils/v3 v3.7.0/go.mod h1:KHpIoNfcEDwupMto6ju9NuKYcw8tlcbtcFhNuonYYeU=
 github.com/emirpasic/gods v1.18.1 h1:FXtiHYKDGKCW2KzwZKx0iC0PQmdlorYgdFG9jPXJ1Bc=
 github.com/emirpasic/gods v1.18.1/go.mod h1:8tpGGwCnJ5H4r6BWwaV6OrWmMoPhUl5jm/FMNAnJvWQ=
 github.com/fatih/color v1.13.0/go.mod h1:kLAiJbzzSOZDVNGyDpeOxJ47H46qBXwg5ILebYFFOfk=
