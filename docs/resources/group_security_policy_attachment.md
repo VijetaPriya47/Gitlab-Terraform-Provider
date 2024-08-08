@@ -59,7 +59,7 @@ actions:
 EOT
 }
 
-resource "gitlab_group_security_policy" "my-policy" {
+resource "gitlab_group_security_policy_attachment" "my-policy" {
   group          = 1234
   policy_project = gitlab_project.my-policy-project.id
 }
