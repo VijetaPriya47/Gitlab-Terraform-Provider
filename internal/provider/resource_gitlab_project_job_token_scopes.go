@@ -7,6 +7,7 @@ import (
 
 	"github.com/dcarbone/terraform-plugin-framework-utils/v3/conv"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -45,6 +46,7 @@ type gitlabProjectJobTokenScopesResource struct {
 // gitlabProjectJobTokenScopesResourceModel describes the resource data model.
 type gitlabProjectJobTokenScopesResourceModel struct {
 	Id        types.String `tfsdk:"id"`
+	Project   types.String `tfsdk:"project"`
 	ProjectID types.Int64  `tfsdk:"project_id"`
 
 	// types.Set in the schema
@@ -70,12 +72,24 @@ Any project not within the defined set in this attribute will be removed, which 
 				Computed:            true,
 				MarkdownDescription: "The ID of this Terraform resource. In the format of `<project_id>`.",
 				PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Validators: []validator.String{
+					stringvalidator.AtLeastOneOf(path.MatchRelative().AtParent().AtName("project"), path.MatchRelative().AtParent().AtName("project_id")),
+				},
+			},
+			"project": schema.StringAttribute{
+				MarkdownDescription: "The ID or full path of the project.",
+				Optional:            true,
+				Computed:            true,
+				PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
+				Validators:          []validator.String{stringvalidator.LengthAtLeast(1), stringvalidator.ConflictsWith(path.MatchRoot("project_id"))},
 			},
 			"project_id": schema.Int64Attribute{
 				MarkdownDescription: "The ID of the project.",
-				Required:            true,
+				DeprecationMessage:  "`project_id` has been deprecated. Use `project` instead.",
+				Optional:            true,
+				Computed:            true,
 				PlanModifiers:       []planmodifier.Int64{int64planmodifier.RequiresReplace()},
-				Validators:          []validator.Int64{int64validator.AtLeast(0)},
+				Validators:          []validator.Int64{int64validator.AtLeast(0), int64validator.ConflictsWith(path.MatchRoot("project"))},
 			},
 			"target_project_ids": schema.SetAttribute{
 				MarkdownDescription: "A set of project IDs that are in the CI/CD job token inbound allowlist.",
@@ -121,7 +135,12 @@ func (r *gitlabProjectJobTokenScopesResource) Create(ctx context.Context, req re
 	}
 
 	// local copies of plan arguments
-	project := int(data.ProjectID.ValueInt64())
+	var project string
+	if data.Project.ValueString() == "" {
+		project = strconv.Itoa(int(data.ProjectID.ValueInt64()))
+	} else {
+		project = data.Project.ValueString()
+	}
 
 	// Since a user may have added scopes to a project before this resource was added, we essentially need to do a
 	// "diff" operation even in the "create" function
@@ -130,7 +149,13 @@ func (r *gitlabProjectJobTokenScopesResource) Create(ctx context.Context, req re
 	// Populate the state model object, since we don't get all projects back in one request, so we have to re-read them
 	resp.Diagnostics.Append(r.readIntoState(ctx, project, data))
 
-	data.Id = types.StringValue(strconv.Itoa(int(data.ProjectID.ValueInt64())))
+	data.Id = types.StringValue(project)
+	data.Project = types.StringValue(project)
+	projectID, err := strconv.Atoi(data.Id.ValueString())
+	if err == nil {
+		data.ProjectID = types.Int64Value(int64(projectID))
+	}
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -145,19 +170,16 @@ func (r *gitlabProjectJobTokenScopesResource) Read(ctx context.Context, req reso
 		return
 	}
 
-	// Ensure the project is the integer ID, not a URL encoded path
-	projectID, err := strconv.Atoi(data.Id.ValueString())
-	if err != nil {
-		resp.Diagnostics.AddError("Error parsing the ID to an integer. This resource required the integer value of the project, not a URL encoded path.", err.Error())
-		return
-
-	}
-
 	// Populate the state model object
-	resp.Diagnostics.Append(r.readIntoState(ctx, projectID, data))
+	resp.Diagnostics.Append(r.readIntoState(ctx, data.Id.ValueString(), data))
 
 	// Save updated data into Terraform state
-	data.ProjectID = types.Int64Value(int64(projectID))
+	data.Project = types.StringValue(data.Id.ValueString())
+	projectID, err := strconv.Atoi(data.Id.ValueString())
+	if err == nil {
+		data.ProjectID = types.Int64Value(int64(projectID))
+	}
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -173,7 +195,12 @@ func (r *gitlabProjectJobTokenScopesResource) Update(ctx context.Context, req re
 	}
 
 	// local copies of plan arguments
-	project := int(data.ProjectID.ValueInt64())
+	var project string
+	if data.Project.ValueString() == "" {
+		project = strconv.Itoa(int(data.ProjectID.ValueInt64()))
+	} else {
+		project = data.Project.ValueString()
+	}
 
 	// Since a user may have added scoped to a project before this resource was added, we essentially need to do a
 	// "diff" operation even in the "create" function
@@ -202,7 +229,11 @@ func (r *gitlabProjectJobTokenScopesResource) Delete(ctx context.Context, req re
 	data.TargetGroupIDs = groupSet
 
 	// Run the set to empty out project Ids
-	r.setProjectCIJobScopes(ctx, int(data.ProjectID.ValueInt64()), data)
+	if data.Project.ValueString() == "" {
+		r.setProjectCIJobScopes(ctx, strconv.Itoa(int(data.ProjectID.ValueInt64())), data)
+	} else {
+		r.setProjectCIJobScopes(ctx, data.Project.ValueString(), data)
+	}
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -219,7 +250,7 @@ func (r *gitlabProjectJobTokenScopesResource) ImportState(ctx context.Context, r
 //   - Adds any scopes not already on the project
 //   - Removes scopes on the project, but not in the list
 //   - Leaves all other scopes alone.
-func (r *gitlabProjectJobTokenScopesResource) setProjectCIJobScopes(ctx context.Context, project int, data *gitlabProjectJobTokenScopesResourceModel) diag.Diagnostic {
+func (r *gitlabProjectJobTokenScopesResource) setProjectCIJobScopes(ctx context.Context, project string, data *gitlabProjectJobTokenScopesResourceModel) diag.Diagnostic {
 	// Get a list of existing CI project scopes for the project
 	projects, err := r.getProjectCIJobScopes(ctx, project)
 	if err != nil {
@@ -239,7 +270,7 @@ func (r *gitlabProjectJobTokenScopesResource) setProjectCIJobScopes(ctx context.
 		_, err := r.client.JobTokenScope.RemoveProjectFromJobScopeAllowList(project, currentProjectID, gitlab.WithContext(ctx))
 		if err != nil {
 			return diag.NewErrorDiagnostic(
-				fmt.Sprintf("GitLab API error occured when removing job scopes from project %d", project),
+				fmt.Sprintf("GitLab API error occured when removing job scopes from project %s", project),
 				err.Error(),
 			)
 		}
@@ -251,7 +282,7 @@ func (r *gitlabProjectJobTokenScopesResource) setProjectCIJobScopes(ctx context.
 		_, _, err := r.client.JobTokenScope.AddProjectToJobScopeAllowList(project, options, gitlab.WithContext(ctx))
 		if err != nil {
 			return diag.NewErrorDiagnostic(
-				fmt.Sprintf("GitLab API error occured when adding job scopes to project %d", project),
+				fmt.Sprintf("GitLab API error occured when adding job scopes to project %s", project),
 				err.Error(),
 			)
 		}
@@ -276,7 +307,7 @@ func (r *gitlabProjectJobTokenScopesResource) setProjectCIJobScopes(ctx context.
 		_, err := r.client.JobTokenScope.RemoveGroupFromJobTokenAllowlist(project, groupID, gitlab.WithContext(ctx))
 		if err != nil {
 			return diag.NewErrorDiagnostic(
-				fmt.Sprintf("GitLab API error occured when removing group from job scopes for project %d", project),
+				fmt.Sprintf("GitLab API error occured when removing group from job scopes for project %s", project),
 				err.Error(),
 			)
 		}
@@ -288,7 +319,7 @@ func (r *gitlabProjectJobTokenScopesResource) setProjectCIJobScopes(ctx context.
 		_, _, err := r.client.JobTokenScope.AddGroupToJobTokenAllowlist(project, options, gitlab.WithContext(ctx))
 		if err != nil {
 			return diag.NewErrorDiagnostic(
-				fmt.Sprintf("GitLab API error occured when adding group to job scopes for project %d", project),
+				fmt.Sprintf("GitLab API error occured when adding group to job scopes for project %s", project),
 				err.Error(),
 			)
 		}
@@ -331,7 +362,7 @@ func (r *gitlabProjectJobTokenScopesResource) compareAndGenerateActions(desiredI
 }
 
 // Retrieves a comprehensive list of CI project scope targets
-func (r *gitlabProjectJobTokenScopesResource) getProjectCIJobScopes(ctx context.Context, projectID int) ([]*gitlab.Project, error) {
+func (r *gitlabProjectJobTokenScopesResource) getProjectCIJobScopes(ctx context.Context, project string) ([]*gitlab.Project, error) {
 	var projectScopes []*gitlab.Project
 
 	// Get a list of existing CI project scopes for the project, 20 pages at once
@@ -343,7 +374,7 @@ func (r *gitlabProjectJobTokenScopesResource) getProjectCIJobScopes(ctx context.
 	}
 
 	for options.Page != 0 {
-		paginatedProjects, resp, err := r.client.JobTokenScope.GetProjectJobTokenInboundAllowList(projectID, &options, gitlab.WithContext(ctx))
+		paginatedProjects, resp, err := r.client.JobTokenScope.GetProjectJobTokenInboundAllowList(project, &options, gitlab.WithContext(ctx))
 		if err != nil {
 			return nil, fmt.Errorf("unable to read CI/CD Job Token inbound allowlist. %s", err)
 		}
@@ -352,7 +383,7 @@ func (r *gitlabProjectJobTokenScopesResource) getProjectCIJobScopes(ctx context.
 		options.Page = resp.NextPage
 
 		tflog.Debug(ctx, "Read CI/CD Job Token inbound allowlist for project", map[string]interface{}{
-			"project":                      projectID,
+			"project":                      project,
 			"page":                         options.Page,
 			"number_of_project_identified": len(projectScopes),
 		})
@@ -360,7 +391,7 @@ func (r *gitlabProjectJobTokenScopesResource) getProjectCIJobScopes(ctx context.
 
 	// Remove itself from the list, which will cause issues during the "set" operation, and during post-apply calculations.
 	for i, p := range projectScopes {
-		if p.ID == projectID {
+		if p.PathWithNamespace == project || strconv.Itoa(p.ID) == project {
 			projectScopes = append(projectScopes[:i], projectScopes[i+1:]...)
 			break
 		}
@@ -370,7 +401,7 @@ func (r *gitlabProjectJobTokenScopesResource) getProjectCIJobScopes(ctx context.
 }
 
 // Retrieves a comprehensive list of CI groups scope targets
-func (r *gitlabProjectJobTokenScopesResource) getProjectCIJobScopesGroups(ctx context.Context, projectID int) ([]*gitlab.Group, error) {
+func (r *gitlabProjectJobTokenScopesResource) getProjectCIJobScopesGroups(ctx context.Context, projectID string) ([]*gitlab.Group, error) {
 	var groupsScopes []*gitlab.Group
 
 	options := gitlab.GetJobTokenAllowlistGroupsOptions{
@@ -399,8 +430,7 @@ func (r *gitlabProjectJobTokenScopesResource) getProjectCIJobScopesGroups(ctx co
 }
 
 // Retrieves a comprehensive list of CI project scope targets
-func (r *gitlabProjectJobTokenScopesResource) readIntoState(ctx context.Context, project int, data *gitlabProjectJobTokenScopesResourceModel) diag.Diagnostic {
-
+func (r *gitlabProjectJobTokenScopesResource) readIntoState(ctx context.Context, project string, data *gitlabProjectJobTokenScopesResourceModel) diag.Diagnostic {
 	// re-read the project IDs from the API to set to state since we don't get them back in one request
 	projects, err := r.getProjectCIJobScopes(ctx, project)
 	if err != nil {
