@@ -483,19 +483,20 @@ func (r *gitlabProjectAccessTokenResource) Update(ctx context.Context, req resou
 		return
 	}
 
-	// determine the new expires_at from the config
-	expiresAt, err := r.determineExpiryDate(data)
+	// since modifyplan has determined the expiration date, simply retrieve it from the plan instead of re-calculating it.
+	// re-calculating it here could result in a different value from the plan if the plan is run on a different date than
+	// the apply, causing a "provider error" message to be sent to the user
+	expiresAt, err := gitlab.ParseISOTime(data.ExpiresAt.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Failed to parse expires_at value into a valid ISOTime",
-			fmt.Sprintf("Failed to parse expires_at value into a valid ISOTime. Error: %v", err),
+			"Error parsing expiry date",
+			fmt.Sprintf("Could not parse expiry date %s: %s", data.ExpiresAt.ValueString(), err),
 		)
-		return
 	}
 
 	// update with a project access token means rotate it
 	token, _, err := r.client.ProjectAccessTokens.RotateProjectAccessToken(project, intPatId, &gitlab.RotateProjectAccessTokenOptions{
-		ExpiresAt: expiresAt,
+		ExpiresAt: &expiresAt,
 	}, gitlab.WithContext(ctx))
 	if err != nil {
 		resp.Diagnostics.AddError(
