@@ -95,10 +95,7 @@ func (r *gitlabProjectAccessTokenResource) Schema(ctx context.Context, req resou
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "The ID of the project access token.",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
-				Computed: true,
+				Computed:            true,
 			},
 			"project": schema.StringAttribute{
 				MarkdownDescription: "The ID or full path of the project.",
@@ -336,6 +333,7 @@ func (r *gitlabProjectAccessTokenResource) ModifyPlan(ctx context.Context, req r
 		if stateData != nil && expiryDate != nil && expiryDate.String() != stateData.ExpiresAt.ValueString() {
 			// Set the new expiration date in the plan
 			planData.ExpiresAt = types.StringValue(expiryDate.String())
+
 			// Set several attributes to unknown since they will change as part of rotation
 			planData.ID = types.StringUnknown()
 			planData.Token = types.StringUnknown()
