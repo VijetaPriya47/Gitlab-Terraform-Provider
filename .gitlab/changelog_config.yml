@@ -27,9 +27,9 @@ template: |
   {% each entries %}
   -\
   {% if commit.trailers.Subsystem %} {{ commit.trailers.Subsystem }}: {% end %}\
-   [{{ title }}]({{ commit.reference }})\
+   [{{ title }}]({{ commit.web_url }})\
   {% if author.credit %} by {{ author.reference }}{% end %}\
-  {% if merge_request %} ([merge request]({{ merge_request.reference }})) {% end %}\
+  {% if merge_request %} ([merge request]({{ merge_request.web_url }})) {% end %}\
 
   {% end %}
 
