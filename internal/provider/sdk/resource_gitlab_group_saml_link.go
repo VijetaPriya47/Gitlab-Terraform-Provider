@@ -55,7 +55,7 @@ var _ = registerResource("gitlab_group_saml_link", func() *schema.Resource {
 				ForceNew:         true,
 			},
 			"member_role_id": {
-				Description: "The ID of a custom member role. Only available for Ultimate instances.",
+				Description: "The ID of a custom member role. Only available for Ultimate instances. When using a custom role, the `access_level` must match the base role used to create the custom role.",
 				Type:        schema.TypeInt,
 				Optional:    true,
 				ForceNew:    true,
