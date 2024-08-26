@@ -584,7 +584,7 @@ func CreateGroupEpicBoard(t *testing.T, path string) {
 	ctx := context.Background()
 	var pid interface{}
 	if _, err := api.SendGraphQLRequest(ctx, TestGitlabClient, query, &pid); err != nil {
-		t.Fatalf(fmt.Sprintf("Unable to create epic board: %s", err.Error()))
+		t.Fatalf("Unable to create epic board: %s", err.Error())
 	}
 }
 

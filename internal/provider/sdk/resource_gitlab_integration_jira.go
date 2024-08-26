@@ -221,7 +221,7 @@ func resourceGitlabIntegrationJiraRead(ctx context.Context, d *schema.ResourceDa
 		return diag.FromErr(fmt.Errorf("unable to determine version of GitLab. Cannot determine which API property to read from. Error: %v", err))
 	}
 	if isVersionAtLeast17 {
-		if jiraService.Properties.ProjectKeys != nil && len(jiraService.Properties.ProjectKeys) > 0 {
+		if len(jiraService.Properties.ProjectKeys) > 0 {
 			d.Set("project_key", jiraService.Properties.ProjectKeys[0])
 		}
 	} else {
