@@ -165,7 +165,7 @@ func (d *gitlabProjectSecurityPolicyAttachmentResource) Read(ctx context.Context
 		return
 	}
 
-	if response.Errors != nil && len(response.Errors) > 0 {
+	if len(response.Errors) > 0 {
 		resp.Diagnostics.AddError("Failed to read security policy project", response.Errors[0].Message)
 	}
 
@@ -262,7 +262,7 @@ func (d *gitlabProjectSecurityPolicyAttachmentResource) Delete(ctx context.Conte
 		return
 	}
 
-	if response.Data.SecurityPolicyProjectUnassign.Errors != nil && len(response.Data.SecurityPolicyProjectUnassign.Errors) > 0 {
+	if len(response.Data.SecurityPolicyProjectUnassign.Errors) > 0 {
 		resp.Diagnostics.AddError("Failed to delete the group security policy attachment", response.Data.SecurityPolicyProjectUnassign.Errors[0].Message)
 		return
 	}
@@ -293,7 +293,7 @@ func (d *gitlabProjectSecurityPolicyAttachmentResource) updatePolicy(ctx context
 	if err != nil {
 		return err
 	}
-	if response.Data.SecurityPolicyProjectAssign.Errors != nil && len(response.Data.SecurityPolicyProjectAssign.Errors) > 0 {
+	if len(response.Data.SecurityPolicyProjectAssign.Errors) > 0 {
 		return errors.New(response.Data.SecurityPolicyProjectAssign.Errors[0].Message)
 	}
 
