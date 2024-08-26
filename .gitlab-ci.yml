@@ -14,7 +14,7 @@ stages:
 
 variables:
   # TODO(@timofurrer): verify if there is an option to read this version from either .tool-versions or go.mod
-  GOLANG_IMAGE_VERSION: "1.22.6"
+  GOLANG_IMAGE_VERSION: "1.23.0"
   # NOTE(@timofurrer): used for caching, see `cache.paths` settings
   GOPATH: ${CI_PROJECT_DIR}/.go
   IMAGE_TAG: latest
