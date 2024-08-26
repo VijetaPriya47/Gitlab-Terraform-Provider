@@ -115,7 +115,7 @@ func (r *gitlabProjectProtectedEnvironmentResource) Schema(ctx context.Context, 
 
 func deployAccessLevelSchema() schema.SetNestedBlock {
 	return schema.SetNestedBlock{
-		MarkdownDescription: "Array of access levels allowed to deploy, with each described by a hash.",
+		MarkdownDescription: "Array of access levels allowed to deploy, with each described by a hash.  Elements in the `deploy_access_levels` should be one of `user_id`, `group_id` or `access_level`.",
 		NestedObject: schema.NestedBlockObject{
 			Attributes: map[string]schema.Attribute{
 				"id": schema.Int64Attribute{
@@ -124,7 +124,7 @@ func deployAccessLevelSchema() schema.SetNestedBlock {
 					PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
 				},
 				"access_level": schema.StringAttribute{
-					MarkdownDescription: fmt.Sprintf("Levels of access required to deploy to this protected environment. Valid values are %s.", utils.RenderValueListForDocs(api.ValidProtectedEnvironmentDeploymentLevelNames)),
+					MarkdownDescription: fmt.Sprintf("Levels of access required to deploy to this protected environment. Mutually exclusive with `user_id` and `group_id`. Valid values are %s.", utils.RenderValueListForDocs(api.ValidProtectedEnvironmentDeploymentLevelNames)),
 					Optional:            true,
 					PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 					Validators: []validator.String{
@@ -137,13 +137,13 @@ func deployAccessLevelSchema() schema.SetNestedBlock {
 					Computed:            true,
 				},
 				"user_id": schema.Int64Attribute{
-					MarkdownDescription: "The ID of the user allowed to deploy to this protected environment. The user must be a member of the project.",
+					MarkdownDescription: "The ID of the user allowed to deploy to this protected environment. The user must be a member of the project. Mutually exclusive with `access_level` and `group_id`.",
 					Optional:            true,
 					PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
 					Validators:          []validator.Int64{int64validator.AtLeast(1)},
 				},
 				"group_id": schema.Int64Attribute{
-					MarkdownDescription: "The ID of the group allowed to deploy to this protected environment. The project must be shared with the group.",
+					MarkdownDescription: "The ID of the group allowed to deploy to this protected environment. The project must be shared with the group. Mutually exclusive with `access_level` and `user_id`.",
 					Optional:            true,
 					PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
 					Validators:          []validator.Int64{int64validator.AtLeast(1)},
@@ -164,7 +164,7 @@ func deployAccessLevelSchema() schema.SetNestedBlock {
 
 func approvalRuleSchema() schema.ListNestedAttribute {
 	return schema.ListNestedAttribute{
-		MarkdownDescription: "Array of approval rules to deploy, with each described by a hash.",
+		MarkdownDescription: "Array of approval rules to deploy, with each described by a hash. Elements in the `approval_rules` should be one of `user_id`, `group_id` or `access_level`.",
 		Optional:            true,
 		Computed:            true,
 		NestedObject: schema.NestedAttributeObject{
@@ -176,7 +176,7 @@ func approvalRuleSchema() schema.ListNestedAttribute {
 					PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
 				},
 				"access_level": schema.StringAttribute{
-					MarkdownDescription: fmt.Sprintf("Levels of access allowed to approve a deployment to this protected environment. Valid values are %s.", utils.RenderValueListForDocs(api.ValidProtectedEnvironmentDeploymentLevelNames)),
+					MarkdownDescription: fmt.Sprintf("Levels of access allowed to approve a deployment to this protected environment. Mutually exclusive with `user_id` and `group_id`. Valid values are %s.", utils.RenderValueListForDocs(api.ValidProtectedEnvironmentDeploymentLevelNames)),
 					Optional:            true,
 					PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 					Validators: []validator.String{
@@ -189,13 +189,13 @@ func approvalRuleSchema() schema.ListNestedAttribute {
 					PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 				},
 				"user_id": schema.Int64Attribute{
-					MarkdownDescription: "The ID of the user allowed to approve a deployment to this protected environment. The user must be a member of the project. This is mutually exclusive with group_id and required_approvals.",
+					MarkdownDescription: "The ID of the user allowed to approve a deployment to this protected environment. The user must be a member of the project. Mutually exclusive with `access_level` and `group_id`.",
 					Optional:            true,
 					PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
 					Validators:          []validator.Int64{int64validator.AtLeast(1)},
 				},
 				"group_id": schema.Int64Attribute{
-					MarkdownDescription: "The ID of the group allowed to approve a deployment to this protected environment. The project must be shared with the group. This is mutually exclusive with user_id.",
+					MarkdownDescription: "The ID of the group allowed to approve a deployment to this protected environment. The project must be shared with the group. Mutually exclusive with `access_level` and `user_id`.",
 					Optional:            true,
 					PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
 					Validators:          []validator.Int64{int64validator.AtLeast(1)},
