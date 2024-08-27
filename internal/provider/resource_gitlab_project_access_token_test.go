@@ -246,11 +246,11 @@ func TestAccGitlabProjectAccessToken_rotationUsingExpiresAtTimeOffset(t *testing
 	project := testutil.CreateProject(t)
 
 	// lintignore:AT004  // we need the provider configuration for the time provider
-	config := fmt.Sprintf(`
+	configString := `
 		provider "time" {}
 
 		resource "time_offset" "year" {
-			offset_days = 364
+			offset_days = %d
 		}
 
 		resource "gitlab_project_access_token" "token" {
@@ -260,7 +260,7 @@ func TestAccGitlabProjectAccessToken_rotationUsingExpiresAtTimeOffset(t *testing
 			access_level = "developer"
 			scopes       = ["read_api"]
 		}
-		`, project.ID)
+		`
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
@@ -273,19 +273,27 @@ func TestAccGitlabProjectAccessToken_rotationUsingExpiresAtTimeOffset(t *testing
 		Steps: []resource.TestStep{
 			// Create a Project Access Token
 			{
-				Config: config,
+				Config: fmt.Sprintf(configString, 360, project.ID),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("gitlab_project_access_token.token", "expires_at"),
 				),
 			},
 			// Taint the timeoffset to have it re-create the token
 			{
-				Config: config,
-				Taint:  []string{"time_offset.year"},
+				Config:             fmt.Sprintf(configString, 365, project.ID),
+				Taint:              []string{"time_offset.year"},
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: true,
 			},
-			// Re-run the config for a Project Access Token
+			// Plan only with an updated date
 			{
-				Config: config,
+				Config:             fmt.Sprintf(configString, 365, project.ID),
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: true,
+			},
+			// Re-run the config for a Project Access Token with an updated date
+			{
+				Config: fmt.Sprintf(configString, 365, project.ID),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("gitlab_project_access_token.token", "expires_at"),
 				),
