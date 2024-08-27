@@ -87,6 +87,7 @@ func resourceGitlabGroupVariableRead(ctx context.Context, d *schema.ResourceData
 	v, _, err := client.GroupVariables.GetVariable(
 		group,
 		key,
+		nil,
 		gitlab.WithContext(ctx),
 		withEnvironmentScopeFilter(ctx, scope),
 	)
