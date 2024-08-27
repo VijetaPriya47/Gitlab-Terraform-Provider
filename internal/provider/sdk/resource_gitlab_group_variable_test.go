@@ -303,7 +303,7 @@ func testAccCheckGitlabGroupVariableExists(n string, groupVariable *gitlab.Group
 		if key == "" {
 			return fmt.Errorf("No variable key is set")
 		}
-		gotVariable, _, err := testutil.TestGitlabClient.GroupVariables.GetVariable(repoName, key, withEnvironmentScopeFilter(context.Background(), rs.Primary.Attributes["environment_scope"]))
+		gotVariable, _, err := testutil.TestGitlabClient.GroupVariables.GetVariable(repoName, key, nil, withEnvironmentScopeFilter(context.Background(), rs.Primary.Attributes["environment_scope"]))
 		if err != nil {
 			return err
 		}
