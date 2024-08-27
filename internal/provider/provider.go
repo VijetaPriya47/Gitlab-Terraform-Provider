@@ -35,6 +35,7 @@ type GitLabProviderModel struct {
 	ClientCert     types.String `tfsdk:"client_cert"`
 	ClientKey      types.String `tfsdk:"client_key"`
 	EarlyAuthCheck types.Bool   `tfsdk:"early_auth_check"`
+	Retries        types.Int64  `tfsdk:"retries"`
 }
 
 func (p *GitLabProvider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
@@ -72,6 +73,10 @@ func (p *GitLabProvider) Schema(_ context.Context, _ provider.SchemaRequest, res
 			},
 			"early_auth_check": schema.BoolAttribute{
 				MarkdownDescription: "(Experimental) By default the provider does a dummy request to get the current user in order to verify that the provider configuration is correct and the GitLab API is reachable. Set this to `false` to skip this check. This may be useful if the GitLab instance does not yet exist and is created within the same terraform module. It may be sourced from the `GITLAB_EARLY_AUTH_CHECK`. This is an experimental feature and may change in the future. Please make sure to always keep backups of your state.",
+				Optional:            true,
+			},
+			"retries": schema.Int64Attribute{
+				MarkdownDescription: "The number of retries to execute when receiving a 429 Rate Limit error. Each retry will exponentially back off.",
 				Optional:            true,
 			},
 		},
@@ -144,6 +149,11 @@ func (p *GitLabProvider) Configure(ctx context.Context, req provider.ConfigureRe
 		)
 	}
 
+	// If no value is explicitly provided for Retries, default to 10
+	if config.Retries.IsUnknown() || config.Retries.IsNull() {
+		config.Retries = types.Int64Value(10)
+	}
+
 	earlyAuthCheck, err := utils.ParseConfigBoolFromEnv("GITLAB_EARLY_AUTH_CHECK", true)
 	if err != nil {
 		resp.Diagnostics.AddAttributeError(
@@ -190,6 +200,9 @@ func (p *GitLabProvider) Configure(ctx context.Context, req provider.ConfigureRe
 	}
 	if !config.EarlyAuthCheck.IsNull() {
 		evaluatedConfig.EarlyAuthFail = config.EarlyAuthCheck.ValueBool()
+	}
+	if !config.Retries.IsNull() {
+		evaluatedConfig.Retries = int(config.Retries.ValueInt64())
 	}
 
 	// TODO(@timofurrer): validate configuration values
