@@ -8,7 +8,7 @@ This example will help you out! You can run the following commands to get bootst
 terraform init
 terraform plan -out plan.out
 terraform apply plan.out
-terraform output
+terraform output runner_registration_token
 ```
 
 > **NOTE**: You will want to add `-var base_uri=...` at the end, with ... replaced with the HTTP base-URI for your GitLab instance if you are not hosted on GitLab.com. You will also want to add `-var license_type=...` at the end, with ... replaced with _premium_ or _ultimate_ if you are not on a free plan.
