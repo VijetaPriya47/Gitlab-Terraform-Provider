@@ -1,5 +1,6 @@
 ---
 page_title: "Terraform GitLab Provider Version 15.7 Upgrade Guide"
+subcategory: "Upgrade Guides"
 ---
 
 # Upgrade to Terraform GitLab Provider Version 15.7
@@ -13,7 +14,6 @@ starting with 15.7 (22nd Dec 2022).
 The version bump from [`3.20.0`](https://registry.terraform.io/providers/gitlabhq/gitlab/3.20.0) to
 [`15.7.0`](https://registry.terraform.io/providers/gitlabhq/gitlab/15.7.0) introduced a few breaking changes,
 which are described below.
-
 
 ## Terraform version 1.0
 
@@ -40,10 +40,11 @@ provider "gitlab" {
   token = var.gitlab_token
 }
 ```
+
 There are two ways to resolve this issue:
 
 - If you have control over the token value, mark it as
-[sensitive](https://developer.hashicorp.com/terraform/language/values/variables#suppressing-values-in-cli-output):
+  [sensitive](https://developer.hashicorp.com/terraform/language/values/variables#suppressing-values-in-cli-output):
 
   ```hcl
   variable "gitlab_token" {
@@ -57,8 +58,8 @@ There are two ways to resolve this issue:
   ```
 
 - If you don't have control over the token value, use the
-[`sensitive()`](https://developer.hashicorp.com/terraform/language/functions/sensitive) function to create
-a *sensitive* copy of the value to use:
+  [`sensitive()`](https://developer.hashicorp.com/terraform/language/functions/sensitive) function to create
+  a _sensitive_ copy of the value to use:
 
   ```hcl
   provider "gitlab" {
