@@ -98,28 +98,42 @@ resource "gitlab_project" "docs" {
 Now, due to the nature of the GitLab Wiki solution, we won't be having any MRs, but we will on the app and docs projects, so let's add some approval rules. These will force any MRs created on these projects to be approved by you the tech lead, and at least one other team member, before they can be merged. This does require at least a GitLab premium license on your top-level group, so if you don't have that, you can skip this part. Add this code to the bottom of your `main.tf`, modifying it to fit your needs:
 
 ```terraform
-resource "gitlab_project_approval_rule" "team_wiki_maintainers" {
+resource "gitlab_project_approval_rule" "team_app_maintainers" {
   project            = gitlab_project.app.id
   name               = "maintainers"
   approvals_required = 1
   user_ids           = [data.gitlab_user.team_lead.id]
 }
 
-resource "gitlab_project_approval_rule" "team_wiki_members" {
+resource "gitlab_project_approval_rule" "team_app_members" {
   project            = gitlab_project.app.id
+  name               = "members"
+  approvals_required = 1
+  user_ids           = [for user in data.gitlab_user.team_members : user.id]
+}
+
+resource "gitlab_project_approval_rule" "team_docs_maintainers" {
+  project            = gitlab_project.docs.id
+  name               = "maintainers"
+  approvals_required = 1
+  user_ids           = [data.gitlab_user.team_lead.id]
+}
+
+resource "gitlab_project_approval_rule" "team_docs_members" {
+  project            = gitlab_project.docs.id
   name               = "members"
   approvals_required = 1
   user_ids           = [for user in data.gitlab_user.team_members : user.id]
 }
 ```
 
-With this in place, you have one item left. You want to be able to automatically run tests, build your product, package it and ship it to customers. For that you are going to need a GitLab runner! With the current runner registration workflow, there is a requirement to create a runner instance on your GitLab group or project in order to configure basic settings as well as to get a registration token that you can utilize with your deployed runners. Add this code to the bottom of your `main.tf`, modifying it to fit your needs:
+With this in place, you have one item left. You want to be able to automatically run tests, build your product, package it and ship it to customers. For that you are going to need a GitLab runner! With the current runner registration workflow, there is a requirement to create a runner instance on your GitLab group or project in order to configure basic settings as well as to get a registration token that you can utilize with your deployed runners. We are going to create a group runner so that it can be shared with your fullstack application and user documentation projects. Add this code to the bottom of your `main.tf`, modifying it to fit your needs:
 
 ```terraform
 resource "gitlab_user_runner" "linux" {
-  project_id  = gitlab_project.app.id
+  group_id    = gitlab_group.my_team.id
   description = "Team Linux Job Runner"
-  runner_type = "project_type"
+  runner_type = "group_type"
   untagged    = true # you can use `tag_list` instead if you want user's to opt-in to using this runner.
 }
 
