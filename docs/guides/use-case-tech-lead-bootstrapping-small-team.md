@@ -74,10 +74,11 @@ Because of how membership rights work in GitLab, any projects we create under th
 
 ```terraform
 resource "gitlab_project" "wiki" {
-  namespace_id = gitlab_group.my_team.id
-  name         = "Team Wiki"
-  path         = "wiki"
-  description  = "Here is where we can knowledge share about our product."
+  namespace_id     = gitlab_group.my_team.id
+  name             = "Team Wiki"
+  path             = "wiki"
+  visibility_level = "private" # make this private so only your team can see it
+  description      = "Here is where we can knowledge share about our product."
 }
 
 resource "gitlab_project" "app" {
