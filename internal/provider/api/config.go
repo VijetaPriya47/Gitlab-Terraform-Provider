@@ -21,6 +21,7 @@ type Config struct {
 	ClientCert    string
 	ClientKey     string
 	EarlyAuthFail bool
+	Retries       int
 }
 
 // Client returns a *gitlab.Client to interact with the configured gitlab instance
@@ -73,6 +74,8 @@ func (c *Config) NewGitLabClient(ctx context.Context) (*gitlab.Client, error) {
 	if c.BaseURL != "" {
 		opts = append(opts, gitlab.WithBaseURL(c.BaseURL))
 	}
+
+	opts = append(opts, gitlab.WithCustomRetryMax(c.Retries))
 
 	// The OAuth method is also compatible with project/group/personal access and job tokens because they are all usable as Bearer tokens.
 	// Although the job token API access is very limited.
