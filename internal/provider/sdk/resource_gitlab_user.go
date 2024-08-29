@@ -101,6 +101,12 @@ var _ = registerResource("gitlab_user", func() *schema.Resource {
 				Optional:    true,
 				Default:     false,
 			},
+			"extern_uid": {
+				Description:  "String, a specific external authentication provider UID.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				RequiredWith: []string{"external_provider"},
+			},
 			"reset_password": {
 				Description: "Boolean, defaults to false. Send user password reset link.",
 				Type:        schema.TypeBool,
@@ -125,6 +131,12 @@ var _ = registerResource("gitlab_user", func() *schema.Resource {
 				Optional:    true,
 				Computed:    true,
 			},
+			"external_provider": {
+				Description:  "String, the external provider.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				RequiredWith: []string{"extern_uid"},
+			},
 		},
 	}
 })
@@ -140,6 +152,14 @@ func resourceGitlabUserSetToState(d *schema.ResourceData, user *gitlab.User) {
 	d.Set("note", user.Note)
 	d.Set("state", user.State)
 	d.Set("namespace_id", user.NamespaceID)
+
+	if len(user.ExternUID) != 0 {
+		d.Set("extern_uid", user.ExternUID)
+	}
+
+	if len(user.Provider) != 0 {
+		d.Set("external_provider", user.Provider)
+	}
 }
 
 func resourceGitlabUserCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -158,6 +178,14 @@ func resourceGitlabUserCreate(ctx context.Context, d *schema.ResourceData, meta 
 		Note:             gitlab.Ptr(d.Get("note").(string)),
 	}
 
+	if len(d.Get("extern_uid").(string)) != 0 {
+		options.ExternUID = gitlab.Ptr(d.Get("extern_uid").(string))
+	}
+
+	if len(d.Get("external_provider").(string)) != 0 {
+		options.Provider = gitlab.Ptr(d.Get("external_provider").(string))
+	}
+
 	if *options.Password == "" && !*options.ResetPassword {
 		return diag.Errorf("At least one of either password or reset_password must be defined")
 	}
@@ -173,13 +201,11 @@ func resourceGitlabUserCreate(ctx context.Context, d *schema.ResourceData, meta 
 
 	if d.Get("state") == "blocked" {
 		err := client.Users.BlockUser(user.ID, gitlab.WithContext(ctx))
-
 		if err != nil {
 			return diag.FromErr(err)
 		}
 	} else if d.Get("state") == "deactivated" {
 		err := client.Users.DeactivateUser(user.ID, gitlab.WithContext(ctx))
-
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -242,8 +268,16 @@ func resourceGitlabUserUpdate(ctx context.Context, d *schema.ResourceData, meta 
 		options.External = gitlab.Ptr(d.Get("is_external").(bool))
 	}
 
+	if d.HasChange("extern_uid") {
+		options.ExternUID = gitlab.Ptr(d.Get("extern_uid").(string))
+	}
+
 	if d.HasChange("note") {
 		options.Note = gitlab.Ptr(d.Get("note").(string))
+	}
+
+	if d.HasChange("external_provider") {
+		options.Provider = gitlab.Ptr(d.Get("external_provider").(string))
 	}
 
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab user %s", d.Id()))
