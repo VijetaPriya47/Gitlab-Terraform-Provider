@@ -158,14 +158,18 @@ func (r *gitlabPersonalAccessTokenResource) personalAccessTokenToStateModel(data
 
 	data.UserId = types.Int64Value(int64(userId))
 	data.Name = types.StringValue(token.Name)
-	data.ExpiresAt = types.StringValue(token.ExpiresAt.String())
-	data.CreatedAt = types.StringValue(token.CreatedAt.String())
 	data.Active = types.BoolValue(token.Active)
 	data.Revoked = types.BoolValue(token.Revoked)
 
 	// Reading the token will not return a `token` value and we don't want to override what's in state when this happens
 	if token.Token != "" {
 		data.Token = types.StringValue(token.Token)
+	}
+	if token.CreatedAt != nil {
+		data.CreatedAt = types.StringValue(token.CreatedAt.String())
+	}
+	if token.ExpiresAt != nil {
+		data.ExpiresAt = types.StringValue(token.ExpiresAt.String())
 	}
 
 	// parse Scopes into []types.String
