@@ -274,6 +274,7 @@ func TestAccGitlabGroup_basicPushRulesEE(t *testing.T) {
 				    member_check = true
 				    prevent_secrets = true
 				    reject_unsigned_commits = true
+				    reject_non_dco_commits = true
 				    max_file_size = 123
 				  }
 				}
@@ -291,6 +292,7 @@ func TestAccGitlabGroup_basicPushRulesEE(t *testing.T) {
 					MemberCheck:                gitlab.Ptr(true),
 					PreventSecrets:             gitlab.Ptr(true),
 					RejectUnsignedCommits:      gitlab.Ptr(true),
+					RejectNonDCOCommits:        gitlab.Ptr(true),
 					MaxFileSize:                gitlab.Ptr(123),
 				}),
 			},
@@ -325,6 +327,7 @@ func TestAccGitlabGroup_basicPushRulesEE(t *testing.T) {
 				    member_check = false
 				    prevent_secrets = true
 				    reject_unsigned_commits = true
+				    reject_non_dco_commits = true
 				    max_file_size = 1234
 				  }
 				}
@@ -342,6 +345,7 @@ func TestAccGitlabGroup_basicPushRulesEE(t *testing.T) {
 					MemberCheck:                gitlab.Ptr(false),
 					PreventSecrets:             gitlab.Ptr(true),
 					RejectUnsignedCommits:      gitlab.Ptr(true),
+					RejectNonDCOCommits:        gitlab.Ptr(true),
 					MaxFileSize:                gitlab.Ptr(1234),
 				}),
 			},
@@ -369,6 +373,7 @@ func TestAccGitlabGroup_basicPushRulesEE(t *testing.T) {
 				    member_check = true
 				    prevent_secrets = true
 				    reject_unsigned_commits = false
+				    reject_non_dco_commits = false
 				    max_file_size = 123
 				  }
 				}
@@ -386,6 +391,7 @@ func TestAccGitlabGroup_basicPushRulesEE(t *testing.T) {
 					MemberCheck:                gitlab.Ptr(true),
 					PreventSecrets:             gitlab.Ptr(true),
 					RejectUnsignedCommits:      gitlab.Ptr(false),
+					RejectNonDCOCommits:        gitlab.Ptr(false),
 					MaxFileSize:                gitlab.Ptr(123),
 				}),
 			},
@@ -420,6 +426,7 @@ func TestAccGitlabGroup_basicPushRulesEE(t *testing.T) {
 				    member_check = false
 				    prevent_secrets = true
 				    reject_unsigned_commits = false
+				    reject_non_dco_commits = false
 				    max_file_size = 1234
 				  }
 				}
@@ -437,6 +444,7 @@ func TestAccGitlabGroup_basicPushRulesEE(t *testing.T) {
 					MemberCheck:                gitlab.Ptr(false),
 					PreventSecrets:             gitlab.Ptr(true),
 					RejectUnsignedCommits:      gitlab.Ptr(false),
+					RejectNonDCOCommits:        gitlab.Ptr(false),
 					MaxFileSize:                gitlab.Ptr(1234),
 				}),
 			},
@@ -1081,6 +1089,7 @@ type testAccGitlabGroupPushRuleExpectedAttributes struct {
 	CommitCommitterCheck       *bool
 	CommitCommitterNameCheck   *bool
 	RejectUnsignedCommits      *bool
+	RejectNonDCOCommits        *bool
 }
 
 func testAccCheckGitlabGroupPushRules(name string, wantPushRules *testAccGitlabGroupPushRuleExpectedAttributes) resource.TestCheckFunc {
@@ -1150,6 +1159,11 @@ func testAccCheckGitlabGroupPushRules(name string, wantPushRules *testAccGitlabG
 		if wantPushRules.RejectUnsignedCommits != nil && gotPushRules.RejectUnsignedCommits != *wantPushRules.RejectUnsignedCommits {
 			messages = append(messages, fmt.Sprintf("reject_unsigned_commits (got: %t, wanted: %t)",
 				gotPushRules.RejectUnsignedCommits, *wantPushRules.RejectUnsignedCommits))
+		}
+
+		if wantPushRules.RejectNonDCOCommits != nil && gotPushRules.RejectNonDCOCommits != *wantPushRules.RejectNonDCOCommits {
+			messages = append(messages, fmt.Sprintf("reject_non_dco_commits (got: %t, wanted: %t)",
+				gotPushRules.RejectNonDCOCommits, *wantPushRules.RejectNonDCOCommits))
 		}
 
 		if wantPushRules.MaxFileSize != nil && gotPushRules.MaxFileSize != *wantPushRules.MaxFileSize {

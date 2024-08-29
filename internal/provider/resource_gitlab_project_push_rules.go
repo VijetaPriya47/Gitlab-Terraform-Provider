@@ -55,6 +55,7 @@ type gitlabProjectPushRulesResourceModel struct {
 	CommitCommitterCheck       types.Bool   `tfsdk:"commit_committer_check"`
 	CommitCommitterNameCheck   types.Bool   `tfsdk:"commit_committer_name_check"`
 	RejectUnsignedCommits      types.Bool   `tfsdk:"reject_unsigned_commits"`
+	RejectNonDCOCommits        types.Bool   `tfsdk:"reject_non_dco_commits"`
 }
 
 // Metadata returns the resource name
@@ -184,6 +185,14 @@ func (r *gitlabProjectPushRulesResource) Schema(ctx context.Context, req resourc
 					boolplanmodifier.UseStateForUnknown(),
 				},
 			},
+			"reject_non_dco_commits": schema.BoolAttribute{
+				MarkdownDescription: "Reject commit when it’s not DCO certified.",
+				Optional:            true,
+				Computed:            true,
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
+				},
+			},
 		},
 	}
 }
@@ -213,6 +222,7 @@ func (r *gitlabProjectPushRulesResource) projectPushRulesToStateModel(projectID 
 	data.MemberCheck = types.BoolValue(pushRules.MemberCheck)
 	data.PreventSecrets = types.BoolValue(pushRules.PreventSecrets)
 	data.RejectUnsignedCommits = types.BoolValue(pushRules.RejectUnsignedCommits)
+	data.RejectNonDCOCommits = types.BoolValue(pushRules.RejectNonDCOCommits)
 }
 
 // Read refreshes the Terraform state with the latest data.
@@ -321,6 +331,10 @@ func (r *gitlabProjectPushRulesResource) Create(ctx context.Context, req resourc
 
 		if !data.RejectUnsignedCommits.IsNull() && !data.RejectUnsignedCommits.IsUnknown() {
 			options.RejectUnsignedCommits = data.RejectUnsignedCommits.ValueBoolPointer()
+		}
+
+		if !data.RejectNonDCOCommits.IsNull() && !data.RejectNonDCOCommits.IsUnknown() {
+			options.RejectNonDCOCommits = data.RejectNonDCOCommits.ValueBoolPointer()
 		}
 
 		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Creating new push rules for project %q", projectID))
@@ -437,6 +451,10 @@ func (r *gitlabProjectPushRulesResource) update(ctx context.Context, data *gitla
 
 	if !data.RejectUnsignedCommits.IsNull() && !data.RejectUnsignedCommits.IsUnknown() {
 		options.RejectUnsignedCommits = data.RejectUnsignedCommits.ValueBoolPointer()
+	}
+
+	if !data.RejectNonDCOCommits.IsNull() && !data.RejectNonDCOCommits.IsUnknown() {
+		options.RejectNonDCOCommits = data.RejectNonDCOCommits.ValueBoolPointer()
 	}
 
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Updating push rules for project %q", projectID))

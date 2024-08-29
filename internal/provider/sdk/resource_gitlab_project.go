@@ -356,6 +356,11 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 					Type:        schema.TypeBool,
 					Optional:    true,
 				},
+				"reject_non_dco_commits": {
+					Description: "Reject commit when it’s not DCO certified.",
+					Type:        schema.TypeBool,
+					Optional:    true,
+				},
 				"max_file_size": {
 					Description:  "Maximum file size (MB).",
 					Type:         schema.TypeInt,
@@ -1742,6 +1747,10 @@ func expandEditProjectPushRuleOptions(d *schema.ResourceData, currentPushRules *
 		options.RejectUnsignedCommits = gitlab.Ptr(d.Get("push_rules.0.reject_unsigned_commits").(bool))
 	}
 
+	if d.Get("push_rules.0.reject_non_dco_commits") != currentPushRules.RejectNonDCOCommits {
+		options.RejectNonDCOCommits = gitlab.Ptr(d.Get("push_rules.0.reject_non_dco_commits").(bool))
+	}
+
 	if d.Get("push_rules.0.max_file_size") != currentPushRules.MaxFileSize {
 		options.MaxFileSize = gitlab.Ptr(d.Get("push_rules.0.max_file_size").(int))
 	}
@@ -1796,6 +1805,10 @@ func expandAddProjectPushRuleOptions(d *schema.ResourceData) gitlab.AddProjectPu
 		options.RejectUnsignedCommits = gitlab.Ptr(v.(bool))
 	}
 
+	if v, ok := d.GetOk("push_rules.0.reject_non_dco_commits"); ok {
+		options.RejectNonDCOCommits = gitlab.Ptr(v.(bool))
+	}
+
 	if v, ok := d.GetOk("push_rules.0.max_file_size"); ok {
 		options.MaxFileSize = gitlab.Ptr(v.(int))
 	}
@@ -1821,6 +1834,7 @@ func flattenProjectPushRules(pushRules *gitlab.ProjectPushRules) (values []map[s
 			"member_check":                  pushRules.MemberCheck,
 			"prevent_secrets":               pushRules.PreventSecrets,
 			"reject_unsigned_commits":       pushRules.RejectUnsignedCommits,
+			"reject_non_dco_commits":        pushRules.RejectNonDCOCommits,
 			"max_file_size":                 pushRules.MaxFileSize,
 		},
 	}

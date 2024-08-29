@@ -180,6 +180,7 @@ deny_delete_tag = true
 member_check = true
 prevent_secrets = true
 reject_unsigned_commits = true
+reject_non_dco_commits = true
 max_file_size = 123
 `),
 				Check: testAccCheckGitlabProjectPushRules("gitlab_project.foo", &gitlab.ProjectPushRules{
@@ -194,6 +195,7 @@ max_file_size = 123
 					MemberCheck:                true,
 					PreventSecrets:             true,
 					RejectUnsignedCommits:      true,
+					RejectNonDCOCommits:        true,
 					MaxFileSize:                123,
 				}),
 			},
@@ -219,6 +221,7 @@ deny_delete_tag = true
 member_check = false
 prevent_secrets = true
 reject_unsigned_commits = true
+reject_non_dco_commits = true
 max_file_size = 1234
 `),
 				Check: testAccCheckGitlabProjectPushRules("gitlab_project.foo", &gitlab.ProjectPushRules{
@@ -233,6 +236,7 @@ max_file_size = 1234
 					MemberCheck:                false,
 					PreventSecrets:             true,
 					RejectUnsignedCommits:      true,
+					RejectNonDCOCommits:        true,
 					MaxFileSize:                1234,
 				}),
 			},
@@ -2275,6 +2279,11 @@ func testAccCheckGitlabProjectPushRules(name string, wantPushRules *gitlab.Proje
 		if gotPushRules.RejectUnsignedCommits != wantPushRules.RejectUnsignedCommits {
 			messages = append(messages, fmt.Sprintf("reject_unsigned_commits (got: %t, wanted: %t)",
 				gotPushRules.RejectUnsignedCommits, wantPushRules.RejectUnsignedCommits))
+		}
+
+		if gotPushRules.RejectNonDCOCommits != wantPushRules.RejectNonDCOCommits {
+			messages = append(messages, fmt.Sprintf("reject_non_dco_commits (got: %t, wanted: %t)",
+				gotPushRules.RejectNonDCOCommits, wantPushRules.RejectNonDCOCommits))
 		}
 
 		if gotPushRules.MaxFileSize != wantPushRules.MaxFileSize {
