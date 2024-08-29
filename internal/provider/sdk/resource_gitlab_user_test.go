@@ -29,7 +29,18 @@ func TestAccGitlabUser_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create a user
 			{
-				Config: testAccGitlabUserConfig(rInt, password),
+				Config: fmt.Sprintf(`
+				resource "gitlab_user" "foo" {
+				  name             = "foo %d"
+				  username         = "listest%d"
+				  password         = "%s"
+				  email            = "listest%d@ssss.com"
+				  is_admin         = false
+				  projects_limit   = 0
+				  can_create_group = false
+				  is_external      = false
+				}
+				  `, rInt, rInt, password, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabUserExists("gitlab_user.foo", &user),
 					testAccCheckGitlabUserAttributes(&user, &testAccGitlabUserExpectedAttributes{
@@ -58,7 +69,19 @@ func TestAccGitlabUser_basic(t *testing.T) {
 			},
 			// Create a user with blocked state
 			{
-				Config: testAccGitlabUserConfigBlocked(rInt, password),
+				Config: fmt.Sprintf(`
+				resource "gitlab_user" "foo" {
+				  name             = "foo %d"
+				  username         = "listest%d"
+				  password         = "%s"
+				  email            = "listest%d@ssss.com"
+				  is_admin         = false
+				  projects_limit   = 0
+				  can_create_group = false
+				  is_external      = false
+				  state            = "blocked"
+				}
+				  `, rInt, rInt, password, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabUserExists("gitlab_user.foo", &user),
 					testAccCheckGitlabUserAttributes(&user, &testAccGitlabUserExpectedAttributes{
@@ -85,7 +108,19 @@ func TestAccGitlabUser_basic(t *testing.T) {
 			},
 			// Update the user to change the name, email, projects_limit and more
 			{
-				Config: testAccGitlabUserUpdateConfig(rInt, password),
+				Config: fmt.Sprintf(`
+				resource "gitlab_user" "foo" {
+				  name             = "bar %d"
+				  username         = "listest%d"
+				  password         = "%s"
+				  email            = "listest%d@tttt.com"
+				  is_admin         = true
+				  projects_limit   = 10
+				  can_create_group = true
+				  is_external      = false
+				  note             = "note%d"
+				}
+				  `, rInt, rInt, password, rInt, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabUserExists("gitlab_user.foo", &user),
 					testAccCheckGitlabUserAttributes(&user, &testAccGitlabUserExpectedAttributes{
@@ -113,7 +148,20 @@ func TestAccGitlabUser_basic(t *testing.T) {
 			},
 			// Update the user to change the state to blocked
 			{
-				Config: testAccGitlabUserUpdateConfigBlocked(rInt, password),
+				Config: fmt.Sprintf(`
+				resource "gitlab_user" "foo" {
+				  name             = "bar %d"
+				  username         = "listest%d"
+				  password         = "%s"
+				  email            = "listest%d@tttt.com"
+				  is_admin         = true
+				  projects_limit   = 10
+				  can_create_group = true
+				  is_external      = false
+				  note             = "note%d"
+				  state            = "blocked"
+				}
+				  `, rInt, rInt, password, rInt, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabUserExists("gitlab_user.foo", &user),
 					testAccCheckGitlabUserAttributes(&user, &testAccGitlabUserExpectedAttributes{
@@ -141,7 +189,18 @@ func TestAccGitlabUser_basic(t *testing.T) {
 			},
 			// Update the user to put the name back
 			{
-				Config: testAccGitlabUserConfig(rInt, password),
+				Config: fmt.Sprintf(`
+				resource "gitlab_user" "foo" {
+				  name             = "foo %d"
+				  username         = "listest%d"
+				  password         = "%s"
+				  email            = "listest%d@ssss.com"
+				  is_admin         = false
+				  projects_limit   = 0
+				  can_create_group = false
+				  is_external      = false
+				}
+				  `, rInt, rInt, password, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabUserExists("gitlab_user.foo", &user),
 					testAccCheckGitlabUserAttributes(&user, &testAccGitlabUserExpectedAttributes{
@@ -168,7 +227,19 @@ func TestAccGitlabUser_basic(t *testing.T) {
 			},
 			// Update the user to disable skip confirmation
 			{
-				Config: testAccGitlabUserUpdateConfigNoSkipConfirmation(rInt, password),
+				Config: fmt.Sprintf(`
+				resource "gitlab_user" "foo" {
+				  name              = "foo %d"
+				  username          = "listest%d"
+				  password          = "%s"
+				  email             = "listest%d@ssss.com"
+				  is_admin          = false
+				  projects_limit    = 0
+				  can_create_group  = false
+				  is_external       = false
+				  skip_confirmation = false
+				}
+				  `, rInt, rInt, password, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabUserExists("gitlab_user.foo", &user),
 					testAccCheckGitlabUserAttributes(&user, &testAccGitlabUserExpectedAttributes{
@@ -195,7 +266,18 @@ func TestAccGitlabUser_basic(t *testing.T) {
 			},
 			// Update the user to initial config
 			{
-				Config: testAccGitlabUserConfig(rInt, password),
+				Config: fmt.Sprintf(`
+				resource "gitlab_user" "foo" {
+				  name             = "foo %d"
+				  username         = "listest%d"
+				  password         = "%s"
+				  email            = "listest%d@ssss.com"
+				  is_admin         = false
+				  projects_limit   = 0
+				  can_create_group = false
+				  is_external      = false
+				}
+				  `, rInt, rInt, password, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabUserExists("gitlab_user.foo", &user),
 					testAccCheckGitlabUserAttributes(&user, &testAccGitlabUserExpectedAttributes{
@@ -222,7 +304,19 @@ func TestAccGitlabUser_basic(t *testing.T) {
 			},
 			// Deactivate the user
 			{
-				Config: testAccGitlabUserConfigDeactivated(rInt, password),
+				Config: fmt.Sprintf(`
+				resource "gitlab_user" "foo" {
+				  name             = "foo %d"
+				  username         = "listest%d"
+				  password         = "%s"
+				  email            = "listest%d@ssss.com"
+				  is_admin         = false
+				  projects_limit   = 0
+				  can_create_group = false
+				  is_external      = false
+				  state            = "deactivated"
+				}
+				  `, rInt, rInt, password, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabUserExists("gitlab_user.foo", &user),
 					testAccCheckGitlabUserAttributes(&user, &testAccGitlabUserExpectedAttributes{
@@ -240,7 +334,18 @@ func TestAccGitlabUser_basic(t *testing.T) {
 			},
 			// Re-activate the user
 			{
-				Config: testAccGitlabUserConfig(rInt, password),
+				Config: fmt.Sprintf(`
+				resource "gitlab_user" "foo" {
+				  name             = "foo %d"
+				  username         = "listest%d"
+				  password         = "%s"
+				  email            = "listest%d@ssss.com"
+				  is_admin         = false
+				  projects_limit   = 0
+				  can_create_group = false
+				  is_external      = false
+				}
+				  `, rInt, rInt, password, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabUserExists("gitlab_user.foo", &user),
 					testAccCheckGitlabUserAttributes(&user, &testAccGitlabUserExpectedAttributes{
@@ -258,7 +363,19 @@ func TestAccGitlabUser_basic(t *testing.T) {
 			},
 			// Block the user
 			{
-				Config: testAccGitlabUserConfigBlocked(rInt, password),
+				Config: fmt.Sprintf(`
+				resource "gitlab_user" "foo" {
+				  name             = "foo %d"
+				  username         = "listest%d"
+				  password         = "%s"
+				  email            = "listest%d@ssss.com"
+				  is_admin         = false
+				  projects_limit   = 0
+				  can_create_group = false
+				  is_external      = false
+				  state            = "blocked"
+				}
+				  `, rInt, rInt, password, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabUserExists("gitlab_user.foo", &user),
 					testAccCheckGitlabUserAttributes(&user, &testAccGitlabUserExpectedAttributes{
@@ -276,7 +393,19 @@ func TestAccGitlabUser_basic(t *testing.T) {
 			},
 			// Deactivate the user from blocked state
 			{
-				Config: testAccGitlabUserConfigDeactivated(rInt, password),
+				Config: fmt.Sprintf(`
+				resource "gitlab_user" "foo" {
+				  name             = "foo %d"
+				  username         = "listest%d"
+				  password         = "%s"
+				  email            = "listest%d@ssss.com"
+				  is_admin         = false
+				  projects_limit   = 0
+				  can_create_group = false
+				  is_external      = false
+				  state            = "deactivated"
+				}
+				  `, rInt, rInt, password, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabUserExists("gitlab_user.foo", &user),
 					testAccCheckGitlabUserAttributes(&user, &testAccGitlabUserExpectedAttributes{
@@ -294,7 +423,19 @@ func TestAccGitlabUser_basic(t *testing.T) {
 			},
 			// Block the user from deactivate state
 			{
-				Config: testAccGitlabUserConfigBlocked(rInt, password),
+				Config: fmt.Sprintf(`
+				resource "gitlab_user" "foo" {
+				  name             = "foo %d"
+				  username         = "listest%d"
+				  password         = "%s"
+				  email            = "listest%d@ssss.com"
+				  is_admin         = false
+				  projects_limit   = 0
+				  can_create_group = false
+				  is_external      = false
+				  state            = "blocked"
+				}
+				  `, rInt, rInt, password, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabUserExists("gitlab_user.foo", &user),
 					testAccCheckGitlabUserAttributes(&user, &testAccGitlabUserExpectedAttributes{
@@ -312,7 +453,18 @@ func TestAccGitlabUser_basic(t *testing.T) {
 			},
 			// Unblock the user
 			{
-				Config: testAccGitlabUserConfig(rInt, password),
+				Config: fmt.Sprintf(`
+				resource "gitlab_user" "foo" {
+				  name             = "foo %d"
+				  username         = "listest%d"
+				  password         = "%s"
+				  email            = "listest%d@ssss.com"
+				  is_admin         = false
+				  projects_limit   = 0
+				  can_create_group = false
+				  is_external      = false
+				}
+				  `, rInt, rInt, password, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabUserExists("gitlab_user.foo", &user),
 					testAccCheckGitlabUserAttributes(&user, &testAccGitlabUserExpectedAttributes{
@@ -340,7 +492,7 @@ func TestAccGitlabUser_user_skip_confirmation(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
-		CheckDestroy:             testAccCheckGitlabGroupDestroy,
+		CheckDestroy:             testAccCheckGitlabUserDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
@@ -414,17 +566,30 @@ func TestAccGitlabUser_password_reset(t *testing.T) {
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
-		CheckDestroy:             testAccCheckGitlabGroupDestroy,
+		CheckDestroy:             testAccCheckGitlabUserDestroy,
 		Steps: []resource.TestStep{
 			// Test that either password or reset_password is needed
 			{
-				Config:      testAccGitlabUserConfigWrong(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_user" "foo" {
+				  name             = "foo %d"
+				  username         = "listest%d"
+				  email            = "listest%d@ssss.com"
+				}
+				  `, rInt, rInt, rInt),
 				ExpectError: regexp.MustCompile("At least one of either password or reset_password must be defined"),
 			},
 			// Create a user without a password
 			{
-				Config: testAccGitlabUserConfigPasswordReset(rInt),
-				Check:  testAccCheckGitlabUserExists("gitlab_user.foo", &user),
+				Config: fmt.Sprintf(`
+				resource "gitlab_user" "foo" {
+				  name             = "foo %d"
+				  username         = "listest%d"
+				  email            = "listest%d@ssss.com"
+				  reset_password   = true
+				}
+				  `, rInt, rInt, rInt),
+				Check: testAccCheckGitlabUserExists("gitlab_user.foo", &user),
 			},
 			{
 				ResourceName:      "gitlab_user.foo",
@@ -435,6 +600,58 @@ func TestAccGitlabUser_password_reset(t *testing.T) {
 					"reset_password",
 					"skip_confirmation",
 				},
+			},
+		},
+	})
+}
+
+func TestAccGitlabUser_external_provider(t *testing.T) {
+	var user gitlab.User
+	rInt := acctest.RandInt()
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabUserDestroy,
+		Steps: []resource.TestStep{
+			// Test error if extern_uid set and external_provider isn't
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_user" "foo" {
+				  name           = "foo %d"
+				  username       = "listest%d"
+				  email          = "listest%d@ssss.com"
+				  reset_password = true
+				  extern_uid     = "%d"
+				}
+				  `, rInt, rInt, rInt, rInt),
+				ExpectError: regexp.MustCompile("Missing required argument"),
+			},
+			// Test error if external_provider set and extern_uid isn't
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_user" "foo" {
+				  name              = "foo %d"
+				  username          = "listest%d"
+				  email             = "listest%d@ssss.com"
+				  reset_password    = true
+				  external_provider = "google"
+				}
+				  `, rInt, rInt, rInt),
+				ExpectError: regexp.MustCompile("Missing required argument"),
+			},
+			// Create a user with both set
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_user" "foo" {
+				  name              = "foo %d"
+				  username          = "listest%d"
+				  email             = "listest%d@ssss.com"
+				  reset_password    = true
+				  extern_uid        = "%d"
+				  external_provider = "google"
+				}
+				  `, rInt, rInt, rInt, rInt),
+				Check: testAccCheckGitlabUserExists("gitlab_user.foo", &user),
 			},
 		},
 	})
@@ -537,121 +754,4 @@ func testAccCheckGitlabUserDestroy(s *terraform.State) error {
 		return nil
 	}
 	return nil
-}
-
-func testAccGitlabUserConfig(rInt int, password string) string {
-	return fmt.Sprintf(`
-resource "gitlab_user" "foo" {
-  name             = "foo %d"
-  username         = "listest%d"
-  password         = "%s"
-  email            = "listest%d@ssss.com"
-  is_admin         = false
-  projects_limit   = 0
-  can_create_group = false
-  is_external      = false
-}
-  `, rInt, rInt, password, rInt)
-}
-
-func testAccGitlabUserConfigBlocked(rInt int, password string) string {
-	return fmt.Sprintf(`
-resource "gitlab_user" "foo" {
-  name             = "foo %d"
-  username         = "listest%d"
-  password         = "%s"
-  email            = "listest%d@ssss.com"
-  is_admin         = false
-  projects_limit   = 0
-  can_create_group = false
-  is_external      = false
-  state            = "blocked"
-}
-  `, rInt, rInt, password, rInt)
-}
-
-func testAccGitlabUserUpdateConfig(rInt int, password string) string {
-	return fmt.Sprintf(`
-resource "gitlab_user" "foo" {
-  name             = "bar %d"
-  username         = "listest%d"
-  password         = "%s"
-  email            = "listest%d@tttt.com"
-  is_admin         = true
-  projects_limit   = 10
-  can_create_group = true
-  is_external      = false
-  note             = "note%d"
-}
-  `, rInt, rInt, password, rInt, rInt)
-}
-
-func testAccGitlabUserUpdateConfigBlocked(rInt int, password string) string {
-	return fmt.Sprintf(`
-resource "gitlab_user" "foo" {
-  name             = "bar %d"
-  username         = "listest%d"
-  password         = "%s"
-  email            = "listest%d@tttt.com"
-  is_admin         = true
-  projects_limit   = 10
-  can_create_group = true
-  is_external      = false
-  note             = "note%d"
-  state            = "blocked"
-}
-  `, rInt, rInt, password, rInt, rInt)
-}
-
-func testAccGitlabUserUpdateConfigNoSkipConfirmation(rInt int, password string) string {
-	return fmt.Sprintf(`
-resource "gitlab_user" "foo" {
-  name              = "foo %d"
-  username          = "listest%d"
-  password          = "%s"
-  email             = "listest%d@ssss.com"
-  is_admin          = false
-  projects_limit    = 0
-  can_create_group  = false
-  is_external       = false
-  skip_confirmation = false
-}
-  `, rInt, rInt, password, rInt)
-}
-
-func testAccGitlabUserConfigPasswordReset(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_user" "foo" {
-  name             = "foo %d"
-  username         = "listest%d"
-  email            = "listest%d@ssss.com"
-  reset_password   = true
-}
-  `, rInt, rInt, rInt)
-}
-
-func testAccGitlabUserConfigWrong(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_user" "foo" {
-  name             = "foo %d"
-  username         = "listest%d"
-  email            = "listest%d@ssss.com"
-}
-  `, rInt, rInt, rInt)
-}
-
-func testAccGitlabUserConfigDeactivated(rInt int, password string) string {
-	return fmt.Sprintf(`
-resource "gitlab_user" "foo" {
-  name             = "foo %d"
-  username         = "listest%d"
-  password         = "%s"
-  email            = "listest%d@ssss.com"
-  is_admin         = false
-  projects_limit   = 0
-  can_create_group = false
-  is_external      = false
-  state            = "deactivated"
-}
-  `, rInt, rInt, password, rInt)
 }
