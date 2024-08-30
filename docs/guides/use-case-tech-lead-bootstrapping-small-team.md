@@ -5,7 +5,7 @@ subcategory: "Use Cases"
 
 Imagine you are a tech lead, responsible for a small team, and you want to get your team bootstrapped with their own group with a few projects. One to hold your team Wiki, another for a full-stack application that you've been working on, and one more for a user facing documentation website. Within this role, you want to make sure that code quality is verified by yourself and at least one additional team member. You also want to setup your own GitLab CI runner to run your automation jobs for your full-stack mono-repo as well as your documentation website.
 
-You've done some research and have heard that IaC (Infrastructure as Code) is all the rage and have also found our that Terraform and OpenTofu are a great technology to use for cloud resources. Further to this, you have also found out that GitLab, your SDLC tool of choice, has its own Terraform provider that will enable you to realize all of your IaC dreams! You still have a problem though, how in the world can I take advantage of this?
+You've done some research and have heard that IaC (Infrastructure as Code) is all the rage and have also found out that Terraform and OpenTofu are a great technology to use for cloud resources. Further to this, you have also found out that GitLab, your SDLC tool of choice, has its own Terraform provider that will enable you to realize all of your IaC dreams! You still have a problem though, how in the world can I take advantage of this?
 
 Have no fear! This guide will walk you through the process of starting from a fresh installation of Terraform or OpenTofu and building our your infrastructure as code solution.
 
@@ -31,7 +31,7 @@ provider "gitlab" {
 }
 ```
 
-These are the building blocks for using Terraform to manage your GitLab instance. The terraform block lets Terraform know where to download the provider for all GitLab resources, and the provider block configures the provider to use an externally provided PAT token to authenticate with GitLab when performing any configuration.
+These are the building blocks for using Terraform to manage your GitLab instance. The `terraform` block lets Terraform know where to download the provider for all GitLab resources, and the `provider` block configures the provider to use an externally provided personal access token to authenticate with GitLab when performing any configuration.
 
 The next thing that we will want to do is create a GitLab group for your team's code and Wiki to live. Groups are a wonderful feature in GitLab that allows you to supply a multi-level hierarchy to your code assets. A root, or top-level group, is typically something that an organization will create so they have policy level controls over all sub-groups and projects found within them, so it is considered a best practice to limit the amount of top-level groups, and to focus on sub-dividing into team or functional areas groupings underneath. To facilitate this, let's create a group for the team by adding this to our `main.tf` file, modifying it to fit your needs:
 
@@ -40,7 +40,9 @@ resource "gitlab_group" "my_team" {
   parent_id   = 1337           # change to your top-level group ID number
   name        = "Awesome Tech" # friendly group name
   path        = "awesome-tech" # path that will be a part of clone URIs
-  description = "We provide awesome tech that makes our company shine!"
+  name        = "Awesome Team" # friendly group name
+  path        = "awesome-team" # path that will be a part of clone URIs
+  description = "The Awesome Team provides awesome tech that makes our company shine!"
 }
 ```
 
