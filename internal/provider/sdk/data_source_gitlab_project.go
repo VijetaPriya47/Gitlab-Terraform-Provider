@@ -395,6 +395,11 @@ var _ = registerDataSource("gitlab_project", func() *schema.Resource {
 							Type:        schema.TypeBool,
 							Computed:    true,
 						},
+						"reject_non_dco_commits": {
+							Description: "Reject commit when it’s not DCO certified.",
+							Type:        schema.TypeBool,
+							Computed:    true,
+						},
 						"max_file_size": {
 							Description: "Maximum file size (MB).",
 							Type:        schema.TypeInt,

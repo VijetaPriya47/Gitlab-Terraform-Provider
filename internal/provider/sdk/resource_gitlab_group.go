@@ -288,6 +288,12 @@ var _ = registerResource("gitlab_group", func() *schema.Resource {
 							Optional:    true,
 							Computed:    true,
 						},
+						"reject_non_dco_commits": {
+							Description: "Reject commit when it’s not DCO certified.",
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Computed:    true,
+						},
 						"max_file_size": {
 							Description:  "Maximum file size (MB) allowed.",
 							Type:         schema.TypeInt,
@@ -920,8 +926,13 @@ func expandEditGroupPushRuleOptions(ctx context.Context, client *gitlab.Client, 
 	if d.HasChange("push_rules.0.commit_committer_check") {
 		options.CommitCommitterCheck = gitlab.Ptr(d.Get("push_rules.0.commit_committer_check").(bool))
 	}
+
 	if d.HasChange("push_rules.0.reject_unsigned_commits") {
 		options.RejectUnsignedCommits = gitlab.Ptr(d.Get("push_rules.0.reject_unsigned_commits").(bool))
+	}
+
+	if d.HasChange("push_rules.0.reject_non_dco_commits") {
+		options.RejectNonDCOCommits = gitlab.Ptr(d.Get("push_rules.0.reject_non_dco_commits").(bool))
 	}
 
 	if d.HasChange("push_rules.0.author_email_regex") {
@@ -973,8 +984,13 @@ func expandAddGroupPushRuleOptions(ctx context.Context, client *gitlab.Client, d
 	if v, ok := d.GetOk("push_rules.0.commit_committer_check"); ok {
 		options.CommitCommitterCheck = gitlab.Ptr(v.(bool))
 	}
+
 	if v, ok := d.GetOk("push_rules.0.reject_unsigned_commits"); ok {
 		options.RejectUnsignedCommits = gitlab.Ptr(v.(bool))
+	}
+
+	if v, ok := d.GetOk("push_rules.0.reject_non_dco_commits"); ok {
+		options.RejectNonDCOCommits = gitlab.Ptr(v.(bool))
 	}
 
 	if v, ok := d.GetOk("push_rules.0.author_email_regex"); ok {
@@ -1038,6 +1054,7 @@ func flattenGroupPushRules(ctx context.Context, client *gitlab.Client, pushRules
 			"member_check":                  pushRules.MemberCheck,
 			"prevent_secrets":               pushRules.PreventSecrets,
 			"reject_unsigned_commits":       pushRules.RejectUnsignedCommits,
+			"reject_non_dco_commits":        pushRules.RejectNonDCOCommits,
 			"max_file_size":                 pushRules.MaxFileSize,
 		},
 	}

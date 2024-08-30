@@ -42,6 +42,7 @@ func TestAccGitlabProjectPushRules_basic(t *testing.T) {
 						member_check                  = true
 						prevent_secrets               = true
 						reject_unsigned_commits       = false
+						reject_non_dco_commits        = false
 					}
 						`, testProject.ID),
 				Check: resource.ComposeTestCheckFunc(
@@ -57,6 +58,7 @@ func TestAccGitlabProjectPushRules_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("gitlab_project_push_rules.foo", "member_check", "true"),
 					resource.TestCheckResourceAttr("gitlab_project_push_rules.foo", "prevent_secrets", "true"),
 					resource.TestCheckResourceAttr("gitlab_project_push_rules.foo", "reject_unsigned_commits", "false"),
+					resource.TestCheckResourceAttr("gitlab_project_push_rules.foo", "reject_non_dco_commits", "false"),
 				),
 			},
 			{
@@ -74,6 +76,7 @@ func TestAccGitlabProjectPushRules_basic(t *testing.T) {
 						commit_message_regex          = "(feat|fix|chore):.*"
 						deny_delete_tag               = true
 						reject_unsigned_commits       = true
+						reject_non_dco_commits        = true
 					}
 						`, testProject.ID),
 				Check: resource.ComposeTestCheckFunc(
@@ -82,6 +85,7 @@ func TestAccGitlabProjectPushRules_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("gitlab_project_push_rules.foo", "commit_message_regex", "(feat|fix|chore):.*"),
 					resource.TestCheckResourceAttr("gitlab_project_push_rules.foo", "deny_delete_tag", "true"),
 					resource.TestCheckResourceAttr("gitlab_project_push_rules.foo", "reject_unsigned_commits", "true"),
+					resource.TestCheckResourceAttr("gitlab_project_push_rules.foo", "reject_non_dco_commits", "true"),
 				),
 			},
 			{
@@ -106,6 +110,7 @@ func TestAccGitlabProjectPushRules_basic(t *testing.T) {
 						member_check                  = true
 						prevent_secrets               = true
 						reject_unsigned_commits       = false
+						reject_non_dco_commits        = false
 					}
 						`, testProject.ID),
 				Check: resource.ComposeTestCheckFunc(
@@ -121,6 +126,7 @@ func TestAccGitlabProjectPushRules_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("gitlab_project_push_rules.foo", "member_check", "true"),
 					resource.TestCheckResourceAttr("gitlab_project_push_rules.foo", "prevent_secrets", "true"),
 					resource.TestCheckResourceAttr("gitlab_project_push_rules.foo", "reject_unsigned_commits", "false"),
+					resource.TestCheckResourceAttr("gitlab_project_push_rules.foo", "reject_non_dco_commits", "false"),
 				),
 			},
 			{
@@ -159,6 +165,7 @@ func TestAccGitlabProjectPushRules_ExistingPushRules(t *testing.T) {
 						member_check                  = true
 						prevent_secrets               = true
 						reject_unsigned_commits       = false
+						reject_non_dco_commits        = false
 					}
 						`, testProject.ID),
 				Check: resource.ComposeTestCheckFunc(
@@ -174,6 +181,7 @@ func TestAccGitlabProjectPushRules_ExistingPushRules(t *testing.T) {
 					resource.TestCheckResourceAttr("gitlab_project_push_rules.foo", "member_check", "true"),
 					resource.TestCheckResourceAttr("gitlab_project_push_rules.foo", "prevent_secrets", "true"),
 					resource.TestCheckResourceAttr("gitlab_project_push_rules.foo", "reject_unsigned_commits", "false"),
+					resource.TestCheckResourceAttr("gitlab_project_push_rules.foo", "reject_non_dco_commits", "false"),
 				),
 			},
 			{

@@ -227,6 +227,7 @@ func CreateProjectWithDefaultPushRules(t *testing.T, namespaceID int) *gitlab.Pr
 		MemberCheck:                gitlab.Ptr(false),
 		PreventSecrets:             gitlab.Ptr(false),
 		RejectUnsignedCommits:      nil,
+		RejectNonDCOCommits:        nil,
 	}
 
 	_, _, err := TestGitlabClient.Projects.AddProjectPushRule(project.ID, options)
