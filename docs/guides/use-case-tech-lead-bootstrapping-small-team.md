@@ -3,7 +3,7 @@ page_title: "A Tech Lead Bootstrapping a Small Team"
 subcategory: "Use Cases"
 ---
 
-Imagine you are a tech lead, responsible for a small team, and you want to get your team bootstrapped with their own group with a few projects. One to hold your team Wiki, another for a full-stack application that you've been working on, and one more for a user facing documentation website. Within this role, you want to make sure that code quality is verified by yourself and at least one additional team member. You also want to setup your own GitLab CI runner to run your automation jobs for your full-stack mono-repo as well as your documentation website.
+Imagine you are a tech lead, responsible for a small team, and you want to get your team bootstrapped with their own group with a Wiki and a couple of projects. One to hold your full-stack application that you've been working on, and another for a user facing documentation website. Within this role, you want to make sure that code quality is verified by yourself and at least one additional team member. You also want to setup your own GitLab CI runner to run your automation jobs for your full-stack mono-repo as well as your documentation website.
 
 You've done some research and have heard that IaC (Infrastructure as Code) is all the rage and have also found out that Terraform and OpenTofu are a great technology to use for cloud resources. Further to this, you have also found out that GitLab, your SDLC tool of choice, has its own Terraform provider that will enable you to realize all of your IaC dreams! You still have a problem though, how in the world can I take advantage of this?
 
@@ -33,16 +33,17 @@ provider "gitlab" {
 
 These are the building blocks for using Terraform to manage your GitLab instance. The `terraform` block lets Terraform know where to download the provider for all GitLab resources, and the `provider` block configures the provider to use an externally provided personal access token to authenticate with GitLab when performing any configuration.
 
-The next thing that we will want to do is create a GitLab group for your team's code and Wiki to live. Groups are a wonderful feature in GitLab that allows you to supply a multi-level hierarchy to your code assets. A root, or top-level group, is typically something that an organization will create so they have policy level controls over all sub-groups and projects found within them, so it is considered a best practice to limit the amount of top-level groups, and to focus on sub-dividing into team or functional areas groupings underneath. To facilitate this, let's create a group for the team by adding this to our `main.tf` file, modifying it to fit your needs:
+The next thing that we will want to do is create a GitLab group for your team's code and for your Wiki to live. Groups are a wonderful feature in GitLab that allows you to supply a multi-level hierarchy to your code assets. A root, or top-level group, is typically something that an organization will create so they have policy level controls over all sub-groups and projects found within them, so it is considered a best practice to limit the amount of top-level groups, and to focus on sub-dividing into team or functional areas groupings underneath. To facilitate this, let's create a group for the team by adding this to our `main.tf` file, modifying it to fit your needs:
 
 ```terraform
 resource "gitlab_group" "my_team" {
-  parent_id   = 1337           # change to your top-level group ID number
-  name        = "Awesome Tech" # friendly group name
-  path        = "awesome-tech" # path that will be a part of clone URIs
-  name        = "Awesome Team" # friendly group name
-  path        = "awesome-team" # path that will be a part of clone URIs
-  description = "The Awesome Team provides awesome tech that makes our company shine!"
+  parent_id         = 1337           # change to your top-level group ID number
+  name              = "Awesome Tech" # friendly group name
+  path              = "awesome-tech" # path that will be a part of clone URIs
+  name              = "Awesome Team" # friendly group name
+  path              = "awesome-team" # path that will be a part of clone URIs
+  description       = "The Awesome Team provides awesome tech that makes our company shine!"
+  wiki_access_level = "private" # make the Wiki only viewable by group members
 }
 ```
 
@@ -72,22 +73,15 @@ resource "gitlab_group_membership" "team_members" {
 }
 ```
 
-Because of how membership rights work in GitLab, any projects we create under this group will give these users the level of access defined at the group level. So, let's create one project where you will hold your internal GitLab Wiki, another where you will house your kicking fullstack app, and a third one which will hold your user facing documentation. Add this code to the bottom of your `main.tf`, modifying it to fit your needs:
+Because of how membership rights work in GitLab, any projects we create under this group will give these users the level of access defined at the group level. So, let's create one project where you will house your kicking fullstack app, and another one which will hold your user facing documentation. Add this code to the bottom of your `main.tf`, modifying it to fit your needs:
 
 ```terraform
-resource "gitlab_project" "wiki" {
-  namespace_id     = gitlab_group.my_team.id
-  name             = "Team Wiki"
-  path             = "wiki"
-  visibility_level = "private" # make this private so only your team can see it
-  description      = "Here is where we can knowledge share about our product."
-}
-
 resource "gitlab_project" "app" {
   namespace_id = gitlab_group.my_team.id
   name         = "Fullstack App"
   path         = "app"
   description  = "Our fullstack app which will deliver value fast!"
+  wiki_enabled = false
 }
 
 resource "gitlab_project" "docs" {
@@ -95,10 +89,11 @@ resource "gitlab_project" "docs" {
   name         = "Documentation"
   path         = "docs"
   description  = "User facing documentation website."
+  wiki_enabled = false
 }
 ```
 
-Now, due to the nature of the GitLab Wiki solution, we won't be having any MRs, but we will on the app and docs projects, so let's add some approval rules. These will force any MRs created on these projects to be approved by you the tech lead, and at least one other team member, before they can be merged. This does require at least a GitLab premium license on your top-level group, so if you don't have that, you can skip this part. Add this code to the bottom of your `main.tf`, modifying it to fit your needs:
+Now, let's add some approval rules. These will force any MRs created on these projects to be approved by you the tech lead, and at least one other team member, before they can be merged. This does require at least a GitLab premium license on your top-level group, so if you don't have that, you can skip this part. Add this code to the bottom of your `main.tf`, modifying it to fit your needs:
 
 ```terraform
 resource "gitlab_project_approval_rule" "team_app_maintainers" {
