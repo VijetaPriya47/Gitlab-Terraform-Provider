@@ -51,11 +51,11 @@ Now that we have a group, it is quite important to add team members to it. GitLa
 
 ```terraform
 data "gitlab_user" "team_lead" {
-  username = "Freddie"
+  username = "Delaney"
 }
 
 data "gitlab_user" "team_members" {
-  for_each = toset(["Brian", "John", "Roger"])
+  for_each = toset(["Sasha", "Priyanka", "Simone"])
   username = each.value
 }
 
