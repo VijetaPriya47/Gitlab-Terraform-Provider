@@ -9,6 +9,8 @@ You've done some research and have heard that IaC (Infrastructure as Code) is al
 
 Have no fear! This guide will walk you through the process of starting from a fresh installation of Terraform or OpenTofu and building our your infrastructure as code solution.
 
+# Configure GitLab Provider
+
 Let's start by creating a new directory on your computer that will store your IaC code. From that directory, let's create a file named `main.tf` using your text editor of choice. Within this file, let's insert the following lines of code:
 
 ```terraform
@@ -32,6 +34,8 @@ provider "gitlab" {
 ```
 
 These are the building blocks for using Terraform to manage your GitLab instance. The `terraform` block lets Terraform know where to download the provider for all GitLab resources, and the `provider` block configures the provider to use an externally provided personal access token to authenticate with GitLab when performing any configuration.
+
+# Create Group And Projects
 
 The next thing that we will want to do is create a GitLab group for your team's code and for your Wiki to live. Groups are a wonderful feature in GitLab that allows you to supply a multi-level hierarchy to your code assets. A root, or top-level group, is typically something that an organization will create so they have policy level controls over all sub-groups and projects found within them, so it is considered a best practice to limit the amount of top-level groups, and to focus on sub-dividing into team or functional areas groupings underneath. To facilitate this, let's create a group for the team by adding this to our `main.tf` file, modifying it to fit your needs:
 
@@ -124,6 +128,8 @@ resource "gitlab_project_approval_rule" "team_docs_members" {
   user_ids           = [for user in data.gitlab_user.team_members : user.id]
 }
 ```
+
+# Configure CI Runner
 
 With this in place, you have one item left. You want to be able to automatically run tests, build your product, package it and ship it to customers. For that you are going to need a GitLab runner! With the current runner registration workflow, there is a requirement to create a runner instance on your GitLab group or project in order to configure basic settings as well as to get a registration token that you can utilize with your deployed runners. We are going to create a group runner so that it can be shared with your fullstack application and user documentation projects. Add this code to the bottom of your `main.tf`, modifying it to fit your needs:
 
