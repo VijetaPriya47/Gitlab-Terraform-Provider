@@ -1329,34 +1329,6 @@ func TestAccGitlabProject_InstanceBranchProtectionDisabled(t *testing.T) {
 	})
 }
 
-type testAccGitlabProjectMirroredExpectedAttributes struct {
-	Mirror                           bool
-	MirrorTriggerBuilds              bool
-	MirrorOverwritesDivergedBranches bool
-	OnlyMirrorProtectedBranches      bool
-}
-
-func testAccCheckGitlabProjectMirroredAttributes(project *gitlab.Project, want *testAccGitlabProjectMirroredExpectedAttributes) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		if project.Mirror != want.Mirror {
-			return fmt.Errorf("got mirror %t; want %t", project.Mirror, want.Mirror)
-		}
-
-		if project.MirrorTriggerBuilds != want.MirrorTriggerBuilds {
-			return fmt.Errorf("got mirror_trigger_builds %t; want %t", project.MirrorTriggerBuilds, want.MirrorTriggerBuilds)
-		}
-
-		if project.MirrorOverwritesDivergedBranches != want.MirrorOverwritesDivergedBranches {
-			return fmt.Errorf("got mirror_overwrites_diverged_branches %t; want %t", project.MirrorOverwritesDivergedBranches, want.MirrorOverwritesDivergedBranches)
-		}
-
-		if project.OnlyMirrorProtectedBranches != want.OnlyMirrorProtectedBranches {
-			return fmt.Errorf("got only_mirror_protected_branches %t; want %t", project.OnlyMirrorProtectedBranches, want.OnlyMirrorProtectedBranches)
-		}
-		return nil
-	}
-}
-
 // lintignore: AT002 // not a Terraform import test
 func TestAccGitlabProject_ImportURLMirrored(t *testing.T) {
 
@@ -2069,6 +2041,86 @@ func TestAccGitlabProject_WithAvatar(t *testing.T) {
 	testCase := createAvatarableTestCase_WithAvatar(t, "gitlab_project.test", testConfig)
 	testCase.CheckDestroy = testAccCheckGitlabProjectDestroy
 	resource.Test(t, testCase)
+}
+
+func TestAccGitlabProject_SecretsPushDetection(t *testing.T) {
+	testutil.SkipIfCE(t)
+	if !testutil.IsRunningAtLeast(t, "17.3") {
+		// Skip for earlier versions of GitLab, since secret
+		// detection isn't supported
+		t.Skip()
+	}
+
+	projectName := acctest.RandomWithPrefix("acctest")
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabProjectDestroy,
+		Steps: []resource.TestStep{
+			// Create a project without secrets detection enabled
+			{
+				Config: fmt.Sprintf(`resource "gitlab_project" "test" {
+					name =  "%s"
+					
+					pre_receive_secret_detection_enabled = false
+				}`, projectName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project.test", "pre_receive_secret_detection_enabled", "false"),
+				),
+			},
+			// Verify import
+			{
+				ResourceName:      "gitlab_project.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Enable Secrets Detection
+			{
+				Config: fmt.Sprintf(`resource "gitlab_project" "test" {
+								name =  "%s"
+								
+								pre_receive_secret_detection_enabled = true
+							}`, projectName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project.test", "pre_receive_secret_detection_enabled", "true"),
+				),
+			},
+			// Verify import
+			{
+				ResourceName:      "gitlab_project.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+type testAccGitlabProjectMirroredExpectedAttributes struct {
+	Mirror                           bool
+	MirrorTriggerBuilds              bool
+	MirrorOverwritesDivergedBranches bool
+	OnlyMirrorProtectedBranches      bool
+}
+
+func testAccCheckGitlabProjectMirroredAttributes(project *gitlab.Project, want *testAccGitlabProjectMirroredExpectedAttributes) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if project.Mirror != want.Mirror {
+			return fmt.Errorf("got mirror %t; want %t", project.Mirror, want.Mirror)
+		}
+
+		if project.MirrorTriggerBuilds != want.MirrorTriggerBuilds {
+			return fmt.Errorf("got mirror_trigger_builds %t; want %t", project.MirrorTriggerBuilds, want.MirrorTriggerBuilds)
+		}
+
+		if project.MirrorOverwritesDivergedBranches != want.MirrorOverwritesDivergedBranches {
+			return fmt.Errorf("got mirror_overwrites_diverged_branches %t; want %t", project.MirrorOverwritesDivergedBranches, want.MirrorOverwritesDivergedBranches)
+		}
+
+		if project.OnlyMirrorProtectedBranches != want.OnlyMirrorProtectedBranches {
+			return fmt.Errorf("got only_mirror_protected_branches %t; want %t", project.OnlyMirrorProtectedBranches, want.OnlyMirrorProtectedBranches)
+		}
+		return nil
+	}
 }
 
 func testAccCheckGitlabProjectExists(n string, project *gitlab.Project) resource.TestCheckFunc {

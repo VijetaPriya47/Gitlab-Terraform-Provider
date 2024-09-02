@@ -725,6 +725,12 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 		Computed:         true,
 		ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(validProjectAccessLevels, false)),
 	},
+	"pre_receive_secret_detection_enabled": {
+		Description: "Whether Secret Push Detection is enabled. Requires GitLab Ultimate and at least GitLab 17.3.",
+		Type:        schema.TypeBool,
+		Optional:    true,
+		Computed:    true,
+	},
 }
 
 var validContainerExpirationPolicyAttributesCadenceValues = []string{
@@ -962,6 +968,7 @@ func resourceGitlabProjectSetToState(ctx context.Context, client *gitlab.Client,
 	d.Set("feature_flags_access_level", string(project.FeatureFlagsAccessLevel))
 	d.Set("infrastructure_access_level", string(project.InfrastructureAccessLevel))
 	d.Set("monitor_access_level", string(project.MonitorAccessLevel))
+	d.Set("pre_receive_secret_detection_enabled", project.PreReceiveSecretDetectionEnabled)
 
 	return nil
 }
@@ -1050,6 +1057,18 @@ func resourceGitlabProjectCreate(ctx context.Context, d *schema.ResourceData, me
 				return diag.Errorf("Project push rules are not supported in your version of GitLab")
 			}
 			return diag.Errorf("Failed to edit push rules for project %q: %s", d.Id(), err)
+		}
+	}
+
+	// If enabling Secret Push Detection, then update that value on the project via
+	// GraphQL
+	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
+	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
+	if _, ok := d.GetOkExists("pre_receive_secret_detection_enabled"); ok {
+		val := d.Get("pre_receive_secret_detection_enabled").(bool)
+		err := updateProjectSecretDetectionValue(ctx, client, project.PathWithNamespace, val)
+		if err != nil {
+			return diag.Errorf("Error updating Secret Push Detection on Project %d: %v", project.ID, err)
 		}
 	}
 
@@ -1536,11 +1555,32 @@ func resourceGitlabProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 		}
 	}
 
+	var project *gitlab.Project
 	if *options != (gitlab.EditProjectOptions{}) {
 		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab project %s", d.Id()))
-		_, _, err := client.Projects.EditProject(d.Id(), options, gitlab.WithContext(ctx))
+		project, _, err = client.Projects.EditProject(d.Id(), options, gitlab.WithContext(ctx))
 		if err != nil {
 			return diag.FromErr(err)
+		}
+	}
+
+	// If we don't have the project from the EditProject call, retrieve the project here so we have the full
+	// path for further calls.
+	if project == nil {
+		project, _, err = client.Projects.GetProject(d.Id(), nil)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	// If enabling Secret Push Detection, then update that value on the project via
+	// GraphQL
+	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
+	if changed := d.HasChange("pre_receive_secret_detection_enabled"); changed {
+		val := d.Get("pre_receive_secret_detection_enabled").(bool)
+		err := updateProjectSecretDetectionValue(ctx, client, project.PathWithNamespace, val)
+		if err != nil {
+			return diag.Errorf("Error updating Secret Push Detection on Project %s: %v", d.Id(), err)
 		}
 	}
 
@@ -2740,4 +2780,72 @@ func updatePostCreateEditOptions(ctx context.Context, editProjectOptions *gitlab
 	}
 
 	return nil
+}
+
+func updateProjectSecretDetectionValue(ctx context.Context, client *gitlab.Client, projectPath string, input bool) error {
+
+	// check if the version of GitLab is at least 17.3 before the call is attempted, and return with no error if lower than
+	// 17.3 to skip the call
+	versionOk, err := api.IsGitLabVersionAtLeast(ctx, client, "17.3")()
+	if err != nil {
+		return fmt.Errorf("failed to determine GitLab version when checking if Secret Push Detection is supported. Error: %v", err)
+	}
+	if !versionOk {
+		// A earlier version of GitLab is being used, so exit before we try to enable the setting
+		return nil
+	}
+
+	tflog.Debug(ctx, "Attempting to update Secrets Detection for project", map[string]interface{}{
+		"project": projectPath,
+		"value":   input,
+	})
+
+	// Create the query for enabling secrets detection via GraphQL
+	query := api.GraphQLQuery{
+		Query: fmt.Sprintf(`
+		mutation {
+			setPreReceiveSecretDetection(
+				input: {
+					enable: %v,
+					namespacePath: "%s"
+				}
+			) {
+				errors
+			}
+		}`, input, projectPath),
+	}
+
+	var response *updateSecretDetectionGraphQLResponse
+	_, err = api.SendGraphQLRequest(ctx, client, query, &response)
+	if err != nil {
+		return err
+	}
+
+	// Check if errors were returned, and respond with the error message if they were
+	if len(response.Data.SetPreReceiveSecretDetection.Errors) > 0 {
+		return fmt.Errorf("error setting secrets detection: %s", response.Data.SetPreReceiveSecretDetection.Errors[0].Message)
+	}
+	return nil
+}
+
+// The GraphQL response struct when setting Secrets Detection
+// Example payload:
+//
+//		{
+//		  "data": {
+//		    "setPreReceiveSecretDetection": {
+//		      "errors": [{
+//	          "message": "example error"
+//	          }]
+//		    }
+//		  }
+//		}
+type updateSecretDetectionGraphQLResponse struct {
+	Data struct {
+		SetPreReceiveSecretDetection struct {
+			Errors []struct {
+				Message string `json:"message"`
+			} `json:"errors"`
+		} `json:"setPreReceiveSecretDetection"`
+	} `json:"data"`
 }
