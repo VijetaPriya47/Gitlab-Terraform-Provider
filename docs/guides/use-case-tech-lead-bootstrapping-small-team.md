@@ -5,9 +5,9 @@ subcategory: "Use Cases"
 
 Imagine you are a tech lead, responsible for a small team, and you want to get your team bootstrapped with their own group with a Wiki and a couple of projects. One to hold your full-stack application that you've been working on, and another for a user facing documentation website. Within this role, you want to make sure that code quality is verified by yourself and at least one additional team member. You also want to setup your own GitLab CI runner to run your automation jobs for your full-stack mono-repo as well as your documentation website.
 
-You've done some research and have heard that IaC (Infrastructure as Code) is all the rage and have also found out that Terraform and OpenTofu are a great technology to use for cloud resources. Further to this, you have also found out that GitLab, your SDLC tool of choice, has its own Terraform provider that will enable you to realize all of your IaC dreams! You still have a problem though, how in the world can I take advantage of this?
+You've done some research and have heard that IaC (Infrastructure as Code) is all the rage and have also found out that OpenTofu and Terraform are a great technology to use for cloud resources. Further to this, you have also found out that GitLab, your SDLC tool of choice, has its own Terraform provider that will enable you to realize all of your IaC dreams! You still have a problem though, how in the world can I take advantage of this?
 
-Have no fear! This guide will walk you through the process of starting from a fresh installation of Terraform or OpenTofu and building our your infrastructure as code solution.
+Have no fear! This guide will walk you through the process of starting from a fresh installation of OpenTofu or Terraform and building our your infrastructure as code solution.
 
 # Configure GitLab Provider
 
@@ -33,7 +33,7 @@ provider "gitlab" {
 }
 ```
 
-These are the building blocks for using Terraform to manage your GitLab instance. The `terraform` block lets Terraform know where to download the provider for all GitLab resources, and the `provider` block configures the provider to use an externally provided personal access token to authenticate with GitLab when performing any configuration.
+These are the building blocks for using OpenTofu/Terraform to manage your GitLab instance. The `terraform` block lets OpenTofu/Terraform know where to download the provider for all GitLab resources, and the `provider` block configures the provider to use an externally provided personal access token to authenticate with GitLab when performing any configuration.
 
 # Create Group And Projects
 
@@ -148,11 +148,13 @@ output "registration_token" {
 }
 ```
 
-With all of this configuration in place, you should be ready to rock. You can use the following commands to initialize your Terraform root module, review the changes, apply them, and then retrieve the registration token that you will want to use with your runner installation:
+With all of this configuration in place, you should be ready to rock. You can use the following commands to initialize your OpenTofu/Terraform root module, review the changes, apply them, and then retrieve the registration token that you will want to use with your runner installation:
 
 ```shell
-terraform init
-terraform plan -out plan.out
-terraform apply plan.out
-terraform output registration_token
+tofu init
+tofu plan -out plan.out
+tofu apply plan.out
+tofu output registration_token
 ```
+
+> NOTE: This example uses OpenTofu's `tofu` command, but you can easily switch it out with `terraform` instead if you'd like to use this with Terraform instead, as they are backwards and forwards compatible.
