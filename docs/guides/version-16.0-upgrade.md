@@ -6,7 +6,7 @@ subcategory: "Upgrade Guides"
 # Upgrade to Terraform GitLab Provider Version 16.0
 
 The GitLab 16.0 major milestone introduced a couple of breaking changes that this
-release addresses. In addition, the provider itself breaks a bunch of interfaces
+release addresses. In addition, the provider itself breaks a bunch of interfaces 
 which may require actions on the users side. These are described below:
 
 ## Change of resource id formats
@@ -54,7 +54,7 @@ Therefore, you may want to use the `sensitive()` or `nonsensitive()` Terraform f
 The `expires_at` attribate for the `gitlab_project_access_token` resource is required in
 version 16.0.0.
 
-In 16.0.1 and later, this attribute is optional again due to GitLab applying a default
+In 16.0.1 and later, this attribute is optional again due to GitLab applying a default 
 when it's empty, however setting it to a date too far in the future may cause an error
 depending on the configuration of your GitLab instance.
 
@@ -98,8 +98,8 @@ removing the `gitlab_label` resource with the upcoming 16.3 release.
 ## Remove support for unencoded test in `gitlab_repository_file`
 
 Support for non-base64 encoded text in `gitlab_repository_file` has been removed.
-If unencoded values are used, terraform will now return an error noting
-`Invalid base64 string in "content"`.
+If unencoded values are used, terraform will now return an error noting 
+`Invalid base64 string in "content"`. 
 Instead, use the [`base64encode()`](https://developer.hashicorp.com/terraform/language/functions/base64encode)
 function from terraform to encode any values if they are not already encoded.
 

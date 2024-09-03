@@ -1,1 +1,6 @@
 * -text
+
+# Add `gitlab-generated` to the docs folder, since those files are enforced by our `lint-generated`
+# job to match the files generated, so they don't need to be reviewed outside the code that generates
+# them.
+docs/** gitlab-generated
