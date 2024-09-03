@@ -11,6 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"github.com/xanzy/go-gitlab"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
@@ -371,6 +372,54 @@ func TestAcc_GitlabUserRunner_createWithOptions(t *testing.T) {
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"token", "group_id", "project_id"}, // doesn't import
+			},
+		},
+	})
+}
+
+// lintignore: AT002 // specialized import test
+func TestAcc_GitlabUserRunner_importAndManageTags(t *testing.T) {
+
+	runner, _, err := testutil.TestGitlabClient.Users.CreateUserRunner(&gitlab.CreateUserRunnerOptions{
+		RunnerType:  gitlab.Ptr("instance_type"),
+		Description: gitlab.Ptr("Eat fish on floor meowwww yet climb leg"),
+	})
+	if err != nil {
+		t.Fatalf("failed to create pre-required runner: %v", err)
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             userRunnerCheckDestroy,
+		Steps: []resource.TestStep{
+			{
+				// Import the runner we created above to manage it in the config
+				Config: `
+					 resource "gitlab_user_runner" "instance_runner" {
+						runner_type = "instance_type"
+
+						description = "Eat fish on floor meowwww yet climb leg"
+					 }
+					`,
+				ResourceName:       "gitlab_user_runner.instance_runner",
+				ImportStateId:      strconv.Itoa(runner.ID),
+				ImportStatePersist: true,
+				ImportState:        true,
+			},
+			{
+				// Add a tag to the managed runner
+				Config: `
+					 resource "gitlab_user_runner" "instance_runner" {
+						runner_type = "instance_type"
+
+						description = "Eat fish on floor meowwww yet climb leg"
+						tag_list = ["kitty", "purr"]
+					 }
+					`,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_user_runner.instance_runner", "tag_list.0", "kitty"),
+					resource.TestCheckResourceAttr("gitlab_user_runner.instance_runner", "tag_list.1", "purr"),
+				),
 			},
 		},
 	})

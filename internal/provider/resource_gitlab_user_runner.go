@@ -29,6 +29,7 @@ var (
 	_ resource.ResourceWithConfigure      = &gitlabUserRunnerResource{}
 	_ resource.ResourceWithImportState    = &gitlabUserRunnerResource{}
 	_ resource.ResourceWithValidateConfig = &gitlabUserRunnerResource{}
+	_ resource.ResourceWithModifyPlan     = &gitlabUserRunnerResource{}
 )
 
 func init() {
@@ -154,6 +155,32 @@ func (d *gitlabUserRunnerResource) Schema(_ context.Context, _ resource.SchemaRe
 			},
 		},
 	}
+}
+
+// ModifyPlan is used to ignore and updates to `Token` outside the create.
+func (d *gitlabUserRunnerResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	var stateData, planData *gitlabUserRunnerModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &stateData)...)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &planData)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// If the `ID` is nil or unknown in state, we're doing a "Create" operation, otherwise we're doing an "Update" operation.
+	// If we're doing an update operation, then we need to set Token to `null` if it's currently `null` in state
+	// to prevent an "Unknown" error when using it after import.
+	if stateData == nil || stateData.ID.IsNull() || stateData.ID.IsUnknown() {
+		// We're doing a "Create" operation
+		return
+	}
+
+	// We're performing an update, so check if the token is null or unknown in state, and set it to null in the plan
+	// if it is (because we're updating, or importing, etc)
+	if (stateData.Token.IsNull() || stateData.Token.IsUnknown()) && planData != nil {
+		planData.Token = types.StringNull()
+	}
+
+	resp.Diagnostics.Append(resp.Plan.Set(ctx, planData)...)
 }
 
 // Configure adds the provider configured client to the resource.
