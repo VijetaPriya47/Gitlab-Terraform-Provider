@@ -3,6 +3,7 @@ package sdk
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -26,12 +27,17 @@ var _ = registerResource("gitlab_group_label", func() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema:        gitlabGroupLabelSchema(),
-		SchemaVersion: 1,
+		SchemaVersion: 2,
 		StateUpgraders: []schema.StateUpgrader{
 			{
 				Type:    resourceGitlabGroupLabelResourceV0().CoreConfigSchema().ImpliedType(),
 				Upgrade: resourceGitlabGroupLabelStateUpgradeV0,
 				Version: 0,
+			},
+			{
+				Type:    resourceGitlabGroupLabelResourceV0().CoreConfigSchema().ImpliedType(),
+				Upgrade: resourceGitlabGroupLabelStateUpgradeV1,
+				Version: 1,
 			},
 		},
 	}
@@ -86,16 +92,48 @@ func resourceGitlabGroupLabelStateUpgradeV0(ctx context.Context, rawState map[st
 	return rawState, nil
 }
 
-func resourceGitlabGroupLabelBuildId(group string, labelName string) string {
-	return utils.BuildTwoPartID(&group, &labelName)
+func resourceGitlabGroupLabelStateUpgradeV1(ctx context.Context, rawState map[string]interface{}, meta interface{}) (map[string]interface{}, error) {
+	group := rawState["group"].(string)
+	oldId := rawState["id"].(string)
+	// Check if label_id is present in rawState
+	labelId, ok := rawState["label_id"].(string)
+
+	tflog.Debug(ctx, "attempting state migration from V1 to V2 - changing the `id` attribute format", map[string]interface{}{"group": group, "label_id": labelId, "v1-id": oldId})
+
+	if !ok {
+		tflog.Debug(ctx, "label_id is not present in the raw state, retrieving the information via API to build the old label_id for migration", map[string]interface{}{"group": group, "v1-id": oldId})
+
+		client := meta.(*gitlab.Client)
+
+		// Derive or fetch label_id if not present
+		var err error
+		group, labelName, err := resourceGitlabGroupLabelParseId(oldId)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse group label id %q: %s", oldId, err)
+		}
+
+		label, _, err := client.GroupLabels.GetGroupLabel(group, labelName, gitlab.WithContext(ctx))
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch label: %v", err)
+		}
+		labelId = strconv.Itoa(label.ID)
+	}
+
+	rawState["id"] = utils.BuildTwoPartID(&group, &labelId)
+	tflog.Debug(ctx, "migrated `id` attribute for V1 to V2", map[string]interface{}{"v1-id": oldId, "v2-id": rawState["id"]})
+	return rawState, nil
+}
+
+func resourceGitlabGroupLabelBuildId(group string, labelId string) string {
+	return utils.BuildTwoPartID(&group, &labelId)
 }
 
 func resourceGitlabGroupLabelParseId(id string) (string, string, error) {
-	group, labelName, err := utils.ParseTwoPartID(id)
+	group, labelId, err := utils.ParseTwoPartID(id)
 	if err != nil {
 		return "", "", err
 	}
-	return group, labelName, nil
+	return group, labelId, nil
 }
 
 func resourceGitlabGroupLabelCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -117,24 +155,24 @@ func resourceGitlabGroupLabelCreate(ctx context.Context, d *schema.ResourceData,
 		return diag.FromErr(err)
 	}
 
-	d.SetId(resourceGitlabGroupLabelBuildId(group, label.Name))
+	d.SetId(resourceGitlabGroupLabelBuildId(group, strconv.Itoa(label.ID)))
 	return resourceGitlabGroupLabelRead(ctx, d, meta)
 }
 
 func resourceGitlabGroupLabelRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
-	group, labelName, err := resourceGitlabGroupLabelParseId(d.Id())
+	group, labelId, err := resourceGitlabGroupLabelParseId(d.Id())
 	if err != nil {
 		return diag.Errorf("Failed to parse group label id %q: %s", d.Id(), err)
 	}
 
-	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab group label %s/%s", group, labelName))
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab group label %s/%s", group, labelId))
 
-	label, _, err := client.GroupLabels.GetGroupLabel(group, labelName, gitlab.WithContext(ctx))
+	label, _, err := client.GroupLabels.GetGroupLabel(group, labelId, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] failed to read gitlab label %s/%s, removing from state", group, labelName))
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] failed to read gitlab label %s/%s, removing from state", group, labelId))
 			d.SetId("")
 			return nil
 		}
