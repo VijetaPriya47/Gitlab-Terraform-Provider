@@ -65,7 +65,76 @@ func TestAccGitlabGroupLabel_StateUpgradeV0(t *testing.T) {
 	}
 }
 
-func TestAccGitlabGroupLabel_SchemaMigration0_1(t *testing.T) {
+func TestAccGitlabGroupLabel_StateUpgradeV1(t *testing.T) {
+	t.Parallel()
+
+	testcases := []struct {
+		name            string
+		givenV1State    map[string]interface{}
+		expectedV2State map[string]interface{}
+		errorMsg        string
+	}{
+		{
+			name: "Group With ID",
+			givenV1State: map[string]interface{}{
+				"label_id": "11",
+				"group":    "99",
+				"id":       "some-label",
+			},
+			expectedV2State: map[string]interface{}{
+				"label_id": "11",
+				"group":    "99",
+				"id":       "99:11",
+			},
+		},
+		{
+			name: "Group With Namespace",
+			givenV1State: map[string]interface{}{
+				"label_id": "11",
+				"group":    "foo/bar",
+				"id":       "some-label",
+			},
+			expectedV2State: map[string]interface{}{
+				"label_id": "11",
+				"group":    "foo/bar",
+				"id":       "foo/bar:11",
+			},
+		},
+		{
+			name: "Invalid ID format",
+			givenV1State: map[string]interface{}{
+				"group": "foo/bar",
+				"id":    "some-label",
+			},
+			expectedV2State: nil,
+			errorMsg:        "failed to parse group label id \"some-label\": Unexpected ID format (\"some-label\"). Expected <part1>:<part2>",
+		},
+		{
+			name: "State does not have the label_id",
+			givenV1State: map[string]interface{}{
+				"group": "99",
+				"id":    "99:FIXME",
+			},
+			expectedV2State: nil,
+			errorMsg:        "failed to fetch label: 404 Not Found",
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			actualV2State, err := resourceGitlabGroupLabelStateUpgradeV1(context.Background(), tc.givenV1State, testutil.TestGitlabClient)
+			if err != nil && err.Error() != tc.errorMsg {
+				t.Fatalf("Error migrating state: %s", err)
+			}
+
+			if !reflect.DeepEqual(tc.expectedV2State, actualV2State) {
+				t.Fatalf("\n\nexpected:\n\n%#v\n\ngot:\n\n%#v\n\n", tc.expectedV2State, actualV2State)
+			}
+		})
+	}
+}
+
+func TestAccGitlabGroupLabel_SchemaMigration0_2(t *testing.T) {
 	testGroup := testutil.CreateGroups(t, 1)[0]
 
 	config := fmt.Sprintf(`
@@ -155,12 +224,12 @@ func testAccCheckGitlabGroupLabelExists(n string, label *gitlab.GroupLabel) reso
 			return fmt.Errorf("Not Found: %s", n)
 		}
 
-		groupName, labelName, err := resourceGitlabGroupLabelParseId(rs.Primary.ID)
+		groupName, labelId, err := resourceGitlabGroupLabelParseId(rs.Primary.ID)
 		if err != nil {
 			return fmt.Errorf("Failed to parse group label id %q: %w", rs.Primary.ID, err)
 		}
 
-		l, _, err := testutil.TestGitlabClient.GroupLabels.GetGroupLabel(groupName, labelName)
+		l, _, err := testutil.TestGitlabClient.GroupLabels.GetGroupLabel(groupName, labelId)
 		*label = *l
 		return err
 	}
