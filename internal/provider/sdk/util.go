@@ -181,18 +181,6 @@ var StringIsGitlabVariableType = func(v interface{}, k string) (s []string, es [
 	return
 }
 
-var tagProtectionAccessLevelID = map[string]gitlab.AccessLevelValue{
-	"no one":     gitlab.NoPermissions,
-	"developer":  gitlab.DeveloperPermissions,
-	"maintainer": gitlab.MaintainerPermissions,
-}
-
-var tagProtectionAccessLevelNames = map[gitlab.AccessLevelValue]string{
-	gitlab.NoPermissions:         "no one",
-	gitlab.DeveloperPermissions:  "developer",
-	gitlab.MaintainerPermissions: "maintainer",
-}
-
 func stringListToStringSlice(stringList []interface{}) *[]string {
 	ret := []string{}
 	if stringList == nil {
