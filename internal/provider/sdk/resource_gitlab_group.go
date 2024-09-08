@@ -17,18 +17,21 @@ import (
 )
 
 // Values to be used for validation and documentation
-var defaultBranchProtectionValues = []int{0, 1, 2, 3, 4}
-var visibilityLevelValues = []string{"private", "internal", "public"}
-var projectCreationLevelValues = []string{"noone", "maintainer", "developer"}
-var subGroupCreationLevelValues = []string{"owner", "maintainer"}
-var validSharedRunnersSettings = []string{
-	"enabled",
-	"disabled_and_overridable",
-	"disabled_and_unoverridable",
+var (
+	defaultBranchProtectionValues         = []int{0, 1, 2, 3, 4}
+	defaultBranchProtectionDefaultsValues = []string{api.AccessLevelValueToName[gitlab.DeveloperPermissions], api.AccessLevelValueToName[gitlab.MaintainerPermissions]}
+	visibilityLevelValues                 = []string{"private", "internal", "public"}
+	projectCreationLevelValues            = []string{"noone", "maintainer", "developer"}
+	subGroupCreationLevelValues           = []string{"owner", "maintainer"}
+	validSharedRunnersSettings            = []string{
+		"enabled",
+		"disabled_and_overridable",
+		"disabled_and_unoverridable",
 
-	// Deprecated
-	"disabled_with_override",
-}
+		// Deprecated
+		"disabled_with_override",
+	}
+)
 
 var _ = registerResource("gitlab_group", func() *schema.Resource {
 	return &schema.Resource{
@@ -89,6 +92,56 @@ var _ = registerResource("gitlab_group", func() *schema.Resource {
 				Optional:     true,
 				Computed:     true,
 				ValidateFunc: validation.IntInSlice(defaultBranchProtectionValues),
+				Deprecated:   "Deprecated in GitLab 17.0. Use default_branch_protection_defaults instead.",
+				ConflictsWith: []string{
+					"default_branch_protection_defaults",
+				},
+			},
+			"default_branch_protection_defaults": {
+				Description: "The default branch protection defaults",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Computed:    true,
+				ConflictsWith: []string{
+					"default_branch_protection",
+				},
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"allowed_to_push": {
+							Description: fmt.Sprintf("An array of access levels allowed to push. Valid values are: %s.", utils.RenderValueListForDocs(defaultBranchProtectionDefaultsValues)),
+							Type:        schema.TypeList,
+							Optional:    true,
+							Computed:    true,
+							Elem: &schema.Schema{
+								Type:         schema.TypeString,
+								ValidateFunc: validation.StringInSlice(defaultBranchProtectionDefaultsValues, false),
+							},
+						},
+						"allow_force_push": {
+							Description: "Allow force push for all users with push access.",
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Computed:    true,
+						},
+						"allowed_to_merge": {
+							Description: fmt.Sprintf("An array of access levels allowed to merge. Valid values are: %s.", utils.RenderValueListForDocs(defaultBranchProtectionDefaultsValues)),
+							Type:        schema.TypeList,
+							Optional:    true,
+							Computed:    true,
+							Elem: &schema.Schema{
+								Type:         schema.TypeString,
+								ValidateFunc: validation.StringInSlice(defaultBranchProtectionDefaultsValues, false),
+							},
+						},
+						"developer_can_initial_push": {
+							Description: "Allow developers to initial push.",
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Computed:    true,
+						},
+					},
+				},
 			},
 			"request_access_enabled": {
 				Description: "Allow users to request member access.",
@@ -389,6 +442,16 @@ func resourceGitlabGroupCreate(ctx context.Context, d *schema.ResourceData, meta
 		options.DefaultBranchProtection = gitlab.Ptr(v.(int))
 	}
 
+	if v, ok := d.GetOk("default_branch_protection_defaults.0"); ok {
+		defaults := v.(map[string]interface{})
+		options.DefaultBranchProtectionDefaults = &gitlab.DefaultBranchProtectionDefaultsOptions{
+			AllowedToPush:           gitlab.Ptr(convertAccessLevelNamesToValues(defaults["allowed_to_push"].([]interface{}))),
+			AllowForcePush:          gitlab.Ptr(defaults["allow_force_push"].(bool)),
+			AllowedToMerge:          gitlab.Ptr(convertAccessLevelNamesToValues(defaults["allowed_to_merge"].([]interface{}))),
+			DeveloperCanInitialPush: gitlab.Ptr(defaults["developer_can_initial_push"].(bool)),
+		}
+	}
+
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 	if v, ok := d.GetOkExists("membership_lock"); ok {
@@ -502,6 +565,20 @@ func resourceGitlabGroupCreate(ctx context.Context, d *schema.ResourceData, meta
 	return resourceGitlabGroupRead(ctx, d, meta)
 }
 
+func convertAccessLevelNamesToValues(names []interface{}) []*gitlab.GroupAccessLevel {
+	valuesList := []*gitlab.GroupAccessLevel{}
+
+	for _, name := range names {
+		nameStr := name.(string)
+		groupAccessLevel := gitlab.GroupAccessLevel{
+			AccessLevel: gitlab.Ptr(api.AccessLevelNameToValue[nameStr]),
+		}
+		valuesList = append(valuesList, &groupAccessLevel)
+	}
+
+	return valuesList
+}
+
 func resourceGitlabGroupRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
@@ -563,6 +640,18 @@ func resourceGitlabGroupRead(ctx context.Context, d *schema.ResourceData, meta i
 	// nolint:staticcheck // SA1019 ignore deprecated DefaultBranchProtection
 	d.Set("default_branch_protection", group.DefaultBranchProtection)
 
+	err = d.Set("default_branch_protection_defaults", []map[string]interface{}{
+		{
+			"allowed_to_push":            convertAccessLevelValuesToNames(group.DefaultBranchProtectionDefaults.AllowedToPush),
+			"allow_force_push":           group.DefaultBranchProtectionDefaults.AllowForcePush,
+			"allowed_to_merge":           convertAccessLevelValuesToNames(group.DefaultBranchProtectionDefaults.AllowedToMerge),
+			"developer_can_initial_push": group.DefaultBranchProtectionDefaults.DeveloperCanInitialPush,
+		},
+	})
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	// The value comes back from the API as a comma separated string, and stores in TF as a set.
 	// We need to set the value only if it's "", otherwise the split gives up [""] which will result
 	// in a non-empty plan.
@@ -605,6 +694,16 @@ func resourceGitlabGroupRead(ctx context.Context, d *schema.ResourceData, meta i
 	}
 
 	return nil
+}
+
+func convertAccessLevelValuesToNames(values []*gitlab.GroupAccessLevel) []*string {
+	namesList := []*string{}
+
+	for _, value := range values {
+		namesList = append(namesList, gitlab.Ptr(api.AccessLevelValueToName[*value.AccessLevel]))
+	}
+
+	return namesList
 }
 
 func resourceGitlabGroupUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -673,6 +772,10 @@ func resourceGitlabGroupUpdate(ctx context.Context, d *schema.ResourceData, meta
 	if d.HasChange("default_branch_protection") {
 		// nolint:staticcheck // SA1019 ignore deprecated DefaultBranchProtection
 		options.DefaultBranchProtection = gitlab.Ptr(d.Get("default_branch_protection").(int))
+	}
+
+	if d.HasChange("default_branch_protection_defaults.0") {
+		options.DefaultBranchProtectionDefaults = gitlab.Ptr(expandDefaultBranchProtectionDefaults(d))
 	}
 
 	if d.HasChange("prevent_forking_outside_group") {
@@ -918,6 +1021,17 @@ func editOrAddGroupPushRules(ctx context.Context, client *gitlab.Client, groupID
 	}
 
 	return nil
+}
+
+func expandDefaultBranchProtectionDefaults(d *schema.ResourceData) gitlab.DefaultBranchProtectionDefaultsOptions {
+	options := gitlab.DefaultBranchProtectionDefaultsOptions{}
+
+	options.AllowedToPush = gitlab.Ptr(convertAccessLevelNamesToValues(d.Get("default_branch_protection_defaults.0.allowed_to_push").([]interface{})))
+	options.AllowForcePush = gitlab.Ptr(d.Get("default_branch_protection_defaults.0.allow_force_push").(bool))
+	options.AllowedToMerge = gitlab.Ptr(convertAccessLevelNamesToValues(d.Get("default_branch_protection_defaults.0.allowed_to_merge").([]interface{})))
+	options.DeveloperCanInitialPush = gitlab.Ptr(d.Get("default_branch_protection_defaults.0.developer_can_initial_push").(bool))
+
+	return options
 }
 
 func expandEditGroupPushRuleOptions(ctx context.Context, client *gitlab.Client, d *schema.ResourceData) (gitlab.EditGroupPushRuleOptions, error) {

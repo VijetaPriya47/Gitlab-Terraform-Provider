@@ -24,3 +24,17 @@ resource "gitlab_group" "example-two" {
     prevent_secrets        = true
   }
 }
+
+# Group with custom default branch protection defaults
+resource "gitlab_group" "example-three" {
+  name        = "example-three"
+  path        = "example-three"
+  description = "An example group with default branch protection defaults"
+
+  default_branch_protection_defaults {
+    allowed_to_push            = ["developer"]
+    allow_force_push           = true
+    allowed_to_merge           = ["developer", "maintainer"]
+    developer_can_initial_push = true
+  }
+}
