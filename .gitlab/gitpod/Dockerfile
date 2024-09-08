@@ -4,7 +4,7 @@
 FROM gitpod/workspace-go
 
 # The link to the go download. Get it from https://go.dev/dl/
-ARG GO_DOWNLOAD=go1.23.0.linux-amd64.tar.gz
+ARG GO_DOWNLOAD=go1.23.1.linux-amd64.tar.gz
 
 RUN rm -rf /home/gitpod/go && \
     wget https://go.dev/dl/${GO_DOWNLOAD} && \
