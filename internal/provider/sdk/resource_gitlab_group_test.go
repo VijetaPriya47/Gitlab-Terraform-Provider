@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
 	"regexp"
 	"strings"
 	"testing"
@@ -21,6 +22,7 @@ import (
 )
 
 func TestAccGitlabGroup_basic(t *testing.T) {
+
 	var group gitlab.Group
 	rInt := acctest.RandInt()
 
@@ -30,7 +32,17 @@ func TestAccGitlabGroup_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create a group
 			{
-				Config: testAccGitlabGroupConfig(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "foo-name-%d"
+				  path = "foo-path-%d"
+				  description = "Terraform acceptance tests"
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				  `, rInt, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabGroupExists("gitlab_group.foo", &group),
 					testAccCheckGitlabGroupAttributes(&group, &testAccGitlabGroupExpectedAttributes{
@@ -50,7 +62,310 @@ func TestAccGitlabGroup_basic(t *testing.T) {
 			},
 			// Update the group to change the description
 			{
-				Config: testAccGitlabGroupUpdateConfig(rInt, 1),
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "bar-name-%d"
+				  path = "bar-path-%d"
+				  description = "Terraform acceptance tests! Updated description"
+				  lfs_enabled = false
+				  request_access_enabled = true
+				  project_creation_level = "developer"
+				  subgroup_creation_level = "maintainer"
+				  require_two_factor_authentication = true
+				  two_factor_grace_period = 56
+				  auto_devops_enabled = true
+				  emails_enabled = false
+				  mentions_disabled = true
+				  share_with_group_lock = true
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				  `, rInt, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabGroupExists("gitlab_group.foo", &group),
+					testAccCheckGitlabGroupAttributes(&group, &testAccGitlabGroupExpectedAttributes{
+						Name:                 fmt.Sprintf("bar-name-%d", rInt),
+						Path:                 fmt.Sprintf("bar-path-%d", rInt),
+						Description:          "Terraform acceptance tests! Updated description",
+						LFSEnabled:           gitlab.Ptr(false),
+						RequestAccessEnabled: gitlab.Ptr(true),
+						RequireTwoFactorAuth: gitlab.Ptr(true),
+						TwoFactorGracePeriod: gitlab.Ptr(56),
+						AutoDevopsEnabled:    gitlab.Ptr(true),
+						EmailsDisabled:       gitlab.Ptr(true),
+						ShareWithGroupLock:   gitlab.Ptr(true),
+					}),
+				),
+			},
+			// Verify Import
+			{
+				ResourceName:            "gitlab_group.foo",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"permanently_remove_on_delete"},
+			},
+			// Update the group to set `default_branch_protection_defaults`
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "bar-name-%d"
+				  path = "bar-path-%d"
+				  description = "Terraform acceptance tests! Updated description"
+				  lfs_enabled = false
+				  request_access_enabled = true
+				  project_creation_level = "developer"
+				  subgroup_creation_level = "maintainer"
+				  require_two_factor_authentication = true
+				  two_factor_grace_period = 56
+				  auto_devops_enabled = true
+				  emails_enabled = false
+				  mentions_disabled = true
+				  share_with_group_lock = true
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				  `, rInt, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabGroupExists("gitlab_group.foo", &group),
+					testAccCheckGitlabGroupAttributes(&group, &testAccGitlabGroupExpectedAttributes{
+						Name:                 fmt.Sprintf("bar-name-%d", rInt),
+						Path:                 fmt.Sprintf("bar-path-%d", rInt),
+						Description:          "Terraform acceptance tests! Updated description",
+						LFSEnabled:           gitlab.Ptr(false),
+						RequestAccessEnabled: gitlab.Ptr(true),
+						RequireTwoFactorAuth: gitlab.Ptr(true),
+						TwoFactorGracePeriod: gitlab.Ptr(56),
+						AutoDevopsEnabled:    gitlab.Ptr(true),
+						EmailsDisabled:       gitlab.Ptr(true),
+						ShareWithGroupLock:   gitlab.Ptr(true),
+					}),
+				),
+			},
+			// Verify Import
+			{
+				ResourceName:            "gitlab_group.foo",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"permanently_remove_on_delete"},
+			},
+			// Update the group to use new value in `default_branch_protection_defaults`
+			{
+				SkipFunc: api.IsGitLabVersionLessThan(context.Background(), testutil.TestGitlabClient, "16.1"),
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "bar-name-%d"
+				  path = "bar-path-%d"
+				  description = "Terraform acceptance tests! Updated description"
+				  lfs_enabled = false
+				  request_access_enabled = true
+				  project_creation_level = "developer"
+				  subgroup_creation_level = "maintainer"
+				  require_two_factor_authentication = true
+				  two_factor_grace_period = 56
+				  auto_devops_enabled = true
+				  emails_enabled = false
+				  mentions_disabled = true
+				  share_with_group_lock = true
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				  `, rInt, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabGroupExists("gitlab_group.foo", &group),
+					testAccCheckGitlabGroupAttributes(&group, &testAccGitlabGroupExpectedAttributes{
+						Name:                 fmt.Sprintf("bar-name-%d", rInt),
+						Path:                 fmt.Sprintf("bar-path-%d", rInt),
+						Description:          "Terraform acceptance tests! Updated description",
+						LFSEnabled:           gitlab.Ptr(false),
+						RequestAccessEnabled: gitlab.Ptr(true),
+						RequireTwoFactorAuth: gitlab.Ptr(true),
+						TwoFactorGracePeriod: gitlab.Ptr(56),
+						AutoDevopsEnabled:    gitlab.Ptr(true),
+						EmailsDisabled:       gitlab.Ptr(true),
+						ShareWithGroupLock:   gitlab.Ptr(true),
+					}),
+				),
+			},
+			// Verify Import
+			{
+				ResourceName:            "gitlab_group.foo",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"permanently_remove_on_delete"},
+			},
+			// Update the group to put the name and description back
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "foo-name-%d"
+				  path = "foo-path-%d"
+				  description = "Terraform acceptance tests"
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				  `, rInt, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabGroupExists("gitlab_group.foo", &group),
+					testAccCheckGitlabGroupAttributes(&group, &testAccGitlabGroupExpectedAttributes{
+						Name:        fmt.Sprintf("foo-name-%d", rInt),
+						Path:        fmt.Sprintf("foo-path-%d", rInt),
+						Description: "Terraform acceptance tests",
+					}),
+				),
+			},
+			// Verify Import
+			{
+				ResourceName:            "gitlab_group.foo",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"permanently_remove_on_delete"},
+			},
+		},
+	})
+}
+
+func TestAccGitlabGroup_defaultBranchProtectionDefaults(t *testing.T) {
+	// Default Branch Protection Defaults added in 17.0
+	testutil.RunIfAtLeast(t, "17.0")
+
+	var group gitlab.Group
+	rInt := acctest.RandInt()
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabGroupDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "foo-name-%d"
+				  path = "foo-path-%d"
+				  description = "Terraform acceptance tests"
+
+				  default_branch_protection_defaults {
+				  	allowed_to_push = ["developer"]
+					allow_force_push = false
+					allowed_to_merge = ["maintainer"]
+					developer_can_initial_push = true
+				  }
+				}
+				  `, rInt, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabGroupExists("gitlab_group.foo", &group),
+					testAccCheckGitlabGroupAttributes(&group, &testAccGitlabGroupExpectedAttributes{
+						Name:                 fmt.Sprintf("foo-name-%d", rInt),
+						Path:                 fmt.Sprintf("foo-path-%d", rInt),
+						Description:          "Terraform acceptance tests",
+						ProjectCreationLevel: "developer",
+					}),
+				),
+			},
+			// Verify Import
+			{
+				ResourceName:            "gitlab_group.foo",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"permanently_remove_on_delete"},
+			},
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "foo-name-%d"
+				  path = "foo-path-%d"
+				  description = "Terraform acceptance tests"
+
+				  default_branch_protection_defaults {
+				  	allowed_to_push = ["maintainer"]
+					allow_force_push = false
+					allowed_to_merge = ["maintainer"]
+					developer_can_initial_push = true
+				  }
+				}
+				  `, rInt, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabGroupExists("gitlab_group.foo", &group),
+					testAccCheckGitlabGroupAttributes(&group, &testAccGitlabGroupExpectedAttributes{
+						Name:                 fmt.Sprintf("foo-name-%d", rInt),
+						Path:                 fmt.Sprintf("foo-path-%d", rInt),
+						Description:          "Terraform acceptance tests",
+						ProjectCreationLevel: "developer",
+					}),
+				),
+			},
+		},
+	})
+}
+
+func TestAccGitlabGroup_basic_deprecated(t *testing.T) {
+	var group gitlab.Group
+	rInt := acctest.RandInt()
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabGroupDestroy,
+		Steps: []resource.TestStep{
+			// Create a group
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "foo-name-%d"
+				  path = "foo-path-%d"
+				  description = "Terraform acceptance tests"
+
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				  `, rInt, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabGroupExists("gitlab_group.foo", &group),
+					testAccCheckGitlabGroupAttributes(&group, &testAccGitlabGroupExpectedAttributes{
+						Name:                 fmt.Sprintf("foo-name-%d", rInt),
+						Path:                 fmt.Sprintf("foo-path-%d", rInt),
+						Description:          "Terraform acceptance tests",
+						ProjectCreationLevel: "developer",
+					}),
+				),
+			},
+			// Verify Import
+			{
+				ResourceName:            "gitlab_group.foo",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"permanently_remove_on_delete"},
+			},
+			// Update the group to change the description
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "bar-name-%d"
+				  path = "bar-path-%d"
+				  description = "Terraform acceptance tests! Updated description"
+				  lfs_enabled = false
+				  request_access_enabled = true
+				  project_creation_level = "developer"
+				  subgroup_creation_level = "maintainer"
+				  require_two_factor_authentication = true
+				  two_factor_grace_period = 56
+				  auto_devops_enabled = true
+				  emails_enabled = false
+				  mentions_disabled = true
+				  share_with_group_lock = true
+				  default_branch_protection = %d
+
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				  `, rInt, rInt, 1),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabGroupExists("gitlab_group.foo", &group),
 					testAccCheckGitlabGroupAttributes(&group, &testAccGitlabGroupExpectedAttributes{
@@ -77,7 +392,28 @@ func TestAccGitlabGroup_basic(t *testing.T) {
 			},
 			// Update the group to use zero-value `default_branch_protection`
 			{
-				Config: testAccGitlabGroupUpdateConfig(rInt, 0),
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "bar-name-%d"
+				  path = "bar-path-%d"
+				  description = "Terraform acceptance tests! Updated description"
+				  lfs_enabled = false
+				  request_access_enabled = true
+				  project_creation_level = "developer"
+				  subgroup_creation_level = "maintainer"
+				  require_two_factor_authentication = true
+				  two_factor_grace_period = 56
+				  auto_devops_enabled = true
+				  emails_enabled = false
+				  mentions_disabled = true
+				  share_with_group_lock = true
+				  default_branch_protection = %d
+
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				  `, rInt, rInt, 0),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabGroupExists("gitlab_group.foo", &group),
 					testAccCheckGitlabGroupAttributes(&group, &testAccGitlabGroupExpectedAttributes{
@@ -105,7 +441,28 @@ func TestAccGitlabGroup_basic(t *testing.T) {
 			// Update the group to use new value 4 for `default_branch_protection`
 			{
 				SkipFunc: api.IsGitLabVersionLessThan(context.Background(), testutil.TestGitlabClient, "16.1"),
-				Config:   testAccGitlabGroupUpdateConfig(rInt, 4),
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "bar-name-%d"
+				  path = "bar-path-%d"
+				  description = "Terraform acceptance tests! Updated description"
+				  lfs_enabled = false
+				  request_access_enabled = true
+				  project_creation_level = "developer"
+				  subgroup_creation_level = "maintainer"
+				  require_two_factor_authentication = true
+				  two_factor_grace_period = 56
+				  auto_devops_enabled = true
+				  emails_enabled = false
+				  mentions_disabled = true
+				  share_with_group_lock = true
+				  default_branch_protection = %d
+
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				  `, rInt, rInt, 4),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabGroupExists("gitlab_group.foo", &group),
 					testAccCheckGitlabGroupAttributes(&group, &testAccGitlabGroupExpectedAttributes{
@@ -132,7 +489,17 @@ func TestAccGitlabGroup_basic(t *testing.T) {
 			},
 			// Update the group to put the name and description back
 			{
-				Config: testAccGitlabGroupConfig(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "foo-name-%d"
+				  path = "foo-path-%d"
+				  description = "Terraform acceptance tests"
+
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				  `, rInt, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabGroupExists("gitlab_group.foo", &group),
 					testAccCheckGitlabGroupAttributes(&group, &testAccGitlabGroupExpectedAttributes{
@@ -217,7 +584,6 @@ func TestAccGitlabGroup_permanentlyRemove(t *testing.T) {
 			},
 		},
 	})
-
 }
 
 func TestAccGitlabGroup_basicPushRulesEE(t *testing.T) {
@@ -232,7 +598,17 @@ func TestAccGitlabGroup_basicPushRulesEE(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create a group
 			{
-				Config: testAccGitlabGroupConfig(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "foo-name-%d"
+				  path = "foo-path-%d"
+				  description = "Terraform acceptance tests"
+
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				  `, rInt, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabGroupExists("gitlab_group.foo", &group),
 					testAccCheckGitlabGroupAttributes(&group, &testAccGitlabGroupExpectedAttributes{
@@ -257,11 +633,11 @@ func TestAccGitlabGroup_basicPushRulesEE(t *testing.T) {
 				  name = "foo-name-%d"
 				  path = "foo-path-%d"
 				  description = "Terraform acceptance tests"
-				
+
 				  # So that acceptance tests can be run in a gitlab organization
 				  # with no billing
 				  visibility_level = "public"
-				
+
 				  push_rules {
 				    author_email_regex = "foo_author"
 				    branch_name_regex = "foo_branch"
@@ -310,11 +686,11 @@ func TestAccGitlabGroup_basicPushRulesEE(t *testing.T) {
 				  name = "foo-name-%d"
 				  path = "foo-path-%d"
 				  description = "Terraform acceptance tests"
-				
+
 				  # So that acceptance tests can be run in a gitlab organization
 				  # with no billing
 				  visibility_level = "public"
-				
+
 				  push_rules {
 				    author_email_regex = "foo_author"
 				    branch_name_regex = "foo_branch"
@@ -356,11 +732,11 @@ func TestAccGitlabGroup_basicPushRulesEE(t *testing.T) {
 				  name = "foo-name-%d"
 				  path = "foo-path-%d"
 				  description = "Terraform acceptance tests"
-				
+
 				  # So that acceptance tests can be run in a gitlab organization
 				  # with no billing
 				  visibility_level = "public"
-				
+
 				  push_rules {
 				    author_email_regex = "foo_author"
 				    branch_name_regex = "foo_branch"
@@ -409,11 +785,11 @@ func TestAccGitlabGroup_basicPushRulesEE(t *testing.T) {
 				  name = "foo-name-%d"
 				  path = "foo-path-%d"
 				  description = "Terraform acceptance tests"
-				
+
 				  # So that acceptance tests can be run in a gitlab organization
 				  # with no billing
 				  visibility_level = "public"
-				
+
 				  push_rules {
 				    author_email_regex = "foo_author"
 				    branch_name_regex = "foo_branch"
@@ -455,11 +831,11 @@ func TestAccGitlabGroup_basicPushRulesEE(t *testing.T) {
 				  name = "foo-name-%d"
 				  path = "foo-path-%d"
 				  description = "Terraform acceptance tests"
-				
+
 				  # So that acceptance tests can be run in a gitlab organization
 				  # with no billing
 				  visibility_level = "public"
-				
+
 				  push_rules {
 				    author_email_regex = "foo_author"
 				  }
@@ -472,7 +848,17 @@ func TestAccGitlabGroup_basicPushRulesEE(t *testing.T) {
 			// Remove the push_rules block entirely.
 			// NOTE: The push rules will still exist upstream because the push_rules block is computed.
 			{
-				Config: testAccGitlabGroupConfig(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "foo-name-%d"
+				  path = "foo-path-%d"
+				  description = "Terraform acceptance tests"
+
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				  `, rInt, rInt),
 				Check: testAccCheckGitlabGroupPushRules("gitlab_group.foo", &testAccGitlabGroupPushRuleExpectedAttributes{
 					AuthorEmailRegex: "foo_author",
 				}),
@@ -484,11 +870,11 @@ func TestAccGitlabGroup_basicPushRulesEE(t *testing.T) {
 				  name = "foo-name-%d"
 				  path = "foo-path-%d"
 				  description = "Terraform acceptance tests"
-				
+
 				  # So that acceptance tests can be run in a gitlab organization
 				  # with no billing
 				  visibility_level = "public"
-				
+
 				  push_rules {
 				    branch_name_regex = "(feature|hotfix)\\/*"
 				  }
@@ -514,7 +900,17 @@ func TestAccGitlabGroup_basicPushRulesCE(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create a group
 			{
-				Config: testAccGitlabGroupConfig(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "foo-name-%d"
+				  path = "foo-path-%d"
+				  description = "Terraform acceptance tests"
+
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				  `, rInt, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabGroupExists("gitlab_group.foo", &group),
 					testAccCheckGitlabGroupAttributes(&group, &testAccGitlabGroupExpectedAttributes{
@@ -539,11 +935,11 @@ func TestAccGitlabGroup_basicPushRulesCE(t *testing.T) {
 				  name = "foo-name-%d"
 				  path = "foo-path-%d"
 				  description = "Terraform acceptance tests"
-				
+
 				  # So that acceptance tests can be run in a gitlab organization
 				  # with no billing
 				  visibility_level = "public"
-				
+
 				  push_rules {
 				    author_email_regex = "foo_author"
 				  }
@@ -672,7 +1068,36 @@ func TestAccGitlabGroup_nested(t *testing.T) {
 		CheckDestroy:             testAccCheckGitlabGroupDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccGitlabNestedGroupConfig(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "foo-name-%d"
+				  path = "foo-path-%d"
+				  description = "Terraform acceptance tests"
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				resource "gitlab_group" "foo2" {
+				  name = "foo2-name-%d"
+				  path = "foo2-path-%d"
+				  description = "Terraform acceptance tests - parent2"
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				resource "gitlab_group" "nested_foo" {
+				  name = "nfoo-name-%d"
+				  path = "nfoo-path-%d"
+				  parent_id = "${gitlab_group.foo.id}"
+				  description = "Terraform acceptance tests"
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				  `, rInt, rInt, rInt, rInt, rInt, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabGroupExists("gitlab_group.foo", &group),
 					testAccCheckGitlabGroupExists("gitlab_group.foo2", &group2),
@@ -687,7 +1112,36 @@ func TestAccGitlabGroup_nested(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccGitlabNestedGroupChangeParentConfig(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "foo-name-%d"
+				  path = "foo-path-%d"
+				  description = "Terraform acceptance tests"
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				resource "gitlab_group" "foo2" {
+				  name = "foo2-name-%d"
+				  path = "foo2-path-%d"
+				  description = "Terraform acceptance tests - parent2"
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				resource "gitlab_group" "nested_foo" {
+				  name = "nfoo-name-%d"
+				  path = "nfoo-path-%d"
+				  description = "Terraform acceptance tests - new parent"
+				  parent_id = "${gitlab_group.foo2.id}"
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				  `, rInt, rInt, rInt, rInt, rInt, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabGroupExists("gitlab_group.foo", &group),
 					testAccCheckGitlabGroupExists("gitlab_group.foo2", &group2),
@@ -702,7 +1156,35 @@ func TestAccGitlabGroup_nested(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccGitlabNestedGroupRemoveParentConfig(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "foo-name-%d"
+				  path = "foo-path-%d"
+				  description = "Terraform acceptance tests"
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				resource "gitlab_group" "foo2" {
+				  name = "foo2-name-%d"
+				  path = "foo2-path-%d"
+				  description = "Terraform acceptance tests - parent2"
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				resource "gitlab_group" "nested_foo" {
+				  name = "nfoo-name-%d"
+				  path = "nfoo-path-%d"
+				  description = "Terraform acceptance tests - updated"
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				  `, rInt, rInt, rInt, rInt, rInt, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabGroupExists("gitlab_group.foo", &group),
 					testAccCheckGitlabGroupExists("gitlab_group.foo2", &group2),
@@ -717,7 +1199,36 @@ func TestAccGitlabGroup_nested(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccGitlabNestedGroupConfig(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "foo-name-%d"
+				  path = "foo-path-%d"
+				  description = "Terraform acceptance tests"
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				resource "gitlab_group" "foo2" {
+				  name = "foo2-name-%d"
+				  path = "foo2-path-%d"
+				  description = "Terraform acceptance tests - parent2"
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				resource "gitlab_group" "nested_foo" {
+				  name = "nfoo-name-%d"
+				  path = "nfoo-path-%d"
+				  parent_id = "${gitlab_group.foo.id}"
+				  description = "Terraform acceptance tests"
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				  `, rInt, rInt, rInt, rInt, rInt, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabGroupExists("gitlab_group.foo", &group),
 					testAccCheckGitlabGroupExists("gitlab_group.foo2", &group2),
@@ -797,7 +1308,19 @@ func TestAccGitlabGroup_PreventForkingOutsideGroup(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				SkipFunc: testutil.IsRunningInCE,
-				Config:   testAccGitlabGroupPreventForkingOutsideGroupConfig(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "foo-name-%d"
+				  path = "foo-path-%d"
+				  description = "Terraform acceptance tests"
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				
+				  prevent_forking_outside_group = true
+				}
+				  `, rInt, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabGroupExists("gitlab_group.foo", &group),
 					resource.TestCheckResourceAttr("gitlab_group.foo", "prevent_forking_outside_group", "true"),
@@ -805,7 +1328,19 @@ func TestAccGitlabGroup_PreventForkingOutsideGroup(t *testing.T) {
 			},
 			{
 				SkipFunc: testutil.IsRunningInCE,
-				Config:   testAccGitlabGroupPreventForkingOutsideGroupUpdateConfig(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "foo-name-%d"
+				  path = "foo-path-%d"
+				  description = "Terraform acceptance tests"
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				
+				  prevent_forking_outside_group = false
+				}
+				  `, rInt, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabGroupExists("gitlab_group.foo", &group),
 					resource.TestCheckResourceAttr("gitlab_group.foo", "prevent_forking_outside_group", "false"),
@@ -952,25 +1487,33 @@ func testAccCheckGitlabGroupExists(n string, group *gitlab.Group) resource.TestC
 	}
 }
 
+type testDefaultBranchProtectionDefaults struct {
+	AllowedToPush           []*gitlab.GroupAccessLevel
+	AllowForcePush          bool
+	AllowedToMerge          []*gitlab.GroupAccessLevel
+	DeveloperCanInitialPush bool
+}
+
 type testAccGitlabGroupExpectedAttributes struct {
-	Name                    string
-	Path                    string
-	Description             string
-	Parent                  *gitlab.Group
-	LFSEnabled              *bool
-	RequestAccessEnabled    *bool
-	Visibility              gitlab.VisibilityValue
-	ShareWithGroupLock      *bool
-	AutoDevopsEnabled       *bool
-	EmailsDisabled          *bool
-	EmailsEnabled           *bool
-	MentionsDisabled        *bool
-	ProjectCreationLevel    gitlab.ProjectCreationLevelValue
-	SubGroupCreationLevel   gitlab.SubGroupCreationLevelValue
-	RequireTwoFactorAuth    *bool
-	TwoFactorGracePeriod    *int
-	DefaultBranchProtection *int
-	IPRestrictionRanges     string
+	Name                            string
+	Path                            string
+	Description                     string
+	Parent                          *gitlab.Group
+	LFSEnabled                      *bool
+	RequestAccessEnabled            *bool
+	Visibility                      gitlab.VisibilityValue
+	ShareWithGroupLock              *bool
+	AutoDevopsEnabled               *bool
+	EmailsDisabled                  *bool
+	EmailsEnabled                   *bool
+	MentionsDisabled                *bool
+	ProjectCreationLevel            gitlab.ProjectCreationLevelValue
+	SubGroupCreationLevel           gitlab.SubGroupCreationLevelValue
+	RequireTwoFactorAuth            *bool
+	TwoFactorGracePeriod            *int
+	DefaultBranchProtection         *int
+	DefaultBranchProtectionDefaults *testDefaultBranchProtectionDefaults
+	IPRestrictionRanges             string
 }
 
 func testAccCheckGitlabGroupAttributes(group *gitlab.Group, want *testAccGitlabGroupExpectedAttributes) resource.TestCheckFunc {
@@ -1034,6 +1577,26 @@ func testAccCheckGitlabGroupAttributes(group *gitlab.Group, want *testAccGitlabG
 		// nolint:staticcheck // SA1019 ignore deprecated DefaultBranchProtection
 		if want.DefaultBranchProtection != nil && group.DefaultBranchProtection != *want.DefaultBranchProtection {
 			return fmt.Errorf("got default_branch_protection %d; want %d", group.DefaultBranchProtection, *want.DefaultBranchProtection)
+		}
+
+		if want.DefaultBranchProtectionDefaults != nil {
+			// fmt.Printf("%+v\n", group.DefaultBranchProtectionDefaults)
+			// fmt.Printf("%+v\n", group.DefaultBranchProtectionDefaults.AllowedToPush[0])
+			if !reflect.DeepEqual(group.DefaultBranchProtectionDefaults.AllowedToPush, want.DefaultBranchProtectionDefaults.AllowedToPush) {
+				return fmt.Errorf("got default_branch_protection_defaults.allowed_to_push %v; want %v", group.DefaultBranchProtectionDefaults.AllowedToPush, want.DefaultBranchProtectionDefaults.AllowedToPush)
+			}
+
+			if group.DefaultBranchProtectionDefaults.AllowForcePush != want.DefaultBranchProtectionDefaults.AllowForcePush {
+				return fmt.Errorf("got default_branch_protection_defaults.allow_force_push %t; want %t", group.DefaultBranchProtectionDefaults.AllowForcePush, want.DefaultBranchProtectionDefaults.AllowForcePush)
+			}
+
+			if !reflect.DeepEqual(group.DefaultBranchProtectionDefaults.AllowedToMerge, want.DefaultBranchProtectionDefaults.AllowedToMerge) {
+				return fmt.Errorf("got default_branch_protection_defaults.allowed_to_merge %v; want %v", group.DefaultBranchProtectionDefaults.AllowedToMerge, want.DefaultBranchProtectionDefaults.AllowedToMerge)
+			}
+
+			if group.DefaultBranchProtectionDefaults.DeveloperCanInitialPush != want.DefaultBranchProtectionDefaults.DeveloperCanInitialPush {
+				return fmt.Errorf("got default_branch_protection_defaults.developer_can_initial_push %t; want %t", group.DefaultBranchProtectionDefaults.DeveloperCanInitialPush, want.DefaultBranchProtectionDefaults.DeveloperCanInitialPush)
+			}
 		}
 
 		if group.IPRestrictionRanges != want.IPRestrictionRanges {
@@ -1177,173 +1740,4 @@ func testAccCheckGitlabGroupPushRules(name string, wantPushRules *testAccGitlabG
 
 		return nil
 	}
-}
-
-func testAccGitlabGroupConfig(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_group" "foo" {
-  name = "foo-name-%d"
-  path = "foo-path-%d"
-  description = "Terraform acceptance tests"
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-  `, rInt, rInt)
-}
-
-func testAccGitlabGroupUpdateConfig(rInt int, defaultBranchProtection int) string {
-	return fmt.Sprintf(`
-resource "gitlab_group" "foo" {
-  name = "bar-name-%d"
-  path = "bar-path-%d"
-  description = "Terraform acceptance tests! Updated description"
-  lfs_enabled = false
-  request_access_enabled = true
-  project_creation_level = "developer"
-  subgroup_creation_level = "maintainer"
-  require_two_factor_authentication = true
-  two_factor_grace_period = 56
-  auto_devops_enabled = true
-  emails_enabled = false
-  mentions_disabled = true
-  share_with_group_lock = true
-  default_branch_protection = %d
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-  `, rInt, rInt, defaultBranchProtection)
-}
-
-func testAccGitlabNestedGroupConfig(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_group" "foo" {
-  name = "foo-name-%d"
-  path = "foo-path-%d"
-  description = "Terraform acceptance tests"
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-resource "gitlab_group" "foo2" {
-  name = "foo2-name-%d"
-  path = "foo2-path-%d"
-  description = "Terraform acceptance tests - parent2"
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-resource "gitlab_group" "nested_foo" {
-  name = "nfoo-name-%d"
-  path = "nfoo-path-%d"
-  parent_id = "${gitlab_group.foo.id}"
-  description = "Terraform acceptance tests"
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-  `, rInt, rInt, rInt, rInt, rInt, rInt)
-}
-
-func testAccGitlabNestedGroupRemoveParentConfig(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_group" "foo" {
-  name = "foo-name-%d"
-  path = "foo-path-%d"
-  description = "Terraform acceptance tests"
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-resource "gitlab_group" "foo2" {
-  name = "foo2-name-%d"
-  path = "foo2-path-%d"
-  description = "Terraform acceptance tests - parent2"
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-resource "gitlab_group" "nested_foo" {
-  name = "nfoo-name-%d"
-  path = "nfoo-path-%d"
-  description = "Terraform acceptance tests - updated"
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-  `, rInt, rInt, rInt, rInt, rInt, rInt)
-}
-
-func testAccGitlabNestedGroupChangeParentConfig(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_group" "foo" {
-  name = "foo-name-%d"
-  path = "foo-path-%d"
-  description = "Terraform acceptance tests"
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-resource "gitlab_group" "foo2" {
-  name = "foo2-name-%d"
-  path = "foo2-path-%d"
-  description = "Terraform acceptance tests - parent2"
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-resource "gitlab_group" "nested_foo" {
-  name = "nfoo-name-%d"
-  path = "nfoo-path-%d"
-  description = "Terraform acceptance tests - new parent"
-  parent_id = "${gitlab_group.foo2.id}"
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-  `, rInt, rInt, rInt, rInt, rInt, rInt)
-}
-
-func testAccGitlabGroupPreventForkingOutsideGroupConfig(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_group" "foo" {
-  name = "foo-name-%d"
-  path = "foo-path-%d"
-  description = "Terraform acceptance tests"
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-
-  prevent_forking_outside_group = true
-}
-  `, rInt, rInt)
-}
-
-func testAccGitlabGroupPreventForkingOutsideGroupUpdateConfig(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_group" "foo" {
-  name = "foo-name-%d"
-  path = "foo-path-%d"
-  description = "Terraform acceptance tests"
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-
-  prevent_forking_outside_group = false
-}
-  `, rInt, rInt)
 }
