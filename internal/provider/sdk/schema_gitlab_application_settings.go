@@ -24,7 +24,6 @@ var allowedImportSources = []string{
 
 func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
-
 		"admin_mode": {
 			Description: "Require administrators to enable Admin Mode by re-authenticating for administrative tasks.",
 			Type:        schema.TypeBool,
@@ -68,6 +67,13 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 
+		"allow_account_deletion": {
+			Description: "Set to true to allow users to delete their accounts. Premium and Ultimate only.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
+
 		"allow_group_owners_to_manage_ldap": {
 			Description: "Set to true to allow group owners to manage LDAP.",
 			Type:        schema.TypeBool,
@@ -89,9 +95,30 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 
+		"allow_project_creation_for_guest_and_below": {
+			Description: "Indicates whether users assigned up to the Guest role can create groups and personal projects.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
+
+		"allow_runner_registration_token": {
+			Description: "Allow using a registration token to create a runner.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
+
 		"archive_builds_in_human_readable": {
 			Description: "Set the duration for which the jobs are considered as old and expired. After that time passes, the jobs are archived and no longer able to be retried. Make it empty to never expire jobs. It has to be no less than 1 day, for example: 15 days, 1 month, 2 years.",
 			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
+		},
+
+		"asciidoc_max_includes": {
+			Description: "Maximum limit of AsciiDoc include directives being processed in any one document. Maximum: 64.",
+			Type:        schema.TypeInt,
 			Optional:    true,
 			Computed:    true,
 		},
@@ -133,6 +160,13 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 
+		"auto_ban_user_on_excessive_projects_download": {
+			Description: "When enabled, users will get automatically banned from the application when they download more than the maximum number of unique projects in the time period specified by max_number_of_repository_downloads and max_number_of_repository_downloads_within_time_period respectively. Introduced in GitLab 15.4. Self-managed, Ultimate only.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
+
 		"auto_devops_domain": {
 			Description: "Specify a domain to use by default for every project’s Auto Review Apps and Auto Deploy stages.",
 			Type:        schema.TypeString,
@@ -154,6 +188,27 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 
+		"bulk_import_concurrent_pipeline_batch_limit": {
+			Description: "Maximum simultaneous Direct Transfer batches to process.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
+		},
+
+		"bulk_import_enabled": {
+			Description: "Enable migrating GitLab groups by direct transfer. Introduced in GitLab 15.8.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
+
+		"bulk_import_max_download_file_size": {
+			Description: "Maximum download file size when importing from source GitLab instances by direct transfer. Introduced in GitLab 16.3.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
+		},
+
 		"can_create_group": {
 			Description: "Indicates whether users can create top-level groups. Introduced in GitLab 15.5.",
 			Type:        schema.TypeBool,
@@ -168,9 +223,44 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 
+		"ci_max_includes": {
+			Description: "The maximum number of includes per pipeline.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
+		},
+
+		"ci_max_total_yaml_size_bytes": {
+			Description: "The maximum amount of memory, in bytes, that can be allocated for the pipeline configuration, with all included YAML configuration files.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
+		},
+
 		"commit_email_hostname": {
 			Description: "Custom hostname (for private commit emails).",
 			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
+		},
+
+		"concurrent_bitbucket_import_jobs_limit": {
+			Description: "Maximum number of simultaneous import jobs for the Bitbucket Cloud importer. Introduced in GitLab 16.11.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
+		},
+
+		"concurrent_bitbucket_server_import_jobs_limit": {
+			Description: "Maximum number of simultaneous import jobs for the Bitbucket Server importer. Introduced in GitLab 16.11.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
+		},
+
+		"concurrent_github_import_jobs_limit": {
+			Description: "Maximum number of simultaneous import jobs for the GitHub importer. Introduced in GitLab 16.11.",
+			Type:        schema.TypeInt,
 			Optional:    true,
 			Computed:    true,
 		},
@@ -231,6 +321,20 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 
+		"deactivate_dormant_users_period": {
+			Description: "Length of time (in days) after which a user is considered dormant. Introduced in GitLab 15.3.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
+		},
+
+		"decompress_archive_file_timeout": {
+			Description: "Default timeout for decompressing archived files, in seconds. Set to 0 to disable timeouts. Introduced in GitLab 16.4.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
+		},
+
 		"default_artifacts_expire_in": {
 			Description: "Set the default expiration time for each job’s artifacts.",
 			Type:        schema.TypeString,
@@ -252,6 +356,44 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 
+		"default_branch_protection_defaults": {
+			Description: "The default_branch_protection_defaults attribute describes the default branch protection defaults. All parameters are optional.",
+			Type:        schema.TypeList,
+			MaxItems:    1,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"allow_force_push": {
+						Description: "Allow force push for all users with push access.",
+						Type:        schema.TypeBool,
+						Optional:    true,
+						Computed:    true,
+					},
+					"allowed_to_merge": {
+						Description: "An array of access levels allowed to merge. Supports Developer (30) or Maintainer (40).",
+						Type:        schema.TypeList,
+						Elem:        schema.TypeInt,
+						Optional:    true,
+						Computed:    true,
+					},
+					"allowed_to_push": {
+						Description: "An array of access levels allowed to push. Supports Developer (30) or Maintainer (40).",
+						Type:        schema.TypeList,
+						Elem:        schema.TypeInt,
+						Optional:    true,
+						Computed:    true,
+					},
+					"developer_can_initial_push": {
+						Description: "Allow developers to initial push.",
+						Type:        schema.TypeBool,
+						Optional:    true,
+						Computed:    true,
+					},
+				},
+			},
+			Optional: true,
+			Computed: true,
+		},
+
 		"default_ci_config_path": {
 			Description: "Default CI/CD configuration file and path for new projects (.gitlab-ci.yml if not set).",
 			Type:        schema.TypeString,
@@ -261,6 +403,13 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 
 		"default_group_visibility": {
 			Description: "What visibility level new groups receive. Can take private, internal and public as a parameter.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
+		},
+
+		"default_preferred_language": {
+			Description: "Default preferred language for users who are not logged in.",
 			Type:        schema.TypeString,
 			Optional:    true,
 			Computed:    true,
@@ -301,11 +450,41 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 
+		"default_syntax_highlighting_theme": {
+			Description: "Default syntax highlighting theme for users who are new or not signed in. See IDs of available themes (https://gitlab.com/gitlab-org/gitlab/blob/master/lib/gitlab/themes.rb#L16)",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
+		},
+
+		"delete_unconfirmed_users": {
+			Description: "Specifies whether users who have not confirmed their email should be deleted. When set to true, unconfirmed users are deleted after unconfirmed_users_delete_after_days days. Introduced in GitLab 16.1. Self-managed, Premium and Ultimate only.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
+
 		"deletion_adjourned_period": {
 			Description: "The number of days to wait before deleting a project or group that is marked for deletion. Value must be between 1 and 90.",
 			Type:        schema.TypeInt,
 			Optional:    true,
 			Computed:    true,
+		},
+
+		"diagramsnet_enabled": {
+			Description:  "(If enabled, requires diagramsnet_url) Enable Diagrams.net integration.",
+			Type:         schema.TypeBool,
+			Optional:     true,
+			Computed:     true,
+			RequiredWith: []string{"diagramsnet_url"},
+		},
+
+		"diagramsnet_url": {
+			Description:  "The Diagrams.net instance URL for integration.",
+			Type:         schema.TypeString,
+			Optional:     true,
+			Computed:     true,
+			RequiredWith: []string{"diagramsnet_enabled"},
 		},
 
 		"diff_max_patch_bytes": {
@@ -329,8 +508,22 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 
+		"disable_admin_oauth_scopes": {
+			Description: "Stops administrators from connecting their GitLab accounts to non-trusted OAuth 2.0 applications that have the api, read_api, read_repository, write_repository, read_registry, write_registry, or sudo scopes. Introduced in GitLab 15.6.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
+
 		"disable_feed_token": {
 			Description: "Disable display of RSS/Atom and calendar feed tokens (introduced in GitLab 13.7).",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
+
+		"disable_personal_access_tokens": {
+			Description: "Disable personal access tokens. Introduced in GitLab 15.7. Self-managed, Premium and Ultimate only. There is no method available to enable a personal access token that’s been disabled through the API. This is a known issue.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
@@ -374,9 +567,23 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 
+		"downstream_pipeline_trigger_limit_per_project_user_sha": {
+			Description: "Maximum downstream pipeline trigger rate. Introduced in GitLab 16.10.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
+		},
+
 		"dsa_key_restriction": {
 			Description: "The minimum allowed bit length of an uploaded DSA key. 0 means no restriction. -1 disables DSA keys.",
 			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
+		},
+
+		"duo_features_enabled": {
+			Description: "Indicates whether GitLab Duo features are enabled for this instance. Introduced in GitLab 16.10. Self-managed, Premium and Ultimate only.",
+			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
 		},
@@ -1785,21 +1992,33 @@ func gitlabApplicationSettingsToStateMap(settings *api.Settings) map[string]inte
 	stateMap["after_sign_up_text"] = settings.AfterSignUpText
 	stateMap["akismet_api_key"] = settings.AkismetAPIKey
 	stateMap["akismet_enabled"] = settings.AkismetEnabled
+	stateMap["allow_account_deletion"] = settings.AllowAccountDeletion
 	stateMap["allow_group_owners_to_manage_ldap"] = settings.AllowGroupOwnersToManageLDAP
 	stateMap["allow_local_requests_from_system_hooks"] = settings.AllowLocalRequestsFromSystemHooks
 	stateMap["allow_local_requests_from_web_hooks_and_services"] = settings.AllowLocalRequestsFromWebHooksAndServices
+	stateMap["allow_project_creation_for_guest_and_below"] = settings.AllowProjectCreationForGuestAndBelow
+	stateMap["allow_runner_registration_token"] = settings.AllowRunnerRegistrationToken
 	stateMap["archive_builds_in_human_readable"] = settings.ArchiveBuildsInHumanReadable
+	stateMap["asciidoc_max_includes"] = settings.AsciidocMaxIncludes
 	stateMap["asset_proxy_enabled"] = settings.AssetProxyEnabled
 	stateMap["asset_proxy_secret_key"] = settings.AssetProxySecretKey
 	stateMap["asset_proxy_url"] = settings.AssetProxyURL
 	stateMap["asset_proxy_allowlist"] = settings.AssetProxyAllowlist
 	stateMap["authorized_keys_enabled"] = settings.AuthorizedKeysEnabled
+	stateMap["auto_ban_user_on_excessive_projects_download"] = settings.AutoBanUserOnExcessiveProjectsDownload
 	stateMap["auto_devops_domain"] = settings.AutoDevOpsDomain
 	stateMap["auto_devops_enabled"] = settings.AutoDevOpsEnabled
 	stateMap["automatic_purchased_storage_allocation"] = settings.AutomaticPurchasedStorageAllocation
+	stateMap["bulk_import_concurrent_pipeline_batch_limit"] = settings.BulkImportConcurrentPipelineBatchLimit
+	stateMap["bulk_import_enabled"] = settings.BulkImportEnabled
 	stateMap["can_create_group"] = settings.CanCreateGroup
 	stateMap["check_namespace_plan"] = settings.CheckNamespacePlan
+	stateMap["ci_max_includes"] = settings.CIMaxIncludes
+	stateMap["ci_max_total_yaml_size_bytes"] = settings.CIMaxTotalYAMLSizeBytes
 	stateMap["commit_email_hostname"] = settings.CommitEmailHostname
+	stateMap["concurrent_bitbucket_import_jobs_limit"] = settings.ConcurrentBitbucketImportJobsLimit
+	stateMap["concurrent_bitbucket_server_import_jobs_limit"] = settings.ConcurrentBitbucketServerImportJobsLimit
+	stateMap["concurrent_github_import_jobs_limit"] = settings.ConcurrentGithubImportJobsLimit
 	stateMap["container_expiration_policies_enable_historic_entries"] = settings.ContainerExpirationPoliciesEnableHistoricEntries
 	stateMap["container_registry_cleanup_tags_service_max_list_size"] = settings.ContainerRegistryCleanupTagsServiceMaxListSize
 	stateMap["container_registry_delete_tags_service_timeout"] = settings.ContainerRegistryDeleteTagsServiceTimeout
@@ -1808,27 +2027,38 @@ func gitlabApplicationSettingsToStateMap(settings *api.Settings) map[string]inte
 	stateMap["container_registry_token_expire_delay"] = settings.ContainerRegistryTokenExpireDelay
 	stateMap["package_registry_cleanup_policies_worker_capacity"] = settings.PackageRegistryCleanupPoliciesWorkerCapacity
 	stateMap["deactivate_dormant_users"] = settings.DeactivateDormantUsers
+	stateMap["deactivate_dormant_users_period"] = settings.DeactivateDormantUsersPeriod
+	stateMap["decompress_archive_file_timeout"] = settings.DecompressArchiveFileTimeout
 	stateMap["default_artifacts_expire_in"] = settings.DefaultArtifactsExpireIn
 	stateMap["default_branch_name"] = settings.DefaultBranchName
 	stateMap["default_branch_protection"] = settings.DefaultBranchProtection
 	stateMap["default_ci_config_path"] = settings.DefaultCiConfigPath
 	stateMap["default_group_visibility"] = settings.DefaultGroupVisibility
+	stateMap["default_preferred_language"] = settings.DefaultPreferredLanguage
 	stateMap["default_project_creation"] = settings.DefaultProjectCreation
 	stateMap["default_project_visibility"] = settings.DefaultProjectVisibility
 	stateMap["default_projects_limit"] = settings.DefaultProjectsLimit
 	stateMap["default_snippet_visibility"] = settings.DefaultSnippetVisibility
+	stateMap["default_syntax_highlighting_theme"] = settings.DefaultSyntaxHighlightingTheme
 	stateMap["delete_inactive_projects"] = settings.DeleteInactiveProjects
+	stateMap["delete_unconfirmed_users"] = settings.DeleteUnconfirmedUsers
 	stateMap["deletion_adjourned_period"] = settings.DeletionAdjournedPeriod
+	stateMap["diagramsnet_enabled"] = settings.DiagramsnetEnabled
+	stateMap["diagramsnet_url"] = settings.DiagramsnetURL
 	stateMap["diff_max_patch_bytes"] = settings.DiffMaxPatchBytes
 	stateMap["diff_max_files"] = settings.DiffMaxFiles
 	stateMap["diff_max_lines"] = settings.DiffMaxLines
+	stateMap["disable_admin_oauth_scopes"] = settings.DisableAdminOauthScopes
 	stateMap["disable_feed_token"] = settings.DisableFeedToken
+	stateMap["disable_personal_access_tokens"] = settings.DisablePersonalAccessTokens
 	stateMap["disabled_oauth_sign_in_sources"] = settings.DisabledOauthSignInSources
 	stateMap["dns_rebinding_protection_enabled"] = settings.DNSRebindingProtectionEnabled
 	stateMap["domain_denylist_enabled"] = settings.DomainDenylistEnabled
 	stateMap["domain_denylist"] = settings.DomainDenylist
 	stateMap["domain_allowlist"] = settings.DomainAllowlist
+	stateMap["downstream_pipeline_trigger_limit_per_project_user_sha"] = settings.DownstreamPipelineTriggerLimitPerProjectUserSHA
 	stateMap["dsa_key_restriction"] = settings.DSAKeyRestriction
+	stateMap["duo_features_enabled"] = settings.DuoFeaturesEnabled
 	stateMap["ecdsa_key_restriction"] = settings.ECDSAKeyRestriction
 	stateMap["ecdsa_sk_key_restriction"] = settings.ECDSASKKeyRestriction
 	stateMap["ed25519_key_restriction"] = settings.Ed25519KeyRestriction
@@ -2022,7 +2252,36 @@ func gitlabApplicationSettingsToStateMap(settings *api.Settings) map[string]inte
 	stateMap["whats_new_variant"] = settings.WhatsNewVariant
 	stateMap["web_ide_clientside_preview_enabled"] = settings.WebIDEClientsidePreviewEnabled
 	stateMap["wiki_page_max_content_bytes"] = settings.WikiPageMaxContentBytes
+
+	stateMap["default_branch_protection_defaults"] = flattenDefaultBranchProtectionDefaults(settings.DefaultBranchProtectionDefaults)
 	return stateMap
+}
+
+// Flattens the default branch protection into a statement for easier storage.
+func flattenDefaultBranchProtectionDefaults(input api.DefaultBranchProtectionDefaultsStruct) (values []map[string]interface{}) {
+	v := map[string]interface{}{}
+	v["allow_force_push"] = input.AllowForcePush
+	v["developer_can_initial_push"] = input.DeveloperCanInitialPush
+	if len(input.AllowedToMerge) > 0 {
+		list := []int{}
+		for _, v := range input.AllowedToMerge {
+			list = append(list, int(*v.AccessLevel))
+		}
+
+		v["allowed_to_merge"] = list
+	}
+	if len(input.AllowedToPush) > 0 {
+		list := []int{}
+		for _, v := range input.AllowedToPush {
+			list = append(list, int(*v.AccessLevel))
+		}
+
+		v["allowed_to_push"] = list
+	}
+
+	values = append(values, v)
+
+	return values
 }
 
 func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.UpdateSettingsOptions {
@@ -2052,6 +2311,10 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 		options.AkismetEnabled = gitlab.Ptr(d.Get("akismet_enabled").(bool))
 	}
 
+	if d.HasChange("allow_account_deletion") {
+		options.AllowAccountDeletion = gitlab.Ptr(d.Get("allow_account_deletion").(bool))
+	}
+
 	if d.HasChange("allow_group_owners_to_manage_ldap") {
 		options.AllowGroupOwnersToManageLDAP = gitlab.Ptr(d.Get("allow_group_owners_to_manage_ldap").(bool))
 	}
@@ -2064,8 +2327,20 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 		options.AllowLocalRequestsFromWebHooksAndServices = gitlab.Ptr(d.Get("allow_local_requests_from_web_hooks_and_services").(bool))
 	}
 
+	if d.HasChange("allow_project_creation_for_guest_and_below") {
+		options.AllowProjectCreationForGuestAndBelow = gitlab.Ptr(d.Get("allow_project_creation_for_guest_and_below").(bool))
+	}
+
+	if d.HasChange("allow_runner_registration_token") {
+		options.AllowRunnerRegistrationToken = gitlab.Ptr(d.Get("allow_runner_registration_token").(bool))
+	}
+
 	if d.HasChange("archive_builds_in_human_readable") {
 		options.ArchiveBuildsInHumanReadable = gitlab.Ptr(d.Get("archive_builds_in_human_readable").(string))
+	}
+
+	if d.HasChange("asciidoc_max_includes") {
+		options.ASCIIDocMaxIncludes = gitlab.Ptr(d.Get("asciidoc_max_includes").(int))
 	}
 
 	if d.HasChange("asset_proxy_enabled") {
@@ -2088,6 +2363,10 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 		options.AuthorizedKeysEnabled = gitlab.Ptr(d.Get("authorized_keys_enabled").(bool))
 	}
 
+	if d.HasChange("auto_ban_user_on_excessive_projects_download") {
+		options.AutoBanUserOnExcessiveProjectsDownload = gitlab.Ptr(d.Get("auto_ban_user_on_excessive_projects_download").(bool))
+	}
+
 	if d.HasChange("auto_devops_domain") {
 		options.AutoDevOpsDomain = gitlab.Ptr(d.Get("auto_devops_domain").(string))
 	}
@@ -2100,6 +2379,18 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 		options.AutomaticPurchasedStorageAllocation = gitlab.Ptr(d.Get("automatic_purchased_storage_allocation").(bool))
 	}
 
+	if d.HasChange("bulk_import_concurrent_pipeline_batch_limit") {
+		options.BulkImportConcurrentPipelineBatchLimit = gitlab.Ptr(d.Get("bulk_import_concurrent_pipeline_batch_limit").(int))
+	}
+
+	if d.HasChange("bulk_import_enabled") {
+		options.BulkImportEnabled = gitlab.Ptr(d.Get("bulk_import_enabled").(bool))
+	}
+
+	if d.HasChange("bulk_import_max_download_file_size") {
+		options.BulkImportMaxDownloadFileSize = gitlab.Ptr(d.Get("bulk_import_max_download_file_size").(int))
+	}
+
 	if d.HasChange("can_create_group") {
 		options.CanCreateGroup = gitlab.Ptr(d.Get("can_create_group").(bool))
 	}
@@ -2108,8 +2399,28 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 		options.CheckNamespacePlan = gitlab.Ptr(d.Get("check_namespace_plan").(bool))
 	}
 
+	if d.HasChange("ci_max_includes") {
+		options.CIMaxIncludes = gitlab.Ptr(d.Get("ci_max_includes").(int))
+	}
+
+	if d.HasChange("ci_max_total_yaml_size_bytes") {
+		options.CIMaxTotalYAMLSizeBytes = gitlab.Ptr(d.Get("ci_max_total_yaml_size_bytes").(int))
+	}
+
 	if d.HasChange("commit_email_hostname") {
 		options.CommitEmailHostname = gitlab.Ptr(d.Get("commit_email_hostname").(string))
+	}
+
+	if d.HasChange("concurrent_bitbucket_import_jobs_limit") {
+		options.ConcurrentBitbucketImportJobsLimit = gitlab.Ptr(d.Get("concurrent_bitbucket_import_jobs_limit").(int))
+	}
+
+	if d.HasChange("concurrent_bitbucket_server_import_jobs_limit") {
+		options.ConcurrentBitbucketServerImportJobsLimit = gitlab.Ptr(d.Get("concurrent_bitbucket_server_import_jobs_limit").(int))
+	}
+
+	if d.HasChange("concurrent_github_import_jobs_limit") {
+		options.ConcurrentGitHubImportJobsLimit = gitlab.Ptr(d.Get("concurrent_github_import_jobs_limit").(int))
 	}
 
 	if d.HasChange("container_expiration_policies_enable_historic_entries") {
@@ -2144,6 +2455,14 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 		options.DeactivateDormantUsers = gitlab.Ptr(d.Get("deactivate_dormant_users").(bool))
 	}
 
+	if d.HasChange("deactivate_dormant_users_period") {
+		options.DeactivateDormantUsersPeriod = gitlab.Ptr(d.Get("deactivate_dormant_users_period").(int))
+	}
+
+	if d.HasChange("decompress_archive_file_timeout") {
+		options.DecompressArchiveFileTimeout = gitlab.Ptr(d.Get("decompress_archive_file_timeout").(int))
+	}
+
 	if d.HasChange("default_artifacts_expire_in") {
 		options.DefaultArtifactsExpireIn = gitlab.Ptr(d.Get("default_artifacts_expire_in").(string))
 	}
@@ -2156,12 +2475,20 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 		options.DefaultBranchProtection = gitlab.Ptr(d.Get("default_branch_protection").(int))
 	}
 
+	if d.HasChange("default_branch_protection_defaults") {
+		options.DefaultBranchProtectionDefaults = gitlab.Ptr(d.Get("default_branch_protection_defaults").(gitlab.BranchProtectionDefaultsOptions))
+	}
+
 	if d.HasChange("default_ci_config_path") {
 		options.DefaultCiConfigPath = gitlab.Ptr(d.Get("default_ci_config_path").(string))
 	}
 
 	if d.HasChange("default_group_visibility") {
 		options.DefaultGroupVisibility = stringToVisibilityLevel(d.Get("default_group_visibility").(string))
+	}
+
+	if d.HasChange("default_preferred_language") {
+		options.DefaultPreferredLanguage = gitlab.Ptr(d.Get("default_preferred_language").(string))
 	}
 
 	if d.HasChange("default_project_creation") {
@@ -2180,12 +2507,28 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 		options.DefaultSnippetVisibility = stringToVisibilityLevel(d.Get("default_snippet_visibility").(string))
 	}
 
+	if d.HasChange("default_syntax_highlighting_theme") {
+		options.DefaultSyntaxHighlightingTheme = gitlab.Ptr(d.Get("default_syntax_highlighting_theme").(int))
+	}
+
 	if d.HasChange("delete_inactive_projects") {
 		options.DeleteInactiveProjects = gitlab.Ptr(d.Get("delete_inactive_projects").(bool))
 	}
 
+	if d.HasChange("delete_unconfirmed_users") {
+		options.DeleteUnconfirmedUsers = gitlab.Ptr(d.Get("delete_unconfirmed_users").(bool))
+	}
+
 	if d.HasChange("deletion_adjourned_period") {
 		options.DeletionAdjournedPeriod = gitlab.Ptr(d.Get("deletion_adjourned_period").(int))
+	}
+
+	if d.HasChange("diagramsnet_enabled") {
+		options.DiagramsnetEnabled = gitlab.Ptr(d.Get("diagramsnet_enabled").(bool))
+	}
+
+	if d.HasChange("diagramsnet_url") {
+		options.DiagramsnetURL = gitlab.Ptr(d.Get("diagramsnet_url").(string))
 	}
 
 	if d.HasChange("diff_max_patch_bytes") {
@@ -2200,8 +2543,16 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 		options.DiffMaxLines = gitlab.Ptr(d.Get("diff_max_lines").(int))
 	}
 
+	if d.HasChange("disable_admin_oauth_scopes") {
+		options.DisableAdminOAuthScopes = gitlab.Ptr(d.Get("disable_admin_oauth_scopes").(bool))
+	}
+
 	if d.HasChange("disable_feed_token") {
 		options.DisableFeedToken = gitlab.Ptr(d.Get("disable_feed_token").(bool))
+	}
+
+	if d.HasChange("disable_personal_access_tokens") {
+		options.DisablePersonalAccessTokens = gitlab.Ptr(d.Get("disable_personal_access_tokens").(bool))
 	}
 
 	if d.HasChange("disabled_oauth_sign_in_sources") {
@@ -2222,6 +2573,14 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 
 	if d.HasChange("domain_allowlist") {
 		options.DomainAllowlist = stringListToStringSlice(d.Get("domain_allowlist").([]interface{}))
+	}
+
+	if d.HasChange("downstream_pipeline_trigger_limit_per_project_user_sha") {
+		options.DownstreamPipelineTriggerLimitPerProjectUserSHA = gitlab.Ptr(d.Get("downstream_pipeline_trigger_limit_per_project_user_sha").(int))
+	}
+
+	if d.HasChange("duo_features_enabled") {
+		options.DuoFeaturesEnabled = gitlab.Ptr(d.Get("duo_features_enabled").(bool))
 	}
 
 	if d.HasChange("dsa_key_restriction") {

@@ -16,21 +16,34 @@ type Settings struct {
 	AfterSignUpText                                       string                   `json:"after_sign_up_text"`
 	AkismetAPIKey                                         string                   `json:"akismet_api_key"`
 	AkismetEnabled                                        bool                     `json:"akismet_enabled"`
+	AllowAccountDeletion                                  bool                     `json:"allow_account_deletion"`
 	AllowGroupOwnersToManageLDAP                          bool                     `json:"allow_group_owners_to_manage_ldap"`
 	AllowLocalRequestsFromSystemHooks                     bool                     `json:"allow_local_requests_from_system_hooks"`
 	AllowLocalRequestsFromWebHooksAndServices             bool                     `json:"allow_local_requests_from_web_hooks_and_services"`
+	AllowProjectCreationForGuestAndBelow                  bool                     `json:"allow_project_creation_for_guest_and_below"`
+	AllowRunnerRegistrationToken                          bool                     `json:"allow_runner_registration_token"`
 	ArchiveBuildsInHumanReadable                          string                   `json:"archive_builds_in_human_readable"`
+	AsciidocMaxIncludes                                   int                      `json:"asciidoc_max_includes"`
 	AssetProxyAllowlist                                   []string                 `json:"asset_proxy_allowlist"`
 	AssetProxyEnabled                                     bool                     `json:"asset_proxy_enabled"`
 	AssetProxyURL                                         string                   `json:"asset_proxy_url"`
 	AssetProxySecretKey                                   string                   `json:"asset_proxy_secret_key"`
 	AuthorizedKeysEnabled                                 bool                     `json:"authorized_keys_enabled"`
+	AutoBanUserOnExcessiveProjectsDownload                bool                     `json:"auto_ban_user_on_excessive_projects_download"`
 	AutoDevOpsDomain                                      string                   `json:"auto_devops_domain"`
 	AutoDevOpsEnabled                                     bool                     `json:"auto_devops_enabled"`
 	AutomaticPurchasedStorageAllocation                   bool                     `json:"automatic_purchased_storage_allocation"`
+	BulkImportConcurrentPipelineBatchLimit                int                      `json:"bulk_import_concurrent_pipeline_batch_limit"`
+	BulkImportEnabled                                     bool                     `json:"bulk_import_enabled"`
+	BulkImportMaxDownloadFileSize                         int                      `json:"bulk_import_max_download_file_size"`
 	CanCreateGroup                                        bool                     `json:"can_create_group"`
 	CheckNamespacePlan                                    bool                     `json:"check_namespace_plan"`
+	CIMaxIncludes                                         int                      `json:"ci_max_includes"`
+	CIMaxTotalYAMLSizeBytes                               int                      `json:"ci_max_total_yaml_size_bytes"`
 	CommitEmailHostname                                   string                   `json:"commit_email_hostname"`
+	ConcurrentBitbucketImportJobsLimit                    int                      `json:"concurrent_bitbucket_import_jobs_limit"`
+	ConcurrentBitbucketServerImportJobsLimit              int                      `json:"concurrent_bitbucket_server_import_jobs_limit"`
+	ConcurrentGithubImportJobsLimit                       int                      `json:"concurrent_github_import_jobs_limit"`
 	ContainerExpirationPoliciesEnableHistoricEntries      bool                     `json:"container_expiration_policies_enable_historic_entries"`
 	ContainerRegistryCleanupTagsServiceMaxListSize        int                      `json:"container_registry_cleanup_tags_service_max_list_size"`
 	ContainerRegistryDeleteTagsServiceTimeout             int                      `json:"container_registry_delete_tags_service_timeout"`
@@ -47,29 +60,40 @@ type Settings struct {
 	DNSRebindingProtectionEnabled                         bool                     `json:"dns_rebinding_protection_enabled"`
 	DSAKeyRestriction                                     int                      `json:"dsa_key_restriction"`
 	DeactivateDormantUsers                                bool                     `json:"deactivate_dormant_users"`
+	DeactivateDormantUsersPeriod                          int                      `json:"deactivate_dormant_users_period"`
+	DecompressArchiveFileTimeout                          int                      `json:"decompress_archive_file_timeout"`
 	DefaultArtifactsExpireIn                              string                   `json:"default_artifacts_expire_in"`
 	DefaultBranchName                                     string                   `json:"default_branch_name"`
 	DefaultBranchProtection                               int                      `json:"default_branch_protection"`
 	DefaultCiConfigPath                                   string                   `json:"default_ci_config_path"`
 	DefaultGroupVisibility                                gitlab.VisibilityValue   `json:"default_group_visibility"`
+	DefaultPreferredLanguage                              string                   `json:"default_preferred_language"`
 	DefaultProjectCreation                                int                      `json:"default_project_creation"`
 	DefaultProjectDeletionProtection                      bool                     `json:"default_project_deletion_protection"`
 	DefaultProjectVisibility                              gitlab.VisibilityValue   `json:"default_project_visibility"`
 	DefaultProjectsLimit                                  int                      `json:"default_projects_limit"`
 	DefaultSnippetVisibility                              gitlab.VisibilityValue   `json:"default_snippet_visibility"`
+	DefaultSyntaxHighlightingTheme                        int                      `json:"default_syntax_highlighting_theme"`
 	DelayedGroupDeletion                                  bool                     `json:"delayed_group_deletion"`
 	DelayedProjectDeletion                                bool                     `json:"delayed_project_deletion"`
 	DeleteInactiveProjects                                bool                     `json:"delete_inactive_projects"`
+	DeleteUnconfirmedUsers                                bool                     `json:"delete_unconfirmed_users"`
 	DeletionAdjournedPeriod                               int                      `json:"deletion_adjourned_period"`
+	DiagramsnetEnabled                                    bool                     `json:"diagramsnet_enabled"`
+	DiagramsnetURL                                        string                   `json:"diagramsnet_url"`
 	DiffMaxFiles                                          int                      `json:"diff_max_files"`
 	DiffMaxLines                                          int                      `json:"diff_max_lines"`
 	DiffMaxPatchBytes                                     int                      `json:"diff_max_patch_bytes"`
+	DisableAdminOauthScopes                               bool                     `json:"disable_admin_oauth_scopes"`
 	DisableFeedToken                                      bool                     `json:"disable_feed_token"`
 	DisableOverridingApproversPerMergeRequest             bool                     `json:"disable_overriding_approvers_per_merge_request"`
+	DisablePersonalAccessTokens                           bool                     `json:"disable_personal_access_tokens"`
 	DisabledOauthSignInSources                            []string                 `json:"disabled_oauth_sign_in_sources"`
 	DomainAllowlist                                       []string                 `json:"domain_allowlist"`
 	DomainDenylist                                        []string                 `json:"domain_denylist"`
 	DomainDenylistEnabled                                 bool                     `json:"domain_denylist_enabled"`
+	DownstreamPipelineTriggerLimitPerProjectUserSHA       int                      `json:"downstream_pipeline_trigger_limit_per_project_user_sha"`
+	DuoFeaturesEnabled                                    bool                     `json:"duo_features_enabled"`
 	ECDSAKeyRestriction                                   int                      `json:"ecdsa_key_restriction"`
 	ECDSASKKeyRestriction                                 int                      `json:"ecdsa_sk_key_restriction"`
 	EKSAccessKeyID                                        string                   `json:"eks_access_key_id"`
@@ -342,6 +366,18 @@ type Settings struct {
 	WebIDEClientsidePreviewEnabled                        bool                     `json:"web_ide_clientside_preview_enabled"`
 	WhatsNewVariant                                       string                   `json:"whats_new_variant"`
 	WikiPageMaxContentBytes                               int                      `json:"wiki_page_max_content_bytes"`
+
+	// This uses a custom struct; see below
+	DefaultBranchProtectionDefaults DefaultBranchProtectionDefaultsStruct `json:"default_branch_protection_defaults"`
+}
+
+// There is no go-gitlab struct for this setup, only a struct for the create/update options, which isn't quite
+// what's needed. Instead, this matches the structure for the group options, defined in groups:line 49
+type DefaultBranchProtectionDefaultsStruct struct {
+	AllowedToPush           []*gitlab.GroupAccessLevel `json:"allowed_to_push"`
+	AllowForcePush          bool                       `json:"allow_force_push"`
+	AllowedToMerge          []*gitlab.GroupAccessLevel `json:"allowed_to_merge"`
+	DeveloperCanInitialPush bool                       `json:"developer_can_initial_push"`
 }
 
 // This is a temporary replacement for the normal gitlab client function for `GetSettings` that removes the container import settings
