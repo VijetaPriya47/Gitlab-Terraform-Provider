@@ -442,6 +442,77 @@ func CreateProtectedBranches(t *testing.T, project *gitlab.Project, n int) []*gi
 	return protectedBranches
 }
 
+// CreateTags is a test helper for creating a specified number of tags.
+// It assumes the project will be destroyed at the end of the test and will not cleanup created tags.
+func CreateTags(t *testing.T, project *gitlab.Project, n int) []*gitlab.Tag {
+	t.Helper()
+
+	tags := make([]*gitlab.Tag, n)
+
+	for i := range tags {
+		var err error
+		tags[i], _, err = TestGitlabClient.Tags.CreateTag(project.ID, &gitlab.CreateTagOptions{
+			TagName: gitlab.Ptr(acctest.RandomWithPrefix("acctest")),
+			Ref:     gitlab.Ptr(project.DefaultBranch),
+		})
+		if err != nil {
+			t.Fatalf("could not create test tags: %v", err)
+		}
+	}
+
+	return tags
+}
+
+// CreateProtectedTags is a test helper for creating a specified number of protected tags.
+// It assumes the project will be destroyed at the end of the test and will not cleanup created tags.
+func CreateProtectedTags(t *testing.T, project *gitlab.Project, n int) []*gitlab.ProtectedTag {
+	t.Helper()
+
+	tags := CreateTags(t, project, n)
+	protectedTags := make([]*gitlab.ProtectedTag, n)
+
+	for i := range make([]int, n) {
+		var err error
+		protectedTags[i], _, err = TestGitlabClient.ProtectedTags.ProtectRepositoryTags(project.ID, &gitlab.ProtectRepositoryTagsOptions{
+			Name: gitlab.Ptr(tags[i].Name),
+		})
+		if err != nil {
+			t.Fatalf("could not protect test tags: %v", err)
+		}
+	}
+
+	return protectedTags
+}
+
+// CreateProtectedTagWithOptions is a test helper for creating a protected tag with specified options.
+// It assumes the project will be destroyed at the end of the test and will not cleanup created tags.
+func CreateProtectedTagWithOptions(t *testing.T, project *gitlab.Project, opts *gitlab.ProtectRepositoryTagsOptions) *gitlab.ProtectedTag {
+	t.Helper()
+
+	tagName := acctest.RandomWithPrefix("acctest")
+	// use the name provided on the options, otherwise if not provided use a random one
+	if opts.Name != nil && *opts.Name != "" {
+		tagName = *opts.Name
+	} else {
+		opts.Name = gitlab.Ptr(tagName)
+	}
+
+	_, _, err := TestGitlabClient.Tags.CreateTag(project.ID, &gitlab.CreateTagOptions{
+		TagName: gitlab.Ptr(tagName),
+		Ref:     gitlab.Ptr(project.DefaultBranch),
+	})
+	if err != nil {
+		t.Fatalf("could not create test tag: %v", err)
+	}
+
+	protectedTag, _, err := TestGitlabClient.ProtectedTags.ProtectRepositoryTags(project.ID, opts)
+	if err != nil {
+		t.Fatalf("could not protect test tag: %v", err)
+	}
+
+	return protectedTag
+}
+
 // CreateReleases is a test helper for creating a specified number of releases.
 // It assumes the project will be destroyed at the end of the test and will not cleanup created releases.
 func CreateReleases(t *testing.T, project *gitlab.Project, n int) []*gitlab.Release {
