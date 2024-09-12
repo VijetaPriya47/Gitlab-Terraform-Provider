@@ -15,7 +15,7 @@ import (
 var _ = registerResource("gitlab_integration_jira", func() *schema.Resource {
 	return resourceGitlabIntegrationJiraSchema(`The ` + "`gitlab_integration_jira`" + ` resource allows to manage the lifecycle of a project integration with Jira.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/services.html#jira)`)
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/integrations.html#jira)`)
 })
 
 var _ = registerResource("gitlab_service_jira", func() *schema.Resource {
@@ -23,7 +23,7 @@ var _ = registerResource("gitlab_service_jira", func() *schema.Resource {
 
 ~> This resource is deprecated. use ` + "`gitlab_integration_jira`" + `instead!
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/services.html#jira)`)
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/integrations.html#jira)`)
 	schema.DeprecationMessage = `This resource is deprecated. use ` + "`gitlab_integration_jira`" + `instead!`
 	return schema
 })
@@ -87,32 +87,40 @@ func resourceGitlabIntegrationJiraSchema(description string) *schema.Resource {
 				Default:     "",
 			},
 			"username": {
-				Description: "The username of the user created to be used with GitLab/JIRA.",
+				Description: "The email or username to be used with Jira. For Jira Cloud use an email, for Jira Data Center and Jira Server use a username. Required when using Basic authentication (jira_auth_type is 0).",
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
 			},
 			"password": {
-				Description: "The password of the user created to be used with GitLab/JIRA.",
+				Description: "The Jira API token, password, or personal access token to be used with Jira. When your authentication method is basic (jira_auth_type is 0), use an API token for Jira Cloud or a password for Jira Data Center or Jira Server. When your authentication method is a Jira personal access token (jira_auth_type is 1), use the personal access token.",
 				Type:        schema.TypeString,
 				Required:    true,
 				Sensitive:   true,
+			},
+			"jira_auth_type": {
+				Description: "The authentication method to be used with Jira. 0 means Basic Authentication. 1 means Jira personal access token. Defaults to 0.",
+				Type:        schema.TypeInt,
+				Optional:    true,
+			},
+			"jira_issue_prefix": {
+				Description: "Prefix to match Jira issue keys.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"jira_issue_regex": {
+				Description: "Regular expression to match Jira issue keys.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"jira_issue_transition_automatic": {
+				Description: "Enable automatic issue transitions. Takes precedence over jira_issue_transition_id if enabled. Defaults to false.",
+				Type:        schema.TypeBool,
+				Optional:    true,
 			},
 			"jira_issue_transition_id": {
 				Description: "The ID of a transition that moves issues to a closed state. You can find this number under the JIRA workflow administration (Administration > Issues > Workflows) by selecting View under Operations of the desired workflow of your project. By default, this ID is set to 2. *Note**: importing this field is only supported since GitLab 15.2.",
 				Type:        schema.TypeString,
 				Optional:    true,
-			},
-			"push_events": {
-				Description: "Enable notifications for push events.",
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Computed:    true,
-			},
-			"issues_events": {
-				Description: "Enable notifications for issues events.",
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Computed:    true,
 			},
 			"commit_events": {
 				Description: "Enable notifications for commit events",
@@ -126,35 +134,27 @@ func resourceGitlabIntegrationJiraSchema(description string) *schema.Resource {
 				Optional:    true,
 				Computed:    true,
 			},
-			"tag_push_events": {
-				Description: "Enable notifications for tag_push events.",
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Computed:    true,
-			},
-			"note_events": {
-				Description: "Enable notifications for note events.",
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Computed:    true,
-			},
-			"pipeline_events": {
-				Description: "Enable notifications for pipeline events.",
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Computed:    true,
-			},
-			"job_events": {
-				Description: "Enable notifications for job events.",
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Computed:    true,
-			},
 			"comment_on_event_enabled": {
 				Description: "Enable comments inside Jira issues on each GitLab event (commit / merge request)",
 				Type:        schema.TypeBool,
 				Optional:    true,
-				Computed:    true,
+			},
+			"issues_enabled": {
+				Description: "Enable viewing Jira issues in GitLab.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
+			"project_keys": {
+				Description: "Keys of Jira projects. When issues_enabled is true, this setting specifies which Jira projects to view issues from in GitLab.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+			"use_inherited_settings": {
+				Description: "Indicates whether or not to inherit default settings. Defaults to false.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
 			},
 		},
 	}
@@ -165,13 +165,29 @@ func resourceGitlabIntegrationJiraCreate(ctx context.Context, d *schema.Resource
 
 	project := d.Get("project").(string)
 
-	jiraOptions, err := expandJiraOptions(d)
-	if err != nil {
-		return diag.FromErr(err)
+	opts := &gitlab.SetJiraServiceOptions{}
+
+	jiraProjectKey := d.Get("project_key").(string)
+	opts.ProjectKeys = &[]string{jiraProjectKey}
+
+	jiraAuthType := gitlab.Ptr(d.Get("jira_auth_type").(int))
+	if *jiraAuthType == 0 {
+		opts.Username = gitlab.Ptr(d.Get("username").(string))
+		opts.Password = gitlab.Ptr(d.Get("password").(string))
+	} else {
+		opts.Password = gitlab.Ptr(d.Get("password").(string))
 	}
+	opts.JiraAuthType = jiraAuthType
+
+	opts.URL = gitlab.Ptr(d.Get("url").(string))
+	opts.CommitEvents = gitlab.Ptr(d.Get("commit_events").(bool))
+	opts.MergeRequestsEvents = gitlab.Ptr(d.Get("merge_requests_events").(bool))
+	opts.CommentOnEventEnabled = gitlab.Ptr(d.Get("comment_on_event_enabled").(bool))
+	opts.APIURL = gitlab.Ptr(d.Get("api_url").(string))
+	opts.JiraIssueTransitionID = gitlab.Ptr(d.Get("jira_issue_transition_id").(string))
 
 	tflog.Debug(ctx, "[DEBUG] Create Gitlab Jira integration")
-	if _, err := client.Services.SetJiraService(project, jiraOptions, gitlab.WithContext(ctx)); err != nil {
+	if _, err := client.Services.SetJiraService(project, opts, gitlab.WithContext(ctx)); err != nil {
 		return diag.Errorf("couldn't create Gitlab Jira service: %v", err)
 	}
 
@@ -203,16 +219,18 @@ func resourceGitlabIntegrationJiraRead(ctx context.Context, d *schema.ResourceDa
 	d.Set("title", jiraService.Title)
 	d.Set("created_at", jiraService.CreatedAt.String())
 	d.Set("updated_at", jiraService.UpdatedAt.String())
-	d.Set("active", jiraService.Active)
-	d.Set("push_events", jiraService.PushEvents)
-	d.Set("issues_events", jiraService.IssuesEvents)
+	d.Set("jira_auth_type", jiraService.Properties.JiraAuthType)
+	d.Set("jira_issue_prefix", jiraService.Properties.JiraIssuePrefix)
+	d.Set("jira_issue_regex", jiraService.Properties.JiraIssueRegex)
+	d.Set("jira_issue_transition_automatic", jiraService.Properties.JiraIssueTransitionAutomatic)
+	// Note for support - if someone is using provider version 16.0+, it's not compatible with GitLab 15.2-, because there
+	// was an issue with how the JIRA transition IDs were formatted in the API. Support for that was removed in 16.0.
+	d.Set("jira_issue_transition_id", jiraService.Properties.JiraIssueTransitionID)
 	d.Set("commit_events", jiraService.CommitEvents)
 	d.Set("merge_requests_events", jiraService.MergeRequestsEvents)
 	d.Set("comment_on_event_enabled", jiraService.CommentOnEventEnabled)
-	d.Set("tag_push_events", jiraService.TagPushEvents)
-	d.Set("note_events", jiraService.NoteEvents)
-	d.Set("pipeline_events", jiraService.PipelineEvents)
-	d.Set("job_events", jiraService.JobEvents)
+	d.Set("issues_enabled", jiraService.Properties.IssuesEnabled)
+	d.Set("use_inherited_settings", jiraService.Properties.IssuesEnabled) // should probably to into jiraService directly
 
 	// Match pre-existing behavior of a single key until we support the new multi-key approach.
 	// If we're running before 17.0, we have to use the deprecated ProjectKey (singular)
@@ -229,10 +247,6 @@ func resourceGitlabIntegrationJiraRead(ctx context.Context, d *schema.ResourceDa
 		// API documentation, and even when passed into the API it returns blank from the read API, so it causes issues.
 		tflog.Debug(ctx, "Skipping setting JIRA Project Key since it isn't supported pre-GitLab 17.0")
 	}
-
-	// Note for support - if someone is using provider version 16.0+, it's not compatible with GitLab 15.2-, because there
-	// was an issue with how the JIRA transition IDs were formatted in the API. Support for that was removed in 16.0.
-	d.Set("jira_issue_transition_id", jiraService.Properties.JiraIssueTransitionID)
 
 	return nil
 }
@@ -254,23 +268,4 @@ func resourceGitlabIntegrationJiraDelete(ctx context.Context, d *schema.Resource
 	}
 
 	return nil
-}
-
-func expandJiraOptions(d *schema.ResourceData) (*gitlab.SetJiraServiceOptions, error) {
-	setJiraServiceOptions := gitlab.SetJiraServiceOptions{}
-
-	jiraProjectKey := d.Get("project_key").(string)
-
-	// Set required properties
-	setJiraServiceOptions.URL = gitlab.Ptr(d.Get("url").(string))
-	setJiraServiceOptions.ProjectKeys = &[]string{jiraProjectKey}
-	setJiraServiceOptions.Username = gitlab.Ptr(d.Get("username").(string))
-	setJiraServiceOptions.Password = gitlab.Ptr(d.Get("password").(string))
-	setJiraServiceOptions.CommitEvents = gitlab.Ptr(d.Get("commit_events").(bool))
-	setJiraServiceOptions.MergeRequestsEvents = gitlab.Ptr(d.Get("merge_requests_events").(bool))
-	setJiraServiceOptions.CommentOnEventEnabled = gitlab.Ptr(d.Get("comment_on_event_enabled").(bool))
-	setJiraServiceOptions.APIURL = gitlab.Ptr(d.Get("api_url").(string))
-	setJiraServiceOptions.JiraIssueTransitionID = gitlab.Ptr(d.Get("jira_issue_transition_id").(string))
-
-	return &setJiraServiceOptions, nil
 }

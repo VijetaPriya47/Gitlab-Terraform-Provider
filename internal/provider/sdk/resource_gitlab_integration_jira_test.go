@@ -182,6 +182,96 @@ func TestAcc_GitlabIntegrationJira_projectKey(t *testing.T) {
 	})
 }
 
+func TestAcc_GitlabIntegrationJira_authType_basicAuth(t *testing.T) {
+	var jiraService gitlab.JiraService
+	jiraResourceName := "gitlab_service_jira.jira"
+
+	project := testutil.CreateProject(t)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabIntegrationJiraDestroy,
+		Steps: []resource.TestStep{
+			// Create a project and a jira service
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_service_jira" "jira" {
+				  project  = "%d"
+				  url      = "https://test.com"
+					jira_auth_type = 0
+				  username = "user1"
+				  password = "mypass"
+				  commit_events = true
+				  merge_requests_events    = false
+				  comment_on_event_enabled = false
+				}
+				`, project.ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabIntegrationJiraExists(jiraResourceName, &jiraService),
+					resource.TestCheckResourceAttr(jiraResourceName, "url", "https://test.com"),
+					resource.TestCheckResourceAttr(jiraResourceName, "jira_auth_type", "0"),
+					resource.TestCheckResourceAttr(jiraResourceName, "username", "user1"),
+					resource.TestCheckResourceAttr(jiraResourceName, "password", "mypass"),
+					resource.TestCheckResourceAttr(jiraResourceName, "commit_events", "true"),
+					resource.TestCheckResourceAttr(jiraResourceName, "merge_requests_events", "false"),
+					resource.TestCheckResourceAttr(jiraResourceName, "comment_on_event_enabled", "false"),
+				),
+			},
+			// Verify Import
+			{
+				ResourceName:      jiraResourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"password",
+				},
+			},
+		},
+	})
+}
+
+func TestAcc_GitlabIntegrationJira_authType_tokenAuth(t *testing.T) {
+	var jiraService gitlab.JiraService
+	jiraResourceName := "gitlab_service_jira.jira"
+
+	project := testutil.CreateProject(t)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabIntegrationJiraDestroy,
+		Steps: []resource.TestStep{
+			// Create a project and a jira service
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_service_jira" "jira" {
+				  project  = "%d"
+				  url      = "https://test.com"
+					jira_auth_type = 1
+				  password = "mypass"
+          use_inherited_settings = false
+				}
+				`, project.ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabIntegrationJiraExists(jiraResourceName, &jiraService),
+					resource.TestCheckResourceAttr(jiraResourceName, "url", "https://test.com"),
+					resource.TestCheckResourceAttr(jiraResourceName, "jira_auth_type", "1"),
+					resource.TestCheckResourceAttr(jiraResourceName, "password", "mypass"),
+					resource.TestCheckResourceAttr(jiraResourceName, "use_inherited_settings", "false"),
+				),
+			},
+			// Verify Import
+			{
+				ResourceName:      jiraResourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"password",
+				},
+			},
+		},
+	})
+}
+
 func TestAcc_GitlabIntegrationJira_backwardsCompatibility(t *testing.T) {
 	var jiraService gitlab.JiraService
 	jiraResourceName := "gitlab_service_jira.jira"
@@ -194,7 +284,7 @@ func TestAcc_GitlabIntegrationJira_backwardsCompatibility(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create a project and a jira service
 			{
-				Config: fmt.Sprintf(`				
+				Config: fmt.Sprintf(`
 				resource "gitlab_service_jira" "jira" {
 				  project  = "%d"
 				  url      = "https://test.com"
