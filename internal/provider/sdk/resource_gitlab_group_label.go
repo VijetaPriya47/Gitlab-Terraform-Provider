@@ -59,7 +59,6 @@ func gitlabGroupLabelSchema() map[string]*schema.Schema {
 			Description: "The name of the label.",
 			Type:        schema.TypeString,
 			Required:    true,
-			ForceNew:    true,
 		},
 		"color": {
 			Description: "The color of the label given in 6-digit hex notation with leading '#' sign (e.g. #FFAABB) or one of the [CSS color names](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#Color_keywords).",
