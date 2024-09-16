@@ -182,6 +182,142 @@ func TestAccGitLabProjectApprovalRule_AnyApprover(t *testing.T) {
 	})
 }
 
+func TestAccGitLabProjectApprovalRule_ReportType(t *testing.T) {
+	// Set up project, groups, users, and branches to use in the test.
+	testutil.SkipIfCE(t)
+	testutil.RunIfAtLeast(t, "17.2")
+
+	project := testutil.CreateProject(t)
+
+	projectUsers := testutil.CreateUsers(t, 2)
+	groups := testutil.CreateGroups(t, 1)
+	group0Users := testutil.CreateUsers(t, 1)
+
+	testutil.AddProjectMembers(t, project.ID, projectUsers) // Users must belong to the project for rules to work.
+	testutil.AddGroupMembers(t, groups[0].ID, group0Users)
+
+	// Terraform test starts here.
+	var projectApprovalRule gitlab.ProjectApprovalRule
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabProjectApprovalRuleDestroy(project.ID),
+		Steps: []resource.TestStep{
+			// Create rule
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_approval_rule" "rt" {
+					project              = %d
+					name                 = "Coverage-Check"
+					approvals_required   = 1
+					rule_type            = "report_approver"
+					report_type          = "code_coverage"
+					group_ids            = [ %d ]
+				}`, project.ID, groups[0].ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabProjectApprovalRuleExists("gitlab_project_approval_rule.rt", &projectApprovalRule),
+					testAccCheckGitlabProjectApprovalRuleAttributes_ReportType(&projectApprovalRule, &testAccGitlabProjectApprovalRuleExpectedAttributes_ReportType{
+						Name:              "Coverage-Check",
+						ApprovalsRequired: 1,
+						RuleType:          "report_approver",
+						ReportType:        "code_coverage",
+					}),
+				),
+			},
+			// Update rule
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_approval_rule" "rt" {
+					project              = %d
+					name                 = "Coverage-Check"
+					approvals_required   = 2
+					rule_type            = "report_approver"
+					report_type          = "code_coverage"
+					group_ids            = [ %d ]
+				  }`, project.ID, groups[0].ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabProjectApprovalRuleExists("gitlab_project_approval_rule.rt", &projectApprovalRule),
+					testAccCheckGitlabProjectApprovalRuleAttributes_ReportType(&projectApprovalRule, &testAccGitlabProjectApprovalRuleExpectedAttributes_ReportType{
+						Name:              "Coverage-Check",
+						ApprovalsRequired: 2,
+						RuleType:          "report_approver",
+						ReportType:        "code_coverage",
+					}),
+				),
+			},
+			// Re-create rule
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_approval_rule" "rt" {
+					project              = %d
+					name                 = "Coverage-Check"
+					approvals_required   = 2
+					rule_type            = "report_approver"
+					report_type          = "code_coverage"
+					group_ids            = [ %d ]
+				}`, project.ID, groups[0].ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabProjectApprovalRuleExists("gitlab_project_approval_rule.rt", &projectApprovalRule),
+					testAccCheckGitlabProjectApprovalRuleAttributes_ReportType(&projectApprovalRule, &testAccGitlabProjectApprovalRuleExpectedAttributes_ReportType{
+						Name:              "Coverage-Check",
+						ApprovalsRequired: 2,
+						RuleType:          "report_approver",
+						ReportType:        "code_coverage",
+					}),
+				),
+			},
+			// Verify import
+			{
+				ResourceName:      "gitlab_project_approval_rule.rt",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"disable_importing_default_any_approver_rule_on_create",
+				},
+			},
+		},
+	})
+}
+
+func TestAccGitLabProjectApprovalRule_ReportTypeMisConfigured(t *testing.T) {
+	// Set up project and branches to use in the test.
+	testutil.SkipIfCE(t)
+	testutil.RunIfAtLeast(t, "17.2")
+
+	project := testutil.CreateProject(t)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabProjectApprovalRuleDestroy(project.ID),
+		Steps: []resource.TestStep{
+			// Create needs correct 'rule_type'
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_approval_rule" "bar" {
+				  project              = %d
+				  name                 = "Coverage-Check"
+				  approvals_required   = %d
+				  rule_type            = "regular"
+				  report_type          = "code_coverage"
+				}`, project.ID, 3),
+				ExpectError: regexp.MustCompile("rule_type incorrect"),
+			},
+			// If 'rule_type' == report_approver then name should be Coverage-Check
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_approval_rule" "bar" {
+					project              = %d
+					name                 = "foo"
+					approvals_required   = %d
+					rule_type            = "report_approver"
+					report_type          = "code_coverage"
+				}`, project.ID, 3),
+				ExpectError: regexp.MustCompile("name should be set to 'Coverage-Check'"),
+			},
+		},
+	})
+}
+
 // This test will ensure the default behavior of auto-importing rules with a 0 value
 // works appropriately.
 func TestAccGitLabProjectApprovalRule_AnyApproverAutoImport(t *testing.T) {
@@ -359,6 +495,13 @@ type testAccGitlabProjectApprovalRuleExpectedAttributes_AnyApprover struct {
 	RuleType          string
 }
 
+type testAccGitlabProjectApprovalRuleExpectedAttributes_ReportType struct {
+	Name              string
+	ApprovalsRequired int
+	RuleType          string
+	ReportType        string
+}
+
 func testAccCheckGitlabProjectApprovalRuleAttributes_Basic(got *gitlab.ProjectApprovalRule, want *testAccGitlabProjectApprovalRuleExpectedAttributes_Basic) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		return InterceptGomegaFailure(func() {
@@ -396,6 +539,17 @@ func testAccCheckGitlabProjectApprovalRuleAttributes_AnyApprover(got *gitlab.Pro
 			Expect(got.Name).To(Equal(want.Name), "name")
 			Expect(got.ApprovalsRequired).To(Equal(want.ApprovalsRequired), "approvals_required")
 			Expect(got.RuleType).To(Equal(want.RuleType), "rule_type")
+		})
+	}
+}
+
+func testAccCheckGitlabProjectApprovalRuleAttributes_ReportType(got *gitlab.ProjectApprovalRule, want *testAccGitlabProjectApprovalRuleExpectedAttributes_ReportType) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		return InterceptGomegaFailure(func() {
+			Expect(got.Name).To(Equal(want.Name), "name")
+			Expect(got.ApprovalsRequired).To(Equal(want.ApprovalsRequired), "approvals_required")
+			Expect(got.RuleType).To(Equal(want.RuleType), "rule_type")
+			Expect(got.ReportType).To(Equal(want.ReportType), "report_type")
 		})
 	}
 }

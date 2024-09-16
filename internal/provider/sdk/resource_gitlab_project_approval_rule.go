@@ -18,6 +18,10 @@ var _ = registerResource("gitlab_project_approval_rule", func() *schema.Resource
 	var validRuleTypeValues = []string{
 		"regular",
 		"any_approver",
+		"report_approver",
+	}
+	var validReportTypeValues = []string{
+		"code_coverage",
 	}
 	return &schema.Resource{
 		Description: `The ` + "`" + `gitlab_project_approval_rule` + "`" + ` resource allows to manage the lifecycle of a project-level approval rule.
@@ -56,6 +60,15 @@ var _ = registerResource("gitlab_project_approval_rule", func() *schema.Resource
 				Description: "The number of approvals required for this rule.",
 				Type:        schema.TypeInt,
 				Required:    true,
+			},
+			"report_type": {
+				Description:      fmt.Sprintf("Report type is required when the rule_type is `report_approver`. Valid values are %s.", utils.RenderValueListForDocs(validReportTypeValues)),
+				Type:             schema.TypeString,
+				ForceNew:         true,
+				Optional:         true,
+				Computed:         true,
+				RequiredWith:     []string{"rule_type"},
+				ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(validReportTypeValues, false)),
 			},
 			"rule_type": {
 				Description:      fmt.Sprintf("String, defaults to 'regular'. The type of rule. `any_approver` is a pre-configured default rule with `approvals_required` at `0`. Valid values are %s.", utils.RenderValueListForDocs(validRuleTypeValues)),
@@ -137,8 +150,10 @@ func resourceGitlabProjectApprovalRuleCreate(ctx context.Context, d *schema.Reso
 	ruleIDString := ""
 	if anyApproverRuleId == 0 {
 
+		name := d.Get("name").(string)
+
 		options := gitlab.CreateProjectLevelRuleOptions{
-			Name:                          gitlab.Ptr(d.Get("name").(string)),
+			Name:                          gitlab.Ptr(name),
 			ApprovalsRequired:             gitlab.Ptr(d.Get("approvals_required").(int)),
 			UserIDs:                       expandApproverIds(d.Get("user_ids")),
 			GroupIDs:                      expandApproverIds(d.Get("group_ids")),
@@ -146,8 +161,37 @@ func resourceGitlabProjectApprovalRuleCreate(ctx context.Context, d *schema.Reso
 			AppliesToAllProtectedBranches: gitlab.Ptr(d.Get("applies_to_all_protected_branches").(bool)),
 		}
 
-		if v, ok := d.GetOk("rule_type"); ok {
-			options.RuleType = gitlab.Ptr(v.(string))
+		if ruleType, ok := d.GetOk("rule_type"); ok {
+			options.RuleType = gitlab.Ptr(ruleType.(string))
+
+			supportsReportType, err := api.IsGitLabVersionAtLeast(ctx, client, "17.2")()
+			if err != nil {
+				return diag.FromErr(err)
+			}
+			if supportsReportType {
+				if reportType, ok := d.GetOk("report_type"); ok {
+
+					if ruleType.(string) != "report_approver" {
+						return diag.Diagnostics{
+							diag.Diagnostic{
+								Severity: diag.Error,
+								Summary:  "rule_type incorrect",
+								Detail:   "rule_type should be set to `report_approver`",
+							},
+						}
+					}
+					if name != "Coverage-Check" {
+						return diag.Diagnostics{
+							diag.Diagnostic{
+								Severity: diag.Error,
+								Summary:  "name incorrect",
+								Detail:   "if rule_type is `report_approver` then name should be set to 'Coverage-Check'",
+							},
+						}
+					}
+					options.ReportType = gitlab.Ptr(reportType.(string))
+				}
+			}
 		}
 
 		tflog.Debug(ctx, `Creating gitlab project-level rule`, map[string]interface{}{
@@ -215,6 +259,7 @@ func resourceGitlabProjectApprovalRuleRead(ctx context.Context, d *schema.Resour
 	d.Set("name", rule.Name)
 	d.Set("approvals_required", rule.ApprovalsRequired)
 	d.Set("rule_type", rule.RuleType)
+	d.Set("report_type", rule.ReportType)
 	d.Set("applies_to_all_protected_branches", rule.AppliesToAllProtectedBranches)
 
 	if err := d.Set("group_ids", flattenApprovalRuleGroupIDs(rule.Groups)); err != nil {
