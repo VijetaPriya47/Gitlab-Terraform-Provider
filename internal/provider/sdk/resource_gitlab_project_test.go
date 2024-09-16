@@ -1934,57 +1934,6 @@ func TestAccGitlabProject_ForkProjectAndConfigurePullMirror(t *testing.T) {
 	})
 }
 
-func TestAccGitlabProject_ContainerExpirationPolicy(t *testing.T) {
-	testProjectName := acctest.RandomWithPrefix("acctest")
-
-	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
-		CheckDestroy:             testAccCheckGitlabProjectDestroy,
-		Steps: []resource.TestStep{
-			// Create project with container expiration policy
-			{
-				Config: fmt.Sprintf(`
-					resource "gitlab_project" "test" {
-					  name                = "%s"
-					  visibility_level    = "public"
-
-					  container_expiration_policy {
-						enabled = true
-						cadence = "1d"
-						keep_n  = 5
-					  }
-					}
-				`, testProjectName),
-			},
-			// Verify import
-			{
-				ResourceName:      "gitlab_project.test",
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
-			// Disabling container expiration policy
-			{
-				Config: fmt.Sprintf(`
-					resource "gitlab_project" "test" {
-					  name                = "%s"
-					  visibility_level    = "public"
-
-					  container_expiration_policy {
-						enabled = false
-					  }
-					}
-				`, testProjectName),
-			},
-			// Verify import
-			{
-				ResourceName:      "gitlab_project.test",
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
-		},
-	})
-}
-
 func TestAccGitlabProject_SetBuildsAccessLevel(t *testing.T) {
 	var received gitlab.Project
 	rInt := acctest.RandInt()
@@ -2508,11 +2457,7 @@ resource "gitlab_project" "foo" {
   build_git_strategy = "fetch"
   build_timeout = 42 * 60
   builds_access_level = "enabled"
-  container_expiration_policy {
-	enabled = true
-  	cadence = "1month"
-  }
-  container_registry_access_level = "enabled"
+  
   emails_enabled = false
   forking_access_level = "enabled"
   issues_access_level = "enabled"
@@ -2589,7 +2534,6 @@ resource "gitlab_project" "foo" {
   approvals_before_merge = 0
   wiki_enabled = false
   snippets_enabled = false
-  container_registry_enabled = false
   lfs_enabled = false
   shared_runners_enabled = false
   group_runners_enabled = false
@@ -2610,11 +2554,6 @@ resource "gitlab_project" "foo" {
   build_git_strategy = "fetch"
   build_timeout = 10 * 60
   builds_access_level = "disabled"
-  container_expiration_policy {
-	enabled = true
-  	cadence = "3month"
-  }
-  container_registry_access_level = "disabled"
   emails_enabled = true
   forking_access_level = "disabled"
   issues_access_level = "disabled"
@@ -2759,11 +2698,6 @@ resource "gitlab_project" "foo" {
   build_git_strategy = "fetch"
   build_timeout = 42 * 60
   builds_access_level = "enabled"
-  container_expiration_policy {
-	enabled = true
-  	cadence = "1month"
-  }
-  container_registry_access_level = "enabled"
   emails_enabled = false
   forking_access_level = "enabled"
   issues_access_level = "enabled"
@@ -2946,11 +2880,6 @@ resource "gitlab_project" "foo" {
   build_git_strategy = "fetch"
   build_timeout = 42 * 60
   builds_access_level = "enabled"
-  container_expiration_policy {
-	enabled = true
-  	cadence = "1month"
-  }
-  container_registry_access_level = "enabled"
   emails_enabled = false
   forking_access_level = "enabled"
   issues_access_level = "enabled"

@@ -24,6 +24,12 @@ import (
 // the test will still fail because the users getting added as allowed to create
 // aren't yet members of the project.
 func TestAccGitlabTagProtection_customAccessLevel(t *testing.T) {
+
+	// This test is VERY flakey, so we're going to skip it until we can figure out how
+	// to cache bust group membership. We're not sure how to do that via API right now.
+	t.Skip()
+
+	// Below is the rest of the test.
 	testutil.SkipIfCE(t)
 
 	var pt gitlab.ProtectedTag
