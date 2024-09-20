@@ -552,6 +552,42 @@ func CreateReleases(t *testing.T, project *gitlab.Project, n int) []*gitlab.Rele
 	return releases
 }
 
+// CreateMergeRequest is a test helper for creating a merge request.
+// It assumes that the project will be destroyed at the end of the test and will not cleanup created merge requests.
+func CreateMergeRequest(t *testing.T, assignee *gitlab.User, project *gitlab.Project, source string, target string) *gitlab.MergeRequest {
+	opts := gitlab.CreateMergeRequestOptions{
+		Title:        gitlab.Ptr(acctest.RandomWithPrefix(source)),
+		Description:  gitlab.Ptr(acctest.RandomWithPrefix(source)),
+		SourceBranch: &source,
+		TargetBranch: &target,
+	}
+	if assignee != nil {
+		opts.AssigneeID = &assignee.ID
+		opts.AssigneeIDs = &[]int{assignee.ID}
+	}
+
+	mergeRequest, _, err := TestGitlabClient.MergeRequests.CreateMergeRequest(
+		project.ID, &opts,
+	)
+	if err != nil {
+		t.Fatalf("could not create merge request: %v", err)
+	}
+	return mergeRequest
+}
+
+// CloseMergeRequest is a test helper for closing a merge request.
+// It assumes that the project will be destroyed at the end of the test and will not cleanup closed merge requests.
+func CloseMergeRequest(t *testing.T, project *gitlab.Project, mr *gitlab.MergeRequest) *gitlab.MergeRequest {
+	opts := gitlab.UpdateMergeRequestOptions{StateEvent: gitlab.Ptr("close")}
+	mergeRequest, _, err := TestGitlabClient.MergeRequests.UpdateMergeRequest(
+		project.ID, mr.IID, &opts,
+	)
+	if err != nil {
+		t.Fatalf("could not close merge request: %v", err)
+	}
+	return mergeRequest
+}
+
 // AddProjectMembers is a test helper for adding users as members of a project with Developer access level.
 // It assumes the project will be destroyed at the end of the test and will not cleanup members.
 func AddProjectMembers(t *testing.T, pid interface{}, users []*gitlab.User) {
