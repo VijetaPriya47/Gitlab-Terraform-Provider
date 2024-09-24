@@ -1089,3 +1089,35 @@ func GetCurrentTimestampPlusDays(t *testing.T, days int) time.Time {
 	now := time.Now()
 	return now.AddDate(0, 0, days)
 }
+
+// CreateGroupServiceAccounts is a test helper for creating a specified number of service accounts.
+func CreateGroupServiceAccounts(t *testing.T, n int, groupID string) []*gitlab.GroupServiceAccount {
+	return CreateGroupServiceAccountsWithPrefix(t, n, groupID, "acctest-service-account")
+}
+
+func CreateGroupServiceAccountsWithPrefix(t *testing.T, n int, groupID, prefix string) []*gitlab.GroupServiceAccount {
+	t.Helper()
+
+	serviceAccounts := make([]*gitlab.GroupServiceAccount, n)
+
+	for i := range serviceAccounts {
+		var err error
+		name := acctest.RandomWithPrefix(prefix)
+		username := acctest.RandomWithPrefix(prefix)
+		serviceAccounts[i], _, err = TestGitlabClient.Groups.CreateServiceAccount(groupID, &gitlab.CreateServiceAccountOptions{
+			Name:     gitlab.Ptr(name),
+			Username: gitlab.Ptr(username),
+		})
+		if err != nil {
+			t.Fatalf("could not create test service account (group_id=%q username=%q): %v", groupID, username, err)
+		}
+
+		serviceAccountID := serviceAccounts[i].ID // Needed for closure.
+		t.Cleanup(func() {
+			if _, err := TestGitlabClient.Groups.DeleteServiceAccount(groupID, serviceAccountID); err != nil {
+				t.Fatalf("could not cleanup test service account: %v", err)
+			}
+		})
+	}
+	return serviceAccounts
+}
