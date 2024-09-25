@@ -718,10 +718,24 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 
+		"elasticsearch_max_code_indexing_concurrency": {
+			Description: "Maximum concurrency of Elasticsearch code indexing background jobs. This only applies to repository indexing operations. Premium and Ultimate only.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
+		},
+
 		"elasticsearch_namespace_ids": {
 			Description: "The namespaces to index via Elasticsearch if elasticsearch_limit_indexing is enabled.",
 			Type:        schema.TypeList,
 			Elem:        &schema.Schema{Type: schema.TypeInt},
+			Optional:    true,
+			Computed:    true,
+		},
+
+		"elasticsearch_requeue_workers": {
+			Description: "Enable automatic requeuing of indexing workers. This improves non-code indexing throughput by enqueuing Sidekiq jobs until all documents are processed. Premium and Ultimate only.",
+			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
 		},
@@ -737,6 +751,13 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 		"elasticsearch_search": {
 			Description: "Enable Elasticsearch search.",
 			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
+
+		"elasticsearch_worker_number_of_shards": {
+			Description: "Number of indexing worker shards. This improves non-code indexing throughput by enqueuing more parallel Sidekiq jobs. Premium and Ultimate only.",
+			Type:        schema.TypeInt,
 			Optional:    true,
 			Computed:    true,
 		},
@@ -773,6 +794,20 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 
 		"email_author_in_body": {
 			Description: "Some email servers do not support overriding the email sender name. Enable this option to include the name of the author of the issue, merge request or comment in the email body instead.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
+
+		"email_confirmation_setting": {
+			Description: "Specifies whether users must confirm their email before sign in. Possible values are off, soft, and hard.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
+		},
+
+		"enable_artifact_external_redirect_warning_page": {
+			Description: "Show the external redirect page that warns you about user-generated content in GitLab Pages.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
@@ -878,6 +913,13 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 
+		"failed_login_attempts_unlock_period_in_minutes": {
+			Description: "Time period in minutes after which the user is unlocked when maximum number of failed sign-in attempts reached.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
+		},
+
 		"file_template_project_id": {
 			Description: "The ID of a project to load custom file templates from.",
 			Type:        schema.TypeInt,
@@ -906,6 +948,22 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 
+		"git_rate_limit_users_alertlist": {
+			Description: "List of user IDs that are emailed when the Git abuse rate limit is exceeded. Maximum: 100 user IDs. Introduced in GitLab 15.9. Self-managed, Ultimate only.",
+			Type:        schema.TypeList,
+			Elem:        &schema.Schema{Type: schema.TypeInt},
+			Optional:    true,
+			Computed:    true,
+		},
+
+		"git_rate_limit_users_allowlist": {
+			Description: "List of usernames excluded from Git anti-abuse rate limits. Maximum: 100 usernames. Introduced in GitLab 15.2. Self-managed, Ultimate only.",
+			Type:        schema.TypeList,
+			Elem:        &schema.Schema{Type: schema.TypeString},
+			Optional:    true,
+			Computed:    true,
+		},
+
 		"git_two_factor_session_expiry": {
 			Description: "Maximum duration (in minutes) of a session for Git operations when 2FA is enabled.",
 			Type:        schema.TypeInt,
@@ -930,6 +988,46 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 		"gitaly_timeout_medium": {
 			Description: "Medium Gitaly timeout, in seconds. This should be a value between the Fast and the Default timeout. Set to 0 to disable timeouts.",
 			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
+		},
+
+		"gitlab_dedicated_instance": {
+			Description: "Indicates whether the instance was provisioned for GitLab Dedicated.",
+			Type:        schema.TypeBool,
+			Computed:    true,
+		},
+
+		"gitlab_environment_toolkit_instance": {
+			Description: "Indicates whether the instance was provisioned with the GitLab Environment Toolkit for Service Ping reporting.",
+			Type:        schema.TypeBool,
+			Computed:    true,
+		},
+
+		"gitlab_shell_operation_limit": {
+			Description: "Maximum number of Git operations per minute a user can perform. Introduced in GitLab 16.2.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
+		},
+
+		"gitpod_enabled": {
+			Description: "Enable Gitpod integration.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
+
+		"gitpod_url": {
+			Description: "The Gitpod instance URL for integration.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
+		},
+
+		"globally_allowed_ips": {
+			Description: "Comma-separated list of IP addresses and CIDRs always allowed for inbound traffic. For example, 1.1.1.1, 2.2.2.0/24.",
+			Type:        schema.TypeString,
 			Optional:    true,
 			Computed:    true,
 		},
@@ -1103,6 +1201,13 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 
+		"include_optional_metrics_in_service_ping": {
+			Description: "Whether or not optional metrics are enabled in Service Ping. Introduced in GitLab 16.10.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
+
 		"invisible_captcha_enabled": {
 			Description: "Enable Invisible CAPTCHA spam detection during sign-up.",
 			Type:        schema.TypeBool,
@@ -1117,6 +1222,27 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 
+		"jira_connect_application_key": {
+			Description: "ID of the OAuth application used to authenticate with the GitLab for Jira Cloud app.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
+		},
+
+		"jira_connect_proxy_url": {
+			Description: "URL of the GitLab instance used as a proxy for the GitLab for Jira Cloud app.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
+		},
+
+		"jira_connect_public_key_storage_enabled": {
+			Description: "Enable public key storage for the GitLab for Jira Cloud app.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
+
 		"keep_latest_artifact": {
 			Description: "Prevent the deletion of the artifacts from the most recent successful jobs, regardless of the expiry time.",
 			Type:        schema.TypeBool,
@@ -1127,6 +1253,13 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 		"local_markdown_version": {
 			Description: "Increase this value when any cached Markdown should be invalidated.",
 			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
+		},
+
+		"lock_duo_features_enabled": {
+			Description: "Indicates whether the GitLab Duo features enabled setting is enforced for all subgroups. Introduced in GitLab 16.10. Self-managed, Premium and Ultimate only.",
+			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
 		},
@@ -1160,6 +1293,13 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 
+		"maven_package_requests_forwarding": {
+			Description: "Use repo.maven.apache.org as a default remote repository when the package is not found in the GitLab Package Registry for Maven. Premium and Ultimate only.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
+
 		"max_artifacts_size": {
 			Description: "Maximum artifacts size in MB.",
 			Type:        schema.TypeInt,
@@ -1174,6 +1314,13 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 
+		"max_decompressed_archive_size": {
+			Description: "Maximum decompressed archive size in bytes.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
+		},
+
 		"max_export_size": {
 			Description: "Maximum export size in MB. 0 for unlimited.",
 			Type:        schema.TypeInt,
@@ -1181,8 +1328,22 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 
+		"max_import_remote_file_size": {
+			Description: "Maximum remote file size for imports from external object storages. Introduced in GitLab 16.3.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
+		},
+
 		"max_import_size": {
 			Description: "Maximum import size in MB. 0 for unlimited.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
+		},
+
+		"max_login_attempts": {
+			Description: "Maximum number of sign-in attempts before locking out the user.",
 			Type:        schema.TypeInt,
 			Optional:    true,
 			Computed:    true,
@@ -1237,14 +1398,6 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 
-		"git_rate_limit_users_allowlist": {
-			Description: "List of usernames excluded from Git anti-abuse rate limits. Maximum: 100 usernames. Introduced in GitLab 15.2.",
-			Type:        schema.TypeList,
-			Elem:        &schema.Schema{Type: schema.TypeString},
-			Optional:    true,
-			Computed:    true,
-		},
-
 		"mirror_available": {
 			Description: "Allow repository mirroring to configured by project Maintainers. If disabled, only Administrators can configure repository mirroring.",
 			Type:        schema.TypeBool,
@@ -1280,8 +1433,8 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 
-		"pypi_package_requests_forwarding": {
-			Description: "Use pypi.org as a default remote repository when the package is not found in the GitLab Package Registry for PyPI.",
+		"nuget_skip_metadata_url_validation": {
+			Description: "Indicates whether to skip metadata URL validation for the NuGet package. Introduced in GitLab 17.0.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
@@ -1291,6 +1444,21 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 			Description: "Define a list of trusted domains or IP addresses to which local requests are allowed when local requests for hooks and services are disabled.",
 			Type:        schema.TypeList,
 			Elem:        &schema.Schema{Type: schema.TypeString},
+			Optional:    true,
+			Computed:    true,
+		},
+
+		"package_metadata_purl_types": {
+			Description: "List of package registry metadata to sync. See the list of the available values (https://gitlab.com/gitlab-org/gitlab/-/blob/ace16c20d5da7c4928dd03fb139692638b557fe3/app/models/concerns/enums/package_metadata.rb#L5). Self-managed, Ultimate only.",
+			Type:        schema.TypeList,
+			Elem:        &schema.Schema{Type: schema.TypeInt},
+			Optional:    true,
+			Computed:    true,
+		},
+
+		"package_registry_allow_anyone_to_pull_option": {
+			Description: "Enable to allow anyone to pull from Package Registry visible and changeable.",
+			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
 		},
@@ -1424,6 +1592,13 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 		"push_event_hooks_limit": {
 			Description: "Number of changes (branches or tags) in a single push to determine whether webhooks and services fire or not. Webhooks and services aren’t submitted if it surpasses that value.",
 			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
+		},
+
+		"pypi_package_requests_forwarding": {
+			Description: "Use pypi.org as a default remote repository when the package is not found in the GitLab Package Registry for PyPI.",
+			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
 		},
@@ -2077,14 +2252,19 @@ func gitlabApplicationSettingsToStateMap(settings *api.Settings) map[string]inte
 	stateMap["elasticsearch_limit_indexing"] = settings.ElasticsearchLimitIndexing
 	stateMap["elasticsearch_max_bulk_concurrency"] = settings.ElasticsearchMaxBulkConcurrency
 	stateMap["elasticsearch_max_bulk_size_mb"] = settings.ElasticsearchMaxBulkSizeMB
+	stateMap["elasticsearch_max_code_indexing_concurrency"] = settings.ElasticsearchMaxCodeIndexingConcurrency
 	stateMap["elasticsearch_namespace_ids"] = settings.ElasticsearchNamespaceIDs
 	stateMap["elasticsearch_project_ids"] = settings.ElasticsearchProjectIDs
+	stateMap["elasticsearch_requeue_workers"] = settings.ElasticsearchRequeueWorkers
 	stateMap["elasticsearch_search"] = settings.ElasticsearchSearch
 	stateMap["elasticsearch_url"] = settings.ElasticsearchURL
 	stateMap["elasticsearch_username"] = settings.ElasticsearchUsername
 	stateMap["elasticsearch_password"] = settings.ElasticsearchPassword
+	stateMap["elasticsearch_worker_number_of_shards"] = settings.ElasticsearchWorkerNumberOfShards
 	stateMap["email_additional_text"] = settings.EmailAdditionalText
 	stateMap["email_author_in_body"] = settings.EmailAuthorInBody
+	stateMap["email_confirmation_setting"] = settings.EmailConfirmationSetting
+	stateMap["enable_artifact_external_redirect_warning_page"] = settings.EnableArtifactExternalRedirectWarningPage
 	stateMap["enabled_git_access_protocol"] = settings.EnabledGitAccessProtocol
 	stateMap["enforce_namespace_storage_limit"] = settings.EnforceNamespaceStorageLimit
 	stateMap["enforce_terms"] = settings.EnforceTerms
@@ -2098,14 +2278,23 @@ func gitlabApplicationSettingsToStateMap(settings *api.Settings) map[string]inte
 	stateMap["external_pipeline_validation_service_url"] = settings.ExternalPipelineValidationServiceURL
 	stateMap["external_pipeline_validation_service_token"] = settings.ExternalPipelineValidationServiceToken
 	stateMap["external_pipeline_validation_service_timeout"] = settings.ExternalPipelineValidationServiceTimeout
+	stateMap["failed_login_attempts_unlock_period_in_minutes"] = settings.FailedLoginAttemptsUnlockPeriodInMinutes
 	stateMap["file_template_project_id"] = settings.FileTemplateProjectID
 	stateMap["first_day_of_week"] = settings.FirstDayOfWeek
 	stateMap["geo_node_allowed_ips"] = settings.GeoNodeAllowedIPs
 	stateMap["geo_status_timeout"] = settings.GeoStatusTimeout
+	stateMap["git_rate_limit_users_alertlist"] = settings.GitRateLimitUsersAlertlist
+	stateMap["git_rate_limit_users_allowlist"] = settings.GitRateLimitUsersAllowlist
 	stateMap["git_two_factor_session_expiry"] = settings.GitTwoFactorSessionExpiry
 	stateMap["gitaly_timeout_default"] = settings.GitalyTimeoutDefault
 	stateMap["gitaly_timeout_fast"] = settings.GitalyTimeoutFast
 	stateMap["gitaly_timeout_medium"] = settings.GitalyTimeoutMedium
+	stateMap["gitlab_dedicated_instance"] = settings.GitlabDedicatedInstance
+	stateMap["gitlab_environment_toolkit_instance"] = settings.GitlabEnvironmentToolkitInstance
+	stateMap["gitlab_shell_operation_limit"] = settings.GitlabShellOperationLimit
+	stateMap["gitpod_enabled"] = settings.GitpodEnabled
+	stateMap["gitpod_url"] = settings.GitpodURL
+	stateMap["globally_allowed_ips"] = settings.GloballyAllowedIps
 	stateMap["grafana_enabled"] = settings.GrafanaEnabled
 	stateMap["grafana_url"] = settings.GrafanaURL
 	stateMap["gravatar_enabled"] = settings.GravatarEnabled
@@ -2128,18 +2317,27 @@ func gitlabApplicationSettingsToStateMap(settings *api.Settings) map[string]inte
 	stateMap["inactive_projects_delete_after_months"] = settings.InactiveProjectsDeleteAfterMonths
 	stateMap["inactive_projects_min_size_mb"] = settings.InactiveProjectsMinSizeMB
 	stateMap["inactive_projects_send_warning_email_after_months"] = settings.InactiveProjectsSendWarningEmailAfterMonths
+	stateMap["include_optional_metrics_in_service_ping"] = settings.IncludeOptionalMetricsInServicePing
 	stateMap["invisible_captcha_enabled"] = settings.InvisibleCaptchaEnabled
 	stateMap["issues_create_limit"] = settings.IssuesCreateLimit
+	stateMap["jira_connect_application_key"] = settings.JiraConnectApplicationKey
+	stateMap["jira_connect_proxy_url"] = settings.JiraConnectProxyURL
+	stateMap["jira_connect_public_key_storage_enabled"] = settings.JiraConnectPublicKeyStorageEnabled
 	stateMap["keep_latest_artifact"] = settings.KeepLatestArtifact
 	stateMap["local_markdown_version"] = settings.LocalMarkdownVersion
+	stateMap["lock_duo_features_enabled"] = settings.LockDuoFeaturesEnabled
 	stateMap["mailgun_signing_key"] = settings.MailgunSigningKey
 	stateMap["mailgun_events_enabled"] = settings.MailgunEventsEnabled
 	stateMap["maintenance_mode_message"] = settings.MaintenanceModeMessage
+	stateMap["maven_package_requests_forwarding"] = settings.MavenPackageRequestsForwarding
 	stateMap["maintenance_mode"] = settings.MaintenanceMode
 	stateMap["max_artifacts_size"] = settings.MaxArtifactsSize
 	stateMap["max_attachment_size"] = settings.MaxAttachmentSize
+	stateMap["max_decompressed_archive_size"] = settings.MaxDecompressedArchiveSize
 	stateMap["max_export_size"] = settings.MaxExportSize
+	stateMap["max_import_remote_file_size"] = settings.MaxImportRemoteFileSize
 	stateMap["max_import_size"] = settings.MaxImportSize
+	stateMap["max_login_attempts"] = settings.MaxLoginAttempts
 	stateMap["max_pages_size"] = settings.MaxPagesSize
 	stateMap["max_personal_access_token_lifetime"] = settings.MaxPersonalAccessTokenLifetime
 	stateMap["max_ssh_key_lifetime"] = settings.MaxSSHKeyLifetime
@@ -2147,14 +2345,15 @@ func gitlabApplicationSettingsToStateMap(settings *api.Settings) map[string]inte
 	stateMap["metrics_method_call_threshold"] = settings.MetricsMethodCallThreshold
 	stateMap["max_number_of_repository_downloads"] = settings.MaxNumberOfRepositoryDownloads
 	stateMap["max_number_of_repository_downloads_within_time_period"] = settings.MaxNumberOfRepositoryDownloadsWithinTimePeriod
-	stateMap["git_rate_limit_users_allowlist"] = settings.GitRateLimitUsersAllowlist
 	stateMap["mirror_available"] = settings.MirrorAvailable
 	stateMap["mirror_capacity_threshold"] = settings.MirrorCapacityThreshold
 	stateMap["mirror_max_capacity"] = settings.MirrorMaxCapacity
 	stateMap["mirror_max_delay"] = settings.MirrorMaxDelay
 	stateMap["npm_package_requests_forwarding"] = settings.NPMPackageRequestsForwarding
-	stateMap["pypi_package_requests_forwarding"] = settings.PyPIPackageRequestsForwarding
+	stateMap["nuget_skip_metadata_url_validation"] = settings.NugetSkipMetadataURLValidation
 	stateMap["outbound_local_requests_whitelist"] = settings.OutboundLocalRequestsWhitelist
+	stateMap["package_metadata_purl_types"] = settings.PackageMetadataPurlTypes
+	stateMap["package_registry_allow_anyone_to_pull_option"] = settings.PackageRegistryAllowAnyoneToPullOption
 	stateMap["pages_domain_verification_enabled"] = settings.PagesDomainVerificationEnabled
 	stateMap["password_authentication_enabled_for_git"] = settings.PasswordAuthenticationEnabledForGit
 	stateMap["password_authentication_enabled_for_web"] = settings.PasswordAuthenticationEnabledForWeb
@@ -2174,6 +2373,7 @@ func gitlabApplicationSettingsToStateMap(settings *api.Settings) map[string]inte
 	stateMap["protected_ci_variables"] = settings.ProtectedCIVariables
 	stateMap["push_event_activities_limit"] = settings.PushEventActivitiesLimit
 	stateMap["push_event_hooks_limit"] = settings.PushEventHooksLimit
+	stateMap["pypi_package_requests_forwarding"] = settings.PyPIPackageRequestsForwarding
 	stateMap["rate_limiting_response_text"] = settings.RateLimitingResponseText
 	stateMap["raw_blob_request_limit"] = settings.RawBlobRequestLimit
 	stateMap["search_rate_limit"] = settings.SearchRateLimit
