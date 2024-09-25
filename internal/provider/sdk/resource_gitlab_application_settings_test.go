@@ -1,19 +1,41 @@
-//go:build acceptance
-// +build acceptance
+//go:build settings
+// +build settings
 
 package sdk
 
 import (
 	"context"
+	"encoding/json"
 	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/xanzy/go-gitlab"
+	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
+var originalSettings *gitlab.UpdateSettingsOptions
+
+func init() {
+	currentSettings, _, err := testutil.TestGitlabClient.Settings.GetSettings()
+	if err != nil {
+		tflog.Debug(context.Background(), "Failed to get application settings")
+	}
+
+	currentSettingsJSON, err := json.Marshal(currentSettings)
+	if err != nil {
+		tflog.Debug(context.Background(), "Failed to marshal application settings")
+	}
+
+	if err := json.Unmarshal(currentSettingsJSON, &originalSettings); err != nil {
+		tflog.Debug(context.Background(), "Failed to unmarshal application settings")
+	}
+}
+
 func TestAccGitlabApplicationSettings_basic(t *testing.T) {
+
 	// lintignore:AT001
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
@@ -39,6 +61,7 @@ func TestAccGitlabApplicationSettings_basic(t *testing.T) {
 }
 
 func TestAccGitlabApplicationSettings_testCanCreateGroup(t *testing.T) {
+
 	// lintignore:AT001
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
@@ -64,6 +87,7 @@ func TestAccGitlabApplicationSettings_testCanCreateGroup(t *testing.T) {
 }
 
 func TestAccGitlabApplicationSettings_testNullGitProtocol(t *testing.T) {
+
 	// lintignore:AT001
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
@@ -109,6 +133,7 @@ func TestAccGitlabApplicationSettings_testNullGitProtocol(t *testing.T) {
 }
 
 func TestAccGitlabApplicationSettings_testConflicts(t *testing.T) {
+
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
 		CheckDestroy:             testAccGitlabApplicationSettingsDestroy,
@@ -166,6 +191,7 @@ func TestAccGitlabApplicationSettings_testConflicts(t *testing.T) {
 }
 
 func TestAccGitlabApplicationSettings_testState(t *testing.T) {
+
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
 		CheckDestroy:             testAccGitlabApplicationSettingsDestroy,
@@ -226,6 +252,7 @@ func TestAccGitlabApplicationSettings_elasticSearchSettings(t *testing.T) {
 }
 
 func TestAccGitlabApplicationSettings_testMinimumPasswordLength(t *testing.T) {
+
 	// lintignore:AT001
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
@@ -253,8 +280,8 @@ func TestAccGitlabApplicationSettings_testMinimumPasswordLength(t *testing.T) {
 }
 
 /*
-README: Adding a test destroy function seems a easier-to-understand path to ilustrate
-application settings nature and its inhability to be destroyed than simply using a nil
+README: Adding a test destroy function seems a easier-to-understand path to illustrate
+application settings nature and its inability to be destroyed than simply using a nil
 value in the acceptance test to satisfy the linter.
 */
 func testAccGitlabApplicationSettingsDestroy(state *terraform.State) error {

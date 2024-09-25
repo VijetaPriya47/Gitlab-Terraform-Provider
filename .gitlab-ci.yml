@@ -185,6 +185,8 @@ go:test:
     expire_in: 2 days
     when: always
 
+# This set of jobs always runs, and tests any resources that can be
+# tested within the CE distribution of GitLab.
 testacc:ce:
   extends:
     - .testacc
@@ -229,6 +231,60 @@ testacc:ce:flakey:
     GITLAB_EDITION: ce
   script: make testacc-flakey
 
+# This set of jobs tests the "ApplicationSettings" resource. Since the resource
+# make changes to the underlying application settings of the instance, we
+# want it to have its own isolated instance so it doesns't "leak" into the
+# other tests, especially since the `destroy` operation doesn't revert the
+# changes.
+testacc:ce:settings:
+  extends:
+    - .testacc
+    - .run-for-supported-versions
+  rules:
+    - if: $CI_MERGE_REQUEST_IID
+      changes:
+        - "**/*.go"
+        - go.mod
+        - go.sum
+        - .gitlab-ci.yml
+        - docker-compose.yml
+        - GNUmakefile
+        - scripts/await-healthy.sh
+        - scripts/healthcheck-and-setup.sh
+        - scripts/gitlab.rb
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_TAG
+  variables:
+    GITLAB_EDITION: ce
+  script: make testacc-settings
+
+testacc:ee:settings:
+  extends:
+    - .testacc
+    - .run-for-supported-versions
+  variables:
+    GITLAB_EDITION: ee
+  rules:
+    # If we're on a merge request, only run the tests if go files have changed.
+    # Otherwise, run them on the default branch as long as EE is enabled.
+    - if: $CI_MERGE_REQUEST_IID && $ENABLE_EE_ACCEPTANCE_TESTS == "true"
+      changes:
+        - "**/*.go"
+        - go.mod
+        - go.sum
+        - .gitlab-ci.yml
+        - docker-compose.yml
+        - GNUmakefile
+        - scripts/await-healthy.sh
+        - scripts/healthcheck-and-setup.sh
+        - scripts/gitlab.rb
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $ENABLE_EE_ACCEPTANCE_TESTS == "true"
+    - if: $CI_COMMIT_TAG && $ENABLE_EE_ACCEPTANCE_TESTS == "true"
+  script: make testacc-settings
+
+# This set of jobs tests the resources that only work in GitLab EE. These include
+# resources which may require a premium or ultimate license to run, but also include
+# some resources that are available in the free tier, but still require GitLab EE.
 testacc:ee:
   extends:
     - .testacc

@@ -1,5 +1,5 @@
-//go:build acceptance || flakey
-// +build acceptance flakey
+//go:build acceptance || flakey || settings
+// +build acceptance flakey settings
 
 package sdk
 

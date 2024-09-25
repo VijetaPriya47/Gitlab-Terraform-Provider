@@ -117,19 +117,24 @@ type Settings struct {
 	ElasticsearchLimitIndexing                            bool                     `json:"elasticsearch_limit_indexing"`
 	ElasticsearchMaxBulkConcurrency                       int                      `json:"elasticsearch_max_bulk_concurrency"`
 	ElasticsearchMaxBulkSizeMB                            int                      `json:"elasticsearch_max_bulk_size_mb"`
+	ElasticsearchMaxCodeIndexingConcurrency               int                      `json:"elasticsearch_max_code_indexing_concurrency"`
 	ElasticsearchNamespaceIDs                             []int                    `json:"elasticsearch_namespace_ids"`
 	ElasticsearchPassword                                 string                   `json:"elasticsearch_password"`
 	ElasticsearchPauseIndexing                            bool                     `json:"elasticsearch_pause_indexing"`
 	ElasticsearchProjectIDs                               []int                    `json:"elasticsearch_project_ids"`
 	ElasticsearchReplicas                                 int                      `json:"elasticsearch_replicas"`
+	ElasticsearchRequeueWorkers                           bool                     `json:"elasticsearch_requeue_workers"`
 	ElasticsearchSearch                                   bool                     `json:"elasticsearch_search"`
 	ElasticsearchShards                                   int                      `json:"elasticsearch_shards"`
 	ElasticsearchURL                                      []string                 `json:"elasticsearch_url"`
 	ElasticsearchUsername                                 string                   `json:"elasticsearch_username"`
+	ElasticsearchWorkerNumberOfShards                     int                      `json:"elasticsearch_worker_number_of_shards"`
 	EmailAdditionalText                                   string                   `json:"email_additional_text"`
 	EmailAuthorInBody                                     bool                     `json:"email_author_in_body"`
+	EmailConfirmationSetting                              string                   `json:"email_confirmation_setting"`
 	EmailRestrictions                                     string                   `json:"email_restrictions"`
 	EmailRestrictionsEnabled                              bool                     `json:"email_restrictions_enabled"`
+	EnableArtifactExternalRedirectWarningPage             bool                     `json:"enable_artifact_external_redirect_warning_page"`
 	EnabledGitAccessProtocol                              string                   `json:"enabled_git_access_protocol"`
 	EnforceNamespaceStorageLimit                          bool                     `json:"enforce_namespace_storage_limit"`
 	EnforcePATExpiration                                  bool                     `json:"enforce_pat_expiration"`
@@ -145,18 +150,24 @@ type Settings struct {
 	ExternalPipelineValidationServiceTimeout              int                      `json:"external_pipeline_validation_service_timeout"`
 	ExternalPipelineValidationServiceToken                string                   `json:"external_pipeline_validation_service_token"`
 	ExternalPipelineValidationServiceURL                  string                   `json:"external_pipeline_validation_service_url"`
+	FailedLoginAttemptsUnlockPeriodInMinutes              int                      `json:"failed_login_attempts_unlock_period_in_minutes"`
 	FileTemplateProjectID                                 int                      `json:"file_template_project_id"`
 	FirstDayOfWeek                                        int                      `json:"first_day_of_week"`
 	FlocEnabled                                           bool                     `json:"floc_enabled"`
 	GeoNodeAllowedIPs                                     string                   `json:"geo_node_allowed_ips"`
 	GeoStatusTimeout                                      int                      `json:"geo_status_timeout"`
+	GitRateLimitUsersAlertlist                            []int                    `json:"git_rate_limit_users_alertlist"`
+	GitRateLimitUsersAllowlist                            []string                 `json:"git_rate_limit_users_allowlist"`
 	GitTwoFactorSessionExpiry                             int                      `json:"git_two_factor_session_expiry"`
 	GitalyTimeoutDefault                                  int                      `json:"gitaly_timeout_default"`
 	GitalyTimeoutFast                                     int                      `json:"gitaly_timeout_fast"`
 	GitalyTimeoutMedium                                   int                      `json:"gitaly_timeout_medium"`
+	GitlabDedicatedInstance                               bool                     `json:"gitlab_dedicated_instance"`
+	GitlabEnvironmentToolkitInstance                      bool                     `json:"gitlab_environment_toolkit_instance"`
+	GitlabShellOperationLimit                             int                      `json:"gitlab_shell_operation_limit"`
 	GitpodEnabled                                         bool                     `json:"gitpod_enabled"`
 	GitpodURL                                             string                   `json:"gitpod_url"`
-	GitRateLimitUsersAllowlist                            []string                 `json:"git_rate_limit_users_allowlist"`
+	GloballyAllowedIps                                    string                   `json:"globally_allowed_ips"`
 	GrafanaEnabled                                        bool                     `json:"grafana_enabled"`
 	GrafanaURL                                            string                   `json:"grafana_url"`
 	GravatarEnabled                                       bool                     `json:"gravatar_enabled"`
@@ -184,24 +195,33 @@ type Settings struct {
 	InactiveProjectsDeleteAfterMonths                     int                      `json:"inactive_projects_delete_after_months"`
 	InactiveProjectsMinSizeMB                             int                      `json:"inactive_projects_min_size_mb"`
 	InactiveProjectsSendWarningEmailAfterMonths           int                      `json:"inactive_projects_send_warning_email_after_months"`
+	IncludeOptionalMetricsInServicePing                   bool                     `json:"include_optional_metrics_in_service_ping"`
 	InProductMarketingEmailsEnabled                       bool                     `json:"in_product_marketing_emails_enabled"`
 	InvisibleCaptchaEnabled                               bool                     `json:"invisible_captcha_enabled"`
 	IssuesCreateLimit                                     int                      `json:"issues_create_limit"`
+	JiraConnectApplicationKey                             string                   `json:"jira_connect_application_key"`
+	JiraConnectProxyURL                                   string                   `json:"jira_connect_proxy_url"`
+	JiraConnectPublicKeyStorageEnabled                    bool                     `json:"jira_connect_public_key_storage_enabled"`
 	KeepLatestArtifact                                    bool                     `json:"keep_latest_artifact"`
 	KrokiEnabled                                          bool                     `json:"kroki_enabled"`
 	KrokiFormats                                          map[string]bool          `json:"kroki_formats"`
 	KrokiURL                                              string                   `json:"kroki_url"`
 	LocalMarkdownVersion                                  int                      `json:"local_markdown_version"`
+	LockDuoFeaturesEnabled                                bool                     `json:"lock_duo_features_enabled"`
 	LockMembershipsToLDAP                                 bool                     `json:"lock_memberships_to_ldap"`
 	LoginRecaptchaProtectionEnabled                       bool                     `json:"login_recaptcha_protection_enabled"`
 	MailgunEventsEnabled                                  bool                     `json:"mailgun_events_enabled"`
 	MailgunSigningKey                                     string                   `json:"mailgun_signing_key"`
 	MaintenanceMode                                       bool                     `json:"maintenance_mode"`
 	MaintenanceModeMessage                                string                   `json:"maintenance_mode_message"`
+	MavenPackageRequestsForwarding                        bool                     `json:"maven_package_requests_forwarding"`
 	MaxArtifactsSize                                      int                      `json:"max_artifacts_size"`
 	MaxAttachmentSize                                     int                      `json:"max_attachment_size"`
+	MaxDecompressedArchiveSize                            int                      `json:"max_decompressed_archive_size"`
 	MaxExportSize                                         int                      `json:"max_export_size"`
+	MaxImportRemoteFileSize                               int                      `json:"max_import_remote_file_size"`
 	MaxImportSize                                         int                      `json:"max_import_size"`
+	MaxLoginAttempts                                      int                      `json:"max_login_attempts"`
 	MaxNumberOfRepositoryDownloads                        int                      `json:"max_number_of_repository_downloads"`
 	MaxNumberOfRepositoryDownloadsWithinTimePeriod        int                      `json:"max_number_of_repository_downloads_within_time_period"`
 	MaxPagesSize                                          int                      `json:"max_pages_size"`
@@ -219,8 +239,11 @@ type Settings struct {
 	NPMPackageRequestsForwarding                          bool                     `json:"npm_package_requests_forwarding"`
 	NotesCreateLimit                                      int                      `json:"notes_create_limit"`
 	NotifyOnUnknownSignIn                                 bool                     `json:"notify_on_unknown_sign_in"`
+	NugetSkipMetadataURLValidation                        bool                     `json:"nuget_skip_metadata_url_validation"`
 	OutboundLocalRequestsAllowlistRaw                     string                   `json:"outbound_local_requests_allowlist_raw"`
 	OutboundLocalRequestsWhitelist                        []string                 `json:"outbound_local_requests_whitelist"`
+	PackageMetadataPurlTypes                              []int                    `json:"package_metadata_purl_types"`
+	PackageRegistryAllowAnyoneToPullOption                bool                     `json:"package_registry_allow_anyone_to_pull_option"`
 	PackageRegistryCleanupPoliciesWorkerCapacity          int                      `json:"package_registry_cleanup_policies_worker_capacity"`
 	PagesDomainVerificationEnabled                        bool                     `json:"pages_domain_verification_enabled"`
 	PasswordAuthenticationEnabledForGit                   bool                     `json:"password_authentication_enabled_for_git"`
