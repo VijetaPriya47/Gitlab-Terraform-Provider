@@ -261,6 +261,8 @@ resource "gitlab_application_settings" "this" {
 - `plantuml_url` (String) The PlantUML instance URL for integration.
 - `polling_interval_multiplier` (Number) Interval multiplier used by endpoints that perform polling. Set to 0 to disable polling.
 - `project_export_enabled` (Boolean) Enable project export.
+- `project_jobs_api_rate_limit` (Number) Maximum authenticated requests to /project/:id/jobs per minute. Introduced in GitLab 16.5.
+- `projects_api_rate_limit_unauthenticated` (Number) Introduced in GitLab 15.10. Max number of requests per 10 minutes per IP address for unauthenticated requests to the list all projects API. To disable throttling set to 0.
 - `prometheus_metrics_enabled` (Boolean) Enable Prometheus metrics.
 - `protected_ci_variables` (Boolean) CI/CD variables are protected by default.
 - `push_event_activities_limit` (Number) Number of changes (branches or tags) in a single push to determine whether individual push events or bulk push events are created. Bulk push events are created if it surpasses that value.
@@ -272,17 +274,25 @@ resource "gitlab_application_settings" "this" {
 - `recaptcha_private_key` (String, Sensitive) Private key for reCAPTCHA.
 - `recaptcha_site_key` (String, Sensitive) Site key for reCAPTCHA.
 - `receive_max_input_size` (Number) Maximum push size (MB).
+- `receptive_cluster_agents_enabled` (Boolean) Enable receptive mode for GitLab Agents for Kubernetes.
+- `remember_me_enabled` (Boolean) Enable Remember me setting. Introduced in GitLab 16.0.
 - `repository_checks_enabled` (Boolean) GitLab periodically runs git fsck in all project and wiki repositories to look for silent disk corruption issues.
 - `repository_size_limit` (Number) Size limit per repository (MB).
 - `repository_storages` (List of String) (GitLab 13.0 and earlier) List of names of enabled storage paths, taken from gitlab.yml. New projects are created in one of these stores, chosen at random.
 - `repository_storages_weighted` (Map of Number) (GitLab 13.1 and later) Hash of names of taken from gitlab.yml to weights. New projects are created in one of these stores, chosen by a weighted random selection.
 - `require_admin_approval_after_user_signup` (Boolean) When enabled, any user that signs up for an account using the registration form is placed under a Pending approval state and has to be explicitly approved by an administrator.
+- `require_admin_two_factor_authentication` (Boolean) Allow administrators to require 2FA for all administrators on the instance.
+- `require_personal_access_token_expiry` (Boolean) When enabled, users must set an expiration date when creating a group or project access token, or a personal access token owned by a non-service account.
 - `require_two_factor_authentication` (Boolean) (If enabled, requires: two_factor_grace_period) Require all users to set up Two-factor authentication.
 - `restricted_visibility_levels` (List of String) Selected levels cannot be used by non-Administrator users for groups, projects or snippets. Can take private, internal and public as a parameter. Null means there is no restriction.
 - `rsa_key_restriction` (Number) The minimum allowed bit length of an uploaded RSA key. 0 means no restriction. -1 disables RSA keys.
 - `search_rate_limit` (Number) Max number of requests per minute for performing a search while authenticated. To disable throttling set to 0.
 - `search_rate_limit_unauthenticated` (Number) Max number of requests per minute for performing a search while unauthenticated. To disable throttling set to 0.
+- `security_approval_policies_limit` (Number) Maximum number of active merge request approval policies per security policy project. Maximum: 20
+- `security_policy_global_group_approvers_enabled` (Boolean) Whether to look up merge request approval policy approval groups globally or within project hierarchies.
+- `security_txt_content` (String) Public security contact information. Introduced in GitLab 16.7.
 - `send_user_confirmation_email` (Boolean) Send confirmation email on sign-up.
+- `service_access_tokens_expiration_enforced` (Boolean) Flag to indicate if token expiry date can be optional for service account users
 - `session_expire_delay` (Number) Session duration in minutes. GitLab restart is required to apply changes.
 - `shared_runners_enabled` (Boolean) (If enabled, requires: shared_runners_text and shared_runners_minutes) Enable shared runners for new projects.
 - `shared_runners_minutes` (Number) Set the maximum number of CI/CD minutes that a group can use on shared runners per month.
@@ -292,6 +302,8 @@ resource "gitlab_application_settings" "this" {
 - `sidekiq_job_limiter_mode` (String) track or compress. Sets the behavior for Sidekiq job size limits.
 - `sign_in_text` (String) Text on the login page.
 - `signup_enabled` (Boolean) Enable registration.
+- `silent_admin_exports_enabled` (Boolean) Enable Silent admin exports.
+- `silent_mode_enabled` (Boolean) Enable Silent mode.
 - `slack_app_enabled` (Boolean) (If enabled, requires: slack_app_id, slack_app_secret and slack_app_secret) Enable Slack app.
 - `slack_app_id` (String) The app ID of the Slack-app.
 - `slack_app_secret` (String, Sensitive) The app secret of the Slack-app.
@@ -301,6 +313,7 @@ resource "gitlab_application_settings" "this" {
 - `snowplow_app_id` (String) The Snowplow site name / application ID. (for example, gitlab)
 - `snowplow_collector_hostname` (String) The Snowplow collector hostname. (for example, snowplow.trx.gitlab.net)
 - `snowplow_cookie_domain` (String) The Snowplow cookie domain. (for example, .gitlab.com)
+- `snowplow_database_collector_hostname` (String) The Snowplow collector for database events hostname. (for example, db-snowplow.trx.gitlab.net)
 - `snowplow_enabled` (Boolean) Enable snowplow tracking.
 - `sourcegraph_enabled` (Boolean) Enables Sourcegraph integration. If enabled, requires sourcegraph_url.
 - `sourcegraph_public_only` (Boolean) Blocks Sourcegraph from being loaded on private and internal projects.
@@ -308,6 +321,8 @@ resource "gitlab_application_settings" "this" {
 - `spam_check_api_key` (String, Sensitive) API key used by GitLab for accessing the Spam Check service endpoint.
 - `spam_check_endpoint_enabled` (Boolean) Enables spam checking using external Spam Check API endpoint.
 - `spam_check_endpoint_url` (String) URL of the external Spamcheck service endpoint. Valid URI schemes are grpc or tls. Specifying tls forces communication to be encrypted.
+- `static_objects_external_storage_auth_token` (String, Sensitive) Authentication token for the external storage linked in static_objects_external_storage_url.
+- `static_objects_external_storage_url` (String, Sensitive) URL to an external storage for repository static objects.
 - `suggest_pipeline_enabled` (Boolean) Enable pipeline suggestion banner.
 - `terminal_max_session_time` (Number) Maximum time for web terminal websocket connection (in seconds). Set to 0 for unlimited time.
 - `terms` (String) (Required by: enforce_terms) Markdown content for the ToS.
@@ -331,18 +346,23 @@ resource "gitlab_application_settings" "this" {
 - `throttle_unauthenticated_web_requests_per_period` (Number) Max requests per period per IP.
 - `time_tracking_limit_to_hours` (Boolean) Limit display of time tracking units to hours.
 - `two_factor_grace_period` (Number) Amount of time (in hours) that users are allowed to skip forced configuration of two-factor authentication.
+- `unconfirmed_users_delete_after_days` (Number) Specifies how many days after sign-up to delete users who have not confirmed their email. Only applicable if delete_unconfirmed_users is set to true. Must be 1 or greater. Introduced in GitLab 16.1. Self-managed, Premium and Ultimate only.
 - `unique_ips_limit_enabled` (Boolean) (If enabled, requires: unique_ips_limit_per_user and unique_ips_limit_time_window) Limit sign in from multiple IPs.
 - `unique_ips_limit_per_user` (Number) Maximum number of IPs per user.
 - `unique_ips_limit_time_window` (Number) How many seconds an IP is counted towards the limit.
+- `update_runner_versions_enabled` (Boolean) Fetch GitLab Runner release version data from GitLab.com.
 - `usage_ping_enabled` (Boolean) Every week GitLab reports license usage back to GitLab, Inc.
+- `use_clickhouse_for_analytics` (Boolean) Enables ClickHouse as a data source for analytics reports. ClickHouse must be configured for this setting to take effect. Available on Premium and Ultimate only.
 - `user_deactivation_emails_enabled` (Boolean) Send an email to users upon account deactivation.
 - `user_default_external` (Boolean) Newly registered users are external by default.
 - `user_default_internal_regex` (String) Specify an email address regex pattern to identify default internal users.
+- `user_defaults_to_private_profile` (Boolean) Newly created users have private profile by default. Introduced in GitLab 15.8.
 - `user_oauth_applications` (Boolean) Allow users to register any application to use GitLab as an OAuth provider.
 - `user_show_add_ssh_key_message` (Boolean) When set to false disable the You won't be able to pull or push project code via SSH warning shown to users with no uploaded SSH key.
+- `valid_runner_registrars` (List of String) List of types which are allowed to register a GitLab Runner. Can be [], ['group'], ['project'] or ['group', 'project'].
 - `version_check_enabled` (Boolean) Let GitLab inform you when an update is available.
 - `web_ide_clientside_preview_enabled` (Boolean) Live Preview (allow live previews of JavaScript projects in the Web IDE using CodeSandbox Live Preview).
-- `whats_new_variant` (String) What’s new variant, possible values: all_tiers, current_tier, and disabled.
+- `whats_new_variant` (String) What's new variant, possible values: all_tiers, current_tier, and disabled.
 - `wiki_page_max_content_bytes` (Number) Maximum wiki page content size in bytes. The minimum value is 1024 bytes.
 
 ### Read-Only

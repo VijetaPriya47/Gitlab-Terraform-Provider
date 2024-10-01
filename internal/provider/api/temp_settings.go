@@ -266,7 +266,9 @@ type Settings struct {
 	ProjectExportEnabled                                  bool                     `json:"project_export_enabled"`
 	ProjectExportLimit                                    int                      `json:"project_export_limit"`
 	ProjectImportLimit                                    int                      `json:"project_import_limit"`
+	ProjectJobsAPIRateLimit                               int                      `json:"project_jobs_api_rate_limit"`
 	ProjectRunnerTokenExpirationInterval                  int                      `json:"project_runner_token_expiration_interval"`
+	ProjectsAPIRateLimitUnauthenticated                   int                      `json:"projects_api_rate_limit_unauthenticated"`
 	PrometheusMetricsEnabled                              bool                     `json:"prometheus_metrics_enabled"`
 	ProtectedCIVariables                                  bool                     `json:"protected_ci_variables"`
 	PseudonymizerEnabled                                  bool                     `json:"pseudonymizer_enabled"`
@@ -280,11 +282,15 @@ type Settings struct {
 	RecaptchaPrivateKey                                   string                   `json:"recaptcha_private_key"`
 	RecaptchaSiteKey                                      string                   `json:"recaptcha_site_key"`
 	ReceiveMaxInputSize                                   int                      `json:"receive_max_input_size"`
+	ReceptiveClusterAgentsEnabled                         bool                     `json:"receptive_cluster_agents_enabled"`
+	RememberMeEnabled                                     bool                     `json:"remember_me_enabled"`
 	RepositoryChecksEnabled                               bool                     `json:"repository_checks_enabled"`
 	RepositorySizeLimit                                   int                      `json:"repository_size_limit"`
 	RepositoryStorages                                    []string                 `json:"repository_storages"`
 	RepositoryStoragesWeighted                            map[string]int           `json:"repository_storages_weighted"`
 	RequireAdminApprovalAfterUserSignup                   bool                     `json:"require_admin_approval_after_user_signup"`
+	RequireAdminTwoFactorAuthentication                   bool                     `json:"require_admin_two_factor_authentication"`
+	RequirePersonalAccessTokenExpiry                      bool                     `json:"require_personal_access_token_expiry"`
 	RequireTwoFactorAuthentication                        bool                     `json:"require_two_factor_authentication"`
 	RestrictedVisibilityLevels                            []gitlab.VisibilityValue `json:"restricted_visibility_levels"`
 	RunnerTokenExpirationInterval                         int                      `json:"runner_token_expiration_interval"`
@@ -294,11 +300,15 @@ type Settings struct {
 	SecretDetectionTokenRevocationEnabled                 bool                     `json:"secret_detection_token_revocation_enabled"`
 	SecretDetectionTokenRevocationToken                   string                   `json:"secret_detection_token_revocation_token"`
 	SecretDetectionTokenRevocationURL                     string                   `json:"secret_detection_token_revocation_url"`
+	SecurityApprovalPoliciesLimit                         int                      `json:"security_approval_policies_limit"`
+	SecurityPolicyGlobalGroupApproversEnabled             bool                     `json:"security_policy_global_group_approvers_enabled"`
+	SecurityTXTContent                                    string                   `json:"security_txt_content"`
 	SendUserConfirmationEmail                             bool                     `json:"send_user_confirmation_email"`
 	SentryClientsideDSN                                   string                   `json:"sentry_clientside_dsn"`
 	SentryDSN                                             string                   `json:"sentry_dsn"`
 	SentryEnabled                                         bool                     `json:"sentry_enabled"`
 	SentryEnvironment                                     string                   `json:"sentry_environment"`
+	ServiceAccessTokensExpirationEnforced                 bool                     `json:"service_access_tokens_expiration_enforced"`
 	SessionExpireDelay                                    int                      `json:"session_expire_delay"`
 	SharedRunnersEnabled                                  bool                     `json:"shared_runners_enabled"`
 	SharedRunnersMinutes                                  int                      `json:"shared_runners_minutes"`
@@ -308,6 +318,8 @@ type Settings struct {
 	SidekiqJobLimiterMode                                 string                   `json:"sidekiq_job_limiter_mode"`
 	SignInText                                            string                   `json:"sign_in_text"`
 	SignupEnabled                                         bool                     `json:"signup_enabled"`
+	SilentAdminExportsEnabled                             bool                     `json:"silent_admin_exports_enabled"`
+	SilentModeEnabled                                     bool                     `json:"silent_mode_enabled"`
 	SlackAppEnabled                                       bool                     `json:"slack_app_enabled"`
 	SlackAppID                                            string                   `json:"slack_app_id"`
 	SlackAppSecret                                        string                   `json:"slack_app_secret"`
@@ -317,6 +329,7 @@ type Settings struct {
 	SnowplowAppID                                         string                   `json:"snowplow_app_id"`
 	SnowplowCollectorHostname                             string                   `json:"snowplow_collector_hostname"`
 	SnowplowCookieDomain                                  string                   `json:"snowplow_cookie_domain"`
+	SnowplowDatabaseCollectorHostname                     string                   `json:"snowplow_database_collector_hostname"`
 	SnowplowEnabled                                       bool                     `json:"snowplow_enabled"`
 	SourcegraphEnabled                                    bool                     `json:"sourcegraph_enabled"`
 	SourcegraphPublicOnly                                 bool                     `json:"sourcegraph_public_only"`
@@ -324,6 +337,8 @@ type Settings struct {
 	SpamCheckAPIKey                                       string                   `json:"spam_check_api_key"`
 	SpamCheckEndpointEnabled                              bool                     `json:"spam_check_endpoint_enabled"`
 	SpamCheckEndpointURL                                  string                   `json:"spam_check_endpoint_url"`
+	StaticObjectsExternalStorageAuthToken                 string                   `json:"static_objects_external_storage_auth_token"`
+	StaticObjectsExternalStorageURL                       string                   `json:"static_objects_external_storage_url"`
 	SuggestPipelineEnabled                                bool                     `json:"suggest_pipeline_enabled"`
 	TerminalMaxSessionTime                                int                      `json:"terminal_max_session_time"`
 	Terms                                                 string                   `json:"terms"`
@@ -371,20 +386,25 @@ type Settings struct {
 	ThrottleUnauthenticatedWebRequestsPerPeriod           int                      `json:"throttle_unauthenticated_web_requests_per_period"`
 	TimeTrackingLimitToHours                              bool                     `json:"time_tracking_limit_to_hours"`
 	TwoFactorGracePeriod                                  int                      `json:"two_factor_grace_period"`
+	UnconfirmedUsersDeleteAfterDays                       int                      `json:"unconfirmed_users_delete_after_days"`
 	UniqueIPsLimitEnabled                                 bool                     `json:"unique_ips_limit_enabled"`
 	UniqueIPsLimitPerUser                                 int                      `json:"unique_ips_limit_per_user"`
 	UniqueIPsLimitTimeWindow                              int                      `json:"unique_ips_limit_time_window"`
+	UpdateRunnerVersionsEnabled                           bool                     `json:"update_runner_versions_enabled"`
 	UpdatedAt                                             *time.Time               `json:"updated_at"`
 	UpdatingNameDisabledForUsers                          bool                     `json:"updating_name_disabled_for_users"`
 	UsagePingEnabled                                      bool                     `json:"usage_ping_enabled"`
 	UsagePingFeaturesEnabled                              bool                     `json:"usage_ping_features_enabled"`
+	UseClickhouseForAnalytics                             bool                     `json:"use_clickhouse_for_analytics"`
 	UserDeactivationEmailsEnabled                         bool                     `json:"user_deactivation_emails_enabled"`
 	UserDefaultExternal                                   bool                     `json:"user_default_external"`
 	UserDefaultInternalRegex                              string                   `json:"user_default_internal_regex"`
+	UserDefaultsToPrivateProfile                          bool                     `json:"user_defaults_to_private_profile"`
 	UserOauthApplications                                 bool                     `json:"user_oauth_applications"`
 	UserShowAddSSHKeyMessage                              bool                     `json:"user_show_add_ssh_key_message"`
 	UsersGetByIDLimit                                     int                      `json:"users_get_by_id_limit"`
 	UsersGetByIDLimitAllowlistRaw                         string                   `json:"users_get_by_id_limit_allowlist_raw"`
+	ValidRunnerRegistrars                                 []string                 `json:"valid_runner_registrars"`
 	VersionCheckEnabled                                   bool                     `json:"version_check_enabled"`
 	WebIDEClientsidePreviewEnabled                        bool                     `json:"web_ide_clientside_preview_enabled"`
 	WhatsNewVariant                                       string                   `json:"whats_new_variant"`

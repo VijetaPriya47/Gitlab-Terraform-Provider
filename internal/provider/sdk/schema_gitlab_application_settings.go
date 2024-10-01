@@ -1568,6 +1568,20 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 
+		"project_jobs_api_rate_limit": {
+			Description: "Maximum authenticated requests to /project/:id/jobs per minute. Introduced in GitLab 16.5.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
+		},
+
+		"projects_api_rate_limit_unauthenticated": {
+			Description: "Introduced in GitLab 15.10. Max number of requests per 10 minutes per IP address for unauthenticated requests to the list all projects API. To disable throttling set to 0.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
+		},
+
 		"prometheus_metrics_enabled": {
 			Description: "Enable Prometheus metrics.",
 			Type:        schema.TypeBool,
@@ -1613,6 +1627,34 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 		"raw_blob_request_limit": {
 			Description: "Max number of requests per minute for each raw path. To disable throttling set to 0.",
 			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
+		},
+
+		"receptive_cluster_agents_enabled": {
+			Description: "Enable receptive mode for GitLab Agents for Kubernetes.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
+
+		"remember_me_enabled": {
+			Description: "Enable Remember me setting. Introduced in GitLab 16.0.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
+
+		"require_admin_two_factor_authentication": {
+			Description: "Allow administrators to require 2FA for all administrators on the instance.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
+
+		"require_personal_access_token_expiry": {
+			Description: "When enabled, users must set an expiration date when creating a group or project access token, or a personal access token owned by a non-service account.",
+			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
 		},
@@ -1720,8 +1762,36 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 
+		"security_approval_policies_limit": {
+			Description: "Maximum number of active merge request approval policies per security policy project. Maximum: 20",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
+		},
+
+		"security_policy_global_group_approvers_enabled": {
+			Description: "Whether to look up merge request approval policy approval groups globally or within project hierarchies.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
+
+		"security_txt_content": {
+			Description: "Public security contact information. Introduced in GitLab 16.7.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
+		},
+
 		"send_user_confirmation_email": {
 			Description: "Send confirmation email on sign-up.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
+
+		"service_access_tokens_expiration_enforced": {
+			Description: "Flag to indicate if token expiry date can be optional for service account users",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
@@ -1785,6 +1855,20 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 
 		"signup_enabled": {
 			Description: "Enable registration.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
+
+		"silent_admin_exports_enabled": {
+			Description: "Enable Silent admin exports.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
+
+		"silent_mode_enabled": {
+			Description: "Enable Silent mode.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
@@ -1855,6 +1939,13 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 
+		"snowplow_database_collector_hostname": {
+			Description: "The Snowplow collector for database events hostname. (for example, db-snowplow.trx.gitlab.net)",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
+		},
+
 		"snowplow_enabled": {
 			Description: "Enable snowplow tracking.",
 			Type:        schema.TypeBool,
@@ -1903,6 +1994,20 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 			Sensitive:   true,
 			Optional:    true,
 			Computed:    true,
+		},
+
+		"static_objects_external_storage_auth_token": {
+			Description: "Authentication token for the external storage linked in static_objects_external_storage_url.",
+			Type:        schema.TypeString,
+			Sensitive:   true,
+			Optional:    true,
+		},
+
+		"static_objects_external_storage_url": {
+			Description: "URL to an external storage for repository static objects.",
+			Type:        schema.TypeString,
+			Sensitive:   true,
+			Optional:    true,
 		},
 
 		"suggest_pipeline_enabled": {
@@ -2066,6 +2171,13 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 
+		"unconfirmed_users_delete_after_days": {
+			Description: "Specifies how many days after sign-up to delete users who have not confirmed their email. Only applicable if delete_unconfirmed_users is set to true. Must be 1 or greater. Introduced in GitLab 16.1. Self-managed, Premium and Ultimate only.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
+		},
+
 		"unique_ips_limit_enabled": {
 			Description: "(If enabled, requires: unique_ips_limit_per_user and unique_ips_limit_time_window) Limit sign in from multiple IPs.",
 			Type:        schema.TypeBool,
@@ -2087,8 +2199,22 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 
+		"update_runner_versions_enabled": {
+			Description: "Fetch GitLab Runner release version data from GitLab.com.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
+
 		"usage_ping_enabled": {
 			Description: "Every week GitLab reports license usage back to GitLab, Inc.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
+
+		"use_clickhouse_for_analytics": {
+			Description: "Enables ClickHouse as a data source for analytics reports. ClickHouse must be configured for this setting to take effect. Available on Premium and Ultimate only.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
@@ -2115,6 +2241,13 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 
+		"user_defaults_to_private_profile": {
+			Description: "Newly created users have private profile by default. Introduced in GitLab 15.8.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
+
 		"user_oauth_applications": {
 			Description: "Allow users to register any application to use GitLab as an OAuth provider.",
 			Type:        schema.TypeBool,
@@ -2129,6 +2262,14 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 
+		"valid_runner_registrars": {
+			Description: "List of types which are allowed to register a GitLab Runner. Can be [], ['group'], ['project'] or ['group', 'project'].",
+			Type:        schema.TypeList,
+			Elem:        &schema.Schema{Type: schema.TypeString},
+			Optional:    true,
+			Computed:    true,
+		},
+
 		"version_check_enabled": {
 			Description: "Let GitLab inform you when an update is available.",
 			Type:        schema.TypeBool,
@@ -2137,7 +2278,7 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 		},
 
 		"whats_new_variant": {
-			Description: "What’s new variant, possible values: all_tiers, current_tier, and disabled.",
+			Description: "What's new variant, possible values: all_tiers, current_tier, and disabled.",
 			Type:        schema.TypeString,
 			Optional:    true,
 			Computed:    true,
@@ -2369,6 +2510,8 @@ func gitlabApplicationSettingsToStateMap(settings *api.Settings) map[string]inte
 	stateMap["plantuml_url"] = settings.PlantumlURL
 	stateMap["polling_interval_multiplier"] = settings.PollingIntervalMultiplier
 	stateMap["project_export_enabled"] = settings.ProjectExportEnabled
+	stateMap["project_jobs_api_rate_limit"] = settings.ProjectJobsAPIRateLimit
+	stateMap["projects_api_rate_limit_unauthenticated"] = settings.ProjectsAPIRateLimitUnauthenticated
 	stateMap["prometheus_metrics_enabled"] = settings.PrometheusMetricsEnabled
 	stateMap["protected_ci_variables"] = settings.ProtectedCIVariables
 	stateMap["push_event_activities_limit"] = settings.PushEventActivitiesLimit
@@ -2382,15 +2525,23 @@ func gitlabApplicationSettingsToStateMap(settings *api.Settings) map[string]inte
 	stateMap["recaptcha_private_key"] = settings.RecaptchaPrivateKey
 	stateMap["recaptcha_site_key"] = settings.RecaptchaSiteKey
 	stateMap["receive_max_input_size"] = settings.ReceiveMaxInputSize
+	stateMap["receptive_cluster_agents_enabled"] = settings.ReceptiveClusterAgentsEnabled
+	stateMap["remember_me_enabled"] = settings.RememberMeEnabled
 	stateMap["repository_checks_enabled"] = settings.RepositoryChecksEnabled
 	stateMap["repository_size_limit"] = settings.RepositorySizeLimit
 	stateMap["repository_storages_weighted"] = settings.RepositoryStoragesWeighted
 	stateMap["repository_storages"] = settings.RepositoryStorages
 	stateMap["require_admin_approval_after_user_signup"] = settings.RequireAdminApprovalAfterUserSignup
+	stateMap["require_admin_two_factor_authentication"] = settings.RequireAdminTwoFactorAuthentication
+	stateMap["require_personal_access_token_expiry"] = settings.RequirePersonalAccessTokenExpiry
 	stateMap["require_two_factor_authentication"] = settings.RequireTwoFactorAuthentication
 	stateMap["restricted_visibility_levels"] = settings.RestrictedVisibilityLevels
 	stateMap["rsa_key_restriction"] = settings.RSAKeyRestriction
+	stateMap["security_approval_policies_limit"] = settings.SecurityApprovalPoliciesLimit
+	stateMap["security_policy_global_group_approvers_enabled"] = settings.SecurityPolicyGlobalGroupApproversEnabled
+	stateMap["security_txt_content"] = settings.SecurityTXTContent
 	stateMap["send_user_confirmation_email"] = settings.SendUserConfirmationEmail
+	stateMap["service_access_tokens_expiration_enforced"] = settings.ServiceAccessTokensExpirationEnforced
 	stateMap["session_expire_delay"] = settings.SessionExpireDelay
 	stateMap["shared_runners_enabled"] = settings.SharedRunnersEnabled
 	stateMap["shared_runners_minutes"] = settings.SharedRunnersMinutes
@@ -2400,6 +2551,8 @@ func gitlabApplicationSettingsToStateMap(settings *api.Settings) map[string]inte
 	stateMap["sidekiq_job_limiter_limit_bytes"] = settings.SidekiqJobLimiterLimitBytes
 	stateMap["sign_in_text"] = settings.SignInText
 	stateMap["signup_enabled"] = settings.SignupEnabled
+	stateMap["silent_admin_exports_enabled"] = settings.SilentAdminExportsEnabled
+	stateMap["silent_mode_enabled"] = settings.SilentModeEnabled
 	stateMap["slack_app_enabled"] = settings.SlackAppEnabled
 	stateMap["slack_app_id"] = settings.SlackAppID
 	stateMap["slack_app_secret"] = settings.SlackAppSecret
@@ -2409,6 +2562,7 @@ func gitlabApplicationSettingsToStateMap(settings *api.Settings) map[string]inte
 	stateMap["snowplow_app_id"] = settings.SnowplowAppID
 	stateMap["snowplow_collector_hostname"] = settings.SnowplowCollectorHostname
 	stateMap["snowplow_cookie_domain"] = settings.SnowplowCookieDomain
+	stateMap["snowplow_database_collector_hostname"] = settings.SnowplowDatabaseCollectorHostname
 	stateMap["snowplow_enabled"] = settings.SnowplowEnabled
 	stateMap["sourcegraph_enabled"] = settings.SourcegraphEnabled
 	stateMap["sourcegraph_public_only"] = settings.SourcegraphPublicOnly
@@ -2416,6 +2570,8 @@ func gitlabApplicationSettingsToStateMap(settings *api.Settings) map[string]inte
 	stateMap["spam_check_endpoint_enabled"] = settings.SpamCheckEndpointEnabled
 	stateMap["spam_check_endpoint_url"] = settings.SpamCheckEndpointURL
 	stateMap["spam_check_api_key"] = settings.SpamCheckAPIKey
+	stateMap["static_objects_external_storage_auth_token"] = settings.StaticObjectsExternalStorageAuthToken
+	stateMap["static_objects_external_storage_url"] = settings.StaticObjectsExternalStorageURL
 	stateMap["suggest_pipeline_enabled"] = settings.SuggestPipelineEnabled
 	stateMap["terminal_max_session_time"] = settings.TerminalMaxSessionTime
 	stateMap["terms"] = settings.Terms
@@ -2439,15 +2595,20 @@ func gitlabApplicationSettingsToStateMap(settings *api.Settings) map[string]inte
 	stateMap["throttle_unauthenticated_web_requests_per_period"] = settings.ThrottleUnauthenticatedWebRequestsPerPeriod
 	stateMap["time_tracking_limit_to_hours"] = settings.TimeTrackingLimitToHours
 	stateMap["two_factor_grace_period"] = settings.TwoFactorGracePeriod
+	stateMap["unconfirmed_users_delete_after_days"] = settings.UnconfirmedUsersDeleteAfterDays
 	stateMap["unique_ips_limit_enabled"] = settings.UniqueIPsLimitEnabled
 	stateMap["unique_ips_limit_per_user"] = settings.UniqueIPsLimitPerUser
 	stateMap["unique_ips_limit_time_window"] = settings.UniqueIPsLimitTimeWindow
+	stateMap["update_runner_versions_enabled"] = settings.UpdateRunnerVersionsEnabled
 	stateMap["usage_ping_enabled"] = settings.UsagePingEnabled
+	stateMap["use_clickhouse_for_analytics"] = settings.UseClickhouseForAnalytics
 	stateMap["user_deactivation_emails_enabled"] = settings.UserDeactivationEmailsEnabled
 	stateMap["user_default_external"] = settings.UserDefaultExternal
 	stateMap["user_default_internal_regex"] = settings.UserDefaultInternalRegex
+	stateMap["user_defaults_to_private_profile"] = settings.UserDefaultsToPrivateProfile
 	stateMap["user_oauth_applications"] = settings.UserOauthApplications
 	stateMap["user_show_add_ssh_key_message"] = settings.UserShowAddSSHKeyMessage
+	stateMap["valid_runner_registrars"] = settings.ValidRunnerRegistrars
 	stateMap["version_check_enabled"] = settings.VersionCheckEnabled
 	stateMap["whats_new_variant"] = settings.WhatsNewVariant
 	stateMap["web_ide_clientside_preview_enabled"] = settings.WebIDEClientsidePreviewEnabled
@@ -3233,6 +3394,14 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 		options.ProjectExportEnabled = gitlab.Ptr(d.Get("project_export_enabled").(bool))
 	}
 
+	if d.HasChange("project_jobs_api_rate_limit") {
+		options.ProjectJobsAPIRateLimit = gitlab.Ptr(d.Get("project_jobs_api_rate_limit").(int))
+	}
+
+	if d.HasChange("projects_api_rate_limit_unauthenticated") {
+		options.ProjectsAPIRateLimitUnauthenticated = gitlab.Ptr(d.Get("projects_api_rate_limit_unauthenticated").(int))
+	}
+
 	if d.HasChange("prometheus_metrics_enabled") {
 		options.PrometheusMetricsEnabled = gitlab.Ptr(d.Get("prometheus_metrics_enabled").(bool))
 	}
@@ -3281,6 +3450,14 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 		options.ReceiveMaxInputSize = gitlab.Ptr(d.Get("receive_max_input_size").(int))
 	}
 
+	if d.HasChange("receptive_cluster_agents_enabled") {
+		options.ReceptiveClusterAgentsEnabled = gitlab.Ptr(d.Get("receptive_cluster_agents_enabled").(bool))
+	}
+
+	if d.HasChange("remember_me_enabled") {
+		options.RememberMeEnabled = gitlab.Ptr(d.Get("remember_me_enabled").(bool))
+	}
+
 	if d.HasChange("repository_checks_enabled") {
 		options.RepositoryChecksEnabled = gitlab.Ptr(d.Get("repository_checks_enabled").(bool))
 	}
@@ -3302,6 +3479,14 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 		options.RequireAdminApprovalAfterUserSignup = gitlab.Ptr(d.Get("require_admin_approval_after_user_signup").(bool))
 	}
 
+	if d.HasChange("require_admin_two_factor_authentication") {
+		options.RequireAdminTwoFactorAuthentication = gitlab.Ptr(d.Get("require_admin_two_factor_authentication").(bool))
+	}
+
+	if d.HasChange("require_personal_access_token_expiry") {
+		options.RequirePersonalAccessTokenExpiry = gitlab.Ptr(d.Get("require_personal_access_token_expiry").(bool))
+	}
+
 	if d.HasChange("require_two_factor_authentication") {
 		options.RequireTwoFactorAuthentication = gitlab.Ptr(d.Get("require_two_factor_authentication").(bool))
 	}
@@ -3314,8 +3499,24 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 		options.RSAKeyRestriction = gitlab.Ptr(d.Get("rsa_key_restriction").(int))
 	}
 
+	if d.HasChange("security_approval_policies_limit") {
+		options.SecurityApprovalPoliciesLimit = gitlab.Ptr(d.Get("security_approval_policies_limit").(int))
+	}
+
+	if d.HasChange("security_policy_global_group_approvers_enabled") {
+		options.SecurityPolicyGlobalGroupApproversEnabled = gitlab.Ptr(d.Get("security_policy_global_group_approvers_enabled").(bool))
+	}
+
+	if d.HasChange("security_txt_content") {
+		options.SecurityTXTContent = gitlab.Ptr(d.Get("security_txt_content").(string))
+	}
+
 	if d.HasChange("send_user_confirmation_email") {
 		options.SendUserConfirmationEmail = gitlab.Ptr(d.Get("send_user_confirmation_email").(bool))
+	}
+
+	if d.HasChange("service_access_tokens_expiration_enforced") {
+		options.ServiceAccessTokensExpirationEnforced = gitlab.Ptr(d.Get("service_access_tokens_expiration_enforced").(bool))
 	}
 
 	if d.HasChange("session_expire_delay") {
@@ -3354,6 +3555,14 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 		options.SignupEnabled = gitlab.Ptr(d.Get("signup_enabled").(bool))
 	}
 
+	if d.HasChange("silent_admin_exports_enabled") {
+		options.SilentAdminExportsEnabled = gitlab.Ptr(d.Get("silent_admin_exports_enabled").(bool))
+	}
+
+	if d.HasChange("silent_mode_enabled") {
+		options.SilentModeEnabled = gitlab.Ptr(d.Get("silent_mode_enabled").(bool))
+	}
+
 	if d.HasChange("slack_app_enabled") {
 		options.SlackAppEnabled = gitlab.Ptr(d.Get("slack_app_enabled").(bool))
 	}
@@ -3390,6 +3599,10 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 		options.SnowplowCookieDomain = gitlab.Ptr(d.Get("snowplow_cookie_domain").(string))
 	}
 
+	if d.HasChange("snowplow_database_collector_hostname") {
+		options.SnowplowDatabaseCollectorHostname = gitlab.Ptr(d.Get("snowplow_database_collector_hostname").(string))
+	}
+
 	if d.HasChange("snowplow_enabled") {
 		options.SnowplowEnabled = gitlab.Ptr(d.Get("snowplow_enabled").(bool))
 	}
@@ -3416,6 +3629,14 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 
 	if d.HasChange("spam_check_api_key") {
 		options.SpamCheckAPIKey = gitlab.Ptr(d.Get("spam_check_api_key").(string))
+	}
+
+	if d.HasChange("static_objects_external_storage_auth_token") {
+		options.StaticObjectsExternalStorageAuthToken = gitlab.Ptr(d.Get("static_objects_external_storage_auth_token").(string))
+	}
+
+	if d.HasChange("static_objects_external_storage_url") {
+		options.StaticObjectsExternalStorageURL = gitlab.Ptr(d.Get("static_objects_external_storage_url").(string))
 	}
 
 	if d.HasChange("suggest_pipeline_enabled") {
@@ -3510,6 +3731,10 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 		options.TwoFactorGracePeriod = gitlab.Ptr(d.Get("two_factor_grace_period").(int))
 	}
 
+	if d.HasChange("unconfirmed_users_delete_after_days") {
+		options.UnconfirmedUsersDeleteAfterDays = gitlab.Ptr(d.Get("unconfirmed_users_delete_after_days").(int))
+	}
+
 	if d.HasChange("unique_ips_limit_enabled") {
 		options.UniqueIPsLimitEnabled = gitlab.Ptr(d.Get("unique_ips_limit_enabled").(bool))
 	}
@@ -3522,8 +3747,16 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 		options.UniqueIPsLimitTimeWindow = gitlab.Ptr(d.Get("unique_ips_limit_time_window").(int))
 	}
 
+	if d.HasChange("update_runner_versions_enabled") {
+		options.UpdateRunnerVersionsEnabled = gitlab.Ptr(d.Get("update_runner_versions_enabled").(bool))
+	}
+
 	if d.HasChange("usage_ping_enabled") {
 		options.UsagePingEnabled = gitlab.Ptr(d.Get("usage_ping_enabled").(bool))
+	}
+
+	if d.HasChange("use_clickhouse_for_analytics") {
+		options.UseClickhouseForAnalytics = gitlab.Ptr(d.Get("use_clickhouse_for_analytics").(bool))
 	}
 
 	if d.HasChange("user_deactivation_emails_enabled") {
@@ -3538,12 +3771,20 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 		options.UserDefaultInternalRegex = gitlab.Ptr(d.Get("user_default_internal_regex").(string))
 	}
 
+	if d.HasChange("user_defaults_to_private_profile") {
+		options.UserDefaultsToPrivateProfile = gitlab.Ptr(d.Get("user_defaults_to_private_profile").(bool))
+	}
+
 	if d.HasChange("user_oauth_applications") {
 		options.UserOauthApplications = gitlab.Ptr(d.Get("user_oauth_applications").(bool))
 	}
 
 	if d.HasChange("user_show_add_ssh_key_message") {
 		options.UserShowAddSSHKeyMessage = gitlab.Ptr(d.Get("user_show_add_ssh_key_message").(bool))
+	}
+
+	if d.HasChange("valid_runner_registrars") {
+		options.ValidRunnerRegistrars = gitlab.Ptr(d.Get("valid_runner_registrars").([]string))
 	}
 
 	if d.HasChange("version_check_enabled") {
