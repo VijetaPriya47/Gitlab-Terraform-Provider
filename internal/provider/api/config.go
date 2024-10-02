@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 
@@ -22,6 +23,7 @@ type Config struct {
 	ClientKey     string
 	EarlyAuthFail bool
 	Retries       int
+	Headers       map[string]any
 }
 
 // Client returns a *gitlab.Client to interact with the configured gitlab instance
@@ -73,6 +75,16 @@ func (c *Config) NewGitLabClient(ctx context.Context) (*gitlab.Client, error) {
 
 	if c.BaseURL != "" {
 		opts = append(opts, gitlab.WithBaseURL(c.BaseURL))
+	}
+
+	if c.Headers != nil {
+		stringMap := make(map[string]string, len(c.Headers))
+		for k, v := range c.Headers {
+			stringMap[k] = fmt.Sprintf("%v", v)
+		}
+		opts = append(opts, gitlab.WithRequestOptions(
+			gitlab.WithHeaders(stringMap),
+		))
 	}
 
 	opts = append(opts, gitlab.WithCustomRetryMax(c.Retries))

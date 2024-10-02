@@ -89,6 +89,12 @@ func New(version string) func() *schema.Provider {
 					Default:     10,
 					Description: "The number of retries to execute when receiving a 429 Rate Limit error. Each retry will exponentially back off.",
 				},
+				"headers": {
+					Type:        schema.TypeMap,
+					Optional:    true,
+					Description: "A map of headers to append to all API request to the GitLab instance.",
+					Elem:        schema.TypeString,
+				},
 			},
 
 			DataSourcesMap: resourceFactoriesToMap(allDataSources),
@@ -112,6 +118,7 @@ func configure(version string, p *schema.Provider) func(context.Context, *schema
 			ClientKey:     d.Get("client_key").(string),
 			EarlyAuthFail: d.Get("early_auth_check").(bool),
 			Retries:       d.Get("retries").(int),
+			Headers:       d.Get("headers").(map[string]any),
 		}
 		if _, ok := d.GetOk("token"); !ok {
 			config.Token = os.Getenv("GITLAB_TOKEN")

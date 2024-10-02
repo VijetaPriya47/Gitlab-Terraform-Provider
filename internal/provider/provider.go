@@ -36,6 +36,7 @@ type GitLabProviderModel struct {
 	ClientKey      types.String `tfsdk:"client_key"`
 	EarlyAuthCheck types.Bool   `tfsdk:"early_auth_check"`
 	Retries        types.Int64  `tfsdk:"retries"`
+	Headers        types.Map    `tfsdk:"headers"`
 }
 
 func (p *GitLabProvider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
@@ -78,6 +79,11 @@ func (p *GitLabProvider) Schema(_ context.Context, _ provider.SchemaRequest, res
 			"retries": schema.Int64Attribute{
 				MarkdownDescription: "The number of retries to execute when receiving a 429 Rate Limit error. Each retry will exponentially back off.",
 				Optional:            true,
+			},
+			"headers": schema.MapAttribute{
+				MarkdownDescription: "A map of headers to append to all API request to the GitLab instance.",
+				Optional:            true,
+				ElementType:         types.StringType,
 			},
 		},
 	}
@@ -148,6 +154,14 @@ func (p *GitLabProvider) Configure(ctx context.Context, req provider.ConfigureRe
 				"Either apply the source of the value first, set the token attribute value statically in the configuration, or use the GITLAB_EARLY_AUTH_CHECK environment variable.",
 		)
 	}
+	if config.Headers.IsUnknown() {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("headers"),
+			"Unknown Headers for the GitLab API calls",
+			"The provider cannot create the GitLab API client as there is an unknown configuration value for the GitLab Headers flag. "+
+				"Either apply the source of the value first or set the headers attribute value statically in the configuration.",
+		)
+	}
 
 	// If no value is explicitly provided for Retries, default to 10
 	if config.Retries.IsUnknown() || config.Retries.IsNull() {
@@ -177,6 +191,7 @@ func (p *GitLabProvider) Configure(ctx context.Context, req provider.ConfigureRe
 		ClientCert:    "",
 		ClientKey:     "",
 		EarlyAuthFail: earlyAuthCheck,
+		Headers:       nil,
 	}
 
 	// Evaluate Provider Attribute Default values now that they are all "known"
@@ -203,6 +218,19 @@ func (p *GitLabProvider) Configure(ctx context.Context, req provider.ConfigureRe
 	}
 	if !config.Retries.IsNull() {
 		evaluatedConfig.Retries = int(config.Retries.ValueInt64())
+	}
+	if !config.Headers.IsNull() {
+		// Convert the terraform types.Map (map[str]attr.Value) into one that have types.String as the key
+		stringMap := make(map[string]types.String, len(config.Headers.Elements()))
+		resp.Diagnostics.Append(config.Headers.ElementsAs(ctx, &stringMap, false)...)
+
+		// Further reduce that to ma[string]string
+		headersMap := map[string]any{}
+		for key, val := range stringMap {
+			headersMap[key] = val.ValueString()
+		}
+
+		evaluatedConfig.Headers = headersMap
 	}
 
 	// TODO(@timofurrer): validate configuration values
