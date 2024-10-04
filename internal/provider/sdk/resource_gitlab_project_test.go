@@ -1996,6 +1996,35 @@ func TestAccGitlabProject_WithAvatar(t *testing.T) {
 	resource.Test(t, testCase)
 }
 
+// This test checks that a project with `use_custom_template` set to false doesn't encounter
+// a 500 internal server error. This is related to a bug in the upstream GitLab API, but is
+// something we can handle on the provider side by simply not passing the value in.
+// See https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/issues/6154#note_2143274743 for details.
+func TestAccGitlabProject_FalseCustomTemplate(t *testing.T) {
+
+	name := acctest.RandomWithPrefix("acctest")
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabProjectDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project" "test" {
+					name             =  "%s"
+					visibility_level = "public"
+			
+					use_custom_template = false
+				}
+				`, name),
+				// We only need to check one attribute; the bug this tests checks causes a 500 internal server error
+				// if it hasn't been resolved.
+				Check: resource.TestCheckResourceAttr("gitlab_project.test", "name", name),
+			},
+		},
+	})
+}
+
 func TestAccGitlabProject_SecretsPushDetection(t *testing.T) {
 	testutil.SkipIfCE(t)
 	if !testutil.IsRunningAtLeast(t, "17.3") {

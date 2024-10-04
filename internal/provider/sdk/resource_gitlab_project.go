@@ -2065,7 +2065,12 @@ func createProject(ctx context.Context, d *schema.ResourceData, client *gitlab.C
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 	if v, ok := d.GetOkExists("use_custom_template"); ok {
-		options.UseCustomTemplate = gitlab.Ptr(v.(bool))
+		// There is currently a bug where `use_custom_template` returns a 500 if the
+		// value is set to `false`, requiring it to be set to `null` instead to work.
+		// As a result, only apply this value if it's "true"
+		if v.(bool) {
+			options.UseCustomTemplate = gitlab.Ptr(v.(bool))
+		}
 	}
 
 	if v, ok := d.GetOk("group_with_project_templates_id"); ok {
