@@ -178,7 +178,7 @@ func CreateProjectWithOptions(t *testing.T, opts *gitlab.CreateProjectOptions) *
 	}
 
 	t.Cleanup(func() {
-		if _, err := TestGitlabClient.Projects.DeleteProject(project.ID); err != nil {
+		if _, err := TestGitlabClient.Projects.DeleteProject(project.ID, nil); err != nil {
 			t.Fatalf("could not cleanup test project: %v", err)
 		}
 	})

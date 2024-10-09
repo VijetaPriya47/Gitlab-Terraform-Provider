@@ -1660,7 +1660,7 @@ func resourceGitlabProjectDelete(ctx context.Context, d *schema.ResourceData, me
 
 	if !d.Get("archive_on_destroy").(bool) {
 		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Delete gitlab project %s", d.Id()))
-		_, err := client.Projects.DeleteProject(d.Id(), gitlab.WithContext(ctx))
+		_, err := client.Projects.DeleteProject(d.Id(), nil, gitlab.WithContext(ctx))
 		if err != nil {
 			return diag.FromErr(err)
 		}
