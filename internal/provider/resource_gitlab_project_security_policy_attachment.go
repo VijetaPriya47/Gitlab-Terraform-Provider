@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -15,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/xanzy/go-gitlab"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
@@ -150,23 +152,48 @@ func (d *gitlabProjectSecurityPolicyAttachmentResource) Read(ctx context.Context
 	}
 
 	// Read the policy project
-	query := fmt.Sprintf(`
+	tflog.Info(ctx, "Waiting up to 1 minutes for reading the policy project to succeed. Sometimes a blank value is returned without this.", map[string]interface{}{
+		"project": project,
+	})
+	var response GetSecurityPolicyProjectResponse
+	err = retry.RetryContext(ctx, 1*time.Minute, func() *retry.RetryError {
+		query := fmt.Sprintf(`
 		query {
 			project(fullPath:"%s") {
 				id,
 				securityPolicyProject {id}
 			}
 		}
-	`, projectIds.ProjectFullPath)
-	var response GetSecurityPolicyProjectResponse
-	_, err = api.SendGraphQLRequest(ctx, d.client, api.GraphQLQuery{Query: query}, &response)
+		`, projectIds.ProjectFullPath)
+		_, err = api.SendGraphQLRequest(ctx, d.client, api.GraphQLQuery{Query: query}, &response)
+
+		if err != nil {
+			// If we _actually_ get a GraphQL error (usually a permissions issue), don't retry
+			return retry.NonRetryableError(err)
+		}
+		if len(response.Errors) > 0 {
+			// Similarly, if we successfully get a response, but it has errors, don't retry
+			return retry.NonRetryableError(errors.New(response.Errors[0].Message))
+		}
+
+		// If our response simply doesns't have a project ID, retry
+		if response.Data.Project == nil || response.Data.Project.SecurityPolicyProject == nil || response.Data.Project.SecurityPolicyProject.ID == "" {
+			tflog.Warn(ctx, "Policy Project ID not found but no errors were encountered, waiting another period", map[string]interface{}{
+				"project": project,
+			})
+			return retry.RetryableError(errors.New("project ID not found but no errors were encountered"))
+		}
+
+		// We have a fully hydrated response, exit the wait
+		tflog.Debug(ctx, "Policy Project ID found successfully", map[string]interface{}{
+			"project": project,
+		})
+		return nil
+	})
+
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to read security policy project", err.Error())
 		return
-	}
-
-	if len(response.Errors) > 0 {
-		resp.Diagnostics.AddError("Failed to read security policy project", response.Errors[0].Message)
 	}
 
 	if response.Data.Project == nil {

@@ -13,6 +13,10 @@ func TestGitlab_extractIIDFromGlobalID(t *testing.T) {
 		IID      int
 	}{
 		{
+			GlobalID: "",
+			IID:      0,
+		},
+		{
 			GlobalID: "gid://gitlab/User/1",
 			IID:      1,
 		},
@@ -38,9 +42,6 @@ func TestGitlab_extractIIDFromGlobalID_invalidGlobalID(t *testing.T) {
 	cases := []struct {
 		GlobalID string
 	}{
-		{
-			GlobalID: "",
-		},
 		{
 			GlobalID: "gid://gitlab/User/",
 		},

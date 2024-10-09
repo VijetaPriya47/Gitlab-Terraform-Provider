@@ -48,6 +48,12 @@ func Is403(err error) bool {
 //
 // see https://docs.gitlab.com/ee/development/api_graphql_styleguide.html#global-ids
 func ExtractIIDFromGlobalID(globalID string) (int, error) {
+	// If the globalID is empty, just return 0. This can happen in some pre-refresh areas,
+	// causing some tests to be flakey
+	if globalID == "" {
+		return 0, nil
+	}
+
 	parts := strings.Split(globalID, "/")
 	iid, err := strconv.Atoi(parts[len(parts)-1])
 	if err != nil {

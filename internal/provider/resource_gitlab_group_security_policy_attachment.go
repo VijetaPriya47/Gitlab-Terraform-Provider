@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -15,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/xanzy/go-gitlab"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
@@ -150,28 +152,48 @@ func (d *gitlabGroupSecurityPolicyAttachmentResource) Read(ctx context.Context, 
 	}
 
 	// Read the policy project
-	query := fmt.Sprintf(`
-		query {
-			group(fullPath:"%s") {
-				id,
-				securityPolicyProject {id}
-			}
-		}
-	`, groupIds.GroupFullPath)
-
+	tflog.Info(ctx, "Waiting up to 1 minutes for reading the policy project to succeed. Sometimes a blank value is returned without this.", map[string]interface{}{
+		"group": group,
+	})
 	var response GetGroupSecurityPolicyProjectResponse
-	_, err = api.SendGraphQLRequest(ctx, d.client, api.GraphQLQuery{Query: query}, &response)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to read security policy project for the group", err.Error())
-		return
-	}
+	err = retry.RetryContext(ctx, 1*time.Minute, func() *retry.RetryError {
+		// Read the policy project
+		query := fmt.Sprintf(`
+			query {
+				group(fullPath:"%s") {
+					id,
+					securityPolicyProject {id}
+				}
+			}
+		`, groupIds.GroupFullPath)
+		_, err = api.SendGraphQLRequest(ctx, d.client, api.GraphQLQuery{Query: query}, &response)
 
-	if len(response.Errors) > 0 {
-		resp.Diagnostics.AddError("Failed to read security policy project for the group", response.Errors[0].Message)
-	}
+		if err != nil {
+			// If we _actually_ get a GraphQL error (usually a permissions issue), don't retry
+			return retry.NonRetryableError(err)
+		}
+		if len(response.Errors) > 0 {
+			// Similarly, if we successfully get a response, but it has errors, don't retry
+			return retry.NonRetryableError(errors.New(response.Errors[0].Message))
+		}
+
+		// If our response simply doesns't have a project ID, retry
+		if response.Data.Group == nil || response.Data.Group.SecurityPolicyProject == nil || response.Data.Group.SecurityPolicyProject.ID == "" {
+			tflog.Warn(ctx, "Policy Project ID not found but no errors were encountered, waiting another period", map[string]interface{}{
+				"group": group,
+			})
+			return retry.RetryableError(errors.New("project ID not found but no errors were encountered"))
+		}
+
+		// We have a fully hydrated response, exit the wait
+		tflog.Debug(ctx, "Project ID found successfully", map[string]interface{}{
+			"group": group,
+		})
+		return nil
+	})
 
 	if response.Data.Group == nil {
-		tflog.Warn(ctx, "Project for the gitlab_group_security_policy_attachment returned nil from the GraphQL call, which usually means the group doesn't exist anymore.", map[string]interface{}{
+		tflog.Warn(ctx, "Group for the gitlab_group_security_policy_attachment returned nil from the GraphQL call, which usually means the group doesn't exist anymore.", map[string]interface{}{
 			"grooup":         group,
 			"policy_project": policyProject,
 		})
