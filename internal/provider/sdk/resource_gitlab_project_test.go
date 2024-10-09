@@ -743,7 +743,7 @@ func TestAccGitlabProject_importURL(t *testing.T) {
 		t.Fatalf("failed to create base project: %v", err)
 	}
 
-	defer testutil.TestGitlabClient.Projects.DeleteProject(baseProject.ID) // nolint // TODO: Resolve this golangci-lint issue: Error return value of `TestGitlabClient.Projects.DeleteProject` is not checked (errcheck)
+	defer testutil.TestGitlabClient.Projects.DeleteProject(baseProject.ID, nil) // nolint // TODO: Resolve this golangci-lint issue: Error return value of `TestGitlabClient.Projects.DeleteProject` is not checked (errcheck)
 
 	// Add a file to the base project, for later verifying the import.
 	_, _, err = testutil.TestGitlabClient.RepositoryFiles.CreateFile(baseProject.ID, "foo.txt", &gitlab.CreateFileOptions{
@@ -806,7 +806,7 @@ func TestAccGitlabProject_importURLWithPassword(t *testing.T) {
 		t.Fatalf("failed to create project access token: %v", err)
 	}
 
-	defer testutil.TestGitlabClient.Projects.DeleteProject(baseProject.ID) // nolint // TODO: Resolve this golangci-lint issue: Error return value of `TestGitlabClient.Projects.DeleteProject` is not checked (errcheck)
+	defer testutil.TestGitlabClient.Projects.DeleteProject(baseProject.ID, nil) // nolint // TODO: Resolve this golangci-lint issue: Error return value of `TestGitlabClient.Projects.DeleteProject` is not checked (errcheck)
 
 	// Add a file to the base project, for later verifying the import.
 	_, _, err = testutil.TestGitlabClient.RepositoryFiles.CreateFile(baseProject.ID, "foo.txt", &gitlab.CreateFileOptions{
@@ -1348,7 +1348,7 @@ func TestAccGitlabProject_ImportURLMirrored(t *testing.T) {
 		t.Fatalf("failed to create base project: %v", err)
 	}
 
-	defer testutil.TestGitlabClient.Projects.DeleteProject(baseProject.ID) // nolint // TODO: Resolve this golangci-lint issue: Error return value of `TestGitlabClient.Projects.DeleteProject` is not checked (errcheck)
+	defer testutil.TestGitlabClient.Projects.DeleteProject(baseProject.ID, nil) // nolint // TODO: Resolve this golangci-lint issue: Error return value of `TestGitlabClient.Projects.DeleteProject` is not checked (errcheck)
 
 	// Add a file to the base project, for later verifying the import.
 	_, _, err = testutil.TestGitlabClient.RepositoryFiles.CreateFile(baseProject.ID, "foo.txt", &gitlab.CreateFileOptions{
