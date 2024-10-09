@@ -3,7 +3,9 @@ package api
 import (
 	"context"
 	"fmt"
+	"io"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/xanzy/go-gitlab"
 )
 
@@ -15,7 +17,15 @@ func SendGraphQLRequest(ctx context.Context, client *gitlab.Client, query GraphQ
 	}
 	// Overwrite the path of the existing request, as otherwise the go-gitlab client appends /api/v4 instead.
 	request.URL.Path = "/api/graphql"
-	if _, err = client.Do(request, response); err != nil {
+	resp, err := client.Do(request, response)
+	if err != nil {
+		// Read the body of the request so we can log it
+		body, _ := io.ReadAll(resp.Body)
+		defer resp.Body.Close()
+		tflog.Debug(ctx, "GraphQL request failed", map[string]interface{}{
+			"status_code": resp.StatusCode,
+			"body":        string(body),
+		})
 		return nil, err
 	}
 	return response, nil
