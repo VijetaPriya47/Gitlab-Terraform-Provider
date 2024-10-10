@@ -32,6 +32,7 @@ func TestAccDataGitlabPipelineSchedules_basic(t *testing.T) {
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("data.gitlab_pipeline_schedules.this", "project", strconv.Itoa(project.ID)),
+					resource.TestCheckResourceAttr("data.gitlab_pipeline_schedules.this", "pipeline_schedules.0.id", strconv.Itoa(schedule1.ID)),
 					resource.TestCheckResourceAttr("data.gitlab_pipeline_schedules.this", "pipeline_schedules.0.description", schedule1.Description),
 					resource.TestCheckResourceAttr("data.gitlab_pipeline_schedules.this", "pipeline_schedules.0.ref", schedule1.Ref),
 					resource.TestCheckResourceAttr("data.gitlab_pipeline_schedules.this", "pipeline_schedules.0.cron", schedule1.Cron),
@@ -46,6 +47,7 @@ func TestAccDataGitlabPipelineSchedules_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("data.gitlab_pipeline_schedules.this", "pipeline_schedules.0.owner.state", schedule1.Owner.State),
 					resource.TestCheckResourceAttr("data.gitlab_pipeline_schedules.this", "pipeline_schedules.0.owner.avatar_url", schedule1.Owner.AvatarURL),
 					resource.TestCheckResourceAttr("data.gitlab_pipeline_schedules.this", "pipeline_schedules.0.owner.web_url", schedule1.Owner.WebURL),
+					resource.TestCheckResourceAttr("data.gitlab_pipeline_schedules.this", "pipeline_schedules.1.id", strconv.Itoa(schedule2.ID)),
 					resource.TestCheckResourceAttr("data.gitlab_pipeline_schedules.this", "pipeline_schedules.1.description", schedule2.Description),
 					resource.TestCheckResourceAttr("data.gitlab_pipeline_schedules.this", "pipeline_schedules.1.ref", schedule2.Ref),
 					resource.TestCheckResourceAttr("data.gitlab_pipeline_schedules.this", "pipeline_schedules.1.cron", schedule2.Cron),

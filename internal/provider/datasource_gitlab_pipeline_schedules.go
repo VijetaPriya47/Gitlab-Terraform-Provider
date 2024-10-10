@@ -39,7 +39,7 @@ type gitLabPipelineSchedulesDataSourceModel struct {
 }
 
 type gitlabPipelineSchedule struct {
-	ID           types.String                 `tfsdk:"id"`
+	ID           types.Int64                  `tfsdk:"id"`
 	Description  types.String                 `tfsdk:"description"`
 	Ref          types.String                 `tfsdk:"ref"`
 	Cron         types.String                 `tfsdk:"cron"`
@@ -77,7 +77,7 @@ func (d *gitlabPipelineSchedulesDataSource) Schema(_ context.Context, _ datasour
 				Computed:            true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
-						"id": schema.StringAttribute{
+						"id": schema.Int64Attribute{
 							MarkdownDescription: "The pipeline schedule id.",
 							Required:            true,
 						},
@@ -180,6 +180,7 @@ func (d *gitlabPipelineSchedulesDataSource) Read(ctx context.Context, req dataso
 
 	for _, schedule := range schedules {
 		state.PipelineSchedules = append(state.PipelineSchedules, &gitlabPipelineSchedule{
+			ID:           types.Int64Value(int64(schedule.ID)),
 			Description:  types.StringValue(schedule.Description),
 			Ref:          types.StringValue(schedule.Ref),
 			Cron:         types.StringValue(schedule.Cron),
