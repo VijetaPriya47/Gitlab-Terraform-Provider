@@ -62,7 +62,7 @@ func TestAccGitlabTagProtection_customAccessLevel(t *testing.T) {
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
-		CheckDestroy:             testAccCheckGitlabTagProtectionDestroy,
+		CheckDestroy:             testAccCheckGitlabTagProtectionDestroyFlakey,
 		Steps: []resource.TestStep{
 			// Create a project and Tag Protection with default options
 			{
@@ -80,8 +80,8 @@ func TestAccGitlabTagProtection_customAccessLevel(t *testing.T) {
 				}
 				`, project.ID, rInt, myUser[0].ID, myGroup[0].ID),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabTagProtectionExists("gitlab_tag_protection.TagProtect", &pt),
-					testAccCheckGitlabTagProtectionAttributes(&pt, &testAccGitlabTagProtectionExpectedAttributes{
+					testAccCheckGitlabTagProtectionExistsFlakey("gitlab_tag_protection.TagProtect", &pt),
+					testAccCheckGitlabTagProtectionAttributesFlakey(&pt, &testAccGitlabTagProtectionExpectedAttributesFlakey{
 						Name:                  fmt.Sprintf("TagProtect-%d", rInt),
 						CreateAccessLevel:     api.AccessLevelValueToName[gitlab.MaintainerPermissions],
 						UsersAllowedToCreate:  []string{myUser[0].Username},
@@ -114,8 +114,8 @@ func TestAccGitlabTagProtection_customAccessLevel(t *testing.T) {
 				}
 				`, project.ID, rInt, myUpdatedUser[0].ID, myUpdatedGroup[0].ID),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabTagProtectionExists("gitlab_tag_protection.TagProtect", &pt),
-					testAccCheckGitlabTagProtectionAttributes(&pt, &testAccGitlabTagProtectionExpectedAttributes{
+					testAccCheckGitlabTagProtectionExistsFlakey("gitlab_tag_protection.TagProtect", &pt),
+					testAccCheckGitlabTagProtectionAttributesFlakey(&pt, &testAccGitlabTagProtectionExpectedAttributesFlakey{
 						Name:                  fmt.Sprintf("TagProtect-%d", rInt),
 						CreateAccessLevel:     api.AccessLevelValueToName[gitlab.DeveloperPermissions],
 						UsersAllowedToCreate:  []string{myUpdatedUser[0].Username},
@@ -147,8 +147,8 @@ func TestAccGitlabTagProtection_customAccessLevel(t *testing.T) {
 				}
 				`, project.ID, rInt, myUpdatedUser[0].ID, myUpdatedGroup[0].ID),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabTagProtectionExists("gitlab_tag_protection.TagProtect", &pt),
-					testAccCheckGitlabTagProtectionAttributes(&pt, &testAccGitlabTagProtectionExpectedAttributes{
+					testAccCheckGitlabTagProtectionExistsFlakey("gitlab_tag_protection.TagProtect", &pt),
+					testAccCheckGitlabTagProtectionAttributesFlakey(&pt, &testAccGitlabTagProtectionExpectedAttributesFlakey{
 						Name:                  fmt.Sprintf("TagProtect-%d", rInt),
 						CreateAccessLevel:     api.AccessLevelValueToName[gitlab.NoPermissions],
 						UsersAllowedToCreate:  []string{myUpdatedUser[0].Username},
@@ -174,9 +174,9 @@ func TestAccGitlabTagProtection_customAccessLevel(t *testing.T) {
 				}
 				`, project.ID, rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabTagProtectionExists("gitlab_tag_protection.tag_protect", &pt),
-					testAccCheckGitlabTagProtectionPersistsInStateCorrectly("gitlab_tag_protection.tag_protect", &pt),
-					testAccCheckGitlabTagProtectionAttributes(&pt, &testAccGitlabTagProtectionExpectedAttributes{
+					testAccCheckGitlabTagProtectionExistsFlakey("gitlab_tag_protection.tag_protect", &pt),
+					testAccCheckGitlabTagProtectionPersistsInStateCorrectlyFlakey("gitlab_tag_protection.tag_protect", &pt),
+					testAccCheckGitlabTagProtectionAttributesFlakey(&pt, &testAccGitlabTagProtectionExpectedAttributesFlakey{
 						Name:                        fmt.Sprintf("TagProtect-%d", rInt),
 						CreateAccessLevel:           api.AccessLevelValueToName[gitlab.MaintainerPermissions],
 						AccessLevelsAllowedToCreate: []string{api.AccessLevelValueToName[gitlab.DeveloperPermissions]},
@@ -193,7 +193,7 @@ func TestAccGitlabTagProtection_customAccessLevel(t *testing.T) {
 	})
 }
 
-func testAccCheckGitlabTagProtectionPersistsInStateCorrectly(n string, pt *gitlab.ProtectedTag) resource.TestCheckFunc {
+func testAccCheckGitlabTagProtectionPersistsInStateCorrectlyFlakey(n string, pt *gitlab.ProtectedTag) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -221,7 +221,7 @@ func testAccCheckGitlabTagProtectionPersistsInStateCorrectly(n string, pt *gitla
 	}
 }
 
-func testAccCheckGitlabTagProtectionExists(n string, pt *gitlab.ProtectedTag) resource.TestCheckFunc {
+func testAccCheckGitlabTagProtectionExistsFlakey(n string, pt *gitlab.ProtectedTag) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -246,7 +246,7 @@ func testAccCheckGitlabTagProtectionExists(n string, pt *gitlab.ProtectedTag) re
 	}
 }
 
-type testAccGitlabTagProtectionExpectedAttributes struct {
+type testAccGitlabTagProtectionExpectedAttributesFlakey struct {
 	Name                        string
 	CreateAccessLevel           string
 	UsersAllowedToCreate        []string
@@ -254,7 +254,7 @@ type testAccGitlabTagProtectionExpectedAttributes struct {
 	AccessLevelsAllowedToCreate []string
 }
 
-func testAccCheckGitlabTagProtectionAttributes(pt *gitlab.ProtectedTag, want *testAccGitlabTagProtectionExpectedAttributes) resource.TestCheckFunc {
+func testAccCheckGitlabTagProtectionAttributesFlakey(pt *gitlab.ProtectedTag, want *testAccGitlabTagProtectionExpectedAttributesFlakey) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if pt.Name != want.Name {
 			return fmt.Errorf("got name %q; want %q", pt.Name, want.Name)
@@ -336,7 +336,7 @@ func testAccCheckGitlabTagProtectionAttributes(pt *gitlab.ProtectedTag, want *te
 	}
 }
 
-func testAccCheckGitlabTagProtectionDestroy(s *terraform.State) error {
+func testAccCheckGitlabTagProtectionDestroyFlakey(s *terraform.State) error {
 	var project string
 	var tag string
 	for _, rs := range s.RootModule().Resources {

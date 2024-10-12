@@ -41,7 +41,7 @@ func TestAccGitlabBranchProtection_allowSecificUserAndNoRoleToPush(t *testing.T)
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
-		CheckDestroy:             testAccCheckGitlabBranchProtectionDestroy,
+		CheckDestroy:             testAccCheckGitlabBranchProtectionDestroyFlakey,
 		Steps: []resource.TestStep{
 			// Create a branch protection, with only user and no role allowed to push
 			{
@@ -60,9 +60,9 @@ func TestAccGitlabBranchProtection_allowSecificUserAndNoRoleToPush(t *testing.T)
 					}
 				`, testProject.ID, testUsers[0].ID),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabBranchProtectionExists("gitlab_branch_protection.test", &pb),
-					testAccCheckGitlabBranchProtectionPersistsInStateCorrectly("gitlab_branch_protection.test", &pb),
-					testAccCheckGitlabBranchProtectionAttributes(&pb, &testAccGitlabBranchProtectionExpectedAttributes{
+					testAccCheckGitlabBranchProtectionExistsFlakey("gitlab_branch_protection.test", &pb),
+					testAccCheckGitlabBranchProtectionPersistsInStateCorrectlyFlakey("gitlab_branch_protection.test", &pb),
+					testAccCheckGitlabBranchProtectionAttributesFlakey(&pb, &testAccGitlabBranchProtectionExpectedAttributesFlakey{
 						Name:                 "test-branch",
 						PushAccessLevel:      api.AccessLevelValueToName[gitlab.MaintainerPermissions],
 						MergeAccessLevel:     api.AccessLevelValueToName[gitlab.MaintainerPermissions],
@@ -93,9 +93,9 @@ func TestAccGitlabBranchProtection_allowSecificUserAndNoRoleToPush(t *testing.T)
 					}
 				`, testProject.ID, testUsers[0].ID),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabBranchProtectionExists("gitlab_branch_protection.test", &pb),
-					testAccCheckGitlabBranchProtectionPersistsInStateCorrectly("gitlab_branch_protection.test", &pb),
-					testAccCheckGitlabBranchProtectionAttributes(&pb, &testAccGitlabBranchProtectionExpectedAttributes{
+					testAccCheckGitlabBranchProtectionExistsFlakey("gitlab_branch_protection.test", &pb),
+					testAccCheckGitlabBranchProtectionPersistsInStateCorrectlyFlakey("gitlab_branch_protection.test", &pb),
+					testAccCheckGitlabBranchProtectionAttributesFlakey(&pb, &testAccGitlabBranchProtectionExpectedAttributesFlakey{
 						Name:                 "test-branch",
 						PushAccessLevel:      api.AccessLevelValueToName[gitlab.MaintainerPermissions],
 						MergeAccessLevel:     api.AccessLevelValueToName[gitlab.MaintainerPermissions],
@@ -130,7 +130,7 @@ func TestAccGitlabBranchProtection_createWithMultipleAccessLevels(t *testing.T) 
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
-		CheckDestroy:             testAccCheckGitlabBranchProtectionDestroy,
+		CheckDestroy:             testAccCheckGitlabBranchProtectionDestroyFlakey,
 		Steps: []resource.TestStep{
 			// Create a project, groups, users and Branch Protection with advanced allowed_to blocks
 			{
@@ -190,9 +190,9 @@ func TestAccGitlabBranchProtection_createWithMultipleAccessLevels(t *testing.T) 
 					}
 				`, testProject.ID, testUsers[0].ID, testUsers[1].ID, testGroups[0].ID, testGroups[1].ID),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabBranchProtectionExists("gitlab_branch_protection.test", &pb),
-					testAccCheckGitlabBranchProtectionPersistsInStateCorrectly("gitlab_branch_protection.test", &pb),
-					testAccCheckGitlabBranchProtectionAttributes(&pb, &testAccGitlabBranchProtectionExpectedAttributes{
+					testAccCheckGitlabBranchProtectionExistsFlakey("gitlab_branch_protection.test", &pb),
+					testAccCheckGitlabBranchProtectionPersistsInStateCorrectlyFlakey("gitlab_branch_protection.test", &pb),
+					testAccCheckGitlabBranchProtectionAttributesFlakey(&pb, &testAccGitlabBranchProtectionExpectedAttributesFlakey{
 						Name:                     "test-branch",
 						PushAccessLevel:          api.AccessLevelValueToName[gitlab.MaintainerPermissions],
 						MergeAccessLevel:         api.AccessLevelValueToName[gitlab.MaintainerPermissions],
@@ -244,9 +244,9 @@ func TestAccGitlabBranchProtection_createWithMultipleAccessLevels(t *testing.T) 
 					}
 				`, testProject.ID, testUsers[0].ID, testUsers[1].ID, testGroups[0].ID, testGroups[1].ID),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabBranchProtectionExists("gitlab_branch_protection.test", &pb),
-					testAccCheckGitlabBranchProtectionPersistsInStateCorrectly("gitlab_branch_protection.test", &pb),
-					testAccCheckGitlabBranchProtectionAttributes(&pb, &testAccGitlabBranchProtectionExpectedAttributes{
+					testAccCheckGitlabBranchProtectionExistsFlakey("gitlab_branch_protection.test", &pb),
+					testAccCheckGitlabBranchProtectionPersistsInStateCorrectlyFlakey("gitlab_branch_protection.test", &pb),
+					testAccCheckGitlabBranchProtectionAttributesFlakey(&pb, &testAccGitlabBranchProtectionExpectedAttributesFlakey{
 						Name:                     "test-branch",
 						PushAccessLevel:          api.AccessLevelValueToName[gitlab.DeveloperPermissions],
 						MergeAccessLevel:         api.AccessLevelValueToName[gitlab.DeveloperPermissions],
@@ -294,7 +294,7 @@ func TestAccGitlabBranchProtection_removeUsersAndGroupsFromAllowedTo(t *testing.
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
-		CheckDestroy:             testAccCheckGitlabBranchProtectionDestroy,
+		CheckDestroy:             testAccCheckGitlabBranchProtectionDestroyFlakey,
 		Steps: []resource.TestStep{
 			// Create a branch protection, with only user and no role allowed to push
 			{
@@ -359,9 +359,9 @@ func TestAccGitlabBranchProtection_removeUsersAndGroupsFromAllowedTo(t *testing.
 					}
 				`, testProject.ID, testUsers[0].ID, testUsers[1].ID, testGroups[0].ID, testGroups[1].ID),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabBranchProtectionExists("gitlab_branch_protection.test", &pb),
-					testAccCheckGitlabBranchProtectionPersistsInStateCorrectly("gitlab_branch_protection.test", &pb),
-					testAccCheckGitlabBranchProtectionAttributes(&pb, &testAccGitlabBranchProtectionExpectedAttributes{
+					testAccCheckGitlabBranchProtectionExistsFlakey("gitlab_branch_protection.test", &pb),
+					testAccCheckGitlabBranchProtectionPersistsInStateCorrectlyFlakey("gitlab_branch_protection.test", &pb),
+					testAccCheckGitlabBranchProtectionAttributesFlakey(&pb, &testAccGitlabBranchProtectionExpectedAttributesFlakey{
 						Name:                     "test-branch",
 						PushAccessLevel:          api.AccessLevelValueToName[gitlab.MaintainerPermissions],
 						MergeAccessLevel:         api.AccessLevelValueToName[gitlab.MaintainerPermissions],
@@ -419,9 +419,9 @@ func TestAccGitlabBranchProtection_removeUsersAndGroupsFromAllowedTo(t *testing.
 					}
 				`, testProject.ID, testUsers[0].ID, testGroups[0].ID),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabBranchProtectionExists("gitlab_branch_protection.test", &pb),
-					testAccCheckGitlabBranchProtectionPersistsInStateCorrectly("gitlab_branch_protection.test", &pb),
-					testAccCheckGitlabBranchProtectionAttributes(&pb, &testAccGitlabBranchProtectionExpectedAttributes{
+					testAccCheckGitlabBranchProtectionExistsFlakey("gitlab_branch_protection.test", &pb),
+					testAccCheckGitlabBranchProtectionPersistsInStateCorrectlyFlakey("gitlab_branch_protection.test", &pb),
+					testAccCheckGitlabBranchProtectionAttributesFlakey(&pb, &testAccGitlabBranchProtectionExpectedAttributesFlakey{
 						Name:                     "test-branch",
 						PushAccessLevel:          api.AccessLevelValueToName[gitlab.MaintainerPermissions],
 						MergeAccessLevel:         api.AccessLevelValueToName[gitlab.MaintainerPermissions],
@@ -439,7 +439,7 @@ func TestAccGitlabBranchProtection_removeUsersAndGroupsFromAllowedTo(t *testing.
 	})
 }
 
-func testAccCheckGitlabBranchProtectionPersistsInStateCorrectly(n string, pb *gitlab.ProtectedBranch) resource.TestCheckFunc {
+func testAccCheckGitlabBranchProtectionPersistsInStateCorrectlyFlakey(n string, pb *gitlab.ProtectedBranch) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -486,7 +486,7 @@ func testAccCheckGitlabBranchProtectionPersistsInStateCorrectly(n string, pb *gi
 	}
 }
 
-func testAccCheckGitlabBranchProtectionExists(n string, pb *gitlab.ProtectedBranch) resource.TestCheckFunc {
+func testAccCheckGitlabBranchProtectionExistsFlakey(n string, pb *gitlab.ProtectedBranch) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -511,13 +511,13 @@ func testAccCheckGitlabBranchProtectionExists(n string, pb *gitlab.ProtectedBran
 	}
 }
 
-func testAccCheckGitlabBranchProtectionComputedAttributes(n string, pb *gitlab.ProtectedBranch) resource.TestCheckFunc {
+func testAccCheckGitlabBranchProtectionComputedAttributesFlakey(n string, pb *gitlab.ProtectedBranch) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		return resource.TestCheckResourceAttr(n, "branch_protection_id", strconv.Itoa(pb.ID))(s)
 	}
 }
 
-type testAccGitlabBranchProtectionExpectedAttributes struct {
+type testAccGitlabBranchProtectionExpectedAttributesFlakey struct {
 	Name                      string
 	PushAccessLevel           string
 	MergeAccessLevel          string
@@ -532,7 +532,7 @@ type testAccGitlabBranchProtectionExpectedAttributes struct {
 	CodeOwnerApprovalRequired bool
 }
 
-func testAccCheckGitlabBranchProtectionAttributes(pb *gitlab.ProtectedBranch, want *testAccGitlabBranchProtectionExpectedAttributes) resource.TestCheckFunc {
+func testAccCheckGitlabBranchProtectionAttributesFlakey(pb *gitlab.ProtectedBranch, want *testAccGitlabBranchProtectionExpectedAttributesFlakey) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if pb.Name != want.Name {
 			return fmt.Errorf("got name %q; want %q", pb.Name, want.Name)
@@ -709,7 +709,7 @@ func testAccCheckGitlabBranchProtectionAttributes(pb *gitlab.ProtectedBranch, wa
 	}
 }
 
-func testAccCheckGitlabBranchProtectionDestroy(s *terraform.State) error {
+func testAccCheckGitlabBranchProtectionDestroyFlakey(s *terraform.State) error {
 	var project string
 	var branch string
 	for _, rs := range s.RootModule().Resources {
