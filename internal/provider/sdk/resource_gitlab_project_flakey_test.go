@@ -21,7 +21,7 @@ func TestAccGitlabProject_ContainerExpirationPolicy(t *testing.T) {
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
-		CheckDestroy:             testAccCheckGitlabProjectDestroy,
+		CheckDestroy:             testAccCheckGitlabProjectDestroyFlakey,
 		Steps: []resource.TestStep{
 			// Create project with container expiration policy
 			{
@@ -67,7 +67,7 @@ func TestAccGitlabProject_ContainerExpirationPolicy(t *testing.T) {
 	})
 }
 
-func testAccCheckGitlabProjectDestroy(s *terraform.State) error {
+func testAccCheckGitlabProjectDestroyFlakey(s *terraform.State) error {
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "gitlab_project" {
 			continue

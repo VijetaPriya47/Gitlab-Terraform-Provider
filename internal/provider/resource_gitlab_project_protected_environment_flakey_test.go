@@ -44,7 +44,7 @@ func TestAcc_GitlabProjectProtectedEnvironment_deployAndApprovalRules(t *testing
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		CheckDestroy:             testAcc_GitlabProjectProtectedEnvironment_CheckDestroy(project.ID, environment.Name),
+		CheckDestroy:             testAcc_GitlabProjectProtectedEnvironment_CheckDestroyFlakey(project.ID, environment.Name),
 		Steps: []resource.TestStep{
 			// Create a basic protected environment.
 			{
@@ -210,7 +210,7 @@ func TestAcc_GitlabProjectProtectedEnvironment_deployAndApprovalRules(t *testing
 	})
 }
 
-func testAcc_GitlabProjectProtectedEnvironment_CheckDestroy(projectID int, environmentName string) resource.TestCheckFunc {
+func testAcc_GitlabProjectProtectedEnvironment_CheckDestroyFlakey(projectID int, environmentName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		_, _, err := testutil.TestGitlabClient.ProtectedEnvironments.GetProtectedEnvironment(projectID, environmentName)
 		if err == nil {

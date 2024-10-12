@@ -144,6 +144,7 @@ func (d *gitlabProjectSecurityPolicyAttachmentResource) Read(ctx context.Context
 		resp.Diagnostics.AddError("Failed to parse IDs", err.Error())
 	}
 	data.Project = types.StringValue(project)
+	data.PolicyProject = types.StringValue(policyProject)
 
 	// Get the GraphQL IDs of the project and group
 	projectIds, err := d.parseGraphQLIds(ctx, data)
@@ -285,12 +286,17 @@ func (d *gitlabProjectSecurityPolicyAttachmentResource) Delete(ctx context.Conte
 	var response SecurityProjectUnassignResponse
 	_, err = api.SendGraphQLRequest(ctx, d.client, api.GraphQLQuery{Query: query}, &response)
 	if err != nil {
-		resp.Diagnostics.AddError("Failed to delete the group security policy attachment", err.Error())
+		resp.Diagnostics.AddError("Failed to delete the project security policy attachment - generic GraphQL error", err.Error())
 		return
 	}
 
 	if len(response.Data.SecurityPolicyProjectUnassign.Errors) > 0 {
-		resp.Diagnostics.AddError("Failed to delete the group security policy attachment", response.Data.SecurityPolicyProjectUnassign.Errors[0].Message)
+		// If the policy project has been deleted (I.e., cleaned up from a test or something else) it's removed
+		// automatically and don't need to "delete" here. Otherwise it's a valid error
+		if !strings.Contains(response.Data.SecurityPolicyProjectUnassign.Errors[0], "Policy project doesn't exist") {
+			resp.Diagnostics.AddError("Failed to delete the project security policy attachment", response.Data.SecurityPolicyProjectUnassign.Errors[0])
+			return
+		}
 		return
 	}
 
@@ -337,12 +343,21 @@ type SecurityProjectAssignResponse struct {
 	} `json:"data"`
 }
 
+// Example payload:
+// {
+// 	"data": {
+// 	  "securityPolicyProjectUnassign": {
+// 		"errors": [
+// 		  "Policy project doesn't exist"
+// 		]
+// 	  }
+// 	}
+// }
+
 type SecurityProjectUnassignResponse struct {
 	Data struct {
 		SecurityPolicyProjectUnassign struct {
-			Errors []struct {
-				Message string `json:"message"`
-			} `json:"errors"`
+			Errors []string `json:"errors"`
 		} `json:"securityPolicyProjectUnassign"`
 	} `json:"data"`
 }
