@@ -75,6 +75,7 @@ func TestAcc_GitlabGroupSecurityPolicyAttachment_basic(t *testing.T) {
 			},
 		},
 	})
+
 }
 
 func testAcc_GitlabGroupSecurityPolicyAttachment_CheckDestroy(s *terraform.State) error {
