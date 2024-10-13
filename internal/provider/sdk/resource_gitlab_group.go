@@ -19,7 +19,7 @@ import (
 // Values to be used for validation and documentation
 var (
 	defaultBranchProtectionValues         = []int{0, 1, 2, 3, 4}
-	defaultBranchProtectionDefaultsValues = []string{api.AccessLevelValueToName[gitlab.DeveloperPermissions], api.AccessLevelValueToName[gitlab.MaintainerPermissions]}
+	defaultBranchProtectionDefaultsValues = []string{api.AccessLevelValueToName[gitlab.DeveloperPermissions], api.AccessLevelValueToName[gitlab.MaintainerPermissions], api.AccessLevelValueToName[gitlab.NoPermissions]}
 	visibilityLevelValues                 = []string{"private", "internal", "public"}
 	projectCreationLevelValues            = []string{"noone", "maintainer", "developer"}
 	subGroupCreationLevelValues           = []string{"owner", "maintainer"}

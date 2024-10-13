@@ -251,6 +251,38 @@ func TestAccGitlabGroup_defaultBranchProtectionDefaults(t *testing.T) {
 				  description = "Terraform acceptance tests"
 
 				  default_branch_protection_defaults {
+				        allowed_to_push = ["no one"]
+					allow_force_push = false
+					allowed_to_merge = ["no one"]
+					developer_can_initial_push = true
+				  }
+				}
+				  `, rInt, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabGroupExists("gitlab_group.foo", &group),
+					testAccCheckGitlabGroupAttributes(&group, &testAccGitlabGroupExpectedAttributes{
+						Name:                 fmt.Sprintf("foo-name-%d", rInt),
+						Path:                 fmt.Sprintf("foo-path-%d", rInt),
+						Description:          "Terraform acceptance tests",
+						ProjectCreationLevel: "developer",
+					}),
+				),
+			},
+			// Verify Import
+			{
+				ResourceName:            "gitlab_group.foo",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"permanently_remove_on_delete"},
+			},
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "foo-name-%d"
+				  path = "foo-path-%d"
+				  description = "Terraform acceptance tests"
+
+				  default_branch_protection_defaults {
 				  	allowed_to_push = ["developer"]
 					allow_force_push = false
 					allowed_to_merge = ["maintainer"]

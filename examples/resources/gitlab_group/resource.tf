@@ -38,3 +38,17 @@ resource "gitlab_group" "example-three" {
     developer_can_initial_push = true
   }
 }
+
+# Group with custom default branch protection defaults
+resource "gitlab_group" "example-four" {
+  name        = "example-four"
+  path        = "example-four"
+  description = "An example group with default branch protection defaults"
+
+  default_branch_protection_defaults {
+    allowed_to_push            = ["no one"]
+    allow_force_push           = true
+    allowed_to_merge           = ["no one"]
+    developer_can_initial_push = true
+  }
+}
