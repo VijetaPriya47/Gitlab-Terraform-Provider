@@ -1,7 +1,7 @@
 //go:build acceptance
 // +build acceptance
 
-package sdk
+package provider
 
 import (
 	"context"
@@ -9,9 +9,10 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/xanzy/go-gitlab"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 
@@ -41,9 +42,8 @@ func TestAccGitlabProjectHook_SchemaMigration0_1(t *testing.T) {
 				Config: config,
 			},
 			{
-				ProtoV6ProviderFactories: providerFactoriesV6,
+				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 				Config:                   config,
-				PlanOnly:                 true,
 			},
 		},
 	})
@@ -52,14 +52,18 @@ func TestAccGitlabProjectHook_SchemaMigration0_1(t *testing.T) {
 func TestAccGitlabProjectHook_basic(t *testing.T) {
 	var hook gitlab.ProjectHook
 	rInt := acctest.RandInt()
+	project := testutil.CreateProject(t)
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabProjectHookDestroy,
 		Steps: []resource.TestStep{
 			// Create a project and hook with default options
 			{
-				Config: testAccGitlabProjectHookConfig(rInt),
+				Config: fmt.Sprintf(`resource "gitlab_project_hook" "foo" {
+					project = "%d"
+					url = "https://example.com/hook-%d"
+					}`, project.ID, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectHookExists("gitlab_project_hook.foo", &hook),
 					testAccCheckGitlabProjectHookAttributes(&hook, &testAccGitlabProjectHookExpectedAttributes{
@@ -71,7 +75,26 @@ func TestAccGitlabProjectHook_basic(t *testing.T) {
 			},
 			// Update the project hook to toggle all the values to their inverse
 			{
-				Config: testAccGitlabProjectHookUpdateConfig(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_hook" "foo" {
+				  project = "%d"
+				  url = "https://example.com/hook-%d"
+				  enable_ssl_verification = false
+				  push_events = true
+				  push_events_branch_filter = "devel"
+				  issues_events = false
+				  confidential_issues_events = false
+				  merge_requests_events = true
+				  tag_push_events = true
+				  note_events = true
+				  confidential_note_events = true
+				  job_events = true
+				  pipeline_events = true
+				  wiki_page_events = true
+				  deployment_events = true
+				  releases_events = true
+				}
+					`, project.ID, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectHookExists("gitlab_project_hook.foo", &hook),
 					testAccCheckGitlabProjectHookAttributes(&hook, &testAccGitlabProjectHookExpectedAttributes{
@@ -95,7 +118,10 @@ func TestAccGitlabProjectHook_basic(t *testing.T) {
 			},
 			// Update the project hook to toggle the options back
 			{
-				Config: testAccGitlabProjectHookConfig(rInt),
+				Config: fmt.Sprintf(`resource "gitlab_project_hook" "foo" {
+					project = "%d"
+					url = "https://example.com/hook-%d"
+					}`, project.ID, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectHookExists("gitlab_project_hook.foo", &hook),
 					testAccCheckGitlabProjectHookAttributes(&hook, &testAccGitlabProjectHookExpectedAttributes{
@@ -127,7 +153,7 @@ func TestAccGitlabProjectHook_customTemplate(t *testing.T) {
 	rInt := acctest.RandInt()
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabProjectHookDestroy,
 		Steps: []resource.TestStep{
 			// Update the project hook to toggle all the values to their inverse
@@ -193,7 +219,7 @@ func TestAccGitlabProjectHook_updateProject(t *testing.T) {
 	projectTwo := testutil.CreateProject(t)
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabProjectHookDestroy,
 		Steps: []resource.TestStep{
 			// Create a project and hook with default options
@@ -233,6 +259,48 @@ func TestAccGitlabProjectHook_updateProject(t *testing.T) {
 	})
 }
 
+func TestAccGitlabProjectHook_migrateFromSDKToFramework(t *testing.T) {
+	var hook gitlab.ProjectHook
+	projectOne := testutil.CreateProject(t)
+
+	// Create common config for testing
+	config := fmt.Sprintf(`resource "gitlab_project_hook" "foo" {
+		project = "%d"
+		url = "https://example.com/hook-1234"
+	  }`, projectOne.ID)
+
+	resource.ParallelTest(t, resource.TestCase{
+		CheckDestroy: testAccCheckGitlabProjectHookDestroy,
+		Steps: []resource.TestStep{
+			// Create the pipeline in the old provider version
+			{
+				ExternalProviders: map[string]resource.ExternalProvider{
+					"gitlab": {
+						VersionConstraint: "~> 17.4",
+						Source:            "gitlabhq/gitlab",
+					},
+				},
+				Config: config,
+				Check:  testAccCheckGitlabProjectHookExists("gitlab_project_hook.foo", &hook),
+			},
+			// Create the config in the new provider version to ensure migration works
+			{
+				ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+				Config:                   config,
+				Check:                    testAccCheckGitlabProjectHookExists("gitlab_project_hook.foo", &hook),
+			},
+			// Verify upstream attributes with an import
+			{
+				ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+				ResourceName:             "gitlab_project_hook.foo",
+				ImportState:              true,
+				ImportStateVerify:        true,
+				ImportStateVerifyIgnore:  []string{"token"},
+			},
+		},
+	})
+}
+
 func testAccCheckGitlabProjectHookExists(n string, hook *gitlab.ProjectHook) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
@@ -240,7 +308,7 @@ func testAccCheckGitlabProjectHookExists(n string, hook *gitlab.ProjectHook) res
 			return fmt.Errorf("Not Found: %s", n)
 		}
 
-		project, hookID, err := resourceGitlabProjectHookParseId(rs.Primary.ID)
+		project, hookID, err := (&gitlabProjectHookResourceModel{}).ResourceGitlabProjectHookParseId(rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -257,24 +325,22 @@ func testAccCheckGitlabProjectHookExists(n string, hook *gitlab.ProjectHook) res
 func TestResourceGitlabProjectHook_StateUpgradeV0(t *testing.T) {
 	t.Parallel()
 
-	givenV0State := map[string]interface{}{
-		"project": "foo/bar",
-		"hook_id": "42",
-		"id":      "42",
+	givenV0State := &gitlabProjectHookResourceModel{
+		Project: types.StringValue("foo/bar"),
+		HookID:  types.Int64Value(42),
+		ID:      types.StringValue("42"),
 	}
-	expectedV1State := map[string]interface{}{
-		"project": "foo/bar",
-		"hook_id": "42",
-		"id":      "foo/bar:42",
-	}
-
-	actualV1State, err := resourceGitlabProjectHookStateUpgradeV0(context.Background(), givenV0State, nil)
-	if err != nil {
-		t.Fatalf("Error migrating state: %s", err)
+	expectedV1State := &gitlabProjectHookResourceModel{
+		Project: types.StringValue("foo/bar"),
+		HookID:  types.Int64Value(42),
+		ID:      types.StringValue("foo/bar:42"),
 	}
 
-	if !reflect.DeepEqual(expectedV1State, actualV1State) {
-		t.Fatalf("\n\nexpected:\n\n%#v\n\ngot:\n\n%#v\n\n", expectedV1State, actualV1State)
+	// Execute the migration
+	givenV0State.v0StateUpgrade(context.Background())
+
+	if !reflect.DeepEqual(expectedV1State, givenV0State) {
+		t.Fatalf("\n\nexpected:\n\n%#v\n\ngot:\n\n%#v\n\n", expectedV1State, givenV0State)
 	}
 }
 
@@ -373,7 +439,7 @@ func testAccCheckGitlabProjectHookDestroy(s *terraform.State) error {
 			continue
 		}
 
-		project, hookID, err := resourceGitlabProjectHookParseId(rs.Primary.ID)
+		project, hookID, err := (&gitlabProjectHookResourceModel{}).ResourceGitlabProjectHookParseId(rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -388,54 +454,4 @@ func testAccCheckGitlabProjectHookDestroy(s *terraform.State) error {
 		return nil
 	}
 	return nil
-}
-
-func testAccGitlabProjectHookConfig(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "foo" {
-  name = "foo-%d"
-  description = "Terraform acceptance tests"
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-
-resource "gitlab_project_hook" "foo" {
-  project = "${gitlab_project.foo.id}"
-  url = "https://example.com/hook-%d"
-}
-	`, rInt, rInt)
-}
-
-func testAccGitlabProjectHookUpdateConfig(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "foo" {
-  name = "foo-%d"
-  description = "Terraform acceptance tests"
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-
-resource "gitlab_project_hook" "foo" {
-  project = "${gitlab_project.foo.id}"
-  url = "https://example.com/hook-%d"
-  enable_ssl_verification = false
-  push_events = true
-  push_events_branch_filter = "devel"
-  issues_events = false
-  confidential_issues_events = false
-  merge_requests_events = true
-  tag_push_events = true
-  note_events = true
-  confidential_note_events = true
-  job_events = true
-  pipeline_events = true
-  wiki_page_events = true
-  deployment_events = true
-  releases_events = true
-}
-	`, rInt, rInt)
 }
