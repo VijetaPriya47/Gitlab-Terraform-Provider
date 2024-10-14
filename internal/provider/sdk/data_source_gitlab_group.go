@@ -3,7 +3,6 @@ package sdk
 import (
 	"context"
 	"fmt"
-
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -55,6 +54,11 @@ var _ = registerDataSource("gitlab_group", func() *schema.Resource {
 			},
 			"path": {
 				Description: "The path of the group.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"default_branch": {
+				Description: "The default branch of the group.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
@@ -210,6 +214,7 @@ func dataSourceGitlabGroupRead(ctx context.Context, d *schema.ResourceData, meta
 	d.Set("full_name", group.FullName)
 	d.Set("web_url", group.WebURL)
 	d.Set("path", group.Path)
+	d.Set("default_branch", group.DefaultBranch)
 	d.Set("description", group.Description)
 	d.Set("lfs_enabled", group.LFSEnabled)
 	d.Set("request_access_enabled", group.RequestAccessEnabled)

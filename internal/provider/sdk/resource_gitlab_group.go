@@ -86,6 +86,11 @@ var _ = registerResource("gitlab_group", func() *schema.Resource {
 				Optional:    true,
 				Computed:    true,
 			},
+			"default_branch": {
+				Description: "Initial default branch name.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
 			"default_branch_protection": {
 				Description:  fmt.Sprintf("See https://docs.gitlab.com/ee/api/groups.html#options-for-default_branch_protection. Valid values are: %s.", utils.RenderIntValueListForDocs(defaultBranchProtectionValues)),
 				Type:         schema.TypeInt,
@@ -372,6 +377,10 @@ func resourceGitlabGroupCreate(ctx context.Context, d *schema.ResourceData, meta
 		options.Path = gitlab.Ptr(v.(string))
 	}
 
+	if v, ok := d.GetOk("default_branch"); ok {
+		options.DefaultBranch = gitlab.Ptr(v.(string))
+	}
+
 	if v, ok := d.GetOk("description"); ok {
 		options.Description = gitlab.Ptr(v.(string))
 	}
@@ -615,6 +624,7 @@ func resourceGitlabGroupRead(ctx context.Context, d *schema.ResourceData, meta i
 	d.Set("full_path", group.FullPath)
 	d.Set("full_name", group.FullName)
 	d.Set("web_url", group.WebURL)
+	d.Set("default_branch", group.DefaultBranch)
 	d.Set("description", group.Description)
 	d.Set("lfs_enabled", group.LFSEnabled)
 	d.Set("request_access_enabled", group.RequestAccessEnabled)
@@ -717,6 +727,10 @@ func resourceGitlabGroupUpdate(ctx context.Context, d *schema.ResourceData, meta
 
 	if d.HasChange("path") {
 		options.Path = gitlab.Ptr(d.Get("path").(string))
+	}
+
+	if d.HasChange("default_branch") {
+		options.DefaultBranch = gitlab.Ptr(d.Get("default_branch").(string))
 	}
 
 	if d.HasChange("description") {

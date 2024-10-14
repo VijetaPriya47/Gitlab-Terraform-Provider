@@ -52,3 +52,11 @@ resource "gitlab_group" "example-four" {
     developer_can_initial_push = true
   }
 }
+
+# Group with a default branch name specified
+resource "gitlab_group" "example-five" {
+  name           = "example"
+  path           = "example"
+  default_branch = "develop"
+  description    = "An example group with a default branch name"
+}
