@@ -87,6 +87,7 @@ func testAccDataSourceGitlabGroup(src, n string) resource.TestCheckFunc {
 			"full_name",
 			"web_url",
 			"path",
+			"default_branch",
 			"description",
 			"lfs_enabled",
 			"request_access_enabled",

@@ -232,6 +232,51 @@ func TestAccGitlabGroup_basic(t *testing.T) {
 	})
 }
 
+func TestAccGitlabGroup_defaultBranch(t *testing.T) {
+
+	var group gitlab.Group
+	rInt := acctest.RandInt()
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabGroupDestroy,
+		Steps: []resource.TestStep{
+			// Create a group with a default branch
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "foo-name-%d"
+				  path = "foo-path-%d"
+				  default_branch = "develop"
+				  description = "Terraform acceptance tests"
+
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				  `, rInt, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabGroupExists("gitlab_group.foo", &group),
+					testAccCheckGitlabGroupAttributes(&group, &testAccGitlabGroupExpectedAttributes{
+						Name:                 fmt.Sprintf("foo-name-%d", rInt),
+						Path:                 fmt.Sprintf("foo-path-%d", rInt),
+						DefaultBranch:        "develop",
+						Description:          "Terraform acceptance tests",
+						ProjectCreationLevel: "developer",
+					}),
+				),
+			},
+			// Verify Import
+			{
+				ResourceName:            "gitlab_group.foo",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"permanently_remove_on_delete"},
+			},
+		},
+	})
+}
+
 func TestAccGitlabGroup_defaultBranchProtectionDefaults(t *testing.T) {
 	// Default Branch Protection Defaults added in 17.0
 	testutil.RunIfAtLeast(t, "17.0")
@@ -1529,6 +1574,7 @@ type testDefaultBranchProtectionDefaults struct {
 type testAccGitlabGroupExpectedAttributes struct {
 	Name                            string
 	Path                            string
+	DefaultBranch                   string
 	Description                     string
 	Parent                          *gitlab.Group
 	LFSEnabled                      *bool
