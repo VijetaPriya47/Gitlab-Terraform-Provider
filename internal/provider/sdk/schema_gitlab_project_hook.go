@@ -1,30 +1,9 @@
 package sdk
 
 import (
-	"fmt"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/xanzy/go-gitlab"
 )
-
-// While the API does allow you to update the URL in place, doing so
-// will remove the `token` that's configured
-// See https://gitlab.com/gitlab-org/gitlab/-/issues/384326#note_1686775884 for more detail
-//
-// To get the Descriptoin to appear only on the resource, we need a separate schema function
-// for it.
-func gitlabProjectHookResourceSchema() map[string]*schema.Schema {
-	schema := gitlabProjectHookSchema()
-
-	// When the URL updates, we need to re-create to ensure the token is preserved
-	schema["url"].Description = fmt.Sprintf("%s Forces re-creation to preserve `token`.", schema["url"].Description)
-	schema["url"].ForceNew = true
-
-	// when changing "project" as a resource, we should re-create the hook since that's used for the ID
-	schema["project"].ForceNew = true
-
-	return schema
-}
 
 func gitlabProjectHookSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
