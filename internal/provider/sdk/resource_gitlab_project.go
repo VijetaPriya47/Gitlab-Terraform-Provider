@@ -736,6 +736,20 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 		Optional:    true,
 		Computed:    true,
 	},
+	"model_experiments_access_level": {
+		Description:      fmt.Sprintf("Set visibility of machine learning model experiments. Valid values are %s.", utils.RenderValueListForDocs(validProjectAccessLevels)),
+		Type:             schema.TypeString,
+		Optional:         true,
+		Computed:         true,
+		ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(validProjectAccessLevels, false)),
+	},
+	"model_registry_access_level": {
+		Description:      fmt.Sprintf("Set visibility of machine learning model registry. Valid values are %s.", utils.RenderValueListForDocs(validProjectAccessLevels)),
+		Type:             schema.TypeString,
+		Optional:         true,
+		Computed:         true,
+		ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(validProjectAccessLevels, false)),
+	},
 }
 
 var validContainerExpirationPolicyAttributesCadenceValues = []string{
@@ -974,6 +988,8 @@ func resourceGitlabProjectSetToState(ctx context.Context, client *gitlab.Client,
 	d.Set("infrastructure_access_level", string(project.InfrastructureAccessLevel))
 	d.Set("monitor_access_level", string(project.MonitorAccessLevel))
 	d.Set("pre_receive_secret_detection_enabled", project.PreReceiveSecretDetectionEnabled)
+	d.Set("model_experiments_access_level", string(project.ModelExperimentsAccessLevel))
+	d.Set("model_registry_access_level", string(project.ModelRegistryAccessLevel))
 
 	return nil
 }
@@ -1547,6 +1563,14 @@ func resourceGitlabProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 
 	if d.HasChange("monitor_access_level") {
 		options.MonitorAccessLevel = stringToAccessControlValue(d.Get("monitor_access_level").(string))
+	}
+
+	if d.HasChange("model_experiments_access_level") {
+		options.ModelExperimentsAccessLevel = stringToAccessControlValue(d.Get("model_experiments_access_level").(string))
+	}
+
+	if d.HasChange("model_registry_access_level") {
+		options.ModelRegistryAccessLevel = stringToAccessControlValue(d.Get("model_registry_access_level").(string))
 	}
 
 	avatar, err := handleAvatarOnUpdate(d)
@@ -2790,6 +2814,14 @@ func updatePostCreateEditOptions(ctx context.Context, editProjectOptions *gitlab
 
 		if v, ok := d.GetOk("monitor_access_level"); ok {
 			editProjectOptions.MonitorAccessLevel = stringToAccessControlValue(v.(string))
+		}
+
+		if v, ok := d.GetOk("model_experiments_access_level"); ok {
+			editProjectOptions.ModelExperimentsAccessLevel = stringToAccessControlValue(v.(string))
+		}
+
+		if v, ok := d.GetOk("model_registry_access_level"); ok {
+			editProjectOptions.ModelRegistryAccessLevel = stringToAccessControlValue(v.(string))
 		}
 	}
 

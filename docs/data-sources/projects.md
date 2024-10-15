@@ -136,6 +136,8 @@ Read-Only:
 - `mirror_overwrites_diverged_branches` (Boolean)
 - `mirror_trigger_builds` (Boolean)
 - `mirror_user_id` (Number)
+- `model_experiments_access_level` (String)
+- `model_registry_access_level` (String)
 - `monitor_access_level` (String)
 - `name` (String)
 - `name_with_namespace` (String)
