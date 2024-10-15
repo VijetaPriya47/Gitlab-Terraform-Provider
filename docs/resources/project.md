@@ -133,6 +133,7 @@ resource "gitlab_project" "import_private" {
 ### Optional
 
 - `allow_merge_on_skipped_pipeline` (Boolean) Set to true if you want to treat skipped pipelines as if they finished with success.
+- `allow_pipeline_trigger_approve_deployment` (Boolean) Set whether or not a pipeline triggerer is allowed to approve deployments. Premium and Ultimate only.
 - `analytics_access_level` (String) Set the analytics access level. Valid values are `disabled`, `private`, `enabled`.
 - `approvals_before_merge` (Number) Number of merge request approvals required for merging. Default is 0.
   This field **does not** work well in combination with the `gitlab_project_approval_rule` resource

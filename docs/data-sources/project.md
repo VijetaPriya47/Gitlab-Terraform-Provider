@@ -39,6 +39,7 @@ data "gitlab_project" "example" {
 
 ### Read-Only
 
+- `allow_pipeline_trigger_approve_deployment` (Boolean) Set whether or not a pipeline triggerer is allowed to approve deployments. Premium and Ultimate only.
 - `analytics_access_level` (String) Set the analytics access level. Valid values are `disabled`, `private`, `enabled`.
 - `archived` (Boolean) Whether the project is in read-only mode (archived).
 - `auto_cancel_pending_pipelines` (String) Auto-cancel pending pipelines. This isn’t a boolean, but enabled/disabled.

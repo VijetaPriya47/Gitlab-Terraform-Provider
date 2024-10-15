@@ -303,6 +303,11 @@ var _ = registerDataSource("gitlab_project", func() *schema.Resource {
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
+			"allow_pipeline_trigger_approve_deployment": {
+				Description: "Set whether or not a pipeline triggerer is allowed to approve deployments. Premium and Ultimate only.",
+				Type:        schema.TypeBool,
+				Computed:    true,
+			},
 			"ci_default_git_depth": {
 				Description: "Default number of revisions for shallow cloning.",
 				Type:        schema.TypeInt,
@@ -598,6 +603,7 @@ func dataSourceGitlabProjectRead(ctx context.Context, d *schema.ResourceData, me
 	d.Set("wiki_access_level", string(found.WikiAccessLevel))
 	d.Set("squash_commit_template", found.SquashCommitTemplate)
 	d.Set("merge_commit_template", found.MergeCommitTemplate)
+	d.Set("allow_pipeline_trigger_approve_deployment", found.AllowPipelineTriggerApproveDeployment)
 	d.Set("ci_default_git_depth", found.CIDefaultGitDepth)
 	d.Set("ci_config_path", found.CIConfigPath)
 	d.Set("ci_separated_caches", found.CISeperateCache)

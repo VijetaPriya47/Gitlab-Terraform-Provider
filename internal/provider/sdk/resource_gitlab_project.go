@@ -205,6 +205,12 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 		Optional:    true,
 		Computed:    true,
 	},
+	"allow_pipeline_trigger_approve_deployment": {
+		Description: "Set whether or not a pipeline triggerer is allowed to approve deployments. Premium and Ultimate only.",
+		Type:        schema.TypeBool,
+		Optional:    true,
+		Computed:    true,
+	},
 	"restrict_user_defined_variables": {
 		Description: "Allow only users with the Maintainer role to pass user-defined variables when triggering a pipeline.",
 		Type:        schema.TypeBool,
@@ -876,6 +882,7 @@ func resourceGitlabProjectSetToState(ctx context.Context, client *gitlab.Client,
 	d.Set("only_allow_merge_if_pipeline_succeeds", project.OnlyAllowMergeIfPipelineSucceeds)
 	d.Set("only_allow_merge_if_all_discussions_are_resolved", project.OnlyAllowMergeIfAllDiscussionsAreResolved)
 	d.Set("allow_merge_on_skipped_pipeline", project.AllowMergeOnSkippedPipeline)
+	d.Set("allow_pipeline_trigger_approve_deployment", project.AllowPipelineTriggerApproveDeployment)
 	d.Set("restrict_user_defined_variables", project.RestrictUserDefinedVariables)
 	d.Set("namespace_id", project.Namespace.ID)
 	d.Set("ssh_url_to_repo", project.SSHURLToRepo)
@@ -1240,6 +1247,10 @@ func resourceGitlabProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 
 	if d.HasChange("allow_merge_on_skipped_pipeline") {
 		options.AllowMergeOnSkippedPipeline = gitlab.Ptr(d.Get("allow_merge_on_skipped_pipeline").(bool))
+	}
+
+	if d.HasChange("allow_pipeline_trigger_approve_deployment") {
+		options.AllowPipelineTriggerApproveDeployment = gitlab.Ptr(d.Get("allow_pipeline_trigger_approve_deployment").(bool))
 	}
 
 	if d.HasChange("restrict_user_defined_variables") {
@@ -2477,6 +2488,12 @@ func updatePostCreateEditOptions(ctx context.Context, editProjectOptions *gitlab
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 	if v, ok := d.GetOkExists("ci_restrict_pipeline_cancellation_role"); ok {
 		editProjectOptions.CIRestrictPipelineCancellationRole = gitlab.Ptr(api.AccessControlLevelValueToName(v.(string)))
+	}
+
+	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
+	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
+	if v, ok := d.GetOkExists("allow_pipeline_trigger_approve_deployment"); ok {
+		editProjectOptions.AllowPipelineTriggerApproveDeployment = gitlab.Ptr(v.(bool))
 	}
 
 	// If we forked the project we could apply lots of the attributes,
