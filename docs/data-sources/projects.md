@@ -81,6 +81,7 @@ Read-Only:
 
 - `_links` (Map of String)
 - `allow_merge_on_skipped_pipeline` (Boolean)
+- `allow_pipeline_trigger_approve_deployment` (Boolean)
 - `analytics_access_level` (String)
 - `approvals_before_merge` (Number)
 - `archived` (Boolean)

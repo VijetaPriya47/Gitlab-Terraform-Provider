@@ -2077,6 +2077,102 @@ func TestAccGitlabProject_SecretsPushDetection(t *testing.T) {
 	})
 }
 
+func TestAccGitlabProject_DeploymentApproverConfig_Create(t *testing.T) {
+	// The `allow_pipeline_trigger_approve_deployment` attribute is only
+	// available on Premium/Ultimate and from GitLab 15.10 onwards.
+	testutil.SkipIfCE(t)
+	testutil.RunIfAtLeast(t, "15.10")
+
+	projectName := acctest.RandomWithPrefix("acctest")
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabProjectDestroy,
+		Steps: []resource.TestStep{
+			// Create a project with config
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project" "test" {
+					name = "%s"
+
+					allow_pipeline_trigger_approve_deployment = true
+				}`, projectName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project.test", "allow_pipeline_trigger_approve_deployment", "true"),
+				),
+			},
+			{
+				ResourceName:      "gitlab_project.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Update resource to remove config (becomes unmanaged)
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project" "test" {
+					name = "%s"
+				}`, projectName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project.test", "allow_pipeline_trigger_approve_deployment", "true"),
+				),
+			},
+			{
+				ResourceName:      "gitlab_project.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccGitlabProject_DeploymentApproverConfig_Update(t *testing.T) {
+	// The `allow_pipeline_trigger_approve_deployment` attribute is only
+	// available on Premium/Ultimate and from GitLab 15.10 onwards.
+	testutil.SkipIfCE(t)
+	testutil.RunIfAtLeast(t, "15.10")
+
+	projectName := acctest.RandomWithPrefix("acctest")
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabProjectDestroy,
+		Steps: []resource.TestStep{
+			// Create a project without config (defaults to `false`)
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project" "test" {
+					name = "%s"
+				}`, projectName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project.test", "allow_pipeline_trigger_approve_deployment", "false"),
+				),
+			},
+			{
+				ResourceName:      "gitlab_project.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Update resource with config set to `true`
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project" "test" {
+					name = "%s"
+
+					allow_pipeline_trigger_approve_deployment = true
+				}`, projectName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project.test", "allow_pipeline_trigger_approve_deployment", "true"),
+				),
+			},
+			{
+				ResourceName:      "gitlab_project.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 type testAccGitlabProjectMirroredExpectedAttributes struct {
 	Mirror                           bool
 	MirrorTriggerBuilds              bool
