@@ -189,6 +189,8 @@ resource "gitlab_project" "import_private" {
 - `mirror` (Boolean) Enable project pull mirror.
 - `mirror_overwrites_diverged_branches` (Boolean) Enable overwrite diverged branches for a mirrored project.
 - `mirror_trigger_builds` (Boolean) Enable trigger builds on pushes for a mirrored project.
+- `model_experiments_access_level` (String) Set visibility of machine learning model experiments. Valid values are `disabled`, `private`, `enabled`.
+- `model_registry_access_level` (String) Set visibility of machine learning model registry. Valid values are `disabled`, `private`, `enabled`.
 - `monitor_access_level` (String) Set the monitor access level. Valid values are `disabled`, `private`, `enabled`.
 - `mr_default_target_self` (Boolean) For forked projects, target merge requests to this project. If false, the target will be the upstream project.
 - `namespace_id` (Number) The namespace (group or user) of the project. Defaults to your user.

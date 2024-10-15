@@ -438,6 +438,16 @@ var _ = registerDataSource("gitlab_project", func() *schema.Resource {
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
+			"model_experiments_access_level": {
+				Description: "The visibility of machine learning model experiments.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"model_registry_access_level": {
+				Description: "The visibility of machine learning model registry.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
 			"shared_with_groups": {
 				Description: "Describes groups which have access shared to this project.",
 				Type:        schema.TypeList,
@@ -615,6 +625,8 @@ func dataSourceGitlabProjectRead(ctx context.Context, d *schema.ResourceData, me
 	d.Set("feature_flags_access_level", string(found.FeatureFlagsAccessLevel))
 	d.Set("infrastructure_access_level", string(found.InfrastructureAccessLevel))
 	d.Set("monitor_access_level", string(found.MonitorAccessLevel))
+	d.Set("model_experiments_access_level", string(found.ModelExperimentsAccessLevel))
+	d.Set("model_registry_access_level", string(found.ModelRegistryAccessLevel))
 
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Reading Gitlab project %q push rules", d.Id()))
 

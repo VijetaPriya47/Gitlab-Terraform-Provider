@@ -3030,6 +3030,8 @@ resource "gitlab_project" "foo" {
   approvals_before_merge = 2
   external_authorization_classification_label = "test"
   requirements_access_level = "enabled"
+  model_experiments_access_level = "enabled"
+  model_registry_access_level = "enabled"
   # are tested in separate test case
   # mirror_trigger_builds = true
   # mirror = true

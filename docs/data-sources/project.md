@@ -74,6 +74,8 @@ data "gitlab_project" "example" {
 - `merge_requests_access_level` (String) Set the merge requests access level. Valid values are `disabled`, `private`, `enabled`.
 - `merge_requests_enabled` (Boolean) Enable merge requests for the project.
 - `merge_trains_enabled` (Boolean) Enable or disable merge trains.
+- `model_experiments_access_level` (String) The visibility of machine learning model experiments.
+- `model_registry_access_level` (String) The visibility of machine learning model registry.
 - `monitor_access_level` (String) Set the monitor access level. Valid values are `disabled`, `private`, `enabled`.
 - `name` (String) The name of the project.
 - `namespace_id` (Number) The namespace (group or user) of the project. Defaults to your user.
