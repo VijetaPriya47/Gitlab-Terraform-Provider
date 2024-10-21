@@ -2,14 +2,14 @@
 
 This release was tested against GitLab 17.5, 17.4, and 17.3 for both CE and EE
 
-## FEATURES (3 changes)
+### FEATURES (3 changes)
 
 - **New Resource** resource/gitlab_group_service_account: [Allows creating service accounts for a gitlab group](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/a1e1686636ee2d901344163bac22bc032ad52056) by @michal.szczepek ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2122))
 - **New Resource** resource/gitlab_group_service_account_token: [Allows creating service account tokens for a service account](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/a1e1686636ee2d901344163bac22bc032ad52056) by @michal.szczepek ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2122))
 - **New Datasource** data/gitlab_group_service_account: [Allows creating service accounts for a gitlab group](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/a1e1686636ee2d901344163bac22bc032ad52056) by @michal.szczepek ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2122))
 - **New Datasource** data/gitlab_group_provisioned_users: [Allows listing users provisioned by an Identity Provider](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/7daffab21eedd594746671a28becd20adba15f8c) by @nvh04121 ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2107))
 
-## IMPROVEMENTS (9 changes)
+### IMPROVEMENTS (9 changes)
 
 - provider/gitlab:  [Add support for `headers` to the provider to allow setting custom headers](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/72f1a49dddcaa9ad18a81a604066b9959f565bed) by @ruben.aleman ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2136))
 - resource/gitlab_application_settings: [Add support for 20 additional new fields](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/5a6321fb096c80be4319dc29cf2186f66163bd88) by @Jitsusama ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2110))
@@ -21,7 +21,7 @@ This release was tested against GitLab 17.5, 17.4, and 17.3 for both CE and EE
 - resource/gitlab_personal_access_token:  [Add support for `rotation_configuration`](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/afa261c798635521fd660b04b1a6a7d9100113a7) by @ruben.aleman ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2143))
 - data/gitlab_pipeline_schedules:  [Add `id` for each schedule found using the datasource](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/169c4daf5bf51e9f9176ea76c00e518117e0de4e) by @nicolas.boussuge.fintech ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2149))
 
-## BUG FIXES (1 change)
+### BUG FIXES (1 change)
 
 - resource/gitlab_project:  [Only apply `use_custom_template` during creation if the value is `true`. Fixes an issue where using `use_custom_template = false` would cause a 500 error](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/bf658535994f38b8dcf743e2827abe4e3e66e20b) by @PatrickRice ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2140))
 
@@ -29,14 +29,14 @@ This release was tested against GitLab 17.5, 17.4, and 17.3 for both CE and EE
 
 This release was tested against GitLab 17.4, 17.3, and 17.2 for both CE and EE
 
-## FEATURES (4 changes)
+### FEATURES (4 changes)
 
 - **New Resource** resource/gitlab_member_role: [Allows creating custom roles at an instance or group level](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/5c4980f0f8320c713ae753d1623fedf1c0499ce9) by @slaup1 ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2115))
 - **New Resource** resource/user_impersonation_token: [Adds support for generating an impersonation token with an admin user](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/b0008c5ed590b7f6cc1a52928a75a40d3da6c5b2) by @slaup1 ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2086))
 - **New Datasource** data/gitlab_protected_tag(s): [Two new datasources allow retrieving a single tag or list of tags by project](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/759279ab7d332e827c87588aa708c38019551e6a) by @mness ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2126))
 - **New Datasource** data/gitlab_pipeline_schedule(s): [Two new datasources allow retrieving a single pipeline schedule or list of pipeline scheduled by project](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/65e4bdb59fd877d1bbe796ce2900d335f60baff0) by @heidi.berry ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2075))
 
-## IMPROVEMENTS (12 changes)
+### IMPROVEMENTS (12 changes)
 
 - resource/gitlab_group: [Add support for `default_branch_protection_defaults`](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/d3a97d371b04c67404cd58d9200a4907a0199cbf) by @heidi.berry ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2113))
 - resource/gitlab_group: [Add support for `reject_non_dco_commits`](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/b9bc021dad13a05d802c8a3c56cbb0b57e5cc5e6) by @mness ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2105))
@@ -52,7 +52,7 @@ This release was tested against GitLab 17.4, 17.3, and 17.2 for both CE and EE
 - docs/use-case-tech-lead-bootstrapping-small-team: [Added new documentation to the provider with an example of creating a small team using GitLab](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/f90a66f2d288e6556b6174a0f62b35cfb8e2a764) by @Jitsusama ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2112))
 
 
-## BUG FIXES (2 changes)
+### BUG FIXES (2 changes)
 
 - resource/gitlab_user_runner: [Fix an issue where managing an imported runner would fail with an error that `token` was unknown](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/e126dbb7307e2b907b6fd62932d72b33ad788b81) by @PatrickRice ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2114))
 - resource/gitlab_personal_access_token: [Fix an issue where tokens with no expiration date encountered a provider error](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/142ce83b0eea8a829c6c7ef04b1bd6b687c0a616) by @PatrickRice ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2104))
@@ -62,11 +62,11 @@ This release was tested against GitLab 17.4, 17.3, and 17.2 for both CE and EE
 
 This release was tested against GitLab 17.3, 17.2, and 17.1 for both CE and EE
 
-## IMPROVEMENTS (1 change)
+### IMPROVEMENTS (1 change)
 
 - [The provider now uses an exponential backoff when no RateLimit-Reset headers are sent from GitLab]() by @PatrickRice ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2073))
 
-## BUG FIXES (7 changes)
+### BUG FIXES (7 changes)
 
 - resource/gitlab_project_access_token: [Fixed an error when applying an update using a plan file that could cause the ID to return an error when rotating](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/d0a63fec70fd01d447091bf81138f76692b59c58) by @PatrickRice ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2060))
 - resource/gitlab_project_access_token: [Fixed an error when applying an update using a plan from from a previous day to rotate an access token](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/d0a63fec70fd01d447091bf81138f76692b59c58) by @PatrickRice ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2060))
