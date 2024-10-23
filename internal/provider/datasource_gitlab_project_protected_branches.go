@@ -43,12 +43,12 @@ type gitLabProjectProtectedBranchesDataSourceModel struct {
 
 // gitLabMetadataDataSourceModel describes the data source data model.
 type gitLabProjectProtectedBranchesObjectDataSourceModel struct {
-	Name                      types.String                                  `tfsdk:"name"`
-	Id                        types.Int64                                   `tfsdk:"id"`
-	PushAccessLevels          []*gitlabBranchProtectionAllowedToObjectModel `tfsdk:"push_access_levels"`
-	MergeAccessLevels         []*gitlabBranchProtectionAllowedToObjectModel `tfsdk:"merge_access_levels"`
-	AllowForcePush            types.Bool                                    `tfsdk:"allow_force_push"`
-	CodeOwnerApprovalRequired types.Bool                                    `tfsdk:"code_owner_approval_required"`
+	Name                      types.String                                      `tfsdk:"name"`
+	Id                        types.Int64                                       `tfsdk:"id"`
+	PushAccessLevels          []*gitlabBranchProtectionAllowedToPushObjectModel `tfsdk:"push_access_levels"`
+	MergeAccessLevels         []*gitlabBranchProtectionAllowedToObjectModel     `tfsdk:"merge_access_levels"`
+	AllowForcePush            types.Bool                                        `tfsdk:"allow_force_push"`
+	CodeOwnerApprovalRequired types.Bool                                        `tfsdk:"code_owner_approval_required"`
 }
 
 // Metadata returns the data source type name.
@@ -98,7 +98,7 @@ func (d *gitLabProjectProtectedBranchesDataSource) Schema(_ context.Context, _ d
 						},
 					},
 					Blocks: map[string]schema.Block{
-						"push_access_levels":  schemaAllowedToBlock("push", api.ValidProtectedBranchTagAccessLevelNames),
+						"push_access_levels":  schemaAllowedToPushBlock(api.ValidProtectedBranchTagAccessLevelNames),
 						"merge_access_levels": schemaAllowedToBlock("merge", api.ValidProtectedBranchTagAccessLevelNames),
 					},
 				},
@@ -168,7 +168,7 @@ func populateProtectedBranches(pbs []*gitlab.ProtectedBranch) (values []gitLabPr
 		pb.Name = types.StringValue(protectedBranch.Name)
 		pb.AllowForcePush = types.BoolValue(protectedBranch.AllowForcePush)
 		pb.CodeOwnerApprovalRequired = types.BoolValue(protectedBranch.CodeOwnerApprovalRequired)
-		pb.PushAccessLevels = populateAllowedToObjectList(protectedBranch.PushAccessLevels)
+		pb.PushAccessLevels = populateAllowedToPushObjectList(protectedBranch.PushAccessLevels)
 		pb.MergeAccessLevels = populateAllowedToObjectList(protectedBranch.MergeAccessLevels)
 		protectedBranches[i] = pb
 	}
