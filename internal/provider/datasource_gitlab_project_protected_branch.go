@@ -36,13 +36,13 @@ type gitLabProjectProtectedBranchDataSource struct {
 
 // gitLabMetadataDataSourceModel describes the data source data model.
 type gitLabProjectProtectedBranchDataSourceModel struct {
-	ProjectId                 types.String                                  `tfsdk:"project_id"`
-	Name                      types.String                                  `tfsdk:"name"`
-	Id                        types.Int64                                   `tfsdk:"id"`
-	PushAccessLevels          []*gitlabBranchProtectionAllowedToObjectModel `tfsdk:"push_access_levels"`
-	MergeAccessLevels         []*gitlabBranchProtectionAllowedToObjectModel `tfsdk:"merge_access_levels"`
-	AllowForcePush            types.Bool                                    `tfsdk:"allow_force_push"`
-	CodeOwnerApprovalRequired types.Bool                                    `tfsdk:"code_owner_approval_required"`
+	ProjectId                 types.String                                      `tfsdk:"project_id"`
+	Name                      types.String                                      `tfsdk:"name"`
+	Id                        types.Int64                                       `tfsdk:"id"`
+	PushAccessLevels          []*gitlabBranchProtectionAllowedToPushObjectModel `tfsdk:"push_access_levels"`
+	MergeAccessLevels         []*gitlabBranchProtectionAllowedToObjectModel     `tfsdk:"merge_access_levels"`
+	AllowForcePush            types.Bool                                        `tfsdk:"allow_force_push"`
+	CodeOwnerApprovalRequired types.Bool                                        `tfsdk:"code_owner_approval_required"`
 }
 
 // Metadata returns the data source type name.
@@ -82,7 +82,7 @@ func (d *gitLabProjectProtectedBranchDataSource) Schema(_ context.Context, _ dat
 			},
 		},
 		Blocks: map[string]schema.Block{
-			"push_access_levels":  schemaAllowedToBlock("push", api.ValidProtectedBranchTagAccessLevelNames),
+			"push_access_levels":  schemaAllowedToPushBlock(api.ValidProtectedBranchTagAccessLevelNames),
 			"merge_access_levels": schemaAllowedToBlock("merge", api.ValidProtectedBranchTagAccessLevelNames),
 		},
 	}
@@ -118,7 +118,7 @@ func (d *gitLabProjectProtectedBranchDataSource) Read(ctx context.Context, req d
 	state.Id = types.Int64Value(int64(protectedBranch.ID))
 	state.AllowForcePush = types.BoolValue(protectedBranch.AllowForcePush)
 	state.CodeOwnerApprovalRequired = types.BoolValue(protectedBranch.CodeOwnerApprovalRequired)
-	state.PushAccessLevels = populateAllowedToObjectList(protectedBranch.PushAccessLevels)
+	state.PushAccessLevels = populateAllowedToPushObjectList(protectedBranch.PushAccessLevels)
 	state.MergeAccessLevels = populateAllowedToObjectList(protectedBranch.MergeAccessLevels)
 
 	diags := resp.State.Set(ctx, &state)

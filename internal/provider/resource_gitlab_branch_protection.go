@@ -3,7 +3,6 @@ package provider
 import (
 	"context"
 	"fmt"
-
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -51,26 +50,35 @@ type gitlabBranchProtectionResource struct {
 
 // gitlabBranchProtectionResourceModel describes the resource data model.
 type gitlabBranchProtectionResourceModel struct {
-	Id                        types.String                                  `tfsdk:"id"`
-	BranchProtectionId        types.Int64                                   `tfsdk:"branch_protection_id"`
-	Project                   types.String                                  `tfsdk:"project"`
-	Branch                    types.String                                  `tfsdk:"branch"`
-	MergeAccessLevel          types.String                                  `tfsdk:"merge_access_level"`
-	PushAccessLevel           types.String                                  `tfsdk:"push_access_level"`
-	UnprotectAccessLevel      types.String                                  `tfsdk:"unprotect_access_level"`
-	AllowForcePush            types.Bool                                    `tfsdk:"allow_force_push"`
-	CodeOwnerApprovalRequired types.Bool                                    `tfsdk:"code_owner_approval_required"`
-	AllowedToPush             []*gitlabBranchProtectionAllowedToObjectModel `tfsdk:"allowed_to_push"`
-	AllowedToMerge            []*gitlabBranchProtectionAllowedToObjectModel `tfsdk:"allowed_to_merge"`
-	AllowedToUnprotect        []*gitlabBranchProtectionAllowedToObjectModel `tfsdk:"allowed_to_unprotect"`
+	Id                        types.String                                      `tfsdk:"id"`
+	BranchProtectionId        types.Int64                                       `tfsdk:"branch_protection_id"`
+	Project                   types.String                                      `tfsdk:"project"`
+	Branch                    types.String                                      `tfsdk:"branch"`
+	MergeAccessLevel          types.String                                      `tfsdk:"merge_access_level"`
+	PushAccessLevel           types.String                                      `tfsdk:"push_access_level"`
+	UnprotectAccessLevel      types.String                                      `tfsdk:"unprotect_access_level"`
+	AllowForcePush            types.Bool                                        `tfsdk:"allow_force_push"`
+	CodeOwnerApprovalRequired types.Bool                                        `tfsdk:"code_owner_approval_required"`
+	AllowedToPush             []*gitlabBranchProtectionAllowedToPushObjectModel `tfsdk:"allowed_to_push"`
+	AllowedToMerge            []*gitlabBranchProtectionAllowedToObjectModel     `tfsdk:"allowed_to_merge"`
+	AllowedToUnprotect        []*gitlabBranchProtectionAllowedToObjectModel     `tfsdk:"allowed_to_unprotect"`
 }
 
-// gitlabBranchProtectionAllowedToObjectModel describes the allowed to block data model.
+// gitlabBranchProtectionAllowedToObjectModel describes the generic allowed to block data model.
 type gitlabBranchProtectionAllowedToObjectModel struct {
 	AccessLevel            types.String `tfsdk:"access_level"`
 	AccessLevelDescription types.String `tfsdk:"access_level_description"`
 	UserId                 types.Int64  `tfsdk:"user_id"`
 	GroupId                types.Int64  `tfsdk:"group_id"`
+}
+
+// gitlabBranchProtectionAllowedToPushObjectModel describes the allowed to push block data model.
+type gitlabBranchProtectionAllowedToPushObjectModel struct {
+	AccessLevel            types.String `tfsdk:"access_level"`
+	AccessLevelDescription types.String `tfsdk:"access_level_description"`
+	UserId                 types.Int64  `tfsdk:"user_id"`
+	GroupId                types.Int64  `tfsdk:"group_id"`
+	DeployKeyId            types.Int64  `tfsdk:"deploy_key_id"`
 }
 
 func (r *gitlabBranchProtectionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -158,7 +166,7 @@ func (d *gitlabBranchProtectionResource) getV1Schema() schema.Schema {
 			},
 		},
 		Blocks: map[string]schema.Block{
-			"allowed_to_push":      schemaAllowedToBlock("push", api.ValidProtectedBranchTagAccessLevelNames),
+			"allowed_to_push":      schemaAllowedToPushBlock(api.ValidProtectedBranchTagAccessLevelNames),
 			"allowed_to_unprotect": schemaAllowedToBlock("unprotect push", api.ValidProtectedBranchUnprotectAccessLevelNames),
 			"allowed_to_merge":     schemaAllowedToBlock("merge", api.ValidProtectedBranchTagAccessLevelNames),
 		},
@@ -189,6 +197,45 @@ func schemaAllowedToBlock(action string, validValues []string) schema.Block {
 				},
 				"group_id": schema.Int64Attribute{
 					Description: "The ID of a GitLab group allowed to perform the relevant action. Mutually exclusive with `user_id`.",
+					Optional:    true,
+				},
+			},
+		},
+	}
+}
+
+func schemaAllowedToPushBlock(validValues []string) schema.Block {
+	return schema.SetNestedBlock{
+		MarkdownDescription: "Array of access levels and user(s)/group(s) allowed to push to protected branch.",
+		NestedObject: schema.NestedBlockObject{
+			Attributes: map[string]schema.Attribute{
+				"access_level": schema.StringAttribute{
+					MarkdownDescription: fmt.Sprintf("Access levels allowed to push to protected branch. Valid values are: %s.",
+						utils.RenderValueListForDocs(validValues)),
+					Computed: true,
+					Validators: []validator.String{
+						stringvalidator.ExactlyOneOf(
+							path.MatchRelative().AtParent().AtName("user_id"),
+							path.MatchRelative().AtParent().AtName("group_id"),
+							path.MatchRelative().AtParent().AtName("deploy_key_id"),
+						),
+						stringvalidator.OneOf(validValues...),
+					},
+				},
+				"access_level_description": schema.StringAttribute{
+					Description: "Readable description of access level.",
+					Computed:    true,
+				},
+				"user_id": schema.Int64Attribute{
+					Description: "The ID of a GitLab user allowed to perform the relevant action. Mutually exclusive with `deploy_key_id` and `group_id`.",
+					Optional:    true,
+				},
+				"group_id": schema.Int64Attribute{
+					Description: "The ID of a GitLab group allowed to perform the relevant action. Mutually exclusive with `deploy_key_id` and `user_id`.",
+					Optional:    true,
+				},
+				"deploy_key_id": schema.Int64Attribute{
+					Description: "The ID of a GitLab deploy key allowed to perform the relevant action. Mutually exclusive with `group_id` and `user_id`. This field is read-only until Gitlab 17.5.",
 					Optional:    true,
 				},
 			},
@@ -232,7 +279,7 @@ func (r *gitlabBranchProtectionResource) Create(ctx context.Context, req resourc
 		}
 
 		// Gitlab automatically creates branch protection rule for repository default branch. This results in protection rule existence
-		// which is not managed by terraform. Then each branch protection rule creation attempt will fails. To fix that it is required
+		// which is not managed by terraform. Then each branch protection rule creation attempt will fail. To fix that it is required
 		// to firstly remove already existing rule to be able to add provider managed one.
 		if projectDetails.DefaultBranch == branch {
 			tflog.Debug(ctx, fmt.Sprintf("This branch protection is for the default branch %q in project %q! It is always "+
@@ -240,12 +287,12 @@ func (r *gitlabBranchProtectionResource) Create(ctx context.Context, req resourc
 
 			_, err := r.client.ProtectedBranches.UnprotectRepositoryBranches(projectID, branch, gitlab.WithContext(ctx))
 			if err != nil {
-				resp.Diagnostics.AddError("GitLab API error occured", fmt.Sprintf("Failed to unprotect default branch %q in "+
+				resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Failed to unprotect default branch %q in "+
 					"project %q while trying to 'import' it: %v", branch, projectID, err.Error()))
 				return
 			}
 		} else {
-			resp.Diagnostics.AddError("GitLab API error occured", fmt.Sprintf("protected branch %q on project %q already exists: %+v",
+			resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("protected branch %q on project %q already exists: %+v",
 				branch, projectID, *existingProtectedBranch))
 			return
 		}
@@ -255,9 +302,9 @@ func (r *gitlabBranchProtectionResource) Create(ctx context.Context, req resourc
 	mergeAccessLevel := api.AccessLevelNameToValue[data.MergeAccessLevel.ValueString()]
 	unprotectAccessLevel := api.AccessLevelNameToValue[data.UnprotectAccessLevel.ValueString()]
 
-	allowedToPush := generateAllowedToStateToAcessLevels([]*gitlab.BranchAccessDescription{}, data.AllowedToPush)
-	allowedToMerge := generateAllowedToStateToAcessLevels([]*gitlab.BranchAccessDescription{}, data.AllowedToMerge)
-	allowedToUnprotect := generateAllowedToStateToAcessLevels([]*gitlab.BranchAccessDescription{}, data.AllowedToUnprotect)
+	allowedToPush := generateAllowedToPushStateToAccessLevels([]*gitlab.BranchAccessDescription{}, data.AllowedToPush)
+	allowedToMerge := generateAllowedToStateToAccessLevels([]*gitlab.BranchAccessDescription{}, data.AllowedToMerge)
+	allowedToUnprotect := generateAllowedToStateToAccessLevels([]*gitlab.BranchAccessDescription{}, data.AllowedToUnprotect)
 
 	// configure GitLab protected branch creation API call
 	options := gitlab.ProtectRepositoryBranchesOptions{
@@ -369,9 +416,9 @@ func (r *gitlabBranchProtectionResource) Update(ctx context.Context, req resourc
 		return
 	}
 
-	allowedToPush := generateAllowedToStateToAcessLevels(protectedBranch.PushAccessLevels, data.AllowedToPush)
-	allowedToMerge := generateAllowedToStateToAcessLevels(protectedBranch.MergeAccessLevels, data.AllowedToMerge)
-	allowedToUnprotect := generateAllowedToStateToAcessLevels(protectedBranch.UnprotectAccessLevels, data.AllowedToUnprotect)
+	allowedToPush := generateAllowedToPushStateToAccessLevels(protectedBranch.PushAccessLevels, data.AllowedToPush)
+	allowedToMerge := generateAllowedToStateToAccessLevels(protectedBranch.MergeAccessLevels, data.AllowedToMerge)
+	allowedToUnprotect := generateAllowedToStateToAccessLevels(protectedBranch.UnprotectAccessLevels, data.AllowedToUnprotect)
 
 	// configure protect repository branch update GitLab API call
 	options := gitlab.UpdateProtectedBranchOptions{
@@ -469,7 +516,7 @@ func (d *gitlabBranchProtectionResource) UpgradeState(context.Context) map[int64
 					PushAccessLevel:           data.PushAccessLevel,
 					UnprotectAccessLevel:      data.UnprotectAccessLevel,
 					AllowForcePush:            data.AllowForcePush,
-					AllowedToPush:             data.AllowedToPush,
+					AllowedToPush:             migrateAllowedToBlock(data.AllowedToPush),
 					AllowedToMerge:            data.AllowedToMerge,
 					AllowedToUnprotect:        data.AllowedToUnprotect,
 					CodeOwnerApprovalRequired: data.CodeOwnerApprovalRequired,
@@ -560,9 +607,9 @@ func firstValidAccessLevel(descriptions []*gitlab.BranchAccessDescription) (*git
 	return nil, fmt.Errorf("no valid access level found")
 }
 
-func generateAllowedToStateToAcessLevels(currentAllowedTos []*gitlab.BranchAccessDescription, plannedAllowedTos []*gitlabBranchProtectionAllowedToObjectModel) []*gitlab.BranchPermissionOptions {
+func generateAllowedToStateToAccessLevels(currentAllowedTos []*gitlab.BranchAccessDescription, plannedAllowedTos []*gitlabBranchProtectionAllowedToObjectModel) []*gitlab.BranchPermissionOptions {
 	validCurrentAllowedTos := []*gitlab.BranchAccessDescription{}
-	// retireve only elements assigned to user(s) or group(s)
+	// retrieve only elements assigned to user(s) or group(s)
 	for _, currentAllowedTo := range currentAllowedTos {
 		if currentAllowedTo.UserID != 0 || currentAllowedTo.GroupID != 0 {
 			validCurrentAllowedTos = append(validCurrentAllowedTos, currentAllowedTo)
@@ -585,6 +632,50 @@ func generateAllowedToStateToAcessLevels(currentAllowedTos []*gitlab.BranchAcces
 			// if element exists in planned values skip removal
 			if !plannedAllowedTo.UserId.IsNull() && plannedAllowedTo.UserId.ValueInt64() == int64(validCurrentAllowedTo.UserID) ||
 				!plannedAllowedTo.GroupId.IsNull() && plannedAllowedTo.GroupId.ValueInt64() == int64(validCurrentAllowedTo.GroupID) {
+				requireRemoval = false
+				continue
+			}
+		}
+
+		if requireRemoval {
+			requireRemovalBranchPermissionOptionData := &gitlab.BranchPermissionOptions{
+				ID:      &validCurrentAllowedTo.ID,
+				Destroy: gitlab.Ptr(true),
+			}
+			finalAllowedTo = append(finalAllowedTo, requireRemovalBranchPermissionOptionData)
+		}
+
+	}
+
+	return finalAllowedTo
+}
+
+func generateAllowedToPushStateToAccessLevels(currentAllowedTos []*gitlab.BranchAccessDescription, plannedAllowedTos []*gitlabBranchProtectionAllowedToPushObjectModel) []*gitlab.BranchPermissionOptions {
+	validCurrentAllowedTos := []*gitlab.BranchAccessDescription{}
+	// retrieve only elements assigned to user(s) or group(s)
+	for _, currentAllowedTo := range currentAllowedTos {
+		if currentAllowedTo.UserID != 0 || currentAllowedTo.GroupID != 0 || currentAllowedTo.DeployKeyID != 0 {
+			validCurrentAllowedTos = append(validCurrentAllowedTos, currentAllowedTo)
+		}
+	}
+
+	finalAllowedTo := []*gitlab.BranchPermissionOptions{}
+	//detect entities to be created
+	for _, plannedAllowedTo := range plannedAllowedTos {
+		var allowedToBranchPermissionOptionData *gitlab.BranchPermissionOptions = populateBranchPermissionOptionsDataForPush(validCurrentAllowedTos, plannedAllowedTo)
+		if allowedToBranchPermissionOptionData != nil {
+			finalAllowedTo = append(finalAllowedTo, allowedToBranchPermissionOptionData)
+		}
+	}
+
+	//detect entities to be removed
+	for _, validCurrentAllowedTo := range validCurrentAllowedTos {
+		requireRemoval := true
+		for _, plannedAllowedTo := range plannedAllowedTos {
+			// if element exists in planned values skip removal
+			if !plannedAllowedTo.UserId.IsNull() && plannedAllowedTo.UserId.ValueInt64() == int64(validCurrentAllowedTo.UserID) ||
+				!plannedAllowedTo.GroupId.IsNull() && plannedAllowedTo.GroupId.ValueInt64() == int64(validCurrentAllowedTo.GroupID) ||
+				!plannedAllowedTo.DeployKeyId.IsNull() && plannedAllowedTo.DeployKeyId.ValueInt64() == int64(validCurrentAllowedTo.DeployKeyID) {
 				requireRemoval = false
 				continue
 			}
@@ -633,6 +724,40 @@ func populateBranchPermissionOptionsData(currentAllowedTos []*gitlab.BranchAcces
 	return allowedToBranchPermissionOptionData
 }
 
+func populateBranchPermissionOptionsDataForPush(currentAllowedTos []*gitlab.BranchAccessDescription, allowedTo *gitlabBranchProtectionAllowedToPushObjectModel) *gitlab.BranchPermissionOptions {
+	var allowedToBranchPermissionOptionData *gitlab.BranchPermissionOptions
+	requireCreation := true
+	//detect if element already exists
+	for _, currentAllowedTo := range currentAllowedTos {
+		//if element already exists skip creation
+		if allowedTo.AccessLevel == types.StringValue(api.AccessLevelValueToName[currentAllowedTo.AccessLevel]) ||
+			!allowedTo.UserId.IsNull() && allowedTo.UserId.ValueInt64() == int64(currentAllowedTo.UserID) ||
+			!allowedTo.GroupId.IsNull() && allowedTo.GroupId.ValueInt64() == int64(currentAllowedTo.GroupID) ||
+			!allowedTo.DeployKeyId.IsNull() && allowedTo.DeployKeyId.ValueInt64() == int64(currentAllowedTo.DeployKeyID) {
+			requireCreation = false
+		}
+	}
+
+	if requireCreation {
+		allowedToBranchPermissionOptionData = &gitlab.BranchPermissionOptions{}
+
+		if !allowedTo.AccessLevel.IsNull() && allowedTo.AccessLevel.ValueString() != "" {
+			allowedToBranchPermissionOptionData.AccessLevel = gitlab.Ptr(api.AccessLevelNameToValue[allowedTo.AccessLevel.ValueString()])
+		}
+		if !allowedTo.UserId.IsNull() && allowedTo.UserId.ValueInt64() != 0 {
+			allowedToBranchPermissionOptionData.UserID = gitlab.Ptr(int(allowedTo.UserId.ValueInt64()))
+		}
+		if !allowedTo.GroupId.IsNull() && allowedTo.GroupId.ValueInt64() != 0 {
+			allowedToBranchPermissionOptionData.GroupID = gitlab.Ptr(int(allowedTo.GroupId.ValueInt64()))
+		}
+		if !allowedTo.DeployKeyId.IsNull() && allowedTo.DeployKeyId.ValueInt64() != 0 {
+			allowedToBranchPermissionOptionData.DeployKeyID = gitlab.Ptr(int(allowedTo.DeployKeyId.ValueInt64()))
+		}
+	}
+
+	return allowedToBranchPermissionOptionData
+}
+
 func populateAllowedToToStateModel(accessLevels []*gitlab.BranchAccessDescription) []*gitlabBranchProtectionAllowedToObjectModel {
 	valid_access_levels := []*gitlab.BranchAccessDescription{}
 	for i := range accessLevels {
@@ -647,6 +772,20 @@ func populateAllowedToToStateModel(accessLevels []*gitlab.BranchAccessDescriptio
 	return populateAllowedToObjectList(valid_access_levels)
 }
 
+func populateAllowedToPushToStateModel(accessLevels []*gitlab.BranchAccessDescription) []*gitlabBranchProtectionAllowedToPushObjectModel {
+	valid_access_levels := []*gitlab.BranchAccessDescription{}
+	for i := range accessLevels {
+		if accessLevels[i].UserID != 0 || accessLevels[i].GroupID != 0 || accessLevels[i].DeployKeyID != 0 {
+			valid_access_levels = append(valid_access_levels, accessLevels[i])
+		}
+	}
+
+	if len(valid_access_levels) == 0 {
+		return nil
+	}
+	return populateAllowedToPushObjectList(valid_access_levels)
+}
+
 func populateAllowedToObjectList(access_levels []*gitlab.BranchAccessDescription) []*gitlabBranchProtectionAllowedToObjectModel {
 	allowedTosData := make([]*gitlabBranchProtectionAllowedToObjectModel, len(access_levels))
 	for i, v := range access_levels {
@@ -659,6 +798,28 @@ func populateAllowedToObjectList(access_levels []*gitlab.BranchAccessDescription
 		}
 		if v.GroupID != 0 {
 			allowedToData.GroupId = types.Int64Value(int64(v.GroupID))
+		}
+		allowedTosData[i] = &allowedToData
+	}
+
+	return allowedTosData
+}
+
+func populateAllowedToPushObjectList(access_levels []*gitlab.BranchAccessDescription) []*gitlabBranchProtectionAllowedToPushObjectModel {
+	allowedTosData := make([]*gitlabBranchProtectionAllowedToPushObjectModel, len(access_levels))
+	for i, v := range access_levels {
+		allowedToData := gitlabBranchProtectionAllowedToPushObjectModel{
+			AccessLevelDescription: types.StringValue(v.AccessLevelDescription),
+		}
+		allowedToData.AccessLevel = types.StringValue(api.AccessLevelValueToName[v.AccessLevel])
+		if v.UserID != 0 {
+			allowedToData.UserId = types.Int64Value(int64(v.UserID))
+		}
+		if v.GroupID != 0 {
+			allowedToData.GroupId = types.Int64Value(int64(v.GroupID))
+		}
+		if v.DeployKeyID != 0 {
+			allowedToData.DeployKeyId = types.Int64Value(int64(v.DeployKeyID))
 		}
 		allowedTosData[i] = &allowedToData
 	}
@@ -684,7 +845,7 @@ func (r *gitlabBranchProtectionResource) protectedBranchToStateModel(projectID s
 
 	data.AllowForcePush = types.BoolValue(protectedBranch.AllowForcePush)
 
-	data.AllowedToPush = populateAllowedToToStateModel(protectedBranch.PushAccessLevels)
+	data.AllowedToPush = populateAllowedToPushToStateModel(protectedBranch.PushAccessLevels)
 	data.AllowedToMerge = populateAllowedToToStateModel(protectedBranch.MergeAccessLevels)
 	data.AllowedToUnprotect = populateAllowedToToStateModel(protectedBranch.UnprotectAccessLevels)
 
@@ -712,7 +873,7 @@ type gitlabBranchProtectionResourceModelv0 struct {
 	AllowedToUnprotect        []*gitlabBranchProtectionAllowedToObjectModel `tfsdk:"allowed_to_unprotect"`
 }
 
-// gitlabBranchProtectionResource describes the resource schema in verison v0.
+// gitlabBranchProtectionResource describes the resource schema in version v0.
 func (d *gitlabBranchProtectionResource) getV0Schema() schema.Schema {
 	return schema.Schema{
 		Version: 0,
@@ -825,4 +986,18 @@ func schemaAllowedToObject(action string, validValues []string) schema.Block {
 			},
 		},
 	}
+}
+
+func migrateAllowedToBlock(previousData []*gitlabBranchProtectionAllowedToObjectModel) []*gitlabBranchProtectionAllowedToPushObjectModel {
+	newData := make([]*gitlabBranchProtectionAllowedToPushObjectModel, len(previousData))
+	for i, v := range previousData {
+		newData[i] = &gitlabBranchProtectionAllowedToPushObjectModel{
+			AccessLevel:            v.AccessLevel,
+			AccessLevelDescription: v.AccessLevelDescription,
+			UserId:                 v.UserId,
+			GroupId:                v.GroupId,
+		}
+	}
+
+	return newData
 }
