@@ -6,7 +6,7 @@ GOBIN = $(shell pwd)/bin
 PROVIDER_SRC_DIR := ./internal/provider/...
 TERRAFORM_PLUGIN_DIR ?= ~/.terraform.d/plugins/gitlab.local/x/gitlab/99.99.99
 TERRAFORM_PLATFORM_DIR ?= darwin_amd64
-CONTAINER_COMPOSE_ENGINE ?= docker-compose
+CONTAINER_COMPOSE_ENGINE ?= $(shell docker compose version >/dev/null 2>&1 && echo 'docker compose' || echo 'docker-compose')
 
 build: ## Build the provider binary.
 	go mod tidy
