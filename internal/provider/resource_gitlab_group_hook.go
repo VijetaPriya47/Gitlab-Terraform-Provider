@@ -426,6 +426,7 @@ func (d *gitlabGroupHookResource) getSchema() schema.Schema {
 						"value": schema.StringAttribute{
 							Required:      true,
 							Description:   "Value of the custom header.",
+							Sensitive:     true,
 							PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 						},
 					},
@@ -466,6 +467,9 @@ func (d *gitlabGroupHookResourceModel) modelToStateModel(a *gitlab.GroupHook) {
 		currentHeaderValues[v.Key.ValueString()] = v.Value.ValueString()
 	}
 
+	// Iterate through the headers that came back on the hook object, and
+	// add them to state using the value that already exists in state previously.
+	// Without this logic, the value would be lost in state with every plan/apply
 	headers := []*gitlabHookCustomHeaderModel{}
 	for _, v := range a.CustomHeaders {
 		head := &gitlabHookCustomHeaderModel{}
@@ -478,8 +482,16 @@ func (d *gitlabGroupHookResourceModel) modelToStateModel(a *gitlab.GroupHook) {
 		} else {
 			head.Value = types.StringValue(currentHeaderValues[v.Key])
 		}
+		// Add the header to the list
+		headers = append(headers, head)
 	}
-	d.CustomHeaders = headers
+
+	// Only set the headers to state if there is at least 1 present. Otherwise,
+	// the resource would break if there were no custom headers set.
+	if len(headers) > 0 {
+		d.CustomHeaders = headers
+	}
+
 }
 
 // Not bound to the resource model because it's used in the tests, so this

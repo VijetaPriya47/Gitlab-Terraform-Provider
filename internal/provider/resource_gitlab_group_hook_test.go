@@ -130,12 +130,13 @@ func TestAccGitlabGroupHook_customHeaders(t *testing.T) {
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabGroupHookDestroy,
 		Steps: []resource.TestStep{
-			// Create a Group Hook with required attributes only
+			// Create a Group Hook with custom headers
 			{
 				Config: fmt.Sprintf(`
 					resource "gitlab_group_hook" "this" {
 						group = "%s"
-						url = "http://example.com"
+						url   = "http://example.com"
+						token = "supersecret"
 
 						custom_headers = [
 							{
@@ -158,10 +159,46 @@ func TestAccGitlabGroupHook_customHeaders(t *testing.T) {
 			},
 			// Verify Import
 			{
-				ResourceName:            "gitlab_group_hook.this",
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"token"},
+				ResourceName:      "gitlab_group_hook.this",
+				ImportState:       true,
+				ImportStateVerify: true,
+				// Values don't come back on "read", so they can't be imported
+				ImportStateVerifyIgnore: []string{"token", "custom_headers.0.value", "custom_headers.1.value"},
+			},
+			// Create a Group Hook with custom headers
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_group_hook" "this" {
+						group = "%s"
+						url   = "http://example.com"
+						token = "supersecret"
+
+						custom_headers = [
+							{
+								key = "test"
+								value = "newValue"
+							},
+							{
+								key = "test2"
+								value = "newValue2"
+							}
+						]
+						
+					}
+				`, testGroup.FullPath),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_group_hook.this", "custom_headers.#", "2"),
+					resource.TestCheckResourceAttr("gitlab_group_hook.this", "custom_headers.0.key", "test"),
+					resource.TestCheckResourceAttr("gitlab_group_hook.this", "custom_headers.0.value", "newValue"),
+				),
+			},
+			// Verify Import
+			{
+				ResourceName:      "gitlab_group_hook.this",
+				ImportState:       true,
+				ImportStateVerify: true,
+				// Values don't come back on "read", so they can't be imported
+				ImportStateVerifyIgnore: []string{"token", "custom_headers.0.value", "custom_headers.1.value"},
 			},
 		},
 	})
