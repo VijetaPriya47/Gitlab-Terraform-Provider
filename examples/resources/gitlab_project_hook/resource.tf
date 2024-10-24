@@ -11,7 +11,7 @@ resource "gitlab_project_hook" "custom_headers" {
   url                   = "https://example.com/hook/example"
   merge_requests_events = true
 
-  custom_headers  = [
+  custom_headers = [
     {
       key   = "X-Custom-Header"
       value = "example"
