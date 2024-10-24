@@ -425,7 +425,7 @@ func (d *gitlabGroupHookResource) getSchema() schema.Schema {
 						},
 						"value": schema.StringAttribute{
 							Required:      true,
-							Description:   "Value of the custom header.",
+							Description:   "Value of the custom header. This value cannot be imported.",
 							Sensitive:     true,
 							PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 						},

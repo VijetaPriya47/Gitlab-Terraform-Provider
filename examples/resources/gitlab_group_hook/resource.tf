@@ -25,3 +25,22 @@ resource "gitlab_group_hook" "all_attributes" {
   releases_events            = true
   subgroup_events            = true
 }
+
+# Using Custom Headers
+# Values of headers can't be imported
+resource "gitlab_group_hook" "all_attributes" {
+  group                 = "example/hooked"
+  url                   = "https://example.com/hook/example"
+  merge_requests_events = true
+
+  custom_headers  = [
+    {
+      key   = "X-Custom-Header"
+      value = "example"
+    },
+    {
+      key   = "X-Custom-Header-Second"
+      value = "example-second"
+    }
+  ]
+}
