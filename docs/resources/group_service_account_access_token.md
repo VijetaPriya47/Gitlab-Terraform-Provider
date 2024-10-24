@@ -33,7 +33,7 @@ resource "gitlab_group_service_account" "example-sa" {
 
 resource "gitlab_group_service_account_access_token" "example-sa-token" {
   group      = gitlab_group.example.id
-  user_id    = gitlab_group_service_account.example-sa.id
+  user_id    = gitlab_group_service_account.example-sa.service_account_id
   name       = "Example personal access token"
   expires_at = "2020-03-14"
 
