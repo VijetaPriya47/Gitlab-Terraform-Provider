@@ -126,7 +126,7 @@ func (r *gitlabGroupHookResource) Create(ctx context.Context, req resource.Creat
 	}
 
 	if len(data.CustomHeaders) > 0 {
-		headers := []*gitlab.HookCustomHeader{}
+		headers := make([]*gitlab.HookCustomHeader, 0, len(data.CustomHeaders))
 		for _, header := range data.CustomHeaders {
 			headers = append(headers, &gitlab.HookCustomHeader{
 				Key:   header.Key.ValueString(),
@@ -231,7 +231,7 @@ func (r *gitlabGroupHookResource) Update(ctx context.Context, req resource.Updat
 	}
 
 	if len(data.CustomHeaders) > 0 {
-		headers := []*gitlab.HookCustomHeader{}
+		headers := make([]*gitlab.HookCustomHeader, 0, len(data.CustomHeaders))
 		for _, header := range data.CustomHeaders {
 			headers = append(headers, &gitlab.HookCustomHeader{
 				Key:   header.Key.ValueString(),
@@ -460,35 +460,32 @@ func (d *gitlabGroupHookResourceModel) modelToStateModel(a *gitlab.GroupHook) {
 	d.EnableSSLVerification = types.BoolValue(a.EnableSSLVerification)
 	d.CustomWebhookTemplate = types.StringValue(a.CustomWebhookTemplate)
 
-	// create a map of key/value data from state currently, so we don't overwrite
-	// values in state when we can't read the values
-	currentHeaderValues := map[string]string{}
-	for _, v := range d.CustomHeaders {
-		currentHeaderValues[v.Key.ValueString()] = v.Value.ValueString()
-	}
-
-	// Iterate through the headers that came back on the hook object, and
-	// add them to state using the value that already exists in state previously.
-	// Without this logic, the value would be lost in state with every plan/apply
-	headers := []*gitlabHookCustomHeaderModel{}
-	for _, v := range a.CustomHeaders {
-		head := &gitlabHookCustomHeaderModel{}
-		head.Key = types.StringValue(v.Key)
-
-		// Value doesn't come back on read requests, so if it's "", we grab the value from
-		// the current data state instead of the hook, so we don't "lose" the value.
-		if v.Value != "" {
-			head.Value = types.StringValue(v.Value)
-		} else {
-			head.Value = types.StringValue(currentHeaderValues[v.Key])
+	if len(a.CustomHeaders) > 0 || len(d.CustomHeaders) > 0 {
+		// create a map of key/value data from state currently, so we don't overwrite
+		// values in state when we can't read the values
+		currentHeaderValues := map[string]string{}
+		for _, v := range d.CustomHeaders {
+			currentHeaderValues[v.Key.ValueString()] = v.Value.ValueString()
 		}
-		// Add the header to the list
-		headers = append(headers, head)
-	}
 
-	// Only set the headers to state if there is at least 1 present. Otherwise,
-	// the resource would break if there were no custom headers set.
-	if len(headers) > 0 {
+		// Iterate through the headers that came back on the hook object, and
+		// add them to state using the value that already exists in state previously.
+		// Without this logic, the value would be lost in state with every plan/apply
+		headers := make([]*gitlabHookCustomHeaderModel, 0, len(a.CustomHeaders))
+		for _, v := range a.CustomHeaders {
+			head := &gitlabHookCustomHeaderModel{}
+			head.Key = types.StringValue(v.Key)
+
+			// Value doesn't come back on read requests, so if it's "", we grab the value from
+			// the current data state instead of the hook, so we don't "lose" the value.
+			if v.Value != "" {
+				head.Value = types.StringValue(v.Value)
+			} else {
+				head.Value = types.StringValue(currentHeaderValues[v.Key])
+			}
+			headers = append(headers, head)
+		}
+
 		d.CustomHeaders = headers
 	}
 
