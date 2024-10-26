@@ -1158,3 +1158,20 @@ func CreateGroupServiceAccountsWithPrefix(t *testing.T, n int, groupID, prefix s
 	}
 	return serviceAccounts
 }
+
+// CreateRunnerWithOptions is a test helper for creating a Runner given some options
+func CreateRunnerWithOptions(t *testing.T, opts *gitlab.CreateUserRunnerOptions) *gitlab.UserRunner {
+	t.Helper()
+
+	runner, _, err := TestGitlabClient.Users.CreateUserRunner(opts)
+	if err != nil {
+		t.Fatalf("could not create runner: %v", err)
+	}
+
+	t.Cleanup(func() {
+		if _, err := TestGitlabClient.Runners.DeleteRegisteredRunnerByID(runner.ID); err != nil {
+			t.Fatalf("could not cleanup runner: %v", err)
+		}
+	})
+	return runner
+}
