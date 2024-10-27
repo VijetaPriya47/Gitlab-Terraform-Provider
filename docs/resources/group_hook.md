@@ -81,7 +81,15 @@ resource "gitlab_group_hook" "all_attributes" {
 
 ## Import
 
-Import is supported using the following syntax:
+Starting in Terraform v1.5.0 you can use an [import block](https://developer.hashicorp.com/terraform/language/import) to import `gitlab_group_hook`. For example:
+```terraform
+import {
+  to = gitlab_group_hook.example
+  id = "see CLI command below for ID"
+}
+```
+
+Import using the CLI is supported using the following syntax:
 
 ```shell
 # A GitLab Group Hook can be imported using a key composed of `<group-id>:<hook-id>`, e.g.

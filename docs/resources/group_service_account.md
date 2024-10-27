@@ -48,7 +48,15 @@ resource "gitlab_group_service_account" "example-sa" {
 
 ## Import
 
-Import is supported using the following syntax:
+Starting in Terraform v1.5.0 you can use an [import block](https://developer.hashicorp.com/terraform/language/import) to import `gitlab_group_service_account`. For example:
+```terraform
+import {
+  to = gitlab_group_service_account.example
+  id = "see CLI command below for ID"
+}
+```
+
+Import using the CLI is supported using the following syntax:
 
 ```shell
 # You can import a group service account using `terraform import <resource> <id>`.  The
