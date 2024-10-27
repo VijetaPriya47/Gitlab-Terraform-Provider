@@ -121,6 +121,7 @@ func TestAccGitlabRunner_comprehensive(t *testing.T) {
 					tag_list = ["tag_one", "tag_two"]
 					access_level = "ref_protected"
 					maximum_timeout = 3600
+					maintenance_note = "Leave me alone!"
 				}
 				`, group.RunnersToken),
 			},
@@ -143,6 +144,7 @@ func TestAccGitlabRunner_comprehensive(t *testing.T) {
 					tag_list = ["tag_one", "tag_two", "tag_three"]
 					access_level = "not_protected"
 					maximum_timeout = 4200
+					maintenance_note = "Leave me!"
 				}
 				`, group.RunnersToken),
 			},

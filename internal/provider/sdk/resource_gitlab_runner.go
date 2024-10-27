@@ -101,6 +101,11 @@ use the ` + "`gitlab_user_runner`" + ` resource!
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+			"maintenance_note": {
+				Description: `Free-form maintenance notes for the runner (1024 characters).`,
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
 		},
 	}
 })
@@ -147,6 +152,10 @@ func resourceGitLabRunnerCreate(ctx context.Context, d *schema.ResourceData, met
 		options.MaximumTimeout = gitlab.Ptr(v.(int))
 	}
 
+	if v, ok := d.GetOk("maintenance_note"); ok {
+		options.MaintenanceNote = gitlab.Ptr(v.(string))
+	}
+
 	// Explicitly not printing the registration token here, even though it may make debugging a bit trickier, since it's a secret
 	tflog.Debug(ctx, "[DEBUG] Update GitLab Runner using registration token in configuration")
 	runner, _, err := client.Runners.RegisterNewRunner(options, gitlab.WithContext(ctx))
@@ -182,6 +191,7 @@ func resourceGitLabRunnerRead(ctx context.Context, d *schema.ResourceData, meta 
 	d.Set("access_level", runner.AccessLevel)
 	d.Set("maximum_timeout", runner.MaximumTimeout)
 	d.Set("status", runner.Status)
+	d.Set("maintenance_note", runner.MaintenanceNote)
 
 	if err := d.Set("tag_list", runner.TagList); err != nil {
 		return diag.FromErr(fmt.Errorf("[DEBUG] error setting tag list for runner: %s", err))
@@ -228,6 +238,9 @@ func resourceGitLabRunnerUpdate(ctx context.Context, d *schema.ResourceData, met
 
 	if v, ok := d.GetOk("maximum_timeout"); ok {
 		options.MaximumTimeout = gitlab.Ptr(v.(int))
+	}
+	if v, ok := d.GetOk("maintenance_note"); ok {
+		options.MaintenanceNote = gitlab.Ptr(v.(string))
 	}
 
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Update GitLab Runner %s", d.Id()))

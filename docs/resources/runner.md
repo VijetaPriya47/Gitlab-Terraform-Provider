@@ -95,6 +95,7 @@ resource "local_file" "config" {
 - `access_level` (String) The access_level of the runner. Valid values are: `not_protected`, `ref_protected`.
 - `description` (String) The runner's description.
 - `locked` (Boolean) Whether the runner should be locked for current project.
+- `maintenance_note` (String) Free-form maintenance notes for the runner (1024 characters).
 - `maximum_timeout` (Number) Maximum timeout set when this runner handles the job.
 - `paused` (Boolean) Whether the runner should ignore new jobs.
 - `run_untagged` (Boolean) Whether the runner should handle untagged jobs.

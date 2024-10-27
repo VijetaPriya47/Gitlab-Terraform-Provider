@@ -89,6 +89,7 @@ check_interval = 0
 - `description` (String) Description of the runner.
 - `group_id` (Number) The ID of the group that the runner is created in. Required if runner_type is group_type.
 - `locked` (Boolean) Specifies if the runner should be locked for the current project.
+- `maintenance_note` (String) Free-form maintenance notes for the runner (1024 characters)
 - `maximum_timeout` (Number) Maximum timeout that limits the amount of time (in seconds) that runners can run jobs. Must be at least 600 (10 minutes).
 - `paused` (Boolean) Specifies if the runner should ignore new jobs.
 - `project_id` (Number) The ID of the project that the runner is created in. Required if runner_type is project_type.
