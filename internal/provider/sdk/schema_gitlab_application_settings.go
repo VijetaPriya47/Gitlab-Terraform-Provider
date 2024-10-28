@@ -3784,7 +3784,12 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("valid_runner_registrars") {
-		options.ValidRunnerRegistrars = gitlab.Ptr(d.Get("valid_runner_registrars").([]string))
+		v := d.Get("valid_runner_registrars").([]interface{})
+		registrars := make([]string, len(v))
+		for i, reg := range v {
+			registrars[i] = reg.(string)
+		}
+		options.ValidRunnerRegistrars = &registrars
 	}
 
 	if d.HasChange("version_check_enabled") {
