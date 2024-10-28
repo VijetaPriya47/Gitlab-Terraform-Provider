@@ -185,7 +185,6 @@ func (r *gitlabProjectAccessTokenResource) Schema(ctx context.Context, req resou
 						Required:            true,
 						PlanModifiers: []planmodifier.Int64{
 							int64planmodifier.UseStateForUnknown(),
-							int64planmodifier.RequiresReplace(),
 						},
 						Validators: []validator.Int64{
 							int64validator.AtLeast(1),
@@ -197,7 +196,6 @@ func (r *gitlabProjectAccessTokenResource) Schema(ctx context.Context, req resou
 						Required:            true,
 						PlanModifiers: []planmodifier.Int64{
 							int64planmodifier.UseStateForUnknown(),
-							int64planmodifier.RequiresReplace(),
 						},
 						Validators: []validator.Int64{
 							int64validator.AtLeast(1),
