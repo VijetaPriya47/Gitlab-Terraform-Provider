@@ -57,8 +57,14 @@ type gitlabGroupHookResourceModel struct {
 	ReleasesEvents           types.Bool   `tfsdk:"releases_events"`
 	SubGroupEvents           types.Bool   `tfsdk:"subgroup_events"`
 
-	EnableSSLVerification types.Bool   `tfsdk:"enable_ssl_verification"`
-	CustomWebhookTemplate types.String `tfsdk:"custom_webhook_template"`
+	EnableSSLVerification types.Bool                     `tfsdk:"enable_ssl_verification"`
+	CustomWebhookTemplate types.String                   `tfsdk:"custom_webhook_template"`
+	CustomHeaders         []*gitlabHookCustomHeaderModel `tfsdk:"custom_headers"`
+}
+
+type gitlabHookCustomHeaderModel struct {
+	Key   types.String `tfsdk:"key"`
+	Value types.String `tfsdk:"value"`
 }
 
 type gitlabGroupHookResource struct {
@@ -117,6 +123,18 @@ func (r *gitlabGroupHookResource) Create(ctx context.Context, req resource.Creat
 
 	if !data.Token.IsNull() {
 		options.Token = data.Token.ValueStringPointer()
+	}
+
+	if len(data.CustomHeaders) > 0 {
+		headers := make([]*gitlab.HookCustomHeader, 0, len(data.CustomHeaders))
+		for _, header := range data.CustomHeaders {
+			headers = append(headers, &gitlab.HookCustomHeader{
+				Key:   header.Key.ValueString(),
+				Value: header.Value.ValueString(),
+			})
+		}
+
+		options.CustomHeaders = &headers
 	}
 
 	tflog.Debug(ctx, "creating gitlab group hook with details", map[string]interface{}{
@@ -210,6 +228,18 @@ func (r *gitlabGroupHookResource) Update(ctx context.Context, req resource.Updat
 
 	if !data.Token.IsNull() {
 		options.Token = data.Token.ValueStringPointer()
+	}
+
+	if len(data.CustomHeaders) > 0 {
+		headers := make([]*gitlab.HookCustomHeader, 0, len(data.CustomHeaders))
+		for _, header := range data.CustomHeaders {
+			headers = append(headers, &gitlab.HookCustomHeader{
+				Key:   header.Key.ValueString(),
+				Value: header.Value.ValueString(),
+			})
+		}
+
+		options.CustomHeaders = &headers
 	}
 
 	tflog.Debug(ctx, "updating gitlab Group hook with details", map[string]interface{}{
@@ -384,6 +414,24 @@ func (d *gitlabGroupHookResource) getSchema() schema.Schema {
 				Optional:    true,
 				Computed:    true,
 			},
+			"custom_headers": schema.ListNestedAttribute{
+				Description: "Custom headers for the project webhook.",
+				Optional:    true,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"key": schema.StringAttribute{
+							Description: "Key of the custom header.",
+							Required:    true,
+						},
+						"value": schema.StringAttribute{
+							Required:      true,
+							Description:   "Value of the custom header. This value cannot be imported.",
+							Sensitive:     true,
+							PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+						},
+					},
+				},
+			},
 		},
 	}
 }
@@ -411,6 +459,36 @@ func (d *gitlabGroupHookResourceModel) modelToStateModel(a *gitlab.GroupHook) {
 	d.SubGroupEvents = types.BoolValue(a.SubGroupEvents)
 	d.EnableSSLVerification = types.BoolValue(a.EnableSSLVerification)
 	d.CustomWebhookTemplate = types.StringValue(a.CustomWebhookTemplate)
+
+	if len(a.CustomHeaders) > 0 || len(d.CustomHeaders) > 0 {
+		// create a map of key/value data from state currently, so we don't overwrite
+		// values in state when we can't read the values
+		currentHeaderValues := map[string]string{}
+		for _, v := range d.CustomHeaders {
+			currentHeaderValues[v.Key.ValueString()] = v.Value.ValueString()
+		}
+
+		// Iterate through the headers that came back on the hook object, and
+		// add them to state using the value that already exists in state previously.
+		// Without this logic, the value would be lost in state with every plan/apply
+		headers := make([]*gitlabHookCustomHeaderModel, 0, len(a.CustomHeaders))
+		for _, v := range a.CustomHeaders {
+			head := &gitlabHookCustomHeaderModel{}
+			head.Key = types.StringValue(v.Key)
+
+			// Value doesn't come back on read requests, so if it's "", we grab the value from
+			// the current data state instead of the hook, so we don't "lose" the value.
+			if v.Value != "" {
+				head.Value = types.StringValue(v.Value)
+			} else {
+				head.Value = types.StringValue(currentHeaderValues[v.Key])
+			}
+			headers = append(headers, head)
+		}
+
+		d.CustomHeaders = headers
+	}
+
 }
 
 // Not bound to the resource model because it's used in the tests, so this

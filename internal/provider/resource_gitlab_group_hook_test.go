@@ -121,6 +121,89 @@ func TestAccGitlabGroupHook_basic(t *testing.T) {
 	})
 }
 
+func TestAccGitlabGroupHook_customHeaders(t *testing.T) {
+	testutil.SkipIfCE(t)
+
+	testGroup := testutil.CreateGroups(t, 1)[0]
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabGroupHookDestroy,
+		Steps: []resource.TestStep{
+			// Create a Group Hook with custom headers
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_group_hook" "this" {
+						group = "%s"
+						url   = "http://example.com"
+						token = "supersecret"
+
+						custom_headers = [
+							{
+								key = "test"
+								value = "testValue"
+							},
+							{
+								key = "test2"
+								value = "testValue2"
+							}
+						]
+						
+					}
+				`, testGroup.FullPath),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_group_hook.this", "custom_headers.#", "2"),
+					resource.TestCheckResourceAttr("gitlab_group_hook.this", "custom_headers.0.key", "test"),
+					resource.TestCheckResourceAttr("gitlab_group_hook.this", "custom_headers.0.value", "testValue"),
+				),
+			},
+			// Verify Import
+			{
+				ResourceName:      "gitlab_group_hook.this",
+				ImportState:       true,
+				ImportStateVerify: true,
+				// Values don't come back on "read", so they can't be imported
+				ImportStateVerifyIgnore: []string{"token", "custom_headers.0.value", "custom_headers.1.value"},
+			},
+			// Create a Group Hook with custom headers
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_group_hook" "this" {
+						group = "%s"
+						url   = "http://example.com"
+						token = "supersecret"
+
+						custom_headers = [
+							{
+								key = "test"
+								value = "newValue"
+							},
+							{
+								key = "test2"
+								value = "newValue2"
+							}
+						]
+						
+					}
+				`, testGroup.FullPath),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_group_hook.this", "custom_headers.#", "2"),
+					resource.TestCheckResourceAttr("gitlab_group_hook.this", "custom_headers.0.key", "test"),
+					resource.TestCheckResourceAttr("gitlab_group_hook.this", "custom_headers.0.value", "newValue"),
+				),
+			},
+			// Verify Import
+			{
+				ResourceName:      "gitlab_group_hook.this",
+				ImportState:       true,
+				ImportStateVerify: true,
+				// Values don't come back on "read", so they can't be imported
+				ImportStateVerifyIgnore: []string{"token", "custom_headers.0.value", "custom_headers.1.value"},
+			},
+		},
+	})
+}
+
 func TestAccGitlabGroupHook_migrateFromSDKToFramework(t *testing.T) {
 	testutil.SkipIfCE(t)
 	group := testutil.CreateGroups(t, 1)[0]
