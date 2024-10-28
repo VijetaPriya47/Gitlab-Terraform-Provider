@@ -63,6 +63,7 @@ func TestAcc_GitlabUserRunner_basicInstanceRunner(t *testing.T) {
 						tag_list = ["stuff", "things"]
 						access_level = "not_protected"
 						maximum_timeout = 600
+						maintenance_note = "Leave me alone!"
 					 }
 					`,
 				Check: resource.TestCheckResourceAttrSet("gitlab_user_runner.this", "token"), // rest of attributes checked by import
@@ -140,6 +141,7 @@ func TestAcc_GitlabUserRunner_basicProjectRunner(t *testing.T) {
 						tag_list = ["stuff", "things"]
 						access_level = "not_protected"
 						maximum_timeout = 600
+						maintenance_note = "Leave me alone!"
 					 }
 					`, project.ID),
 				Check: resource.TestCheckResourceAttrSet("gitlab_user_runner.this", "token"), // rest of attributes checked by import
@@ -217,6 +219,7 @@ func TestAcc_GitlabUserRunner_basicGroupRunner(t *testing.T) {
 						tag_list = ["stuff", "things"]
 						access_level = "not_protected"
 						maximum_timeout = 600
+						maintenance_note = "Leave me alone!"
 					 }
 					`, group.ID),
 				Check: resource.ComposeAggregateTestCheckFunc(
@@ -306,6 +309,7 @@ func TestAcc_GitlabUserRunner_createWithOptions(t *testing.T) {
 						tag_list = ["stuff", "things"]
 						access_level = "not_protected"
 						maximum_timeout = 600
+						maintenance_note = "Leave me alone!"
 					 }
 					`,
 				Check: resource.ComposeTestCheckFunc(

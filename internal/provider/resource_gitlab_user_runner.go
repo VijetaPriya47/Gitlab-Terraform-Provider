@@ -51,18 +51,19 @@ func (d *gitlabUserRunnerResource) Metadata(_ context.Context, req resource.Meta
 
 // Struct for the schema
 type gitlabUserRunnerModel struct {
-	ID             types.String `tfsdk:"id"`
-	RunnerType     types.String `tfsdk:"runner_type"`
-	GroupID        types.Int64  `tfsdk:"group_id"`
-	ProjectID      types.Int64  `tfsdk:"project_id"`
-	Description    types.String `tfsdk:"description"`
-	Paused         types.Bool   `tfsdk:"paused"`
-	Locked         types.Bool   `tfsdk:"locked"`
-	Untagged       types.Bool   `tfsdk:"untagged"`
-	TagList        types.Set    `tfsdk:"tag_list"`
-	AccessLevel    types.String `tfsdk:"access_level"`
-	MaximumTimeout types.Int64  `tfsdk:"maximum_timeout"`
-	Token          types.String `tfsdk:"token"`
+	ID              types.String `tfsdk:"id"`
+	RunnerType      types.String `tfsdk:"runner_type"`
+	GroupID         types.Int64  `tfsdk:"group_id"`
+	ProjectID       types.Int64  `tfsdk:"project_id"`
+	Description     types.String `tfsdk:"description"`
+	Paused          types.Bool   `tfsdk:"paused"`
+	Locked          types.Bool   `tfsdk:"locked"`
+	Untagged        types.Bool   `tfsdk:"untagged"`
+	TagList         types.Set    `tfsdk:"tag_list"`
+	AccessLevel     types.String `tfsdk:"access_level"`
+	MaximumTimeout  types.Int64  `tfsdk:"maximum_timeout"`
+	Token           types.String `tfsdk:"token"`
+	MaintenanceNote types.String `tfsdk:"maintenance_note"`
 }
 
 func (d *gitlabUserRunnerResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -153,6 +154,15 @@ func (d *gitlabUserRunnerResource) Schema(_ context.Context, _ resource.SchemaRe
 				MarkdownDescription: "The authentication token to use when setting up a new runner with this configuration. This value cannot be imported.",
 				PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
+			"maintenance_note": schema.StringAttribute{
+				Optional:            true,
+				Computed:            true,
+				MarkdownDescription: "Free-form maintenance notes for the runner (1024 characters) ",
+				PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtMost(1024),
+				},
+			},
 		},
 	}
 }
@@ -240,6 +250,9 @@ func (r *gitlabUserRunnerResource) Create(ctx context.Context, req resource.Crea
 	// greater than 0 before including it within create.
 	if !data.MaximumTimeout.IsNull() && !data.MaximumTimeout.IsUnknown() && data.MaximumTimeout.ValueInt64() > 0 {
 		options.MaximumTimeout = gitlab.Ptr(int(data.MaximumTimeout.ValueInt64()))
+	}
+	if !data.MaintenanceNote.IsNull() && !data.MaintenanceNote.IsUnknown() {
+		options.MaintenanceNote = gitlab.Ptr(data.MaintenanceNote.ValueString())
 	}
 
 	tflog.Debug(ctx, "Creating new GitLab Runner", map[string]interface{}{
@@ -334,6 +347,9 @@ func (r *gitlabUserRunnerResource) Update(ctx context.Context, req resource.Upda
 	}
 	if !data.MaximumTimeout.IsNull() && !data.MaximumTimeout.IsUnknown() && data.MaximumTimeout.ValueInt64() > 0 {
 		options.MaximumTimeout = gitlab.Ptr(int(data.MaximumTimeout.ValueInt64()))
+	}
+	if !data.MaintenanceNote.IsNull() && !data.MaintenanceNote.IsUnknown() {
+		options.MaintenanceNote = gitlab.Ptr(data.MaintenanceNote.ValueString())
 	}
 
 	tflog.Debug(ctx, "Updating GitLab Runner ID", map[string]interface{}{
@@ -453,6 +469,7 @@ func (d *gitlabUserRunnerModel) modelToStateModel(r *gitlab.RunnerDetails, ctx c
 	d.Untagged = types.BoolValue(r.RunUntagged)
 	d.AccessLevel = types.StringValue(r.AccessLevel)
 	d.MaximumTimeout = types.Int64Value(int64(r.MaximumTimeout))
+	d.MaintenanceNote = types.StringValue(r.MaintenanceNote)
 
 	// uses a []string, so doesn't require a `types` package constructor.
 	list, diag := types.SetValueFrom(ctx, types.StringType, r.TagList)
