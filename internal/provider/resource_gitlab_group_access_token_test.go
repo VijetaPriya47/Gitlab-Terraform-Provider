@@ -560,6 +560,20 @@ func TestAccGitlabGroupAccessToken_attributeValidation(t *testing.T) {
 				`, group.ID, testutil.GetCurrentTimePlusDays(t, 2).String()), // so it's always in the future.
 				ExpectError: regexp.MustCompile("Error: Invalid Attribute Combination"),
 			},
+			// At least one rotation_configuration or expires_at is required
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group_access_token" "this" {
+					name = "my group token"
+					group = %d
+
+					access_level = "developer"
+					scopes = ["api"]
+
+				}
+				`, group.ID),
+				ExpectError: regexp.MustCompile("Error: Invalid Attribute Combination"),
+			},
 			// Validate that expiration must be > 0
 			{
 				Config: fmt.Sprintf(`

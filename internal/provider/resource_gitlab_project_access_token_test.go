@@ -534,6 +534,17 @@ func TestAccGitlabProjectAccessToken_attributeValidation(t *testing.T) {
 				`, project.ID, getCurrentTimePlusDays(2).String()), // To ensure it's always in the future
 				ExpectError: regexp.MustCompile("Error: Invalid Attribute Combination"),
 			},
+			// expires_at or rotation_configuration must be applied
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_access_token" "foo" {
+					project = %d
+					name    = "foo"
+					scopes  = ["api"]
+				}
+				`, project.ID),
+				ExpectError: regexp.MustCompile("Error: Invalid Attribute Combination"),
+			},
 			// Validate expiration_days is at least 1
 			{
 				Config: fmt.Sprintf(`
@@ -550,7 +561,6 @@ func TestAccGitlabProjectAccessToken_attributeValidation(t *testing.T) {
 				`, project.ID),
 				ExpectError: regexp.MustCompile("rotation_configuration.expiration_days value must be at least 1"),
 			},
-
 			// Validate rotate_before_days is at least 1
 			{
 				Config: fmt.Sprintf(`

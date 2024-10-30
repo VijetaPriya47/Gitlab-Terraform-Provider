@@ -127,7 +127,7 @@ func (r *gitlabGroupAccessTokenResource) Schema(ctx context.Context, req resourc
 					stringplanmodifier.UseStateForUnknown(),
 				},
 				Validators: []validator.String{
-					stringvalidator.ConflictsWith(path.MatchRoot("rotation_configuration")),
+					stringvalidator.ExactlyOneOf(path.MatchRoot("rotation_configuration")),
 				},
 				Optional: true,
 				Computed: true,
@@ -169,7 +169,7 @@ func (r *gitlabGroupAccessTokenResource) Schema(ctx context.Context, req resourc
 				MarkdownDescription: "The configuration for when to rotate a token automatically. Will not rotate a token until `terraform apply` is run.",
 				Optional:            true,
 				Validators: []validator.Object{
-					objectvalidator.ConflictsWith(path.MatchRoot("expires_at")),
+					objectvalidator.ExactlyOneOf(path.MatchRoot("expires_at")),
 				},
 
 				// Rotation attributes
