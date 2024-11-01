@@ -3,7 +3,7 @@ module gitlab.com/gitlab-org/terraform-provider-gitlab
 go 1.23.2
 
 require (
-	github.com/dcarbone/terraform-plugin-framework-utils/v3 v3.7.0
+	github.com/dcarbone/terraform-plugin-framework-utils/v3 v3.8.0
 	github.com/hashicorp/go-cty v1.4.1-0.20200723130312-85980079f637
 	github.com/hashicorp/go-retryablehttp v0.7.7
 	github.com/hashicorp/terraform-plugin-framework v1.13.0
@@ -23,7 +23,7 @@ require (
 	github.com/agext/levenshtein v1.2.2 // indirect
 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect
-	github.com/fatih/color v1.16.0 // indirect
+	github.com/fatih/color v1.18.0 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
