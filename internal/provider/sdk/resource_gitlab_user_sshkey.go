@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/xanzy/go-gitlab"
+	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
 
@@ -52,7 +53,7 @@ func resourceGitlabUserSSHKeyCreate(ctx context.Context, d *schema.ResourceData,
 	var err error
 
 	if userIDOk {
-		isAdmin, err = isCurrentUserAdmin(ctx, client)
+		isAdmin, err = api.IsCurrentUserAdmin(ctx, client)
 		if err != nil {
 			return diag.Errorf("failed to check if user is admin for configuring ssh keys for a user")
 		}
@@ -147,7 +148,7 @@ func resourceGitlabUserSSHKeyDelete(ctx context.Context, d *schema.ResourceData,
 
 	var isAdmin bool
 
-	isAdmin, err = isCurrentUserAdmin(ctx, client)
+	isAdmin, err = api.IsCurrentUserAdmin(ctx, client)
 	if err != nil {
 		return diag.Errorf("failed to check if user is admin for configuring ssh keys for a user")
 	}

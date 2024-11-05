@@ -249,15 +249,6 @@ func fromIntegerMap(value interface{}) map[string]int {
 	return integerMap
 }
 
-func isCurrentUserAdmin(ctx context.Context, client *gitlab.Client) (bool, error) {
-	currentUser, _, err := client.Users.CurrentUser(gitlab.WithContext(ctx))
-	if err != nil {
-		return false, err
-	}
-
-	return currentUser.IsAdmin, nil
-}
-
 // ISO 8601 date format
 const iso8601 = "2006-01-02"
 

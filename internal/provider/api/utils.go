@@ -76,3 +76,13 @@ func CurrentTime() time.Time {
 	}
 	return time.Now()
 }
+
+// Retrieves the data for the current user (which is the user configured in the provider) and determines if they are an admin.
+func IsCurrentUserAdmin(ctx context.Context, client *gitlab.Client) (bool, error) {
+	currentUser, _, err := client.Users.CurrentUser(gitlab.WithContext(ctx))
+	if err != nil {
+		return false, err
+	}
+
+	return currentUser.IsAdmin, nil
+}

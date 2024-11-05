@@ -6,6 +6,7 @@ package provider
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -183,10 +184,108 @@ func TestAccGitlabGroupServiceAccountAccessToken_rotationUsingExpiresAt(t *testi
 	})
 }
 
+// This test ensures that a user who is an Owner level will be able to use and roate the token using the state data
+// even when they can't normally read the service account token's information.
+func TestAccGitlabGroupServiceAccountAccessToken_nonAdminToken(t *testing.T) {
+	testutil.SkipIfCE(t)
+
+	ownerUser := testutil.CreateUsers(t, 1)[0]
+	token := testutil.CreatePersonalAccessToken(t, ownerUser)
+
+	group := testutil.CreateGroups(t, 1)[0]
+	groupID := strconv.Itoa(group.ID)
+
+	// Add the user to the group with owner permissions
+	testutil.AddGroupMembersWithAccessLevel(t, groupID, []*gitlab.User{ownerUser}, gitlab.OwnerPermissions)
+
+	serviceAccount := testutil.CreateGroupServiceAccounts(t, 1, groupID)[0]
+
+	// Explicitly don't run this as a parallel test, since membership additions happen async, and a busier instance
+	// means it's more likely to fail because the background process hasn't run yet.
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabGroupServiceAccountAccessTokenDestroy,
+		Steps: []resource.TestStep{
+			// Create a basic access token.
+			{
+				// lintignore:AT004  // we need the provider configuration here to attempt to create the service account as a different user
+				Config: fmt.Sprintf(`
+				provider "gitlab" {
+					token = "%s"
+				}
+
+				resource "gitlab_group_service_account_access_token" "foo" {
+					group = %s 
+					user_id  = %d
+					name     = "foo"
+					scopes   = ["api"]
+
+					expires_at = "%s"
+				}
+				`, token.Token, groupID, serviceAccount.ID, time.Now().Add(time.Hour*48).Format(api.Iso8601)),
+				// Check computed and default attributes.
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_group_service_account_access_token.foo", "active", "true"),
+					resource.TestCheckResourceAttr("gitlab_group_service_account_access_token.foo", "revoked", "false"),
+					resource.TestCheckResourceAttrSet("gitlab_group_service_account_access_token.foo", "token"),
+					resource.TestCheckResourceAttrSet("gitlab_group_service_account_access_token.foo", "created_at"),
+					resource.TestCheckResourceAttrSet("gitlab_group_service_account_access_token.foo", "user_id"),
+				),
+			},
+			// Recreate the access token with updated attributes.
+			{
+				// lintignore:AT004  // we need the provider configuration here to attempt to create the service account as a different user
+				Config: fmt.Sprintf(`
+				provider "gitlab" {
+					token = "%s"
+				}
+
+				resource "gitlab_group_service_account_access_token" "foo" {
+					group = %s 
+					user_id  = %d
+					name     = "foo"
+					scopes   = [
+						"api",
+						"read_user",
+						"read_api",
+						"read_repository",
+						"write_repository",
+						"read_registry",
+						"write_registry",
+						"sudo",
+						"admin_mode",
+						"create_runner",
+						"manage_runner",
+						"ai_features",
+						"k8s_proxy",
+						"read_service_ping",
+					]
+					expires_at = %q
+				}
+				`, token.Token, groupID, serviceAccount.ID, time.Now().Add(time.Hour*48).Format(api.Iso8601)),
+				// Check computed and default attributes.
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_group_service_account_access_token.foo", "active", "true"),
+					resource.TestCheckResourceAttr("gitlab_group_service_account_access_token.foo", "revoked", "false"),
+					resource.TestCheckResourceAttrSet("gitlab_group_service_account_access_token.foo", "token"),
+					resource.TestCheckResourceAttrSet("gitlab_group_service_account_access_token.foo", "created_at"),
+					resource.TestCheckResourceAttrSet("gitlab_group_service_account_access_token.foo", "user_id"),
+				),
+			},
+		},
+	})
+}
+
 func testAccCheckGitlabGroupServiceAccountAccessTokenDestroy(s *terraform.State) error {
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "gitlab_group_service_account_access_token" {
 			continue
+		}
+
+		id := rs.Primary.Attributes["id"]
+		splitedID := strings.SplitN(id, ":", 3)
+		if len(splitedID) != 3 {
+			return fmt.Errorf("Invalid number of parts in ID %q", id)
 		}
 
 		name := rs.Primary.Attributes["name"]
@@ -203,7 +302,8 @@ func testAccCheckGitlabGroupServiceAccountAccessTokenDestroy(s *terraform.State)
 		}
 
 		for _, token := range tokens {
-			if token.Name == name && !token.Revoked {
+			// index 2 is the access token ID
+			if strconv.Itoa(token.ID) == splitedID[2] && !token.Revoked {
 				return fmt.Errorf("service account access token with name %q is not in a revoked state", name)
 			}
 		}
