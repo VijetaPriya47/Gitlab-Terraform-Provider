@@ -1987,7 +1987,7 @@ func expectDefaultBranchProtection(ctx context.Context, client *gitlab.Client, p
 		return group.DefaultBranchProtection != 0, nil
 	}
 
-	isAdmin, err := isCurrentUserAdmin(ctx, client)
+	isAdmin, err := api.IsCurrentUserAdmin(ctx, client)
 	if err != nil {
 		return false, fmt.Errorf("failed to check if user is admin to verify is default branch protection is enabled on instance-level: %w", err)
 	}

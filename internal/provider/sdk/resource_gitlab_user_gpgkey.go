@@ -74,7 +74,7 @@ func resourceGitlabUserGPGKeyCreate(ctx context.Context, d *schema.ResourceData,
 	var err error
 	userID, userIDOk := d.GetOk("user_id")
 	if userIDOk {
-		isAdmin, err = isCurrentUserAdmin(ctx, client)
+		isAdmin, err = api.IsCurrentUserAdmin(ctx, client)
 		if err != nil {
 			return diag.Errorf("failed to check if user is admin for configuring GPG keys for a user")
 		}
@@ -141,7 +141,7 @@ func resourceGitlabUserGPGKeyDelete(ctx context.Context, d *schema.ResourceData,
 	}
 
 	if userID, ok := d.GetOk("user_id"); ok {
-		isAdmin, err = isCurrentUserAdmin(ctx, client)
+		isAdmin, err = api.IsCurrentUserAdmin(ctx, client)
 		if err != nil {
 			return diag.Errorf("failed to check if user is admin for configuring GPG keys for a user")
 		}
