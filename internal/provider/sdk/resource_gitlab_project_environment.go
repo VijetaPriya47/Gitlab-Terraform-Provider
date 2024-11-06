@@ -2,10 +2,12 @@ package sdk
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"time"
 
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -17,6 +19,8 @@ import (
 )
 
 var _ = registerResource("gitlab_project_environment", func() *schema.Resource {
+	allowedEnvironmentTiers := []string{"production", "staging", "testing", "development", "other"}
+
 	return &schema.Resource{
 		Description: `The ` + "`gitlab_project_environment`" + ` resource allows to manage the lifecycle of an environment in a project.
 
@@ -53,6 +57,30 @@ Set the ` + "`stop_before_destroy`" + ` flag to attempt to automatically stop th
 				Type:         schema.TypeString,
 				Optional:     true,
 				ValidateFunc: validation.IsURLWithHTTPorHTTPS,
+			},
+			"tier": {
+				Description:      fmt.Sprintf("The tier of the new environment. Valid values are %s.", utils.RenderValueListForDocs(allowedEnvironmentTiers)),
+				Type:             schema.TypeString,
+				Optional:         true,
+				Computed:         true,
+				ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(allowedEnvironmentTiers, false)),
+			},
+			"cluster_agent_id": {
+				Description: "The cluster agent to associate with this environment.",
+				Type:        schema.TypeInt,
+				Optional:    true,
+			},
+			"kubernetes_namespace": {
+				Description:  "The Kubernetes namespace to associate with this environment.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				RequiredWith: []string{"cluster_agent_id"},
+			},
+			"flux_resource_path": {
+				Description:  "The Flux resource path to associate with this environment.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				RequiredWith: []string{"cluster_agent_id", "kubernetes_namespace"},
 			},
 			"slug": {
 				Description: "The name of the environment in lowercase, shortened to 63 bytes, and with everything except 0-9 and a-z replaced with -. No leading / trailing -. Use in URLs, host names and domain names.",
@@ -91,6 +119,18 @@ func resourceGitlabProjectEnvironmentCreate(ctx context.Context, d *schema.Resou
 	}
 	if externalURL, ok := d.GetOk("external_url"); ok {
 		options.ExternalURL = gitlab.Ptr(externalURL.(string))
+	}
+	if tier, ok := d.GetOk("tier"); ok {
+		options.Tier = gitlab.Ptr(tier.(string))
+	}
+	if clusterAgentID, ok := d.GetOk("cluster_agent_id"); ok {
+		options.ClusterAgentID = gitlab.Ptr(clusterAgentID.(int))
+	}
+	if kubernetesNamespace, ok := d.GetOk("kubernetes_namespace"); ok {
+		options.KubernetesNamespace = gitlab.Ptr(kubernetesNamespace.(string))
+	}
+	if fluxResourcePath, ok := d.GetOk("flux_resource_path"); ok {
+		options.FluxResourcePath = gitlab.Ptr(fluxResourcePath.(string))
 	}
 
 	project := d.Get("project").(string)
@@ -138,6 +178,14 @@ func resourceGitlabProjectEnvironmentRead(ctx context.Context, d *schema.Resourc
 	d.Set("name", environment.Name)
 	d.Set("state", environment.State)
 	d.Set("external_url", environment.ExternalURL)
+	d.Set("tier", environment.Tier)
+	if environment.ClusterAgent != nil {
+		d.Set("cluster_agent_id", environment.ClusterAgent.ID)
+	} else {
+		d.Set("cluster_agent_id", nil)
+	}
+	d.Set("kubernetes_namespace", environment.KubernetesNamespace)
+	d.Set("flux_resource_path", environment.FluxResourcePath)
 	d.Set("created_at", environment.CreatedAt.Format(time.RFC3339))
 	if environment.UpdatedAt != nil {
 		d.Set("updated_at", environment.UpdatedAt.Format(time.RFC3339))
@@ -161,6 +209,18 @@ func resourceGitlabProjectEnvironmentUpdate(ctx context.Context, d *schema.Resou
 	if d.HasChange("external_url") {
 		options.ExternalURL = gitlab.Ptr(d.Get("external_url").(string))
 	}
+	if d.HasChange("tier") {
+		options.Tier = gitlab.Ptr(d.Get("tier").(string))
+	}
+	if v, ok := d.GetOk("cluster_agent_id"); d.HasChange("cluster_agent_id") && ok {
+		options.ClusterAgentID = gitlab.Ptr(v.(int))
+	}
+	if d.HasChange("kubernetes_namespace") {
+		options.KubernetesNamespace = gitlab.Ptr(d.Get("kubernetes_namespace").(string))
+	}
+	if d.HasChange("flux_resource_path") {
+		options.FluxResourcePath = gitlab.Ptr(d.Get("flux_resource_path").(string))
+	}
 
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Project %s update gitlab environment %d", project, environmentID))
 
@@ -170,7 +230,43 @@ func resourceGitlabProjectEnvironmentUpdate(ctx context.Context, d *schema.Resou
 		return diag.Errorf("error editing gitlab project %s environment %d: %v", project, environmentID, err)
 	}
 
+	if v, ok := d.GetOk("cluster_agent_id"); d.HasChange("cluster_agent_id") && !ok || v == nil {
+		err := updateNullableClusterAgentID(ctx, client, project, environmentID)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
 	return resourceGitlabProjectEnvironmentRead(ctx, d, meta)
+}
+
+func updateNullableClusterAgentID(ctx context.Context, client *gitlab.Client, pid any, environmentID int) error {
+	options := &gitlab.EditEnvironmentOptions{}
+
+	if _, _, err := client.Environments.EditEnvironment(pid, environmentID, options, gitlab.WithContext(ctx), func(request *retryablehttp.Request) error {
+		optionsStruct := struct {
+			ClusterAgentID *int `url:"cluster_agent_id" json:"cluster_agent_id"`
+		}{
+			ClusterAgentID: nil,
+		}
+
+		body, err := json.Marshal(optionsStruct)
+		if err != nil {
+			return err
+		}
+
+		err = request.SetBody(body)
+		if err != nil {
+			return err
+		}
+
+		return nil
+
+	}); err != nil {
+		return fmt.Errorf("error editing gitlab project %s environment %d: %v", pid, environmentID, err)
+	}
+
+	return nil
 }
 
 func resourceGitlabProjectEnvironmentStop(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {

@@ -45,6 +45,7 @@ func TestAccGitlabProjectEnvironment_basic(t *testing.T) {
 					testAccCheckGitlabProjectEnvironmentAttributes(&env1, &testAccGitlabProjectEnvironmentExpectedAttributes{
 						Name:  fmt.Sprintf("ProjectEnvironment-%d", rInt),
 						State: "available",
+						Tier:  "other",
 					}),
 					resource.TestCheckResourceAttrWith("gitlab_project_environment.this", "created_at", func(value string) error {
 						expectedValue := env1.CreatedAt.Format(time.RFC3339)
@@ -71,6 +72,7 @@ func TestAccGitlabProjectEnvironment_basic(t *testing.T) {
 						Name:        fmt.Sprintf("ProjectEnvironment-%d", rInt),
 						State:       "available",
 						ExternalURL: "https://example.com",
+						Tier:        "production",
 					}),
 					resource.TestCheckResourceAttrWith("gitlab_project_environment.this", "created_at", func(value string) error {
 						expectedValue := env2.CreatedAt.Format(time.RFC3339)
@@ -103,6 +105,7 @@ func TestAccGitlabProjectEnvironment_basic(t *testing.T) {
 					testAccCheckGitlabProjectEnvironmentAttributes(&env1, &testAccGitlabProjectEnvironmentExpectedAttributes{
 						Name:  fmt.Sprintf("ProjectEnvironment-%d", rInt),
 						State: "available",
+						Tier:  "production",
 					}),
 				),
 			},
@@ -142,6 +145,123 @@ func TestAccGitlabProjectEnvironment_stopBeforeDestroyDisabled(t *testing.T) {
 	})
 }
 
+func TestAccGitlabProjectEnvironment_ClusterAgent(t *testing.T) {
+	testutil.RunIfAtLeast(t, "17.5")
+
+	testName := acctest.RandString(10)
+	testProject := testutil.CreateProject(t)
+	testAgents := testutil.CreateClusterAgents(t, testProject.ID, 2)
+	testAgent1 := testAgents[0]
+	testAgent2 := testAgents[1]
+	testutil.SetupUserAccess(t, testProject, testAgent1)
+	testutil.SetupUserAccess(t, testProject, testAgent2)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabProjectEnvironmentDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_environment" "test" {
+						project              = %d
+						name                 = "%s"
+						cluster_agent_id     = %d
+						kubernetes_namespace = "default"
+						flux_resource_path   = "some-path"
+
+						stop_before_destroy = true
+					}
+				`, testProject.ID, testName, testAgent1.ID),
+			},
+			// Verify import
+			{
+				ResourceName:            "gitlab_project_environment.test",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"stop_before_destroy"},
+			},
+			// Clear agent related attributes
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_environment" "test" {
+						project              = %d
+						name                 = "%s"
+
+						stop_before_destroy = true
+					}
+				`, testProject.ID, testName),
+			},
+			// Verify import
+			{
+				ResourceName:            "gitlab_project_environment.test",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"stop_before_destroy"},
+			},
+			// Re-assign cluster agent
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_environment" "test" {
+						project              = %d
+						name                 = "%s"
+						cluster_agent_id     = %d
+
+						stop_before_destroy = true
+					}
+				`, testProject.ID, testName, testAgent2.ID),
+			},
+			// Verify import
+			{
+				ResourceName:            "gitlab_project_environment.test",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"stop_before_destroy"},
+			},
+			// Re-assign kubernetes namespace
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_environment" "test" {
+						project              = %d
+						name                 = "%s"
+						cluster_agent_id     = %d
+						kubernetes_namespace = "default"
+
+						stop_before_destroy = true
+					}
+				`, testProject.ID, testName, testAgent2.ID),
+			},
+			// Verify import
+			{
+				ResourceName:            "gitlab_project_environment.test",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"stop_before_destroy"},
+			},
+			// Re-assign flux resource path
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_environment" "test" {
+						project              = %d
+						name                 = "%s"
+						cluster_agent_id     = %d
+						kubernetes_namespace = "default"
+						flux_resource_path   = "some-path"
+
+						stop_before_destroy = true
+					}
+				`, testProject.ID, testName, testAgent1.ID),
+			},
+			// Verify import
+			{
+				ResourceName:            "gitlab_project_environment.test",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"stop_before_destroy"},
+			},
+		},
+	})
+}
+
 func testAccCheckGitlabProjectEnvironmentExists(n string, env *gitlab.Environment) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
@@ -172,6 +292,7 @@ type testAccGitlabProjectEnvironmentExpectedAttributes struct {
 	Name        string
 	ExternalURL string
 	State       string
+	Tier        string
 }
 
 func testAccCheckGitlabProjectEnvironmentAttributes(env *gitlab.Environment, want *testAccGitlabProjectEnvironmentExpectedAttributes) resource.TestCheckFunc {
@@ -182,6 +303,10 @@ func testAccCheckGitlabProjectEnvironmentAttributes(env *gitlab.Environment, wan
 
 		if env.ExternalURL != want.ExternalURL {
 			return fmt.Errorf("got external URL %q; want %q", env.ExternalURL, want.ExternalURL)
+		}
+
+		if env.Tier != want.Tier {
+			return fmt.Errorf("got tier %q; want %q", env.Tier, want.Tier)
 		}
 
 		if env.State != want.State {
@@ -244,6 +369,7 @@ resource "gitlab_project_environment" "this" {
   project      = %d
   name         = "ProjectEnvironment-%d"
   external_url = "https://example.com"
+  tier         = "production"
 }
 `, projectID, rInt)
 }
