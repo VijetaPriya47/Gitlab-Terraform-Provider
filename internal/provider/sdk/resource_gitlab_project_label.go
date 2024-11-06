@@ -191,7 +191,7 @@ func resourceGitlabProjectLabelUpdate(ctx context.Context, d *schema.ResourceDat
 
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab label %s", d.Id()))
 
-	_, _, err = client.Labels.UpdateLabel(project, options, gitlab.WithContext(ctx))
+	_, _, err = client.Labels.UpdateLabel(project, nil, options, gitlab.WithContext(ctx))
 	if err != nil {
 		return diag.FromErr(err)
 	}

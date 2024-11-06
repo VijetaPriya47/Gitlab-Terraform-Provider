@@ -187,7 +187,7 @@ func resourceGitlabIntegrationJiraCreate(ctx context.Context, d *schema.Resource
 	opts.JiraIssueTransitionID = gitlab.Ptr(d.Get("jira_issue_transition_id").(string))
 
 	tflog.Debug(ctx, "[DEBUG] Create Gitlab Jira integration")
-	if _, err := client.Services.SetJiraService(project, opts, gitlab.WithContext(ctx)); err != nil {
+	if _, _, err := client.Services.SetJiraService(project, opts, gitlab.WithContext(ctx)); err != nil {
 		return diag.Errorf("couldn't create Gitlab Jira service: %v", err)
 	}
 

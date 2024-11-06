@@ -141,7 +141,7 @@ func resourceGitlabIntegrationEmailsOnPushCreate(ctx context.Context, d *schema.
 	project := d.Get("project").(string)
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab emails on push service for project %s", project))
 
-	_, err := client.Services.SetEmailsOnPushService(project, options, gitlab.WithContext(ctx))
+	_, _, err := client.Services.SetEmailsOnPushService(project, options, gitlab.WithContext(ctx))
 	if err != nil {
 		return diag.FromErr(err)
 	}

@@ -89,7 +89,7 @@ func resourceGitlabIntegrationPipelinesEmailCreate(ctx context.Context, d *schem
 
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab pipelines emails integration for project %s", project))
 
-	_, err := client.Services.SetPipelinesEmailService(project, options, gitlab.WithContext(ctx))
+	_, _, err := client.Services.SetPipelinesEmailService(project, options, gitlab.WithContext(ctx))
 	if err != nil {
 		return diag.FromErr(err)
 	}

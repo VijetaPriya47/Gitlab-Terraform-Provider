@@ -200,7 +200,7 @@ func resourceGitlabIntegrationMattermostCreate(ctx context.Context, d *schema.Re
 	opts.PipelineChannel = gitlab.Ptr(d.Get("pipeline_channel").(string))
 	opts.WikiPageChannel = gitlab.Ptr(d.Get("wiki_page_channel").(string))
 
-	_, err := client.Services.SetMattermostService(project, opts, gitlab.WithContext(ctx))
+	_, _, err := client.Services.SetMattermostService(project, opts, gitlab.WithContext(ctx))
 	if err != nil {
 		return diag.FromErr(err)
 	}
