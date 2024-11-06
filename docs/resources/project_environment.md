@@ -52,8 +52,12 @@ resource "gitlab_project_environment" "this" {
 
 ### Optional
 
+- `cluster_agent_id` (Number) The cluster agent to associate with this environment.
 - `external_url` (String) Place to link to for this environment.
+- `flux_resource_path` (String) The Flux resource path to associate with this environment.
+- `kubernetes_namespace` (String) The Kubernetes namespace to associate with this environment.
 - `stop_before_destroy` (Boolean) Determines whether the environment is attempted to be stopped before the environment is deleted.
+- `tier` (String) The tier of the new environment. Valid values are `production`, `staging`, `testing`, `development`, `other`.
 
 ### Read-Only
 

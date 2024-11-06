@@ -5,6 +5,7 @@ package testutil
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"os"
@@ -649,6 +650,28 @@ func CreateClusterAgents(t *testing.T, pid interface{}, n int) []*gitlab.Agent {
 		clusterAgents = append(clusterAgents, clusterAgent)
 	}
 	return clusterAgents
+}
+
+func SetupUserAccess(t *testing.T, project *gitlab.Project, agent *gitlab.Agent) {
+	t.Helper()
+
+	agentCfgPath := fmt.Sprintf(".gitlab/agents/%s/config.yaml", agent.Name)
+	userAccessCfg := []byte(fmt.Sprintf(`
+user_access:
+  access_as:
+    agent: {}
+  projects:
+    - id: %q
+`, project.PathWithNamespace))
+	_, _, err := TestGitlabClient.RepositoryFiles.CreateFile(project.ID, agentCfgPath, &gitlab.CreateFileOptions{
+		Branch:        gitlab.Ptr(project.DefaultBranch),
+		Encoding:      gitlab.Ptr("base64"),
+		Content:       gitlab.Ptr(base64.StdEncoding.EncodeToString(userAccessCfg)),
+		CommitMessage: gitlab.Ptr(fmt.Sprintf("Setup user access for agent %s in acceptance tests", agent.Name)),
+	})
+	if err != nil {
+		t.Fatalf("unable to setup user access for agent %s in project %s: %v", agent.Name, project.PathWithNamespace, err)
+	}
 }
 
 func CreateProjectIssues(t *testing.T, pid interface{}, n int) []*gitlab.Issue {
