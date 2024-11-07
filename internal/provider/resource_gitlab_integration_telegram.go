@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -230,7 +231,7 @@ func (r *gitlabIntegrationTelegramResource) update(ctx context.Context, plan *tf
 		WikiPageEvents:            data.WikiPageEvents.ValueBoolPointer(),
 	}
 
-	if _, err := r.client.Services.SetTelegramService(projectId, options, gitlab.WithContext(ctx)); err != nil {
+	if _, _, err := r.client.Services.SetTelegramService(projectId, options, gitlab.WithContext(ctx)); err != nil {
 		return err
 	}
 

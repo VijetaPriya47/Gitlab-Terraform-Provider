@@ -253,7 +253,7 @@ func resourceGitlabIntegrationSlackCreate(ctx context.Context, d *schema.Resourc
 	opts.WikiPageChannel = gitlab.Ptr(d.Get("wiki_page_channel").(string))
 	opts.WikiPageEvents = gitlab.Ptr(d.Get("wiki_page_events").(bool))
 
-	_, err := client.Services.SetSlackService(project, opts, gitlab.WithContext(ctx))
+	_, _, err := client.Services.SetSlackService(project, opts, gitlab.WithContext(ctx))
 	if err != nil {
 		return diag.FromErr(err)
 	}

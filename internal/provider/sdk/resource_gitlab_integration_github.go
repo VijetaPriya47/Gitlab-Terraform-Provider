@@ -117,7 +117,7 @@ func resourceGitlabIntegrationGithubCreate(ctx context.Context, d *schema.Resour
 		StaticContext: gitlab.Ptr(d.Get("static_context").(bool)),
 	}
 
-	_, err := client.Services.SetGithubService(project, opts, gitlab.WithContext(ctx))
+	_, _, err := client.Services.SetGithubService(project, opts, gitlab.WithContext(ctx))
 	if err != nil {
 		return diag.FromErr(err)
 	}

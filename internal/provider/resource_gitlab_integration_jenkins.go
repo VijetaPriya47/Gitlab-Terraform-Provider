@@ -207,7 +207,7 @@ func (r *gitlabIntegrationJenkinsResource) update(ctx context.Context, plan *tfs
 
 	projectID := data.Project.ValueString()
 
-	_, err := r.client.Services.SetJenkinsCIService(projectID, options)
+	_, _, err := r.client.Services.SetJenkinsCIService(projectID, options)
 	if err != nil {
 		return err
 	}

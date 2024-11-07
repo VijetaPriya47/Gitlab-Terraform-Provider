@@ -148,7 +148,7 @@ func resourceGitlabIntegrationMicrosoftTeamsCreate(ctx context.Context, d *schem
 
 	tflog.Debug(ctx, "[DEBUG] Create Gitlab Microsoft Teams integration")
 
-	if _, err := client.Services.SetMicrosoftTeamsService(project, options, gitlab.WithContext(ctx)); err != nil {
+	if _, _, err := client.Services.SetMicrosoftTeamsService(project, options, gitlab.WithContext(ctx)); err != nil {
 		return diag.Errorf("couldn't create Gitlab Microsoft Teams integration: %v", err)
 	}
 

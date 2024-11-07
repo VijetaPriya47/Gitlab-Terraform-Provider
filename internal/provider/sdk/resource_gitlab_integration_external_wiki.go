@@ -97,7 +97,7 @@ func resourceGitlabIntegrationExternalWikiCreate(ctx context.Context, d *schema.
 
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab external wiki service for project %s", project))
 
-	_, err := client.Services.SetExternalWikiService(project, options, gitlab.WithContext(ctx))
+	_, _, err := client.Services.SetExternalWikiService(project, options, gitlab.WithContext(ctx))
 	if err != nil {
 		return diag.FromErr(err)
 	}

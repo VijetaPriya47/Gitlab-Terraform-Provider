@@ -184,7 +184,7 @@ func (r *gitlabIntegrationCustomIssueTrackerResource) update(ctx context.Context
 		NewIssueURL: gitlab.Ptr(data.ProjectURL.ValueString()),
 	}
 
-	if _, err := r.client.Services.SetCustomIssueTrackerService(projectId, options, gitlab.WithContext(ctx)); err != nil {
+	if _, _, err := r.client.Services.SetCustomIssueTrackerService(projectId, options, gitlab.WithContext(ctx)); err != nil {
 		return err
 	}
 
