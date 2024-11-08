@@ -34,7 +34,7 @@ func NewGitLabGroupIssueBoardResource() resource.Resource {
 }
 
 type gitlabGroupIssueBoardResource struct {
-	client *gitlab.Client // This is required for making calls to GitLab later
+	client *gitlab.Client
 }
 
 type gitlabGroupIssueBoardResourceModel struct {
@@ -370,7 +370,8 @@ func (r *gitlabGroupIssueBoardResource) Configure(ctx context.Context, req resou
 		return
 	}
 
-	r.client = req.ProviderData.(*gitlab.Client)
+	resourceData := req.ProviderData.(*GitLabResourceData)
+	r.client = resourceData.Client
 }
 
 func (r *gitlabGroupIssueBoardResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {

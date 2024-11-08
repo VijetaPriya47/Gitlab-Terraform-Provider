@@ -164,7 +164,8 @@ func (r *gitlabIntegrationTelegramResource) Configure(_ context.Context, req res
 		return
 	}
 
-	r.client = req.ProviderData.(*gitlab.Client)
+	resourceData := req.ProviderData.(*GitLabResourceData)
+	r.client = resourceData.Client
 }
 
 func (r *gitlabIntegrationTelegramResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {

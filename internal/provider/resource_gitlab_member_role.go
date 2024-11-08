@@ -146,7 +146,8 @@ func (r *gitlabMemberRoleResource) Configure(ctx context.Context, req resource.C
 		return
 	}
 
-	r.client = req.ProviderData.(*gitlab.Client)
+	resourceData := req.ProviderData.(*GitLabResourceData)
+	r.client = resourceData.Client
 }
 
 // Use the `ModifyPlan` to determine if Gitlab instance is self-hosted vs SaaS.

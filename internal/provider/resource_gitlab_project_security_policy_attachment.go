@@ -90,12 +90,13 @@ func (r *gitlabProjectSecurityPolicyAttachmentResource) Schema(ctx context.Conte
 	}
 }
 
-func (d *gitlabProjectSecurityPolicyAttachmentResource) Configure(ctx context.Context, req resource.ConfigureRequest, _ *resource.ConfigureResponse) {
+func (r *gitlabProjectSecurityPolicyAttachmentResource) Configure(ctx context.Context, req resource.ConfigureRequest, _ *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
 
-	d.client = req.ProviderData.(*gitlab.Client)
+	resourceData := req.ProviderData.(*GitLabResourceData)
+	r.client = resourceData.Client
 }
 
 func (d *gitlabProjectSecurityPolicyAttachmentResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {

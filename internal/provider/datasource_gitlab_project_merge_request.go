@@ -151,7 +151,8 @@ func (d *gitlabProjectMergeRequestDataSource) Configure(_ context.Context, req d
 	if req.ProviderData == nil {
 		return
 	}
-	d.client = req.ProviderData.(*gitlab.Client)
+	datasource := req.ProviderData.(*GitLabDatasourceData)
+	d.client = datasource.Client
 }
 
 func (d *gitlabProjectMergeRequestDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {

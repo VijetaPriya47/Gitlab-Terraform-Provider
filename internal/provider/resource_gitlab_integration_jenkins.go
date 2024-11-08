@@ -121,12 +121,13 @@ func (r *gitlabIntegrationJenkinsResource) Schema(_ context.Context, _ resource.
 	}
 }
 
-func (d *gitlabIntegrationJenkinsResource) Configure(_ context.Context, req resource.ConfigureRequest, _ *resource.ConfigureResponse) {
+func (r *gitlabIntegrationJenkinsResource) Configure(_ context.Context, req resource.ConfigureRequest, _ *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
 
-	d.client = req.ProviderData.(*gitlab.Client)
+	resourceData := req.ProviderData.(*GitLabResourceData)
+	r.client = resourceData.Client
 }
 
 func (r *gitlabIntegrationJenkinsResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {

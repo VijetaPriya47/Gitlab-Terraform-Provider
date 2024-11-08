@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/xanzy/go-gitlab"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
@@ -239,19 +240,21 @@ func (p *GitLabProvider) Configure(ctx context.Context, req provider.ConfigureRe
 	ctx = utils.ApplyLogMaskingToContext(ctx)
 
 	// Creating a new GitLab Client from the provider configuration
-	gitlabClient, err := evaluatedConfig.NewGitLabClient(ctx)
+	clientFactory := newGitLabClient(evaluatedConfig, req.TerraformVersion, p.version)
+	gitlabClient, err := clientFactory(ctx)
 	if err != nil {
-		resp.Diagnostics.AddError("Failed to create GitLab Client from provider configuration", fmt.Sprintf("The provider failed to create a new GitLab Client from the given configuration: %+v", err))
+		resp.Diagnostics.AddError("Failed to create GitLab Client from provider configuration", err.Error())
 		return
 	}
 
-	// NOTE: there is no helper function for this available yet in the terraform-plugin-framework,
-	//       see https://github.com/hashicorp/terraform-plugin-framework/issues/280
-	gitlabClient.UserAgent = fmt.Sprintf("Terraform/%s (+https://www.terraform.io) Terraform-Plugin-Framework terraform-provider-gitlab/%s", req.TerraformVersion, p.version)
-
 	// Attach the client to the response so that it will be available for the Data Sources and Resources
-	resp.DataSourceData = gitlabClient
-	resp.ResourceData = gitlabClient
+	resp.DataSourceData = &GitLabDatasourceData{
+		Client: gitlabClient,
+	}
+	resp.ResourceData = &GitLabResourceData{
+		Client:          gitlabClient,
+		NewGitLabClient: clientFactory,
+	}
 }
 
 func (p *GitLabProvider) Resources(ctx context.Context) []func() resource.Resource {
@@ -267,5 +270,44 @@ func New(version string) func() provider.Provider {
 		return &GitLabProvider{
 			version: version,
 		}
+	}
+}
+
+type GitLabClientOptionApplyFunc = func(api.Config) api.Config
+type GitLabClientFactory = func(ctx context.Context, configFuncs ...GitLabClientOptionApplyFunc) (*gitlab.Client, error)
+
+// Attributes passed into Datasources from the Provider
+type GitLabDatasourceData struct {
+	Client *gitlab.Client
+}
+
+// Attributes passed into Resources from the Provider
+type GitLabResourceData struct {
+	Client          *gitlab.Client
+	NewGitLabClient GitLabClientFactory
+}
+
+func newGitLabClient(config api.Config, tfVersion, providerVersion string) GitLabClientFactory {
+	return func(ctx context.Context, configFuncs ...GitLabClientOptionApplyFunc) (*gitlab.Client, error) {
+		for _, f := range configFuncs {
+			config = f(config)
+		}
+
+		client, err := config.NewGitLabClient(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("The provider failed to create a new GitLab Client from the given configuration: %w", err)
+		}
+
+		// NOTE: there is no helper function for this available yet in the terraform-plugin-framework,
+		//       see https://github.com/hashicorp/terraform-plugin-framework/issues/280
+		client.UserAgent = fmt.Sprintf("Terraform/%s (+https://www.terraform.io) Terraform-Plugin-Framework terraform-provider-gitlab/%s", tfVersion, providerVersion)
+		return client, nil
+	}
+}
+
+func WithToken(token string) GitLabClientOptionApplyFunc {
+	return func(config api.Config) api.Config {
+		config.Token = token
+		return config
 	}
 }

@@ -200,7 +200,8 @@ func (r *gitlabUserRunnerResource) Configure(ctx context.Context, req resource.C
 		return
 	}
 
-	r.client = req.ProviderData.(*gitlab.Client)
+	resourceData := req.ProviderData.(*GitLabResourceData)
+	r.client = resourceData.Client
 }
 
 // The `create` method of this resource is special, because it doesn't use the `Runners` client, it uses the

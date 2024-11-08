@@ -125,7 +125,8 @@ func (r *gitlabIntegrationCustomIssueTrackerResource) Configure(_ context.Contex
 		return
 	}
 
-	r.client = req.ProviderData.(*gitlab.Client)
+	resourceData := req.ProviderData.(*GitLabResourceData)
+	r.client = resourceData.Client
 }
 
 func (r *gitlabIntegrationCustomIssueTrackerResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {

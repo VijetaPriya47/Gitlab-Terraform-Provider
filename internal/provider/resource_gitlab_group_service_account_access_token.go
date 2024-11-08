@@ -41,7 +41,8 @@ func NewGitlabGroupServiceAccountAccessTokenResource() resource.Resource {
 }
 
 type gitlabGroupServiceAccountAccessTokenResource struct {
-	client *gitlab.Client
+	client          *gitlab.Client
+	newGitLabClient GitLabClientFactory
 }
 
 // The base Resource implementation struct
@@ -73,8 +74,6 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Schema(ctx context.Contex
 ~> Use of the ` + "`timestamp()`" + ` function with expires_at will cause the resource to be re-created with every apply, it's recommended to use ` + "`plantimestamp()`" + ` or a static value instead.
 
 ~> Reading the access token status of a service account requires an admin token, even on gitlab.com. As a result, this resource will ignore permission errors when attempting to read the token status, and will rely on the values in state instead. This can lead to apply-time failures if the token configured for the provider doesn't have permissions to rotate tokens for the service account.
-
-~> Deleting the access token requires an admin token. If an admin token is used to configure the provider, a direct delete will be performed during a ` + "`" + `destroy` + "`" + ` operation. Otherwise, the token will be rotated to destroy the old value, and the new token value will not be saved. This will cause the new token to expire eventually, functionally removing the old token.
 
 **Upstream API**: [GitLab API docs](https://docs.gitlab.com/ee/api/group_service_accounts.html#create-a-personal-access-token-for-a-service-account-user)`,
 		Attributes: map[string]schema.Attribute{
@@ -158,7 +157,9 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Configure(ctx context.Con
 		return
 	}
 
-	r.client = req.ProviderData.(*gitlab.Client)
+	rd := req.ProviderData.(*GitLabResourceData)
+	r.client = rd.Client
+	r.newGitLabClient = rd.NewGitLabClient
 }
 
 func (r *gitlabGroupServiceAccountAccessTokenResource) groupServiceAccountAccessTokenToStateModel(data *gitlabGroupServiceAccountAccessTokenResourceModel, token *gitlab.PersonalAccessToken, group string) diag.Diagnostics {
@@ -343,15 +344,6 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Delete(ctx context.Contex
 		return
 	}
 
-	userIDInt, err := strconv.Atoi(userID)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error parsing user ID",
-			fmt.Sprintf("Could not parse user ID %s to int: %s", userID, err),
-		)
-		return
-	}
-
 	// If the user is an admin token, delete the group token directly. Otherwise we need to rotate it and discard the results instead.
 	isAdmin, err := api.IsCurrentUserAdmin(ctx, r.client)
 	if err != nil {
@@ -365,9 +357,34 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Delete(ctx context.Contex
 	if isAdmin {
 		tflog.Debug(ctx, "[DEBUG] Deleting GroupServiceAccountAccessToken - direct delete due to admin privileges", map[string]interface{}{"token_id": accessTokenID, "user_id": userID})
 		_, err = r.client.PersonalAccessTokens.RevokePersonalAccessToken(accessTokenIDInt, gitlab.WithContext(ctx))
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Error deleting group service account access token",
+				fmt.Sprintf("Could not delete service access token using the provider admin token: %v", err),
+			)
+			return
+		}
 	} else {
-		tflog.Debug(ctx, "[DEBUG] Deleting GroupServiceAccountAccessToken - this involves rotating the token then discarding the returned result so it can't be used. This is done because the only way to fully delete a token is to have an admin token, or be signed in with the service account.", map[string]interface{}{"token_id": accessTokenID, "user_id": userID})
-		_, _, err = r.client.Groups.RotateServiceAccountPersonalAccessToken(group, userIDInt, accessTokenIDInt, gitlab.WithContext(ctx))
+
+		// Create a new client from the token that exists in state, and use that client to delete the existing token.
+		tflog.Debug(ctx, "[DEBUG] Deleting GroupServiceAccountAccessToken - This will use the token that's in state to delete the token instead of relying on the provier's configured token.", map[string]interface{}{"token_id": accessTokenID, "user_id": userID})
+		tokenClient, err := r.newGitLabClient(ctx, WithToken(data.Token.ValueString()))
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Error deleting group service account access token",
+				fmt.Sprintf("Could not create a new client with the token that exists in state. The provider's token can't delete the service account access token because it's not an admin: %v", err),
+			)
+			return
+		}
+
+		_, err = tokenClient.PersonalAccessTokens.RevokePersonalAccessToken(accessTokenIDInt, gitlab.WithContext(ctx))
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Error deleting group service account access token",
+				fmt.Sprintf("Unable to delete service account access token using the token in state. This may indicate the token has already expired: %v", err),
+			)
+			return
+		}
 	}
 	if err != nil {
 		resp.Diagnostics.AddError(

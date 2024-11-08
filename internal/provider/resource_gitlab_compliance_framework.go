@@ -123,7 +123,8 @@ func (r *gitlabComplianceFrameworkResource) Configure(ctx context.Context, req r
 		return
 	}
 
-	r.client = req.ProviderData.(*gitlab.Client)
+	resourceData := req.ProviderData.(*GitLabResourceData)
+	r.client = resourceData.Client
 }
 
 func (r *gitlabComplianceFrameworkResource) complianceFrameworkToStateModel(response *api.GraphQLComplianceFramework, namespacePath string, data *gitlabComplianceFrameworkResourceModel) {
