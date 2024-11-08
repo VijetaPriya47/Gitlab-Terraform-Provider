@@ -113,7 +113,8 @@ func (d *gitLabProjectProtectedBranchesDataSource) Configure(_ context.Context, 
 		return
 	}
 
-	d.client = req.ProviderData.(*gitlab.Client)
+	datasource := req.ProviderData.(*GitLabDatasourceData)
+	d.client = datasource.Client
 }
 
 // Read refreshes the Terraform state with the latest data.

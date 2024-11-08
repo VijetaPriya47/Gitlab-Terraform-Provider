@@ -92,7 +92,8 @@ func (r *gitlabProjectJobTokenScopeResource) Configure(ctx context.Context, req 
 		return
 	}
 
-	r.client = req.ProviderData.(*gitlab.Client)
+	resourceData := req.ProviderData.(*GitLabResourceData)
+	r.client = resourceData.Client
 }
 
 // Create a new upstream resources and adds it into the Terraform state.

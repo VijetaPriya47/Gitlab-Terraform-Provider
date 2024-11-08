@@ -6,7 +6,6 @@ description: |-
   The gitlab_group_service_account_access_token resource allows to manage the lifecycle of a group service account access token.
   ~> Use of the timestamp() function with expires_at will cause the resource to be re-created with every apply, it's recommended to use plantimestamp() or a static value instead.
   ~> Reading the access token status of a service account requires an admin token, even on gitlab.com. As a result, this resource will ignore permission errors when attempting to read the token status, and will rely on the values in state instead. This can lead to apply-time failures if the token configured for the provider doesn't have permissions to rotate tokens for the service account.
-  ~> Deleting the access token requires an admin token. If an admin token is used to configure the provider, a direct delete will be performed during a destroy operation. Otherwise, the token will be rotated to destroy the old value, and the new token value will not be saved. This will cause the new token to expire eventually, functionally removing the old token.
   Upstream API: GitLab API docs https://docs.gitlab.com/ee/api/group_service_accounts.html#create-a-personal-access-token-for-a-service-account-user
 ---
 
@@ -17,8 +16,6 @@ The `gitlab_group_service_account_access_token` resource allows to manage the li
 ~> Use of the `timestamp()` function with expires_at will cause the resource to be re-created with every apply, it's recommended to use `plantimestamp()` or a static value instead.
 
 ~> Reading the access token status of a service account requires an admin token, even on gitlab.com. As a result, this resource will ignore permission errors when attempting to read the token status, and will rely on the values in state instead. This can lead to apply-time failures if the token configured for the provider doesn't have permissions to rotate tokens for the service account.
-
-~> Deleting the access token requires an admin token. If an admin token is used to configure the provider, a direct delete will be performed during a `destroy` operation. Otherwise, the token will be rotated to destroy the old value, and the new token value will not be saved. This will cause the new token to expire eventually, functionally removing the old token.
 
 **Upstream API**: [GitLab API docs](https://docs.gitlab.com/ee/api/group_service_accounts.html#create-a-personal-access-token-for-a-service-account-user)
 

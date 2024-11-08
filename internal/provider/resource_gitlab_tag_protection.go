@@ -147,7 +147,8 @@ func (r *gitlabTagProtectionResource) Configure(ctx context.Context, req resourc
 		return
 	}
 
-	r.client = req.ProviderData.(*gitlab.Client)
+	resourceData := req.ProviderData.(*GitLabResourceData)
+	r.client = resourceData.Client
 }
 
 // Create creates a new upstream resources and adds it into the Terraform state.

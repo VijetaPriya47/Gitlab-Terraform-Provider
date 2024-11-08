@@ -82,7 +82,8 @@ func (d *gitlabGroupIDsDataSource) Configure(_ context.Context, req datasource.C
 		return
 	}
 
-	d.client = req.ProviderData.(*gitlab.Client)
+	datasource := req.ProviderData.(*GitLabDatasourceData)
+	d.client = datasource.Client
 }
 
 func (d *gitlabGroupIDsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {

@@ -100,7 +100,8 @@ func (d *gitlabMetadataDataSource) Configure(_ context.Context, req datasource.C
 		return
 	}
 
-	d.client = req.ProviderData.(*gitlab.Client)
+	datasource := req.ProviderData.(*GitLabDatasourceData)
+	d.client = datasource.Client
 }
 
 // Read refreshes the Terraform state with the latest data.

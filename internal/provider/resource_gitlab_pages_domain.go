@@ -122,12 +122,13 @@ func (d *gitlabPagesDomainResource) Schema(_ context.Context, _ resource.SchemaR
 }
 
 // Configure adds the client implementation to the resource
-func (d *gitlabPagesDomainResource) Configure(_ context.Context, req resource.ConfigureRequest, _ *resource.ConfigureResponse) {
+func (r *gitlabPagesDomainResource) Configure(_ context.Context, req resource.ConfigureRequest, _ *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
 
-	d.client = req.ProviderData.(*gitlab.Client)
+	resourceData := req.ProviderData.(*GitLabResourceData)
+	r.client = resourceData.Client
 }
 
 func (d *gitlabPagesDomainResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {

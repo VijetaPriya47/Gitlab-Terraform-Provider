@@ -57,12 +57,13 @@ func (d *gitlabProjectLevelMrApprovalsResource) Schema(_ context.Context, _ reso
 	resp.Schema = d.getV1Schema()
 }
 
-func (d *gitlabProjectLevelMrApprovalsResource) Configure(ctx context.Context, req resource.ConfigureRequest, _ *resource.ConfigureResponse) {
+func (r *gitlabProjectLevelMrApprovalsResource) Configure(ctx context.Context, req resource.ConfigureRequest, _ *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
 
-	d.client = req.ProviderData.(*gitlab.Client)
+	resourceData := req.ProviderData.(*GitLabResourceData)
+	r.client = resourceData.Client
 }
 
 // provides plan-time validation of the configuration across multiple attributes (as opposed to just attribute-level validation)

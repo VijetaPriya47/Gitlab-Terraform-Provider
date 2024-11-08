@@ -37,7 +37,7 @@ func NewGitLabGroupEpicBoardResource() resource.Resource {
 }
 
 type gitlabGroupEpicBoardResource struct {
-	client *gitlab.Client // This is required for making calls to GitLab later
+	client *gitlab.Client
 }
 
 type gitlabGroupEpicBoardResourceModel struct {
@@ -412,7 +412,8 @@ func (r *gitlabGroupEpicBoardResource) Configure(ctx context.Context, req resour
 		return
 	}
 
-	r.client = req.ProviderData.(*gitlab.Client)
+	resourceData := req.ProviderData.(*GitLabResourceData)
+	r.client = resourceData.Client
 }
 
 func (r *gitlabGroupEpicBoardResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {

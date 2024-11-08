@@ -192,7 +192,8 @@ func (r *gitlabPersonalAccessTokenResource) Configure(ctx context.Context, req r
 		return
 	}
 
-	r.client = req.ProviderData.(*gitlab.Client)
+	resourceData := req.ProviderData.(*GitLabResourceData)
+	r.client = resourceData.Client
 }
 
 func (r *gitlabPersonalAccessTokenResource) personalAccessTokenToStateModel(data *gitlabPersonalAccessTokenResourceModel, token *gitlab.PersonalAccessToken, userId int) diag.Diagnostics {

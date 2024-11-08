@@ -160,7 +160,8 @@ func (r *gitlabUserImpersonationTokenResource) Configure(ctx context.Context, re
 		return
 	}
 
-	r.client = req.ProviderData.(*gitlab.Client)
+	resourceData := req.ProviderData.(*GitLabResourceData)
+	r.client = resourceData.Client
 }
 
 func (r *gitlabUserImpersonationTokenResource) userImpersonationTokenToStateModel(data *gitlabUserImpersonationTokenResourceModel, token *gitlab.ImpersonationToken, userID int64) diag.Diagnostics {

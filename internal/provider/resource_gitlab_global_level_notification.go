@@ -196,12 +196,13 @@ func (d *gitlabGlobalLevelNotificationsResource) Schema(_ context.Context, _ res
 	}
 }
 
-func (d *gitlabGlobalLevelNotificationsResource) Configure(ctx context.Context, req resource.ConfigureRequest, _ *resource.ConfigureResponse) {
+func (r *gitlabGlobalLevelNotificationsResource) Configure(ctx context.Context, req resource.ConfigureRequest, _ *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
 
-	d.client = req.ProviderData.(*gitlab.Client)
+	resourceData := req.ProviderData.(*GitLabResourceData)
+	r.client = resourceData.Client
 }
 
 func (d *gitlabGlobalLevelNotificationsResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {

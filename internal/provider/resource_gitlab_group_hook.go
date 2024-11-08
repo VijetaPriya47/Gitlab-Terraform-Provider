@@ -85,7 +85,8 @@ func (r *gitlabGroupHookResource) Configure(ctx context.Context, req resource.Co
 		return
 	}
 
-	r.client = req.ProviderData.(*gitlab.Client)
+	resourceData := req.ProviderData.(*GitLabResourceData)
+	r.client = resourceData.Client
 }
 
 // ImportState imports the resource into the Terraform state.

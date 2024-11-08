@@ -208,7 +208,8 @@ func (r *gitlabGroupAccessTokenResource) Configure(ctx context.Context, req reso
 		return
 	}
 
-	r.client = req.ProviderData.(*gitlab.Client)
+	resourceData := req.ProviderData.(*GitLabResourceData)
+	r.client = resourceData.Client
 }
 
 func (r *gitlabGroupAccessTokenResource) groupAccessTokenToStateModel(data *gitlabGroupAccessTokenResourceModel, token *gitlab.GroupAccessToken, group string) diag.Diagnostics {
