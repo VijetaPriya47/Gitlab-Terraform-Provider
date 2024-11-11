@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -129,11 +129,11 @@ Custom roles allow an organization to create user roles with the precise privile
 				PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 				Validators:          []validator.String{stringvalidator.OneOf(allowedBaseAccessLevels...)},
 			},
-			"enabled_permissions": schema.ListAttribute{
+			"enabled_permissions": schema.SetAttribute{
 				MarkdownDescription: fmt.Sprintf("All permissions enabled for the custom role. Valid values are: %s", utils.RenderValueListForDocs(allowedEnabledPermissions)),
 				Required:            true,
 				ElementType:         types.StringType,
-				Validators:          []validator.List{listvalidator.ValueStringsAre(stringvalidator.OneOf(allowedEnabledPermissions...))},
+				Validators:          []validator.Set{setvalidator.ValueStringsAre(stringvalidator.OneOf(allowedEnabledPermissions...))},
 			},
 		},
 	}
