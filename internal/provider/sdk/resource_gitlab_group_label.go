@@ -187,15 +187,15 @@ func resourceGitlabGroupLabelRead(ctx context.Context, d *schema.ResourceData, m
 
 func resourceGitlabGroupLabelUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
-	group, _, err := resourceGitlabGroupLabelParseId(d.Id())
+	group, labelId, err := resourceGitlabGroupLabelParseId(d.Id())
 
 	if err != nil {
 		return diag.Errorf("Failed to parse group label id %q: %s", d.Id(), err)
 	}
 
 	options := &gitlab.UpdateGroupLabelOptions{
-		Name:  gitlab.Ptr(d.Get("name").(string)),
-		Color: gitlab.Ptr(d.Get("color").(string)),
+		NewName: gitlab.Ptr(d.Get("name").(string)),
+		Color:   gitlab.Ptr(d.Get("color").(string)),
 	}
 
 	if d.HasChange("description") {
@@ -204,7 +204,7 @@ func resourceGitlabGroupLabelUpdate(ctx context.Context, d *schema.ResourceData,
 
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab group label %s", d.Id()))
 
-	_, _, err = client.GroupLabels.UpdateGroupLabel(group, nil, options, gitlab.WithContext(ctx))
+	_, _, err = client.GroupLabels.UpdateGroupLabel(group, labelId, options, gitlab.WithContext(ctx))
 	if err != nil {
 		return diag.FromErr(err)
 	}

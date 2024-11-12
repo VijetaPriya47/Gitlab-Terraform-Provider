@@ -191,7 +191,7 @@ func TestAccGitlabGroupLabel_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabGroupLabelExists("gitlab_group_label.fixme", &label),
 					testAccCheckGitlabGroupLabelAttributes(&label, &testAccGitlabGroupLabelExpectedAttributes{
-						Name:        fmt.Sprintf("FIXME-%d", rInt),
+						Name:        fmt.Sprintf("FIXME-AGAIN-%d", rInt),
 						Color:       "#ff0000",
 						Description: "red label",
 					}),
@@ -311,7 +311,7 @@ resource "gitlab_group" "foo" {
 
 resource "gitlab_group_label" "fixme" {
   group       = "${gitlab_group.foo.id}"
-  name        = "FIXME-%d"
+  name        = "FIXME-AGAIN-%d"
   color       = "#ff0000"
   description = "red label"
 }
