@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/onsi/gomega"
 	"github.com/xanzy/go-gitlab"
 
@@ -100,7 +100,7 @@ func SkipIfEE(t *testing.T) {
 }
 
 func RunIfLessThan(t *testing.T, requiredMaxVersion string) {
-	isLessThan, err := api.IsGitLabVersionLessThan(context.TODO(), TestGitlabClient, requiredMaxVersion)()
+	isLessThan, err := api.IsGitLabVersionLessThan(context.Background(), TestGitlabClient, requiredMaxVersion)()
 	if err != nil {
 		t.Fatalf("Failed to fetch GitLab version: %+v", err)
 	}
@@ -111,7 +111,7 @@ func RunIfLessThan(t *testing.T, requiredMaxVersion string) {
 }
 
 func RunIfAtLeast(t *testing.T, requiredMinVersion string) {
-	isAtLeast, err := api.IsGitLabVersionAtLeast(context.TODO(), TestGitlabClient, requiredMinVersion)()
+	isAtLeast, err := api.IsGitLabVersionAtLeast(context.Background(), TestGitlabClient, requiredMinVersion)()
 	if err != nil {
 		t.Fatalf("Failed to fetch GitLab version: %+v", err)
 	}
@@ -122,7 +122,7 @@ func RunIfAtLeast(t *testing.T, requiredMinVersion string) {
 }
 
 func IsRunningAtLeast(t *testing.T, requiredMinVersion string) bool {
-	isAtLeast, err := api.IsGitLabVersionAtLeast(context.TODO(), TestGitlabClient, requiredMinVersion)()
+	isAtLeast, err := api.IsGitLabVersionAtLeast(context.Background(), TestGitlabClient, requiredMinVersion)()
 	if err != nil {
 		t.Fatalf("Failed to fetch GitLab version: %+v", err)
 	}
