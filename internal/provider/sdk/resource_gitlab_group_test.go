@@ -1124,6 +1124,105 @@ func TestAccGitlabGroup_IPRestricted(t *testing.T) {
 	})
 }
 
+func TestAccGitlabGroup_EmailDomains(t *testing.T) {
+	testutil.SkipIfCE(t)
+	testutil.RunIfAtLeast(t, "17.4")
+
+	var group gitlab.Group
+	rInt := acctest.RandInt()
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabGroupDestroy,
+		Steps: []resource.TestStep{
+			// Create a group
+			{
+				SkipFunc: testutil.IsRunningInCE,
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "this" {
+					name = "test-email-domains-%d"
+					path = "path-%d"
+
+					allowed_email_domains_list = ["example.com"]
+				}
+				`, rInt, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabGroupExists("gitlab_group.this", &group),
+					testAccCheckGitlabGroupAttributes(&group, &testAccGitlabGroupExpectedAttributes{
+						Name:                    fmt.Sprintf("test-email-domains-%d", rInt),
+						Path:                    fmt.Sprintf("path-%d", rInt),
+						AllowedEmailDomainsList: "example.com",
+					}),
+				),
+			},
+			// Verify Import
+			{
+				SkipFunc:                testutil.IsRunningInCE,
+				ResourceName:            "gitlab_group.this",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"permanently_remove_on_delete"},
+			},
+			// Update the group to generate a comma in the ranges
+			{
+				SkipFunc: testutil.IsRunningInCE,
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "this" {
+					name = "test-email-domains-%d"
+					path = "path-%d"
+
+					allowed_email_domains_list = ["example.com", "gitlab.com"]
+				}
+				`, rInt, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabGroupExists("gitlab_group.this", &group),
+					testAccCheckGitlabGroupAttributes(&group, &testAccGitlabGroupExpectedAttributes{
+						Name:                    fmt.Sprintf("test-email-domains-%d", rInt),
+						Path:                    fmt.Sprintf("path-%d", rInt),
+						AllowedEmailDomainsList: "example.com,gitlab.com",
+					}),
+				),
+			},
+			// Verify Import
+			{
+				SkipFunc:                testutil.IsRunningInCE,
+				ResourceName:            "gitlab_group.this",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"permanently_remove_on_delete"},
+			},
+			// Update the group back to unrestricted
+			{
+				SkipFunc: testutil.IsRunningInCE,
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "this" {
+					name = "test-email-domains-%d"
+					path = "path-%d"
+
+					allowed_email_domains_list = []
+				}
+				`, rInt, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabGroupExists("gitlab_group.this", &group),
+					testAccCheckGitlabGroupAttributes(&group, &testAccGitlabGroupExpectedAttributes{
+						Name:                    fmt.Sprintf("test-email-domains-%d", rInt),
+						Path:                    fmt.Sprintf("path-%d", rInt),
+						AllowedEmailDomainsList: "",
+					}),
+				),
+			},
+			// Verify Import
+			{
+				SkipFunc:                testutil.IsRunningInCE,
+				ResourceName:            "gitlab_group.this",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"permanently_remove_on_delete"},
+			},
+		},
+	})
+}
+
 func TestAccGitlabGroup_nested(t *testing.T) {
 	var group gitlab.Group
 	var group2 gitlab.Group
@@ -1592,6 +1691,7 @@ type testAccGitlabGroupExpectedAttributes struct {
 	DefaultBranchProtection         *int
 	DefaultBranchProtectionDefaults *testDefaultBranchProtectionDefaults
 	IPRestrictionRanges             string
+	AllowedEmailDomainsList         string
 }
 
 func testAccCheckGitlabGroupAttributes(group *gitlab.Group, want *testAccGitlabGroupExpectedAttributes) resource.TestCheckFunc {

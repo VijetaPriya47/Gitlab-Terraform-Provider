@@ -252,6 +252,12 @@ var _ = registerResource("gitlab_group", func() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 				Optional:    true,
 			},
+			"allowed_email_domains_list": {
+				Description: "A list of email address domains to allow group access. Will be concatenated together into a comma separated string.",
+				Type:        schema.TypeList,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Optional:    true,
+			},
 			"wiki_access_level": {
 				Description:  fmt.Sprintf("The group's wiki access level. Only available on Premium and Ultimate plans. Valid values are %s.", utils.RenderValueListForDocs(validWikiAccessLevels)),
 				Type:         schema.TypeString,
@@ -561,6 +567,11 @@ func resourceGitlabGroupCreate(ctx context.Context, d *schema.ResourceData, meta
 		updateOptions.IPRestrictionRanges = stringListToCommaSeparatedString(v.([]interface{}))
 	}
 
+	// Email domains can only be set on update.
+	if v, ok := d.GetOk("allowed_email_domains_list"); ok {
+		updateOptions.AllowedEmailDomainsList = stringListToCommaSeparatedString(v.([]interface{}))
+	}
+
 	if v, ok := d.GetOk("shared_runners_setting"); ok {
 		updateOptions.SharedRunnersSetting = stringToSharedRunnersSetting(v.(string))
 	}
@@ -665,13 +676,26 @@ func resourceGitlabGroupRead(ctx context.Context, d *schema.ResourceData, meta i
 	// The value comes back from the API as a comma separated string, and stores in TF as a set.
 	// We need to set the value only if it's "", otherwise the split gives up [""] which will result
 	// in a non-empty plan.
-	var IPValue []string = []string{}
+	IPValue := []string{}
 	if group.IPRestrictionRanges != "" {
 		IPValue = strings.Split(group.IPRestrictionRanges, ",")
 	}
 
 	if err := d.Set("ip_restriction_ranges", IPValue); err != nil {
 		tflog.Error(ctx, "Error setting ip_restriction_ranges.")
+		return diag.FromErr(err)
+	}
+
+	// The value comes back from the API as a comma separated string, and stores in TF as a set.
+	// We need to set the value only if it's "", otherwise the split gives up [""] which will result
+	// in a non-empty plan.
+	emailDomains := []string{}
+	if group.AllowedEmailDomainsList != "" {
+		emailDomains = strings.Split(group.AllowedEmailDomainsList, ",")
+	}
+
+	if err := d.Set("allowed_email_domains_list", emailDomains); err != nil {
+		tflog.Error(ctx, "Error setting allowed_email_domains_list.")
 		return diag.FromErr(err)
 	}
 
@@ -810,6 +834,10 @@ func resourceGitlabGroupUpdate(ctx context.Context, d *schema.ResourceData, meta
 
 	if d.HasChange("ip_restriction_ranges") {
 		options.IPRestrictionRanges = stringListToCommaSeparatedString(d.Get("ip_restriction_ranges").([]interface{}))
+	}
+
+	if d.HasChange("allowed_email_domains_list") {
+		options.AllowedEmailDomainsList = stringListToCommaSeparatedString(d.Get("allowed_email_domains_list").([]interface{}))
 	}
 
 	avatar, err := handleAvatarOnUpdate(d)
