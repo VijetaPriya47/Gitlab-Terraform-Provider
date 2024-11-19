@@ -36,7 +36,7 @@ workflow:
 default:
   image: golang:${GOLANG_IMAGE_VERSION}
   tags:
-    - saas-linux-large-amd64
+    - saas-linux-2xlarge-amd64
 
 cache:
   key:
