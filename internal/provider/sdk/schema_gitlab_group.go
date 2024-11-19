@@ -152,6 +152,12 @@ func gitlabGroupSchema() map[string]*schema.Schema {
 			Computed:    true,
 			Optional:    true,
 		},
+		"allowed_email_domains_list": {
+			Description: "",
+			Type:        schema.TypeString,
+			Computed:    true,
+			Optional:    true,
+		},
 		"statistics": {
 			Description: "",
 			Type:        schema.TypeMap,
