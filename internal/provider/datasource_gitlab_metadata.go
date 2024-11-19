@@ -36,9 +36,10 @@ type gitLabMetadataDataSourceModel struct {
 	Version  string `tfsdk:"version" json:"version"`
 	Revision string `tfsdk:"revision" json:"revision"`
 	KAS      struct {
-		Enabled     bool   `tfsdk:"enabled" json:"enabled"`
-		ExternalUrl string `tfsdk:"external_url" json:"externalUrl"`
-		Version     string `tfsdk:"version" json:"version"`
+		Enabled             bool   `tfsdk:"enabled" json:"enabled"`
+		ExternalUrl         string `tfsdk:"external_url" json:"externalUrl"`
+		ExternalK8SProxyUrl string `tfsdk:"external_k8s_proxy_url" json:"externalK8sProxyUrl"`
+		Version             string `tfsdk:"version" json:"version"`
 	} `tfsdk:"kas" json:"kas"`
 	Enterprise bool `tfsdk:"enterprise" json:"enterprise"`
 }
@@ -78,6 +79,10 @@ func (d *gitlabMetadataDataSource) Schema(_ context.Context, _ datasource.Schema
 					},
 					"external_url": schema.StringAttribute{
 						MarkdownDescription: "URL used by the agents to communicate with KAS. It’s null if kas.enabled is false.",
+						Computed:            true,
+					},
+					"external_k8s_proxy_url": schema.StringAttribute{
+						MarkdownDescription: "URL used by the Kubernetes tooling to communicate with the KAS Kubernetes API proxy. It’s null if kas.enabled is false.",
 						Computed:            true,
 					},
 					"version": schema.StringAttribute{
