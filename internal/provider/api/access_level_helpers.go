@@ -63,6 +63,10 @@ var ValidCIRestrictPipelineCancellationRoleValues = []string{
 	"developer", "maintainer", "no one",
 }
 
+var ValidCIPipelineVariablesMinimumOverrideRoleValues = []string{
+	"developer", "maintainer", "owner", "no_one_allowed",
+}
+
 var AccessLevelNameToValue = map[string]gitlab.AccessLevelValue{
 	"no one":     gitlab.NoPermissions,
 	"minimal":    gitlab.MinimalAccessPermissions,

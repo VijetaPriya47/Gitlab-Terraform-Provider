@@ -329,6 +329,11 @@ var _ = registerDataSource("gitlab_project", func() *schema.Resource {
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
+			"ci_pipeline_variables_minimum_override_role": {
+				Description: fmt.Sprintf("The minimum role required to set variables when running pipelines and jobs. Introduced in GitLab 17.1. Valid values are %s", utils.RenderValueListForDocs(api.ValidCIPipelineVariablesMinimumOverrideRoleValues)),
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
 			"keep_latest_artifact": {
 				Description: "Disable or enable the ability to keep the latest artifact for this project.",
 				Type:        schema.TypeBool,
@@ -618,6 +623,7 @@ func dataSourceGitlabProjectRead(ctx context.Context, d *schema.ResourceData, me
 	d.Set("ci_config_path", found.CIConfigPath)
 	d.Set("ci_separated_caches", found.CISeperateCache)
 	d.Set("ci_restrict_pipeline_cancellation_role", found.CIRestrictPipelineCancellationRole)
+	d.Set("ci_pipeline_variables_minimum_override_role", found.CIPipelineVariablesMinimumOverrideRole)
 	d.Set("keep_latest_artifact", found.KeepLatestArtifact)
 	d.Set("import_url", found.ImportURL)
 	d.Set("releases_access_level", string(found.ReleasesAccessLevel))
