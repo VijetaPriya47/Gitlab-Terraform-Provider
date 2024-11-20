@@ -1171,6 +1171,58 @@ func TestAccGitlabProject_ciRestrictPipelineCancellationRole(t *testing.T) {
 	})
 }
 
+// tests to ensure that ci_pipeline_variables_minimum_override_role functions as expected
+func TestAccGitlabProject_ciPipelineVariablesMinimumOverrideRole(t *testing.T) {
+	// This value is only present in 16.8 and beyond, and only in EE
+	testutil.SkipIfCE(t)
+	testutil.RunIfAtLeast(t, "16.8")
+
+	var received gitlab.Project
+	rInt := acctest.RandInt()
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabProjectDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project" "this" {
+						name             = "testname-%d"
+						visibility_level = "private"
+						default_branch   = "main"
+
+						ci_pipeline_variables_minimum_override_role = "no_one_allowed"
+					}`, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabProjectExists("gitlab_project.this", &received),
+					resource.TestCheckResourceAttr("gitlab_project.this", "ci_pipeline_variables_minimum_override_role", "no_one_allowed"),
+				),
+			},
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project" "this" {
+						name             = "testname-%d"
+						visibility_level = "private"
+						default_branch   = "main"
+
+						ci_pipeline_variables_minimum_override_role = "owner"
+					}`, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabProjectExists("gitlab_project.this", &received),
+					resource.TestCheckResourceAttr("gitlab_project.this", "ci_pipeline_variables_minimum_override_role", "owner"),
+				),
+			},
+			// Verify Import
+			{
+				ResourceName:            "gitlab_project.this",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"initialize_with_readme"},
+			},
+		},
+	})
+}
+
 func TestAccGitlabProject_InstanceBranchProtectionDisabled(t *testing.T) {
 	rInt := acctest.RandInt()
 
@@ -2013,7 +2065,7 @@ func TestAccGitlabProject_FalseCustomTemplate(t *testing.T) {
 				resource "gitlab_project" "test" {
 					name             =  "%s"
 					visibility_level = "public"
-			
+
 					use_custom_template = false
 				}
 				`, name),
@@ -2043,7 +2095,7 @@ func TestAccGitlabProject_SecretsPushDetection(t *testing.T) {
 			{
 				Config: fmt.Sprintf(`resource "gitlab_project" "test" {
 					name =  "%s"
-					
+
 					pre_receive_secret_detection_enabled = false
 				}`, projectName),
 				Check: resource.ComposeTestCheckFunc(
@@ -2060,7 +2112,7 @@ func TestAccGitlabProject_SecretsPushDetection(t *testing.T) {
 			{
 				Config: fmt.Sprintf(`resource "gitlab_project" "test" {
 								name =  "%s"
-								
+
 								pre_receive_secret_detection_enabled = true
 							}`, projectName),
 				Check: resource.ComposeTestCheckFunc(
@@ -2582,7 +2634,7 @@ resource "gitlab_project" "foo" {
   build_git_strategy = "fetch"
   build_timeout = 42 * 60
   builds_access_level = "enabled"
-  
+
   emails_enabled = false
   forking_access_level = "enabled"
   issues_access_level = "enabled"

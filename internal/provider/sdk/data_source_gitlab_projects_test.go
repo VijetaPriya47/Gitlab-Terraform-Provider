@@ -263,6 +263,47 @@ func TestAccDataGitlabProjects_CIRestrictPipeline(t *testing.T) {
 	})
 }
 
+// Create a test that populates the CI pipeline variables minimum
+// override role value using testUtil, then uses a terraform
+// `gitlab_projects` datasource to read and validate that it matches
+func TestAccDataGitlabProjects_CIPipelineVariablesMinimumOverrideRole(t *testing.T) {
+	// Requires GitLab 17.1 or greater
+	testutil.RunIfAtLeast(t, "17.1")
+
+	// Create a new project using testutil, and update it's pipelines cancellation
+	// to "developer"
+	client := testutil.TestGitlabClient
+	group := testutil.CreateGroups(t, 1)[0]
+	project := testutil.CreateProjectWithNamespace(t, group.ID)
+	role := gitlab.CIPipelineVariablesNoOneAllowedRole
+	_, _, err := client.Projects.EditProject(project.ID, &gitlab.EditProjectOptions{
+		CIPipelineVariablesMinimumOverrideRole: &role,
+	})
+	if err != nil {
+		t.Fatalf("Error updating project: %v", err)
+	}
+
+	// Create the terraform test
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(
+					`
+					 data "gitlab_projects" "this" {
+						group_id = %d
+					 }
+					`, group.ID,
+				),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testAccDataSourceGitlabProjectsContainsProjects("data.gitlab_projects.this", project),
+					resource.TestCheckResourceAttr("data.gitlab_projects.this", "projects.0.ci_pipeline_variables_minimum_override_role", "no_one_allowed"),
+				),
+			},
+		},
+	})
+}
+
 func testAccDataSourceGitlabProjectsContainsProjects(dsPath string, projects ...*gitlab.Project) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		search := s.RootModule().Resources[dsPath]

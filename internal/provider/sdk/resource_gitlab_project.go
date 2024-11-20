@@ -481,6 +481,13 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 		Optional:    true,
 		Computed:    true,
 	},
+	"ci_pipeline_variables_minimum_override_role": {
+		Description:  fmt.Sprintf("The minimum role required to set variables when running pipelines and jobs. Introduced in GitLab 17.1. Valid values are %s", utils.RenderValueListForDocs(api.ValidCIPipelineVariablesMinimumOverrideRoleValues)),
+		Type:         schema.TypeString,
+		Optional:     true,
+		Computed:     true,
+		ValidateFunc: validation.StringInSlice(api.ValidCIPipelineVariablesMinimumOverrideRoleValues, true),
+	},
 	"keep_latest_artifact": {
 		Description: "Disable or enable the ability to keep the latest artifact for this project.",
 		Type:        schema.TypeBool,
@@ -930,6 +937,7 @@ func resourceGitlabProjectSetToState(ctx context.Context, client *gitlab.Client,
 	d.Set("ci_forward_deployment_enabled", project.CIForwardDeploymentEnabled)
 	d.Set("ci_separated_caches", project.CISeperateCache)
 	d.Set("ci_restrict_pipeline_cancellation_role", project.CIRestrictPipelineCancellationRole)
+	d.Set("ci_pipeline_variables_minimum_override_role", project.CIPipelineVariablesMinimumOverrideRole)
 	d.Set("keep_latest_artifact", project.KeepLatestArtifact)
 	d.Set("merge_pipelines_enabled", project.MergePipelinesEnabled)
 	d.Set("merge_trains_enabled", project.MergeTrainsEnabled)
@@ -1419,6 +1427,11 @@ func resourceGitlabProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 	if d.HasChange("ci_restrict_pipeline_cancellation_role") {
 		stringVal := d.Get("ci_restrict_pipeline_cancellation_role").(string)
 		options.CIRestrictPipelineCancellationRole = gitlab.Ptr(api.AccessControlLevelValueToName(stringVal))
+	}
+
+	if d.HasChange("ci_pipeline_variables_minimum_override_role") {
+		stringVal := d.Get("ci_pipeline_variables_minimum_override_role").(string)
+		options.CIPipelineVariablesMinimumOverrideRole = gitlab.Ptr(stringVal)
 	}
 
 	if d.HasChange("merge_pipelines_enabled") {
@@ -2512,6 +2525,11 @@ func updatePostCreateEditOptions(ctx context.Context, editProjectOptions *gitlab
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 	if v, ok := d.GetOkExists("ci_restrict_pipeline_cancellation_role"); ok {
 		editProjectOptions.CIRestrictPipelineCancellationRole = gitlab.Ptr(api.AccessControlLevelValueToName(v.(string)))
+	}
+	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
+	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
+	if v, ok := d.GetOkExists("ci_pipeline_variables_minimum_override_role"); ok {
+		editProjectOptions.CIPipelineVariablesMinimumOverrideRole = gitlab.Ptr(v.(string))
 	}
 
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists

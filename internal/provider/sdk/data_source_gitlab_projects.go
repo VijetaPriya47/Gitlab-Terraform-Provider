@@ -205,6 +205,7 @@ func flattenProjects(projects []*gitlab.Project) (values []map[string]interface{
 			"infrastructure_access_level":                      string(project.InfrastructureAccessLevel),
 			"monitor_access_level":                             string(project.MonitorAccessLevel),
 			"ci_restrict_pipeline_cancellation_role":           string(project.CIRestrictPipelineCancellationRole),
+			"ci_pipeline_variables_minimum_override_role":      string(project.CIPipelineVariablesMinimumOverrideRole),
 			"emails_enabled":                                   project.EmailsEnabled,
 			"model_experiments_access_level":                   string(project.ModelExperimentsAccessLevel),
 			"model_registry_access_level":                      string(project.ModelRegistryAccessLevel),
@@ -1034,6 +1035,11 @@ var _ = registerDataSource("gitlab_projects", func() *schema.Resource {
 						},
 						"ci_restrict_pipeline_cancellation_role": {
 							Description: fmt.Sprintf("The role required to cancel a pipeline or job. Introduced in GitLab 16.8. Premium and Ultimate only. Valid values are %s", utils.RenderValueListForDocs(api.ValidCIRestrictPipelineCancellationRoleValues)),
+							Type:        schema.TypeString,
+							Computed:    true,
+						},
+						"ci_pipeline_variables_minimum_override_role": {
+							Description: fmt.Sprintf("The minimum role required to set variables when running pipelines and jobs. Introduced in GitLab 17.1. Valid values are %s", utils.RenderValueListForDocs(api.ValidCIPipelineVariablesMinimumOverrideRoleValues)),
 							Type:        schema.TypeString,
 							Computed:    true,
 						},
