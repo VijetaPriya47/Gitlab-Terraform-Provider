@@ -55,6 +55,10 @@ func (r *gitlabProjectComplianceFrameworkResource) Schema(ctx context.Context, r
 
 **Upstream API**: [GitLab GraphQL API docs](https://docs.gitlab.com/ee/api/graphql/reference/#mutationprojectsetcomplianceframework)`,
 
+		DeprecationMessage: `This resource is deprecated as it has been replaced by a resource that supports assigning multiple compliance frameworks to a project.
+
+Please use ` + "`gitlab_project_compliance_frameworks`" + ` instead!`,
+
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "The ID of this Terraform resource.",
@@ -321,20 +325,4 @@ type projectSetComplianceFrameworkResponse struct {
 			Project graphQLProject `json:"project"`
 		} `json:"projectSetComplianceFramework"`
 	} `json:"data"`
-}
-
-type projectResponse struct {
-	Data struct {
-		Project graphQLProject `json:"project"`
-	} `json:"data"`
-}
-
-type graphQLProject struct {
-	ProjectId            string `json:"id"`
-	FullPath             string `json:"fullPath"`
-	ComplianceFrameworks struct {
-		Nodes []struct {
-			ID string `json:"id"` // This comes back as a globally unique ID
-		} `json:"nodes"`
-	} `json:"complianceFrameworks"`
 }

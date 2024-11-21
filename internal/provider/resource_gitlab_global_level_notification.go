@@ -21,9 +21,9 @@ import (
 const applicationGlobalSettingsID = "gitlab"
 
 var (
-	_ resource.Resource                = &gitlabComplianceFrameworkResource{}
-	_ resource.ResourceWithConfigure   = &gitlabComplianceFrameworkResource{}
-	_ resource.ResourceWithImportState = &gitlabComplianceFrameworkResource{}
+	_ resource.Resource                = &gitlabGlobalLevelNotificationsResource{}
+	_ resource.ResourceWithConfigure   = &gitlabGlobalLevelNotificationsResource{}
+	_ resource.ResourceWithImportState = &gitlabGlobalLevelNotificationsResource{}
 
 	// The allowed notification
 	allowedGlobalNotificationLevels = []string{"disabled", "participating", "watch", "mention", "custom"}
