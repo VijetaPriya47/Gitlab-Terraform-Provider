@@ -1,8 +1,51 @@
+## 17.6.0 (2024-11-21)
+
+This release was tested against GitLab 17.6, 17.5, and 17.4 for both CE and EE
+
+### FEATURES (4 changes)
+
+- **New Resource** resource/gitlab_project_compliance_frameworks: [Add new resource `gitlab_project_compliance_frameworks`, allowing managing multiple compliance frameworks on a single project](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/5022e5ee705a1ff926d2391e2e61a6ef3968db5b) by @mness ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2209))
+- **New Datasource** datasource/gitlab_group_billable_member_memberships:  [Add new data source `gitlab_group_billable_member_memberships`](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/8cb70059c55bd121df6f84dd9c306b8559303754) by @mdroessler ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2144)) 
+- **New Datasource** datasource/gitlab_project_environments:  [Add new data source `gitlab_project_environments`](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/cca616faa31acc2702b9cd873a0e59b79aa00c06) by @ruben.aleman ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2172)) 
+- **New Datasource** data/gitlab_runners:  [Add new data source `gitlab_runners`](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/b02e9ee2a0518a6e1b4133824661b9a6ebd221f7) by @ruben.aleman ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2164)) 
+
+### IMPROVEMENTS (17 changes)
+
+- docs:  [add import block examples to resources](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/d350937502c4ee11c8c99ac89e7983bae03cc439) by @ruben.aleman ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2169)) 
+- data/gitlab_project: [Add `ci_pipeline_variables_minimum_role` setting](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/59215d220e064fc9d42d4f579031730e8aaec2bf) by @hfyngvason ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2208))
+- data/gitlab_projects: [Add `ci_pipeline_variables_minimum_role` setting](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/59215d220e064fc9d42d4f579031730e8aaec2bf) by @hfyngvason ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2208))
+- data/gitlab_metadata: [Add `external_kas_proxy_url` setting](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/ad66d449ab7e6257dc6787d2232cdf80c4b49a9e) by @timofurrer ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2203))
+- resource/gitlab_user_runner:  [Add `maintenance_note` setting](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/269371d4c91fc5ec333cd7b596964b63dfa60c70) by @ruben.aleman ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2170)) 
+- resource/gitlab_group: [Add `allowed_email_domains_list` setting](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/34024e7d01d1c8a11f3799416eba64c96653ba75) by @jeremad ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2204))
+- resource/gitlab_project: [Add `ci_pipeline_variables_minimum_role` setting](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/59215d220e064fc9d42d4f579031730e8aaec2bf) by @hfyngvason ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2208))
+- resource/gitlab_project_environment: [Add support for multiple attributes related to cluster agents](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/ff6c1780c4f168aeb721be188098cdeda0336728) by @timofurrer ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2168))
+- resource/gitlab_project_hook:  [Add `custom_headers` support](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/9a396394049d469e06afc43841d85b4fc807fb07) by @PatrickRice ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2166)) 
+- resource/gitlab_group_hook:  [Add `custom_headers` support](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/9a396394049d469e06afc43841d85b4fc807fb07) by @PatrickRice ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2166)) 
+- resource/gitlab_branch_protection:  [Add `deploy_key` support to `allowed_to_push`](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/3d988071a93df18d93d9ead00a47bc4bf905fe45) by @nicolas.boussuge.fintech ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2157)) 
+- resource/gitlab_group_security_policy_attachment:  [Update documentation to make usage with compliance frameworks and policies more clear](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/72457495cad307146cb1200318c447a1fb6bbe2a) by @odupre ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2210)) 
+- resource/personal_access_token:  [Remove the "RequiresReplace()" modifier on rotation_config for access tokens](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/399f3c2a067f1e683258820ac88df7abd187e310) by @PatrickRice ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2174)) 
+- resource/project_access_token:  [Remove the "RequiresReplace()" modifier on rotation_config for access tokens](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/399f3c2a067f1e683258820ac88df7abd187e310) by @PatrickRice ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2174)) 
+- resource/group_access_token:  [Remove the "RequiresReplace()" modifier on rotation_config for access tokens](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/399f3c2a067f1e683258820ac88df7abd187e310) by @PatrickRice ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2174)) 
+- resource/gitlab_service_account_access_token:  [Improve example documentation and include better information on required permissions for gitlab.com](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/38b3c7e8b9ad27dd8b9ba452ceb6fd179801e550) by @heidi.berry ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2201))
+- resource/gitlab_member_role: [Add documentation examples and import examples](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/93ceb96da2be4e75c15fb5e552106c1aad5c5407) by @john.shimmin ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2186))
+
+
+### BUG FIXES (8 changes)
+
+- resource/gitlab_group_label:  [Fix an issue where `apply` fails when changing the `name` attribute](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/b6dd163bb62c52c8cad432b92e638220687887a4) by @krzywykrzych ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2200)) 
+- resource/gitlab_application_settings:  [Fix panic when using `valid_runner_registrars`](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/55dc97d6ab2308f557595a4d50f3015776006507) by @PatrickRice ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2173)) 
+- resource/gitlab_service_account_access_token:  [Fix an issue where non-admin tokens cannot use the service account access token resource](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/20e8244e61544eceacd00be025b2bdd1a6299419) by @PatrickRice ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2189))
+- resource/gitlab_service_account_access_token:  [Fix invalid HCL in the example](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/a752175ba841041fd5a8889c072bae569dadaf1b) by @telliffoshea ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2167))
+- resource/gitlab_member_role: [Fix an issue where `enabled_permissions` could cause issues due to sorting](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/93ceb96da2be4e75c15fb5e552106c1aad5c5407) by @john.shimmin ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2186))
+- resource/gitlab_group_access_token: [Fix an issue where removing `rotation_configuration` after an `apply` operation caused a provider panic](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/40dbca0ff63b6c4639a806a156f201cf3fea202f) by @PatrickRice ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2175))
+- resource/gitlab_project_access_token: [Fix an issue where removing `rotation_configuration` after an `apply` operation caused a provider panic](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/40dbca0ff63b6c4639a806a156f201cf3fea202f) by @PatrickRice ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2175))
+- resource/gitlab_personal_access_token: [Fix an issue where removing `rotation_configuration` after an `apply` operation caused a provider panic](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/40dbca0ff63b6c4639a806a156f201cf3fea202f) by @PatrickRice ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2175))
+
 ## 17.5.0 (2024-10-17)
 
 This release was tested against GitLab 17.5, 17.4, and 17.3 for both CE and EE
 
-### FEATURES (3 changes)
+### FEATURES (4 changes)
 
 - **New Resource** resource/gitlab_group_service_account: [Allows creating service accounts for a gitlab group](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/a1e1686636ee2d901344163bac22bc032ad52056) by @michal.szczepek ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2122))
 - **New Resource** resource/gitlab_group_service_account_token: [Allows creating service account tokens for a service account](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/a1e1686636ee2d901344163bac22bc032ad52056) by @michal.szczepek ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2122))
