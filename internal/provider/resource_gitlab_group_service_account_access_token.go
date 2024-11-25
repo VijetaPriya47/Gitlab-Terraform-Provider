@@ -6,7 +6,10 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/objectvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -61,6 +64,14 @@ type gitlabGroupServiceAccountAccessTokenResourceModel struct {
 
 	Active  types.Bool `tfsdk:"active"`
 	Revoked types.Bool `tfsdk:"revoked"`
+
+	RotationConfiguration *gitlabServiceActionAccessTokenRotationConfiguration `tfsdk:"rotation_configuration"`
+}
+
+// The struct for rotation configurations. Used when the provider is auto
+// rotating tokens, and its use conflicts with `expires_at`
+type gitlabServiceActionAccessTokenRotationConfiguration struct {
+	RotateBeforeDays types.Int64 `tfsdk:"rotate_before_days"`
 }
 
 func (r *gitlabGroupServiceAccountAccessTokenResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -74,6 +85,10 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Schema(ctx context.Contex
 ~> Use of the ` + "`timestamp()`" + ` function with expires_at will cause the resource to be re-created with every apply, it's recommended to use ` + "`plantimestamp()`" + ` or a static value instead.
 
 ~> Reading the access token status of a service account requires an admin token or a top-level group owner token on gitlab.com. As a result, this resource will ignore permission errors when attempting to read the token status, and will rely on the values in state instead. This can lead to apply-time failures if the token configured for the provider doesn't have permissions to rotate tokens for the service account.
+
+~> Use ` + "`rotation_configuration`" + ` to automatically rotate tokens instead of using ` + "`timestamp()`" + ` as timestamp will cause changes with every plan. ` + "`terraform apply`" + ` must still be run to rotate the token.
+
+~> Due to a limitation in the API, the ` + "`rotation_configuration`" + ` is unable to set the new expiry date. Instead, when the resource is created, it will default the expiry date to 7 days in the future. On each subsequent apply, the new expiry will be 7 days from the date of the apply. 
 
 **Upstream API**: [GitLab API docs](https://docs.gitlab.com/ee/api/group_service_accounts.html#create-a-personal-access-token-for-a-service-account-user)`,
 		Attributes: map[string]schema.Attribute{
@@ -121,10 +136,13 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Schema(ctx context.Contex
 				},
 			},
 			"expires_at": schema.StringAttribute{
-				MarkdownDescription: "	The personal access token expiry date. When left blank, the token follows the standard rule of expiry for personal access tokens.",
+				MarkdownDescription: "The service account access token expiry date. When left blank, the token follows the standard rule of expiry for personal access tokens.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 					stringplanmodifier.UseStateForUnknown(),
+				},
+				Validators: []validator.String{
+					stringvalidator.ExactlyOneOf(path.MatchRoot("rotation_configuration")),
 				},
 				Optional: true,
 				Computed: true,
@@ -145,6 +163,27 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Schema(ctx context.Contex
 			"revoked": schema.BoolAttribute{
 				MarkdownDescription: "True if the token is revoked.",
 				Computed:            true,
+			},
+			"rotation_configuration": schema.SingleNestedAttribute{
+				MarkdownDescription: "The configuration for when to rotate a token automatically. Will not rotate a token until `terraform apply` is run.",
+				Optional:            true,
+				Validators: []validator.Object{
+					objectvalidator.ExactlyOneOf(path.MatchRoot("expires_at")),
+				},
+
+				// Rotation attributes
+				Attributes: map[string]schema.Attribute{
+					"rotate_before_days": schema.Int64Attribute{
+						MarkdownDescription: "The duration (in days) before the expiration when the token should be rotated. As an example, if set to 7 days, the token will rotate 7 days before the expiration date, but only when `terraform apply` is run in that timeframe.",
+						Required:            true,
+						PlanModifiers: []planmodifier.Int64{
+							int64planmodifier.UseStateForUnknown(),
+						},
+						Validators: []validator.Int64{
+							int64validator.AtLeast(1),
+						},
+					},
+				},
 			},
 		},
 	}
@@ -194,6 +233,52 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) groupServiceAccountAccess
 // ImportState imports the resource into the Terraform state.
 func (r *gitlabGroupServiceAccountAccessTokenResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+// Use the `ModifyPlan` to determine if we need to rotate the `token` associated to this
+// resource by checking the date that's set in the `expires_at` field is less than the current date.
+func (r *gitlabGroupServiceAccountAccessTokenResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	var planData, stateData *gitlabGroupServiceAccountAccessTokenResourceModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &planData)...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &stateData)...)
+
+	if planData == nil {
+		// Log a note that there is no plan data, usually because we're importing.
+		tflog.Debug(ctx, "Plan data is nil, no check for token rotation is needed")
+		return
+	}
+
+	if stateData != nil && stateData.RotationConfiguration != nil {
+		expiresAt := stateData.ExpiresAt.ValueString()
+		expiresAtTime, err := time.Parse(api.Iso8601, expiresAt)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Error parsing expiry date",
+				fmt.Sprintf("Could not parse expiry date %q: %s", expiresAt, err),
+			)
+			return
+		}
+
+		// Subtract the rotation days
+		// This is done using `Add` because it returns "time.Time" instead of `Sub` which returns time.Duration. For some reason.
+		gapTime := expiresAtTime.Add(-time.Duration(planData.RotationConfiguration.RotateBeforeDays.ValueInt64()) * 24 * time.Hour)
+
+		if gapTime.Before(api.CurrentTime()) {
+			planData.ExpiresAt = types.StringUnknown()
+			planData.ID = types.StringUnknown()
+			planData.Token = types.StringUnknown()
+			planData.CreatedAt = types.StringUnknown()
+
+			// Logs for assisting with support
+			tflog.Debug(ctx, "[ServiceAccountAccessToken] Rotation is required, setting plan data", map[string]interface{}{
+				"expires_at": stateData.ExpiresAt.ValueString(),
+				"group":      planData.Group.ValueString(),
+				"name":       planData.Name.ValueString(),
+			})
+
+			resp.Diagnostics.Append(resp.Plan.Set(ctx, planData)...)
+		}
+	}
 }
 
 // Read refreshes the Terraform state with the latest data.
@@ -296,6 +381,18 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Create(ctx context.Contex
 		}
 
 		options.ExpiresAt = &expiryDate
+	} else if !data.RotationConfiguration.RotateBeforeDays.IsNull() {
+		// Default the expires at to 7 days in the future if rotation is configured.
+		expiryDate := api.CurrentTime().Add(time.Duration(7) * 24 * time.Hour)
+		expiryIsoTime, err := gitlab.ParseISOTime(expiryDate.Format(api.Iso8601))
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Error determining default expiry date",
+				fmt.Sprintf("Could not determine default expiry date: %s", err),
+			)
+		}
+
+		options.ExpiresAt = &expiryIsoTime
 	}
 
 	token, _, err := r.client.Groups.CreateServiceAccountPersonalAccessToken(data.Group.ValueString(), int(data.UserID.ValueInt64()), options, gitlab.WithContext(ctx))
@@ -312,7 +409,53 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Create(ctx context.Contex
 }
 
 func (r *gitlabGroupServiceAccountAccessTokenResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	resp.Diagnostics.AddError("Provider Error, report upstream", "Somehow the resource was requested to perform an in-place upgrade which is not possible.")
+	// Update only triggers when `expires_at` is updated. Anything else should trigger
+	// a "replace" operation which will destroy/create.
+	var planData, stateData *gitlabGroupServiceAccountAccessTokenResourceModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &planData)...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &stateData)...)
+
+	splitedID := strings.SplitN(stateData.ID.ValueString(), ":", 3)
+	if len(splitedID) != 3 {
+		resp.Diagnostics.AddError(
+			"Error parsing ID",
+			"Could not parse ID into group, userID and accessTokenID",
+		)
+		return
+	}
+
+	group := splitedID[0]
+	userID := splitedID[1]
+	accessTokenID := splitedID[2]
+
+	userIDInt, err := strconv.Atoi(userID)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error parsing user ID",
+			fmt.Sprintf("Could not parse user ID %s to int: %s", userID, err),
+		)
+		return
+	}
+
+	accessTokenIDInt, err := strconv.Atoi(accessTokenID)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error parsing access token ID",
+			fmt.Sprintf("Could not parse access token ID %s to int: %s", accessTokenID, err),
+		)
+		return
+	}
+
+	token, _, err := r.client.Groups.RotateServiceAccountPersonalAccessToken(group, userIDInt, accessTokenIDInt, gitlab.WithContext(ctx))
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error rotating GitLab GroupServiceAccountAccessToken",
+			fmt.Sprintf("Could not rotate GitLab GroupServiceAccountAccessToken, unexpected error: %v", err),
+		)
+	}
+
+	r.groupServiceAccountAccessTokenToStateModel(planData, token, planData.Group.ValueString())
+	resp.Diagnostics.Append(resp.State.Set(ctx, &planData)...)
 }
 
 func (r *gitlabGroupServiceAccountAccessTokenResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
