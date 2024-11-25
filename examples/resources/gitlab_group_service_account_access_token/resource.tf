@@ -29,3 +29,16 @@ resource "gitlab_group_service_account_access_token" "example_sa_token" {
 
   scopes = ["api"]
 }
+
+# The service account access token with rotation configuration
+resource "gitlab_group_service_account_access_token" "example_sa_token" {
+  group   = gitlab_group.example.id
+  user_id = gitlab_group_service_account.example_sa.service_account_id
+  name    = "Example service account access token"
+
+  rotation_configuration = {
+    rotate_before_days = 2
+  }
+
+  scopes = ["api"]
+}

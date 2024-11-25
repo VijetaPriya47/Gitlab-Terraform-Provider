@@ -5,6 +5,7 @@ package provider
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -105,6 +106,122 @@ func TestAccGitlabGroupServiceAccountAccessToken_basic(t *testing.T) {
 	})
 }
 
+// This test checks that when the resource is created with rotation_configuration
+// the expires_at date is defaulted to seven days in the future
+// Unfortunately, we cannot currently test rotating the token since we can't influence
+// the new expiry date. It will always be seven days in the future based off
+// the real time rather than any mocked time we give the provider as it
+// is set by the API.
+func TestAccGitlabGroupServiceAccountAccessToken_rotationConfiguration(t *testing.T) {
+	testutil.SkipIfCE(t)
+
+	group := testutil.CreateGroups(t, 1)[0]
+	groupID := strconv.Itoa(group.ID)
+
+	serviceAccount := testutil.CreateGroupServiceAccounts(t, 1, groupID)[0]
+
+	expiryDate := testutil.GetCurrentTimestampPlusDays(t, 7).Format(time.DateOnly)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		CheckDestroy:             testAccCheckGitlabGroupServiceAccountAccessTokenDestroy,
+		Steps: []resource.TestStep{
+			// Create a Group Service Account Access Token
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group_service_account_access_token" "this" {
+					group    = %s 
+					user_id  = %d
+					name     = "foo"
+					scopes   = ["api"]
+
+					rotation_configuration = {
+						rotate_before_days = 1
+					}
+				}
+				`, groupID, serviceAccount.ID),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_group_service_account_access_token.this", "rotation_configuration.rotate_before_days", "1"),
+					resource.TestCheckResourceAttr("gitlab_group_service_account_access_token.this", "expires_at", expiryDate),
+					resource.TestCheckResourceAttrSet("gitlab_group_service_account_access_token.this", "token"),
+				),
+			},
+			// Verify upstream resource with an import.
+			{
+				ResourceName:      "gitlab_group_service_account_access_token.this",
+				ImportState:       true,
+				ImportStateVerify: true,
+				// The token is only known during creating. We explicitly mention this limitation in the docs.
+				ImportStateVerifyIgnore: []string{"token", "rotation_configuration"},
+			},
+		},
+	})
+}
+
+func TestAccGitlabGroupServiceAccountAccessToken_attributeValidation(t *testing.T) {
+	testutil.SkipIfCE(t)
+
+	group := testutil.CreateGroups(t, 1)[0]
+	groupID := strconv.Itoa(group.ID)
+
+	serviceAccount := testutil.CreateGroupServiceAccounts(t, 1, groupID)[0]
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabGroupServiceAccountAccessTokenDestroy,
+		Steps: []resource.TestStep{
+			// Validate expires_at and rotation_configuration conflict
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group_service_account_access_token" "this" {
+					group = %s 
+					user_id  = %d
+					name     = "foo"
+					scopes   = ["api"]
+
+					expires_at = "%s"
+
+					rotation_configuration = {
+						rotate_before_days = 1
+					}
+
+				}
+				`, groupID, serviceAccount.ID, time.Now().Add(time.Hour*48).Format(api.Iso8601)), // so it's always in the future.
+				ExpectError: regexp.MustCompile("Error: Invalid Attribute Combination"),
+			},
+			// At least one rotation_configuration or expires_at is required
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group_service_account_access_token" "this" {
+					group = %s 
+					user_id  = %d
+					name     = "foo"
+					scopes   = ["api"]
+				}
+				`, groupID, serviceAccount.ID),
+				ExpectError: regexp.MustCompile("Error: Invalid Attribute Combination"),
+			},
+			// Validate that rotate_before_days must be > 0
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group_service_account_access_token" "this" {
+					group = %s 
+					user_id  = %d
+					name     = "foo"
+					scopes   = ["api"]
+
+					rotation_configuration = {
+						rotate_before_days = -1
+					}
+
+				}
+				`, groupID, serviceAccount.ID),
+				ExpectError: regexp.MustCompile("rotation_configuration.rotate_before_days value must be at least 1"),
+			},
+		},
+	})
+}
+
 // This test checks an issue where using the `expires` to change the rotation would only work once.
 // This is because the primary ID of the token was only stored on create, so after the first rotation,
 // it attempts to re-use that primary key, which was already expired.
@@ -184,7 +301,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_rotationUsingExpiresAt(t *testi
 	})
 }
 
-// This test ensures that a user who is an Owner level will be able to use and roate the token using the state data
+// This test ensures that a user who is an Owner level will be able to use and rotate the token using the state data
 // even when they can't normally read the service account token's information.
 func TestAccGitlabGroupServiceAccountAccessToken_nonAdminToken(t *testing.T) {
 	testutil.SkipIfCE(t)
