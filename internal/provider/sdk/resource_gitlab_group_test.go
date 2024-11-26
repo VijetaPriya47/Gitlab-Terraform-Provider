@@ -1124,6 +1124,50 @@ func TestAccGitlabGroup_IPRestricted(t *testing.T) {
 	})
 }
 
+func TestAccGitlabGroup_PreexistingEmailDomain(t *testing.T) {
+	testutil.RunIfAtLeast(t, "17.4")
+
+	var group gitlab.Group
+	rInt := acctest.RandInt()
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabGroupDestroy,
+		Steps: []resource.TestStep{
+			// Create a group with no allow list
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "this" {
+					name = "test-email-domains-%d"
+					path = "path-%d"
+				}
+				`, rInt, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabGroupExists("gitlab_group.this", &group),
+				),
+			},
+			// Update the group to have the allow list then run a plan to ensure it isn't removed.
+			{
+				PreConfig: func() {
+					// Update the group to have an allowed email list
+					testutil.TestGitlabClient.Groups.UpdateGroup(group.ID, &gitlab.UpdateGroupOptions{
+						AllowedEmailDomainsList: gitlab.Ptr("example.com"),
+					})
+				},
+				SkipFunc: testutil.IsRunningInCE,
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "this" {
+					name = "test-email-domains-%d"
+					path = "path-%d"
+				}
+				`, rInt, rInt),
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: false,
+			},
+		},
+	})
+}
+
 func TestAccGitlabGroup_EmailDomains(t *testing.T) {
 	testutil.SkipIfCE(t)
 	testutil.RunIfAtLeast(t, "17.4")
