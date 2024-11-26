@@ -5,7 +5,7 @@ go 1.23.3
 require (
 	github.com/bflad/tfproviderlint v0.30.0
 	github.com/golangci/golangci-lint v1.62.2
-	github.com/hashicorp/terraform-plugin-docs v0.20.0
+	github.com/hashicorp/terraform-plugin-docs v0.20.1
 	golang.org/x/tools v0.27.0
 	mvdan.cc/sh/v3 v3.10.0
 )
@@ -218,7 +218,7 @@ require (
 	golang.org/x/sync v0.9.0 // indirect
 	golang.org/x/sys v0.27.0 // indirect
 	golang.org/x/term v0.25.0 // indirect
-	golang.org/x/text v0.19.0 // indirect
+	golang.org/x/text v0.20.0 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
