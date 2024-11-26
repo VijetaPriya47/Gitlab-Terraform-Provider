@@ -254,6 +254,70 @@ func TestAccGitlabProjectComplianceFrameworks_basicWithFullPath(t *testing.T) {
 	})
 }
 
+func TestAccGitlabProjectComplianceFrameworks_removedOutsideOfTerraform(t *testing.T) {
+	testutil.SkipIfCE(t)
+
+	testGroup := testutil.CreateGroups(t, 1)[0]
+	testProject := testutil.CreateProjectWithNamespace(t, testGroup.ID)
+	testComplianceFrameworkAlpha := testutil.CreateComplianceFramework(t, testGroup)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAcc_GitlabProjectComplianceFrameworks_CheckDestroy,
+		Steps: []resource.TestStep{
+			// Associate a compliance framework with a project
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_compliance_frameworks" "bar" {
+						compliance_framework_ids = ["%s"]
+						project = "%s"
+					}
+						`, testComplianceFrameworkAlpha.ID, testProject.PathWithNamespace),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("gitlab_project_compliance_frameworks.bar", "id"),
+					resource.TestCheckTypeSetElemAttr("gitlab_project_compliance_frameworks.bar", "compliance_framework_ids.*", testComplianceFrameworkAlpha.ID),
+				),
+			},
+			{
+				ResourceName:      "gitlab_project_compliance_frameworks.bar",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// remove the compliance framework from the project outside of terraform
+			{
+				PreConfig: func() {
+					testutil.DeleteProjectComplianceFrameworks(t, testProject)
+				},
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_compliance_frameworks" "bar" {
+						compliance_framework_ids = ["%s"]
+						project = "%s"
+					}
+						`, testComplianceFrameworkAlpha.ID, testProject.PathWithNamespace),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("gitlab_project_compliance_frameworks.bar", "id"),
+					resource.TestCheckTypeSetElemAttr("gitlab_project_compliance_frameworks.bar", "compliance_framework_ids.*", testComplianceFrameworkAlpha.ID),
+				),
+			},
+			{
+				ResourceName:      "gitlab_project_compliance_frameworks.bar",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Test removing compliance framework association on project
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_compliance_frameworks" "bar" {
+						compliance_framework_ids = ["%s"]
+						project = "%s"
+					}
+						`, testComplianceFrameworkAlpha.ID, testProject.PathWithNamespace),
+				Destroy: true,
+			},
+		},
+	})
+}
+
 func TestAccGitlabProjectComplianceFrameworks_EnsureErrorOnInvalidComplianceFrameworkGID(t *testing.T) {
 	testutil.SkipIfCE(t)
 
