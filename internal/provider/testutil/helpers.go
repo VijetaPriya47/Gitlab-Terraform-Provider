@@ -1114,6 +1114,36 @@ func CreateComplianceFramework(t *testing.T, group *gitlab.Group) *api.GraphQLCo
 	return &response.Data.CreateComplianceFramework.Framework
 }
 
+func DeleteProjectComplianceFrameworks(t *testing.T, project *gitlab.Project) {
+	t.Helper()
+
+	query := api.GraphQLQuery{
+		Query: fmt.Sprintf(`
+			mutation {
+				projectUpdateComplianceFrameworks(
+					input: {
+						projectId: "gid://gitlab/Project/%d",
+						complianceFrameworkIds: []
+					}
+				) {
+					project {
+						id,
+						complianceFrameworks {
+							nodes {
+								id
+							}
+						}
+					}
+					errors
+				}
+			}`, project.ID),
+	}
+
+	if _, err := api.SendGraphQLRequest(context.Background(), TestGitlabClient, query, nil); err != nil {
+		t.Fatalf("Unable to delete project compliance frameworks: %s", err.Error())
+	}
+}
+
 func CreateScheduledPipeline(t *testing.T, project int, branch string) (*gitlab.PipelineSchedule, error) {
 	t.Helper()
 

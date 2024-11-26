@@ -166,13 +166,12 @@ func (r *gitlabProjectComplianceFrameworksResource) Read(ctx context.Context, re
 		return
 	}
 
-	// error if no project compliance frameworks were returned
+	// remove from state if no project compliance frameworks were returned, as they will get added via a create
 	if len(response.Data.Project.ComplianceFrameworks.Nodes) == 0 {
 		tflog.Debug(ctx, "compliance frameworks do not exist on project, removing from state", map[string]interface{}{
 			"project_path_with_namespace": project.PathWithNamespace,
 		})
 		resp.State.RemoveResource(ctx)
-		resp.Diagnostics.AddError("Project Compliance Framework not found", fmt.Sprintf("Unable to find Compliance Frameworks on project: %s", project.PathWithNamespace))
 		return
 	}
 
@@ -309,7 +308,7 @@ func (r *gitlabProjectComplianceFrameworksResource) Delete(ctx context.Context, 
 				projectUpdateComplianceFrameworks(
 					input: {
 						projectId: "gid://gitlab/Project/%d",
-						complianceFrameworkIds: null
+						complianceFrameworkIds: []
 					}
 				) {
 					project {
