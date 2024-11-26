@@ -1150,9 +1150,12 @@ func TestAccGitlabGroup_PreexistingEmailDomain(t *testing.T) {
 			{
 				PreConfig: func() {
 					// Update the group to have an allowed email list
-					testutil.TestGitlabClient.Groups.UpdateGroup(group.ID, &gitlab.UpdateGroupOptions{
+					_, _, err := testutil.TestGitlabClient.Groups.UpdateGroup(group.ID, &gitlab.UpdateGroupOptions{
 						AllowedEmailDomainsList: gitlab.Ptr("example.com"),
 					})
+					if err != nil {
+						t.Fatal("Failed to update email for group", err)
+					}
 				},
 				SkipFunc: testutil.IsRunningInCE,
 				Config: fmt.Sprintf(`
