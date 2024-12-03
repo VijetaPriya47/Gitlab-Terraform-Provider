@@ -1,5 +1,5 @@
 include:
-  - component: ${CI_SERVER_FQDN}/gitlab-org/components/danger-review/danger-review@1.4.1
+  - component: ${CI_SERVER_FQDN}/gitlab-org/components/danger-review/danger-review@1.4.2
     inputs:
       job_stage: "lint"
       job_allow_failure: true
