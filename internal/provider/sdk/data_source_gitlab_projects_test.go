@@ -50,6 +50,11 @@ func TestAccDataGitlabProjects_search(t *testing.T) {
 						"projects.0.namespace.0.kind",
 						"user",
 					),
+					resource.TestCheckResourceAttr(
+						"data.gitlab_projects.search",
+						"projects.0.prevent_merge_without_jira_issue",
+						"false",
+					),
 				),
 			},
 		},

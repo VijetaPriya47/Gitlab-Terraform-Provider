@@ -763,6 +763,12 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 		Computed:         true,
 		ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(validProjectAccessLevels, false)),
 	},
+	"prevent_merge_without_jira_issue": {
+		Description: "Set whether merge requests require an associated issue from Jira. Premium and Ultimate only.",
+		Type:        schema.TypeBool,
+		Optional:    true,
+		Computed:    true,
+	},
 }
 
 var validContainerExpirationPolicyAttributesCadenceValues = []string{
@@ -1005,6 +1011,7 @@ func resourceGitlabProjectSetToState(ctx context.Context, client *gitlab.Client,
 	d.Set("pre_receive_secret_detection_enabled", project.PreReceiveSecretDetectionEnabled)
 	d.Set("model_experiments_access_level", string(project.ModelExperimentsAccessLevel))
 	d.Set("model_registry_access_level", string(project.ModelRegistryAccessLevel))
+	d.Set("prevent_merge_without_jira_issue", project.PreventMergeWithoutJiraIssue)
 
 	return nil
 }
@@ -1595,6 +1602,10 @@ func resourceGitlabProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 
 	if d.HasChange("model_registry_access_level") {
 		options.ModelRegistryAccessLevel = stringToAccessControlValue(d.Get("model_registry_access_level").(string))
+	}
+
+	if d.HasChange("prevent_merge_without_jira_issue") {
+		options.PreventMergeWithoutJiraIssue = gitlab.Ptr(d.Get("prevent_merge_without_jira_issue").(bool))
 	}
 
 	avatar, err := handleAvatarOnUpdate(d)
@@ -2536,6 +2547,10 @@ func updatePostCreateEditOptions(ctx context.Context, editProjectOptions *gitlab
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 	if v, ok := d.GetOkExists("allow_pipeline_trigger_approve_deployment"); ok {
 		editProjectOptions.AllowPipelineTriggerApproveDeployment = gitlab.Ptr(v.(bool))
+	}
+
+	if v, ok := d.GetOk("prevent_merge_without_jira_issue"); ok {
+		editProjectOptions.PreventMergeWithoutJiraIssue = gitlab.Ptr(v.(bool))
 	}
 
 	// If we forked the project we could apply lots of the attributes,

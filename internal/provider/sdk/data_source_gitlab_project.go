@@ -453,6 +453,11 @@ var _ = registerDataSource("gitlab_project", func() *schema.Resource {
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
+			"prevent_merge_without_jira_issue": {
+				Description: "Whether merge requests require an associated issue from Jira. Premium and Ultimate only.",
+				Type:        schema.TypeBool,
+				Computed:    true,
+			},
 			"shared_with_groups": {
 				Description: "Describes groups which have access shared to this project.",
 				Type:        schema.TypeList,
@@ -633,6 +638,7 @@ func dataSourceGitlabProjectRead(ctx context.Context, d *schema.ResourceData, me
 	d.Set("monitor_access_level", string(found.MonitorAccessLevel))
 	d.Set("model_experiments_access_level", string(found.ModelExperimentsAccessLevel))
 	d.Set("model_registry_access_level", string(found.ModelRegistryAccessLevel))
+	d.Set("prevent_merge_without_jira_issue", found.PreventMergeWithoutJiraIssue)
 
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Reading Gitlab project %q push rules", d.Id()))
 

@@ -209,6 +209,7 @@ func flattenProjects(projects []*gitlab.Project) (values []map[string]interface{
 			"emails_enabled":                                   project.EmailsEnabled,
 			"model_experiments_access_level":                   string(project.ModelExperimentsAccessLevel),
 			"model_registry_access_level":                      string(project.ModelRegistryAccessLevel),
+			"prevent_merge_without_jira_issue":                 project.PreventMergeWithoutJiraIssue,
 		}
 		values = append(values, v)
 	}
@@ -1051,6 +1052,11 @@ var _ = registerDataSource("gitlab_projects", func() *schema.Resource {
 						"model_registry_access_level": {
 							Description: "The visibility of machine learning model registry.",
 							Type:        schema.TypeString,
+							Computed:    true,
+						},
+						"prevent_merge_without_jira_issue": {
+							Description: "Whether merge requests require an associated issue from Jira. Premium and Ultimate only.",
+							Type:        schema.TypeBool,
 							Computed:    true,
 						},
 					},
