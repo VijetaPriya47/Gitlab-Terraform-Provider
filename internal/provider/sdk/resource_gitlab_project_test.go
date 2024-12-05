@@ -2225,6 +2225,53 @@ func TestAccGitlabProject_DeploymentApproverConfig_Update(t *testing.T) {
 	})
 }
 
+func TestAccGitlabProject_RequireJiraIssue(t *testing.T) {
+	testutil.SkipIfCE(t)
+
+	projectName := acctest.RandomWithPrefix("acctest")
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabProjectDestroy,
+		Steps: []resource.TestStep{
+			// Create a project with prevent_merge_without_jira_issue enabled
+			{
+				Config: fmt.Sprintf(`resource "gitlab_project" "test" {
+					name =  "%s"
+
+					prevent_merge_without_jira_issue = true
+				}`, projectName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project.test", "prevent_merge_without_jira_issue", "true"),
+				),
+			},
+			// Verify import
+			{
+				ResourceName:      "gitlab_project.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Disable prevent_merge_without_jira_issue
+			{
+				Config: fmt.Sprintf(`resource "gitlab_project" "test" {
+					name =  "%s"
+
+					prevent_merge_without_jira_issue = false
+				}`, projectName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project.test", "prevent_merge_without_jira_issue", "false"),
+				),
+			},
+			// Verify import
+			{
+				ResourceName:      "gitlab_project.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 type testAccGitlabProjectMirroredExpectedAttributes struct {
 	Mirror                           bool
 	MirrorTriggerBuilds              bool

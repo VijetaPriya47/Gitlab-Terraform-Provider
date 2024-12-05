@@ -19,6 +19,8 @@ import (
 func TestAccDataGitlabProject_basic(t *testing.T) {
 	projectname := fmt.Sprintf("tf-%s", acctest.RandString(5))
 
+	project := testutil.CreateProject(t)
+
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
 		Steps: []resource.TestStep{
@@ -37,6 +39,14 @@ func TestAccDataGitlabProject_basic(t *testing.T) {
 				Config:   testAccDataGitlabProjectConfigPushRules(projectname),
 				Check: testAccDataSourceGitlabProject("gitlab_project.test", "data.gitlab_project.foo",
 					[]string{"push_rules.0.author_email_regex"}),
+			},
+			{
+				SkipFunc: testutil.IsRunningInCE,
+				Config: fmt.Sprintf(`					
+					data "gitlab_project" "test" {
+						id = %d
+					} `, project.ID),
+				Check: resource.TestCheckResourceAttr("data.gitlab_project.test", "prevent_merge_without_jira_issue", "false"),
 			},
 		},
 	})
