@@ -662,16 +662,18 @@ func resourceGitlabGroupRead(ctx context.Context, d *schema.ResourceData, meta i
 	// nolint:staticcheck // SA1019 ignore deprecated DefaultBranchProtection
 	d.Set("default_branch_protection", group.DefaultBranchProtection)
 
-	err = d.Set("default_branch_protection_defaults", []map[string]interface{}{
-		{
-			"allowed_to_push":            convertAccessLevelValuesToNames(group.DefaultBranchProtectionDefaults.AllowedToPush),
-			"allow_force_push":           group.DefaultBranchProtectionDefaults.AllowForcePush,
-			"allowed_to_merge":           convertAccessLevelValuesToNames(group.DefaultBranchProtectionDefaults.AllowedToMerge),
-			"developer_can_initial_push": group.DefaultBranchProtectionDefaults.DeveloperCanInitialPush,
-		},
-	})
-	if err != nil {
-		return diag.FromErr(err)
+	if group.DefaultBranchProtectionDefaults != nil {
+		err = d.Set("default_branch_protection_defaults", []map[string]interface{}{
+			{
+				"allowed_to_push":            convertAccessLevelValuesToNames(group.DefaultBranchProtectionDefaults.AllowedToPush),
+				"allow_force_push":           group.DefaultBranchProtectionDefaults.AllowForcePush,
+				"allowed_to_merge":           convertAccessLevelValuesToNames(group.DefaultBranchProtectionDefaults.AllowedToMerge),
+				"developer_can_initial_push": group.DefaultBranchProtectionDefaults.DeveloperCanInitialPush,
+			},
+		})
+		if err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	// The value comes back from the API as a comma separated string, and stores in TF as a set.
