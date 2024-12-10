@@ -1,7 +1,7 @@
 package api
 
 import (
-	"github.com/xanzy/go-gitlab"
+	"gitlab.com/gitlab-org/api/client-go"
 )
 
 // NOTE:

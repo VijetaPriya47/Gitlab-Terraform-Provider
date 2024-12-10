@@ -5,7 +5,7 @@ import (
 	"net/url"
 
 	"github.com/hashicorp/go-retryablehttp"
-	"github.com/xanzy/go-gitlab"
+	"gitlab.com/gitlab-org/api/client-go"
 )
 
 // withEnvironmentScopeFilter adds the environment scope filter query parameter to the URL.

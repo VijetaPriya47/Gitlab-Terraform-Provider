@@ -2,7 +2,7 @@ package sdk
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/xanzy/go-gitlab"
+	"gitlab.com/gitlab-org/api/client-go"
 )
 
 func gitlabProjectHookSchema() map[string]*schema.Schema {
