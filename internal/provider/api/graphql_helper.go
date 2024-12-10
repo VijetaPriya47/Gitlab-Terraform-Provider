@@ -6,7 +6,7 @@ import (
 	"io"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/xanzy/go-gitlab"
+	"gitlab.com/gitlab-org/api/client-go"
 )
 
 // Helper method for modifying client requests appropriately for sending a GraphQL call instead of a REST call.

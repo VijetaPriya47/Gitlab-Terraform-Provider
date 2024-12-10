@@ -1185,7 +1185,7 @@ ENHANCEMENTS:
 - Support running the provider using an OAuth token ([#686](https://github.com/gitlabhq/terraform-provider-gitlab/pull/686))
 - Allow merge on skipped pipeline ([#705](https://github.com/gitlabhq/terraform-provider-gitlab/pull/705))
 - support default_branch_protection on group ([#706](https://github.com/gitlabhq/terraform-provider-gitlab/pull/706))
-- Bump github.com/xanzy/go-gitlab from 0.50.0 to 0.51.1 ([#718](https://github.com/gitlabhq/terraform-provider-gitlab/pull/718))
+- Bump gitlab.com/gitlab-org/api/client-go from 0.50.0 to 0.51.1 ([#718](https://github.com/gitlabhq/terraform-provider-gitlab/pull/718))
 - Add squash option ([#719](https://github.com/gitlabhq/terraform-provider-gitlab/pull/719))
 
 BUGFIXES:
@@ -1227,7 +1227,7 @@ ENHANCEMENTS:
 - Support the Note field in the User resource/data ([#572](https://github.com/gitlabhq/terraform-provider-gitlab/pull/572))
 - add diffSuppressFunc for 'expires_at' attribute in 'deploy_token' ([#575](https://github.com/gitlabhq/terraform-provider-gitlab/pull/575))
 - Update to Go 1.16 and terraform-plugin-sdk 1.16 ([#579](https://github.com/gitlabhq/terraform-provider-gitlab/pull/579))
-- Bump github.com/xanzy/go-gitlab from 0.44.0 to 0.46.0 ([#586](https://github.com/gitlabhq/terraform-provider-gitlab/pull/586))
+- Bump gitlab.com/gitlab-org/api/client-go from 0.44.0 to 0.46.0 ([#586](https://github.com/gitlabhq/terraform-provider-gitlab/pull/586))
 
 BUG FIXES:
 

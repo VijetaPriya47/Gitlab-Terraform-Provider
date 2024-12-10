@@ -12,7 +12,7 @@ import (
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/tools/passes"
 )
 
-const goGitLabPackagePath = "github.com/xanzy/go-gitlab"
+const goGitLabPackagePath = "gitlab.com/gitlab-org/api/client-go"
 
 var Analyzer = &analysis.Analyzer{
 	Doc:        "Intermediate analyzer for extracting summary data from the go-gitlab package",
