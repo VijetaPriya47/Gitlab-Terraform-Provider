@@ -37,6 +37,7 @@ func TestAcc_GitlabIntegrationJira_basic(t *testing.T) {
 				  commit_events = true
 				  merge_requests_events    = false
 				  comment_on_event_enabled = false
+				  jira_issue_transition_automatic = true
 				}
 				`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
@@ -47,6 +48,8 @@ func TestAcc_GitlabIntegrationJira_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(jiraResourceName, "commit_events", "true"),
 					resource.TestCheckResourceAttr(jiraResourceName, "merge_requests_events", "false"),
 					resource.TestCheckResourceAttr(jiraResourceName, "comment_on_event_enabled", "false"),
+					resource.TestCheckResourceAttr(jiraResourceName, "use_inherited_settings", "false"),
+					resource.TestCheckResourceAttr(jiraResourceName, "jira_issue_transition_automatic", "true"),
 				),
 			},
 			// Verify Import
@@ -56,6 +59,7 @@ func TestAcc_GitlabIntegrationJira_basic(t *testing.T) {
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{
 					"password",
+					"jira_issue_transition_automatic",
 				},
 			},
 			// Update the jira service
@@ -71,6 +75,8 @@ func TestAcc_GitlabIntegrationJira_basic(t *testing.T) {
 				  commit_events = false
 				  merge_requests_events    = true
 				  comment_on_event_enabled = true
+				  jira_issue_regex = "TEST-[0-9]+"
+				  issues_enabled = true
 				}
 				`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
@@ -79,10 +85,14 @@ func TestAcc_GitlabIntegrationJira_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(jiraResourceName, "api_url", "https://testurl.com/rest"),
 					resource.TestCheckResourceAttr(jiraResourceName, "username", "user2"),
 					resource.TestCheckResourceAttr(jiraResourceName, "password", "mypass_update"),
+					resource.TestCheckResourceAttr(jiraResourceName, "jira_issue_transition_automatic", "false"),
 					resource.TestCheckResourceAttr(jiraResourceName, "jira_issue_transition_id", "3"),
 					resource.TestCheckResourceAttr(jiraResourceName, "commit_events", "false"),
 					resource.TestCheckResourceAttr(jiraResourceName, "merge_requests_events", "true"),
 					resource.TestCheckResourceAttr(jiraResourceName, "comment_on_event_enabled", "true"),
+					resource.TestCheckResourceAttr(jiraResourceName, "use_inherited_settings", "false"),
+					resource.TestCheckResourceAttr(jiraResourceName, "jira_issue_regex", "TEST-[0-9]+"),
+					resource.TestCheckResourceAttr(jiraResourceName, "issues_enabled", "true"),
 				),
 			},
 			// Verify Import
@@ -92,6 +102,7 @@ func TestAcc_GitlabIntegrationJira_basic(t *testing.T) {
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{
 					"password",
+					"jira_issue_transition_automatic",
 				},
 			},
 			// Update the jira service to get back to previous settings
@@ -105,6 +116,7 @@ func TestAcc_GitlabIntegrationJira_basic(t *testing.T) {
 				  commit_events = true
 				  merge_requests_events    = false
 				  comment_on_event_enabled = false
+				  jira_issue_transition_automatic = true
 				}
 				`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
@@ -116,6 +128,10 @@ func TestAcc_GitlabIntegrationJira_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(jiraResourceName, "commit_events", "true"),
 					resource.TestCheckResourceAttr(jiraResourceName, "merge_requests_events", "false"),
 					resource.TestCheckResourceAttr(jiraResourceName, "comment_on_event_enabled", "false"),
+					resource.TestCheckResourceAttr(jiraResourceName, "use_inherited_settings", "false"),
+					resource.TestCheckResourceAttr(jiraResourceName, "jira_issue_regex", ""),
+					resource.TestCheckResourceAttr(jiraResourceName, "issues_enabled", "false"),
+					resource.TestCheckResourceAttr(jiraResourceName, "jira_issue_transition_automatic", "true"),
 				),
 			},
 			// Verify Import
@@ -125,6 +141,7 @@ func TestAcc_GitlabIntegrationJira_basic(t *testing.T) {
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{
 					"password",
+					"jira_issue_transition_automatic",
 				},
 			},
 		},

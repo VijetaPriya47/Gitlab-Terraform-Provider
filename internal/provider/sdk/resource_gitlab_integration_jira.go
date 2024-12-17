@@ -62,6 +62,7 @@ func resourceGitlabIntegrationJiraSchema(description string) *schema.Resource {
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
+			// This value is always set to `true` when creating the service, even if `false` is passed into the API. Deleting the service sets it to `false`.
 			"active": {
 				Description: "Whether the integration is active.",
 				Type:        schema.TypeBool,
@@ -113,7 +114,7 @@ func resourceGitlabIntegrationJiraSchema(description string) *schema.Resource {
 				Optional:    true,
 			},
 			"jira_issue_transition_automatic": {
-				Description: "Enable automatic issue transitions. Takes precedence over jira_issue_transition_id if enabled. Defaults to false.",
+				Description: "Enable automatic issue transitions. Takes precedence over jira_issue_transition_id if enabled. Defaults to false. This value cannot be imported, and will not perform drift detection if changed outside Terraform.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 			},
@@ -185,6 +186,11 @@ func resourceGitlabIntegrationJiraCreate(ctx context.Context, d *schema.Resource
 	opts.CommentOnEventEnabled = gitlab.Ptr(d.Get("comment_on_event_enabled").(bool))
 	opts.APIURL = gitlab.Ptr(d.Get("api_url").(string))
 	opts.JiraIssueTransitionID = gitlab.Ptr(d.Get("jira_issue_transition_id").(string))
+	opts.JiraIssuePrefix = gitlab.Ptr(d.Get("jira_issue_prefix").(string))
+	opts.JiraIssueRegex = gitlab.Ptr(d.Get("jira_issue_regex").(string))
+	opts.JiraIssueTransitionAutomatic = gitlab.Ptr(d.Get("jira_issue_transition_automatic").(bool))
+	opts.IssuesEnabled = gitlab.Ptr(d.Get("issues_enabled").(bool))
+	opts.UseInheritedSettings = gitlab.Ptr(d.Get("use_inherited_settings").(bool))
 
 	tflog.Debug(ctx, "[DEBUG] Create Gitlab Jira integration")
 	if _, _, err := client.Services.SetJiraService(project, opts, gitlab.WithContext(ctx)); err != nil {
@@ -222,15 +228,17 @@ func resourceGitlabIntegrationJiraRead(ctx context.Context, d *schema.ResourceDa
 	d.Set("jira_auth_type", jiraService.Properties.JiraAuthType)
 	d.Set("jira_issue_prefix", jiraService.Properties.JiraIssuePrefix)
 	d.Set("jira_issue_regex", jiraService.Properties.JiraIssueRegex)
-	d.Set("jira_issue_transition_automatic", jiraService.Properties.JiraIssueTransitionAutomatic)
 	// Note for support - if someone is using provider version 16.0+, it's not compatible with GitLab 15.2-, because there
 	// was an issue with how the JIRA transition IDs were formatted in the API. Support for that was removed in 16.0.
 	d.Set("jira_issue_transition_id", jiraService.Properties.JiraIssueTransitionID)
+	// Note: jira_issue_transition_automtaic is not returned via API so we cannot read it for the state.
+	// d.Set("jira_issue_transition_automatic", jiraService.Properties.JiraIssueTransitionAutomatic)
 	d.Set("commit_events", jiraService.CommitEvents)
 	d.Set("merge_requests_events", jiraService.MergeRequestsEvents)
 	d.Set("comment_on_event_enabled", jiraService.CommentOnEventEnabled)
 	d.Set("issues_enabled", jiraService.Properties.IssuesEnabled)
-	d.Set("use_inherited_settings", jiraService.Properties.IssuesEnabled) // should probably to into jiraService directly
+	d.Set("use_inherited_settings", jiraService.Inherited)
+	d.Set("active", jiraService.Active)
 
 	// Match pre-existing behavior of a single key until we support the new multi-key approach.
 	// If we're running before 17.0, we have to use the deprecated ProjectKey (singular)
