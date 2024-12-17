@@ -6,7 +6,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
@@ -371,14 +371,14 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 					"allowed_to_merge": {
 						Description: "An array of access levels allowed to merge. Supports Developer (30) or Maintainer (40).",
 						Type:        schema.TypeList,
-						Elem:        schema.TypeInt,
+						Elem:        &schema.Schema{Type: schema.TypeInt},
 						Optional:    true,
 						Computed:    true,
 					},
 					"allowed_to_push": {
 						Description: "An array of access levels allowed to push. Supports Developer (30) or Maintainer (40).",
 						Type:        schema.TypeList,
-						Elem:        schema.TypeInt,
+						Elem:        &schema.Schema{Type: schema.TypeInt},
 						Optional:    true,
 						Computed:    true,
 					},
@@ -2837,7 +2837,34 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("default_branch_protection_defaults") {
-		options.DefaultBranchProtectionDefaults = gitlab.Ptr(d.Get("default_branch_protection_defaults").(gitlab.BranchProtectionDefaultsOptions))
+		// only one struct is allowed here, so retrieve the first one.
+		values := d.Get("default_branch_protection_defaults.0").(map[string]interface{})
+
+		// Read the allowed to push and convert to []*gitlab.GroupAccessLevel
+		allowedToPushList := values["allowed_to_push"].([]interface{})
+		allowedToPush := make([]*gitlab.GroupAccessLevel, len(allowedToPushList))
+		for k, v := range allowedToPushList {
+			allowedToPush[k] = &gitlab.GroupAccessLevel{
+				AccessLevel: gitlab.Ptr(gitlab.AccessLevelValue(v.(int))),
+			}
+		}
+
+		// Read the allowed to merge and convert to []*gitlab.GroupAccessLevel
+		allowedToMergeList := values["allowed_to_merge"].([]interface{})
+		allowedToMerge := make([]*gitlab.GroupAccessLevel, len(allowedToMergeList))
+		for k, v := range allowedToMergeList {
+			allowedToMerge[k] = &gitlab.GroupAccessLevel{
+				AccessLevel: gitlab.Ptr(gitlab.AccessLevelValue(v.(int))),
+			}
+		}
+
+		branchProtectionDefault := &gitlab.DefaultBranchProtectionDefaultsOptions{
+			DeveloperCanInitialPush: gitlab.Ptr(values["developer_can_initial_push"].(bool)),
+			AllowForcePush:          gitlab.Ptr(values["allow_force_push"].(bool)),
+			AllowedToPush:           &allowedToPush,
+			AllowedToMerge:          &allowedToMerge,
+		}
+		options.DefaultBranchProtectionDefaults = branchProtectionDefault
 	}
 
 	if d.HasChange("default_ci_config_path") {
