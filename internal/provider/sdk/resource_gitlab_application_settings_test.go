@@ -61,6 +61,31 @@ func TestAccGitlabApplicationSettings_basic(t *testing.T) {
 	})
 }
 
+func TestAccGitlabApplicationSettings_branchProtectionDefaults(t *testing.T) {
+
+	// lintignore:AT001
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		Steps: []resource.TestStep{
+			// Verify empty application settings
+			{
+				Config: `
+					resource "gitlab_application_settings" "application_settings" {
+						default_branch_name = "main"
+
+						default_branch_protection_defaults {
+							allow_force_push           = false
+							developer_can_initial_push = false
+							allowed_to_push            = []
+							allowed_to_merge           = [60]
+						}
+					}
+				`,
+			},
+		},
+	})
+}
+
 func TestAccGitlabApplicationSettings_testCanCreateGroup(t *testing.T) {
 
 	// lintignore:AT001
