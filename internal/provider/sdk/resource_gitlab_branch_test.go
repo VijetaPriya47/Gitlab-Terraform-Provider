@@ -55,7 +55,7 @@ func TestAccGitlabBranch_basic(t *testing.T) {
 				ResourceName:            "gitlab_branch.foo",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"ref"},
+				ImportStateVerifyIgnore: []string{"ref", "keep_on_destroy"},
 			},
 			// update properties in resource
 			{
@@ -75,6 +75,32 @@ func TestAccGitlabBranch_basic(t *testing.T) {
 					}),
 					testAccCheckGitlabBranchRef("foo", "main"),
 					testAccCheckGitlabBranchRef("foo2", fmt.Sprintf("testbranch-%d", rInt2)),
+				),
+			},
+		},
+	})
+}
+
+func TestAccGitlabBranch_keepOnDelete(t *testing.T) {
+	var branch gitlab.Branch
+	project := testutil.CreateProject(t)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabBranchDestroyBranchNotDeleted,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_branch" "keep" {
+						name = "keep"
+						ref = "main"
+						project = "%[1]d"
+						keep_on_destroy = true
+					}
+				`, project.ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabBranchExists("keep", &branch),
+					testAccCheckGitlabBranchKeepOnDestroy("keep", "true"),
 				),
 			},
 		},
@@ -103,6 +129,17 @@ func testAccCheckGitlabBranchRef(n, expectedRef string) resource.TestCheckFunc {
 	}
 }
 
+func testAccCheckGitlabBranchKeepOnDestroy(n, expectedKeep string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs := s.RootModule().Resources[fmt.Sprintf("gitlab_branch.%s", n)]
+		keep := rs.Primary.Attributes["keep_on_destroy"]
+		if keep != expectedKeep {
+			return fmt.Errorf("expected keep_on_destroy: %s got: %s", expectedKeep, keep)
+		}
+		return nil
+	}
+}
+
 func testAccCheckGitlabBranchDestroy(s *terraform.State) error {
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "gitlab_branch" {
@@ -118,6 +155,24 @@ func testAccCheckGitlabBranchDestroy(s *terraform.State) error {
 			return err
 		}
 		return errors.New("branch still exists")
+	}
+	return nil
+}
+
+func testAccCheckGitlabBranchDestroyBranchNotDeleted(s *terraform.State) error {
+	for _, rs := range s.RootModule().Resources {
+		if rs.Type != "gitlab_branch" {
+			continue
+		}
+		name := rs.Primary.Attributes["name"]
+		project := rs.Primary.Attributes["project"]
+		_, _, err := testutil.TestGitlabClient.Branches.GetBranch(project, name)
+		if err != nil {
+			if api.Is404(err) {
+				return errors.New("branch was deleted")
+			}
+			return err
+		}
 	}
 	return nil
 }
