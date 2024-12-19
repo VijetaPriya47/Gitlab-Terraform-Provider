@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
@@ -215,6 +215,7 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 		Description: "Allow only users with the Maintainer role to pass user-defined variables when triggering a pipeline.",
 		Type:        schema.TypeBool,
 		Optional:    true,
+		Computed:    true,
 	},
 	"ssh_url_to_repo": {
 		Description: "URL that can be provided to `git clone` to clone the",
