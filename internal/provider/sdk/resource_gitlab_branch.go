@@ -21,6 +21,7 @@ var _ = registerResource("gitlab_branch", func() *schema.Resource {
 
 		CreateContext: resourceGitlabBranchCreate,
 		ReadContext:   resourceGitlabBranchRead,
+		UpdateContext: resourceGitlabBranchUpdate,
 		DeleteContext: resourceGitlabBranchDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
@@ -43,6 +44,12 @@ var _ = registerResource("gitlab_branch", func() *schema.Resource {
 				Type:        schema.TypeString,
 				ForceNew:    true,
 				Required:    true,
+			},
+			"keep_on_destroy": {
+				Description: "Indicates whether the branch is kept once the resource destroyed (must be applied before a destroy).",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
 			},
 			"web_url": {
 				Description: "The url of the created branch (https).",
@@ -207,6 +214,12 @@ func resourceGitlabBranchRead(ctx context.Context, d *schema.ResourceData, meta 
 	return nil
 }
 
+func resourceGitlabBranchUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	// This function exists only to update the `keep_on_destroy` in state. No action is necessary, because all important attributes
+	// force re-creation of the resource.
+	return resourceGitlabBranchRead(ctx, d, meta)
+}
+
 func resourceGitlabBranchDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project, name, err := utils.ParseTwoPartID(d.Id())
@@ -214,6 +227,12 @@ func resourceGitlabBranchDelete(ctx context.Context, d *schema.ResourceData, met
 		return diag.FromErr(err)
 	}
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] delete gitlab branch %s", name))
+
+	if d.Get("keep_on_destroy").(bool) {
+		tflog.Info(ctx, fmt.Sprintf("[INFO] skipping deletion of branch %s, 'keep_on_destroy' enabled", name))
+		return nil
+	}
+
 	resp, err := client.Branches.DeleteBranch(project, name, gitlab.WithContext(ctx))
 	if err != nil {
 		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] failed to delete gitlab branch %s response %v", name, resp))
