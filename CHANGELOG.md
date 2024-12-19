@@ -1,3 +1,24 @@
+## 17.7.0 (2024-12-19)
+
+This release was tested against GitLab 17.7, 17.6, and 17.5 for both CE and EE
+
+### FEATURES (1 change)
+
+- resource/gitlab_instance_service_account:  [Allows managing instance-level service accounts](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/0da40eceb4272d3fb856139198da777d08960711) by @ipsavitsky234 ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2220)) 
+
+### IMPROVEMENTS (2 changes)
+
+- resource/gitlab_integration_jira:  [Align Jira integration resource with the API](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/e3b04f9babac66bc96244d32d79c304e639161cd) by @slaup1 ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2221)) 
+- resource/gitlab_project:  [Add support for 'prevent_merge_without_jira_issue'](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/6da24d2c30b017d00f766a6bdb9deb31877be242) by @slaup1 ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2223)) 
+- resource/gitlab_branch: [Add support for `keep_on_destroy`, which will preserve a branch when a `destroy` operation is performed](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/3fa3aae0ea19a71354bc7af13196bac4bd7fdd9a) by @jae-sorcero ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2192))
+
+### BUG FIXES (4 changes)
+
+- resource/gitlab_group_service_account_access_token:  [Fixed an issue where revoking a service account token required more permissions than the documentation suggested when using SaaS](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/b4814f9bec3cbe904cc747f98f1d4adcff3691d0) by @u120230 ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2240)) 
+- resource/gitlab_group:  [Fixed an issue where older versions of GitLab may fail due to missing `DefaultBranchProtectionDefaults`](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/c12242b1c7209cd00db546817a94c72e62ff4d6f) by @PatrickRice ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2228))
+- resource/gitlab_application_settings:  [Fixed an issue where `DefaultBranchProtectionDefaults` didn't apply properly](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/0f8c9e14e92adbee43087c483ccc6ecdfafcc35b) by @PatrickRice ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2229))
+- resource/gitlab_project: [Fixed an issue where `restrict_user_defined_variables` caused a perpetual plan when not included in the config](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/commit/9a371bb386650a1efd79c6b3d8d9073a9d55e81d) by @PatrickRice ([merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2243))
+
 ## 17.6.1 (2024-11-27)
 
 This release was tested against GitLab 17.6, 17.5, and 17.4 for both CE and EE
