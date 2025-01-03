@@ -199,6 +199,54 @@ func TestAccGitlabGroup_basic(t *testing.T) {
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"permanently_remove_on_delete"},
 			},
+			// Update the group to use new 'owner' value in `project_creation_level`
+			{
+				SkipFunc: api.IsGitLabVersionLessThan(context.Background(), testutil.TestGitlabClient, "17.7"),
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "bar-name-%d"
+				  path = "bar-path-%d"
+				  description = "Terraform acceptance tests! Updated description"
+				  lfs_enabled = false
+				  request_access_enabled = true
+				  project_creation_level = "owner"
+				  subgroup_creation_level = "maintainer"
+				  require_two_factor_authentication = true
+				  two_factor_grace_period = 56
+				  auto_devops_enabled = true
+				  emails_enabled = false
+				  mentions_disabled = true
+				  share_with_group_lock = true
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				  `, rInt, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabGroupExists("gitlab_group.foo", &group),
+					testAccCheckGitlabGroupAttributes(&group, &testAccGitlabGroupExpectedAttributes{
+						Name:                 fmt.Sprintf("bar-name-%d", rInt),
+						Path:                 fmt.Sprintf("bar-path-%d", rInt),
+						Description:          "Terraform acceptance tests! Updated description",
+						LFSEnabled:           gitlab.Ptr(false),
+						RequestAccessEnabled: gitlab.Ptr(true),
+						RequireTwoFactorAuth: gitlab.Ptr(true),
+						TwoFactorGracePeriod: gitlab.Ptr(56),
+						AutoDevopsEnabled:    gitlab.Ptr(true),
+						EmailsDisabled:       gitlab.Ptr(true),
+						ShareWithGroupLock:   gitlab.Ptr(true),
+						ProjectCreationLevel: gitlab.OwnerProjectCreation,
+					}),
+				),
+			},
+			// Verify Import
+			{
+				ResourceName:            "gitlab_group.foo",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"permanently_remove_on_delete"},
+			},
 			// Update the group to put the name and description back
 			{
 				Config: fmt.Sprintf(`
