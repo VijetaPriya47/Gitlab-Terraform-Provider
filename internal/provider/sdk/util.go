@@ -52,6 +52,7 @@ func stringToVisibilityLevel(s string) *gitlab.VisibilityValue {
 
 func stringToProjectCreationLevel(s string) *gitlab.ProjectCreationLevelValue {
 	lookup := map[string]gitlab.ProjectCreationLevelValue{
+		"owner":      gitlab.OwnerProjectCreation,
 		"noone":      gitlab.NoOneProjectCreation,
 		"maintainer": gitlab.MaintainerProjectCreation,
 		"developer":  gitlab.DeveloperProjectCreation,

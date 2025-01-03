@@ -21,8 +21,8 @@ var (
 	defaultBranchProtectionValues         = []int{0, 1, 2, 3, 4}
 	defaultBranchProtectionDefaultsValues = []string{api.AccessLevelValueToName[gitlab.DeveloperPermissions], api.AccessLevelValueToName[gitlab.MaintainerPermissions], api.AccessLevelValueToName[gitlab.NoPermissions]}
 	visibilityLevelValues                 = []string{"private", "internal", "public"}
-	projectCreationLevelValues            = []string{"noone", "maintainer", "developer"}
-	subGroupCreationLevelValues           = []string{"owner", "maintainer"}
+	projectCreationLevelValues            = []string{string(gitlab.NoOneProjectCreation), string(gitlab.OwnerProjectCreation), string(gitlab.MaintainerProjectCreation), string(gitlab.DeveloperProjectCreation)}
+	subGroupCreationLevelValues           = []string{string(gitlab.OwnerSubGroupCreationLevelValue), string(gitlab.MaintainerSubGroupCreationLevelValue)}
 	validSharedRunnersSettings            = []string{
 		"enabled",
 		"disabled_and_overridable",
