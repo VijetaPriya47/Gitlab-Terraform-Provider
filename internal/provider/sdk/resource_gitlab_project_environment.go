@@ -278,7 +278,7 @@ func resourceGitlabProjectEnvironmentStop(ctx context.Context, d *schema.Resourc
 
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Stopping environment %d for Project %s", environmentID, project))
 	if _, _, err = client.Environments.StopEnvironment(project, environmentID, nil, gitlab.WithContext(ctx)); err != nil {
-		return diag.Errorf("error while stopping gitlab environment %q for project %s: %v", environmentID, project, err)
+		return diag.Errorf("error while stopping gitlab environment %d for project %s: %v", environmentID, project, err)
 	}
 
 	// Wait for the environment to be stopped, before we destroy it
@@ -299,7 +299,7 @@ func resourceGitlabProjectEnvironmentStop(ctx context.Context, d *schema.Resourc
 		},
 	}
 	if _, err = stateConf.WaitForStateContext(ctx); err != nil {
-		return diag.Errorf("error waiting for gitlab project %s to stop in environment %q: %v", project, environmentID, err)
+		return diag.Errorf("error waiting for gitlab project %s to stop in environment %d: %v", project, environmentID, err)
 	}
 
 	return nil
