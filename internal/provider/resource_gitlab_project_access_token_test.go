@@ -12,8 +12,8 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
 
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
@@ -596,7 +596,7 @@ func testAccCheckGitlabProjectAccessTokenDestroy(s *terraform.State) error {
 		}
 
 		for _, token := range tokens {
-			if token.Name == name {
+			if token.Name == name && !token.Revoked {
 				return fmt.Errorf("project %q access token with name %q still exists", project, name)
 			}
 		}
