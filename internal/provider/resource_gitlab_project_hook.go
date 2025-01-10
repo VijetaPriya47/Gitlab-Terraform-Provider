@@ -40,11 +40,13 @@ func NewGitLabProjectHookResource() resource.Resource {
 type gitlabProjectHookResourceModel struct {
 	ID types.String `tfsdk:"id"`
 
-	Project   types.String `tfsdk:"project"`
-	ProjectID types.Int64  `tfsdk:"project_id"`
-	HookID    types.Int64  `tfsdk:"hook_id"`
-	URL       types.String `tfsdk:"url"`
-	Token     types.String `tfsdk:"token"`
+	Project     types.String `tfsdk:"project"`
+	ProjectID   types.Int64  `tfsdk:"project_id"`
+	HookID      types.Int64  `tfsdk:"hook_id"`
+	URL         types.String `tfsdk:"url"`
+	Token       types.String `tfsdk:"token"`
+	Name        types.String `tfsdk:"name"`
+	Description types.String `tfsdk:"description"`
 
 	PushEvents               types.Bool   `tfsdk:"push_events"`
 	PushEventsBranchFilter   types.String `tfsdk:"push_events_branch_filter"`
@@ -103,6 +105,8 @@ func (r *gitlabProjectHookResource) Create(ctx context.Context, req resource.Cre
 	}
 
 	options := &gitlab.AddProjectHookOptions{
+		Name:                     data.Name.ValueStringPointer(),
+		Description:              data.Description.ValueStringPointer(),
 		URL:                      data.URL.ValueStringPointer(),
 		PushEvents:               data.PushEvents.ValueBoolPointer(),
 		PushEventsBranchFilter:   data.PushEventsBranchFilter.ValueStringPointer(),
@@ -207,6 +211,8 @@ func (r *gitlabProjectHookResource) Update(ctx context.Context, req resource.Upd
 	}
 
 	options := &gitlab.EditProjectHookOptions{
+		Name:                     data.Name.ValueStringPointer(),
+		Description:              data.Description.ValueStringPointer(),
 		URL:                      data.URL.ValueStringPointer(),
 		PushEvents:               data.PushEvents.ValueBoolPointer(),
 		PushEventsBranchFilter:   data.PushEventsBranchFilter.ValueStringPointer(),
@@ -343,6 +349,16 @@ func (d *gitlabProjectHookResource) getSchema() schema.Schema {
 				Computed:            true,
 				Sensitive:           true,
 			},
+			"name": schema.StringAttribute{
+				MarkdownDescription: "Name of the project webhook.",
+				Optional:            true,
+				Computed:            true,
+			},
+			"description": schema.StringAttribute{
+				MarkdownDescription: "Description of the webhook.",
+				Optional:            true,
+				Computed:            true,
+			},
 			"push_events": schema.BoolAttribute{
 				Description: "Invoke the hook for push events.",
 				Optional:    true,
@@ -458,6 +474,8 @@ func (d *gitlabProjectHookResourceModel) modelToStateModel(a *gitlab.ProjectHook
 	d.URL = types.StringValue(a.URL)
 	d.ProjectID = types.Int64Value(int64(a.ProjectID))
 	d.HookID = types.Int64Value(int64(a.ID))
+	d.Name = types.StringValue(a.Name)
+	d.Description = types.StringValue(a.Description)
 
 	d.PushEvents = types.BoolValue(a.PushEvents)
 	d.PushEventsBranchFilter = types.StringValue(a.PushEventsBranchFilter)
