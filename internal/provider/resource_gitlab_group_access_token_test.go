@@ -13,7 +13,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
@@ -618,6 +618,50 @@ func TestAccGitlabGroupAccessToken_attributeValidation(t *testing.T) {
 	})
 }
 
+func TestAccGitlabGroupAccessToken_revokeAlreadyExpiredToken(t *testing.T) {
+	var gat testAccGitlabGroupAccessTokenWrapper
+	group := testutil.CreateGroups(t, 1)[0]
+	expiresAt := time.Now().AddDate(0, 1, 0)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabGroupAccessTokenDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group_access_token" "this" {
+				  name = "my group token"
+				  group = %d
+				  expires_at = "%s"
+				  access_level = "developer"
+				  scopes = ["read_repository" , "api", "write_repository", "read_api", "ai_features", "k8s_proxy", "read_observability", "write_observability"]
+				}
+				`, group.ID, expiresAt.Format(api.Iso8601)),
+				Check: testAccCheckGitlabGroupAccessTokenExists("gitlab_group_access_token.this", &gat),
+			},
+			{
+				PreConfig: func() {
+					// revoke the token using the API so it's already revoked before we run destroy
+					_, err := testutil.TestGitlabClient.GroupAccessTokens.RevokeGroupAccessToken(group.ID, gat.groupAccessToken.ID, nil)
+					if err != nil {
+						t.Fatalf("Failed to properly revoke the token before destroy. Error: %v", err)
+					}
+				},
+				Config: fmt.Sprintf(`
+				resource "gitlab_group_access_token" "this" {
+				  name = "my group token"
+				  group = %d
+				  expires_at = "%s"
+				  access_level = "developer"
+				  scopes = ["read_repository" , "api", "write_repository", "read_api", "ai_features", "k8s_proxy", "read_observability", "write_observability"]
+				}
+				`, group.ID, expiresAt.Format(api.Iso8601)),
+				Destroy: true,
+			},
+		},
+	})
+}
+
 func testAccCheckGitlabGroupAccessTokenExists(n string, gat *testAccGitlabGroupAccessTokenWrapper) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
@@ -727,7 +771,7 @@ func testAccCheckGitlabGroupAccessTokenDestroy(s *terraform.State) error {
 		}
 
 		for _, token := range tokens {
-			if token.Name == name {
+			if token.Name == name && !token.Revoked {
 				return fmt.Errorf("group %q access token with name %q still exists", group, name)
 			}
 		}

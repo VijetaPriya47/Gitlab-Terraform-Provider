@@ -48,6 +48,11 @@ test -f $done || {
     printf 'application_settings.save!;'
   ) | gitlab-rails console
 
+  echo 'Enabling `retain_resource_access_token_user_after_revoke` feature flag'
+  (
+    printf 'Feature.enable(:retain_resource_access_token_user_after_revoke);'
+  ) | gitlab-rails console
+
   touch $done
 }
 

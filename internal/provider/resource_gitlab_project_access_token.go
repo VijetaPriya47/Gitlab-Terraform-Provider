@@ -24,7 +24,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
@@ -546,13 +546,21 @@ func (r *gitlabProjectAccessTokenResource) Delete(ctx context.Context, req resou
 	// Deleting access token is async, so Log that we're waiting for it to delete
 	tflog.Info(ctx, "Waiting up to 5 minutes for async delete of project access token")
 	err = retry.RetryContext(ctx, 5*time.Minute, func() *retry.RetryError {
-		_, _, err := r.client.ProjectAccessTokens.GetProjectAccessToken(project, projectAccessTokenID, gitlab.WithContext(ctx))
+		token, _, err := r.client.ProjectAccessTokens.GetProjectAccessToken(project, projectAccessTokenID, gitlab.WithContext(ctx))
 		if err != nil {
 			if api.Is404(err) {
+				tflog.Info(ctx, "Token is fully deleted.")
 				return nil
 			}
 			return retry.NonRetryableError(err)
 		}
+
+		// Check if the token is revoked, and return nil because the token is "deleted" if it's been revoked.
+		if token != nil && token.Revoked {
+			tflog.Info(ctx, "Token is revoked. Treating as successfully deleted.")
+			return nil
+		}
+
 		return retry.RetryableError(errors.New("project access token was not deleted"))
 	})
 
