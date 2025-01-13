@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mitchellh/hashstructure/v2"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
 
@@ -52,6 +52,7 @@ var _ = registerDataSource("gitlab_project_issues", func() *schema.Resource {
 			"not_assignee_id": {
 				Description: "Return issues that do not match the assignee id.",
 				Type:        schema.TypeList,
+				MaxItems:    1,
 				Elem:        &schema.Schema{Type: schema.TypeInt},
 				Optional:    true,
 			},
@@ -72,6 +73,7 @@ var _ = registerDataSource("gitlab_project_issues", func() *schema.Resource {
 				Description: "Return issues that do not match the author id.",
 				Type:        schema.TypeList,
 				Elem:        &schema.Schema{Type: schema.TypeInt},
+				MaxItems:    1,
 				Optional:    true,
 			},
 			// NOTE: not yet supported in go-gitlab.
@@ -150,6 +152,7 @@ var _ = registerDataSource("gitlab_project_issues", func() *schema.Resource {
 				Description: "Return issues not reacted by the authenticated user by the given emoji.",
 				Type:        schema.TypeList,
 				Elem:        &schema.Schema{Type: schema.TypeString},
+				MaxItems:    1,
 				Optional:    true,
 			},
 			"order_by": {
@@ -263,15 +266,17 @@ func dataSourceGitlabProjectIssuesRead(ctx context.Context, d *schema.ResourceDa
 	}
 
 	if v, ok := d.GetOk("not_author_id"); ok {
-		options.NotAuthorID = intSetToIntSlice(v.(*schema.Set))
+		authors := *intSetToIntSlice(v.(*schema.Set))
+		options.NotAuthorID = &authors[0]
 	}
 
 	if v, ok := d.GetOk("assignee_id"); ok {
-		options.AssigneeID = gitlab.AssigneeID(v.(int))
+		options.AssigneeID = gitlab.Ptr(v.(int))
 	}
 
 	if v, ok := d.GetOk("not_assignee_id"); ok {
-		options.NotAssigneeID = intSetToIntSlice(v.(*schema.Set))
+		assignees := *intSetToIntSlice(v.(*schema.Set))
+		options.NotAssigneeID = &assignees[0]
 	}
 
 	if v, ok := d.GetOk("assignee_username"); ok {
@@ -283,7 +288,8 @@ func dataSourceGitlabProjectIssuesRead(ctx context.Context, d *schema.ResourceDa
 	}
 
 	if v, ok := d.GetOk("not_my_reaction_emoji"); ok {
-		options.NotMyReactionEmoji = stringSetToStringSlice(v.(*schema.Set))
+		emojis := *stringSetToStringSlice(v.(*schema.Set))
+		options.NotMyReactionEmoji = &emojis[0]
 	}
 
 	if v, ok := d.GetOk("order_by"); ok {
