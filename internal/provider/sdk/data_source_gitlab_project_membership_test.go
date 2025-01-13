@@ -53,6 +53,30 @@ func TestAccDataSourceGitlabProjectMembership_pagination(t *testing.T) {
 	})
 }
 
+func TestAccDataSourceGitlabProjectMembership_ByUserID(t *testing.T) {
+	userCount := 5
+
+	project := testutil.CreateProject(t)
+	users := testutil.CreateUsers(t, userCount)
+	testutil.AddProjectMembers(t, project.ID, users)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+					data "gitlab_project_membership" "test" {
+						project_id = "%d"
+					    user_ids   = [%d, %d]
+					}
+				`, project.ID, users[1].ID, users[3].ID),
+				// one more for the user owning the token, which is always added to the project.
+				Check: resource.TestCheckResourceAttr("data.gitlab_project_membership.test", "members.#", fmt.Sprintf("%d", 2)),
+			},
+		},
+	})
+}
+
 func testAccDataSourceGitlabProjectMembership(projectID int) string {
 	return fmt.Sprintf(`
 data "gitlab_project_membership" "foo" {
