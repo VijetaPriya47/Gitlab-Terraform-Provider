@@ -41,6 +41,14 @@ var _ = registerDataSource("gitlab_project_membership", func() *schema.Resource 
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
+			"user_ids": {
+				Description: "List of user ids to filter members by",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Elem: &schema.Schema{
+					Type: schema.TypeInt,
+				},
+			},
 			"inherited": {
 				Description: "Return all project members including members through ancestor groups",
 				Type:        schema.TypeBool,
@@ -137,6 +145,10 @@ func dataSourceGitlabProjectMembershipRead(ctx context.Context, d *schema.Resour
 			PerPage: 20,
 			Page:    1,
 		},
+	}
+
+	if v, ok := d.GetOk("user_ids"); ok {
+		listOptions.UserIDs = intSetToIntSlice(v.(*schema.Set))
 	}
 
 	listMembers := client.ProjectMembers.ListProjectMembers
