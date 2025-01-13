@@ -74,6 +74,39 @@ func TestAccGitlabProjectHook_basic(t *testing.T) {
 					}),
 				),
 			},
+			// Verify import
+			{
+				ResourceName:            "gitlab_project_hook.foo",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"token"},
+			},
+			// Update the project hook to set Name and Description
+			{
+				Config: fmt.Sprintf(`resource "gitlab_project_hook" "foo" {
+					project = "%d"
+					url = "https://example.com/hook-%d"
+					name = "Test"
+					description = "Testing"
+					}`, project.ID, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabProjectHookExists("gitlab_project_hook.foo", &hook),
+					testAccCheckGitlabProjectHookAttributes(&hook, &testAccGitlabProjectHookExpectedAttributes{
+						URL:                   fmt.Sprintf("https://example.com/hook-%d", rInt),
+						Name:                  "Test",
+						Description:           "Testing",
+						PushEvents:            true,
+						EnableSSLVerification: true,
+					}),
+				),
+			},
+			// Verify import
+			{
+				ResourceName:            "gitlab_project_hook.foo",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"token"},
+			},
 			// Update the project hook to toggle all the values to their inverse
 			{
 				Config: fmt.Sprintf(`
@@ -100,6 +133,8 @@ func TestAccGitlabProjectHook_basic(t *testing.T) {
 					testAccCheckGitlabProjectHookExists("gitlab_project_hook.foo", &hook),
 					testAccCheckGitlabProjectHookAttributes(&hook, &testAccGitlabProjectHookExpectedAttributes{
 						URL:                      fmt.Sprintf("https://example.com/hook-%d", rInt),
+						Name:                     "",
+						Description:              "",
 						PushEvents:               true,
 						PushEventsBranchFilter:   "devel",
 						IssuesEvents:             false,
@@ -116,6 +151,13 @@ func TestAccGitlabProjectHook_basic(t *testing.T) {
 						EnableSSLVerification:    false,
 					}),
 				),
+			},
+			// Verify import
+			{
+				ResourceName:            "gitlab_project_hook.foo",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"token"},
 			},
 			// Update the project hook to toggle the options back
 			{
@@ -338,6 +380,13 @@ func TestAccGitlabProjectHook_updateProject(t *testing.T) {
 					),
 				),
 			},
+			// Verify import
+			{
+				ResourceName:            "gitlab_project_hook.foo",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"token"},
+			},
 		},
 	})
 }
@@ -449,6 +498,8 @@ func TestResourceGitlabProjectHook_StateUpgradeV0(t *testing.T) {
 
 type testAccGitlabProjectHookExpectedAttributes struct {
 	URL                      string
+	Name                     string
+	Description              string
 	PushEvents               bool
 	PushEventsBranchFilter   string
 	IssuesEvents             bool
@@ -470,6 +521,14 @@ func testAccCheckGitlabProjectHookAttributes(hook *gitlab.ProjectHook, want *tes
 	return func(s *terraform.State) error {
 		if hook.URL != want.URL {
 			return fmt.Errorf("got url %q; want %q", hook.URL, want.URL)
+		}
+
+		if hook.Name != want.Name {
+			return fmt.Errorf("got name %q; want %q", hook.Name, want.Name)
+		}
+
+		if hook.Description != want.Description {
+			return fmt.Errorf("got description %q; want %q", hook.Description, want.Description)
 		}
 
 		if hook.EnableSSLVerification != want.EnableSSLVerification {
