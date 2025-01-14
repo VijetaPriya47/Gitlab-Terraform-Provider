@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -89,6 +90,7 @@ func (r *gitlabValueStreamAnalyticsResource) Schema(ctx context.Context, req res
 				MarkdownDescription: "The name of the value stream",
 				Required:            true,
 				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+				PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 			},
 			"group_full_path": schema.StringAttribute{
 				MarkdownDescription: "Full path of the group the value stream is created in. **One of `group_full_path` OR `project_full_path` is required.**",
@@ -119,41 +121,48 @@ func (r *gitlabValueStreamAnalyticsResource) Schema(ctx context.Context, req res
 							MarkdownDescription: "The name of the value stream stage.",
 							Required:            true,
 							Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+							PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 						},
 						"custom": schema.BoolAttribute{
 							MarkdownDescription: "Boolean whether the stage is customized. If false, it assigns a built-in default stage by name.",
 							Optional:            true,
 							Validators:          []validator.Bool{boolvalidator.All()},
+							PlanModifiers:       []planmodifier.Bool{boolplanmodifier.RequiresReplace()},
 						},
 						"hidden": schema.BoolAttribute{
 							MarkdownDescription: "Boolean whether the stage is hidden, GitLab provided default stages are hidden by default.",
 							Optional:            true,
 							Validators:          []validator.Bool{boolvalidator.All()},
+							PlanModifiers:       []planmodifier.Bool{boolplanmodifier.RequiresReplace()},
 						},
 						"end_event_identifier": schema.StringAttribute{
 							MarkdownDescription: fmt.Sprintf(`End event identifier. Valid values are: %s`, utils.RenderValueListForDocs(allowedEventLabels)),
 
-							Optional:   true,
-							Computed:   true,
-							Validators: []validator.String{stringvalidator.OneOf(allowedEventLabels...)},
+							Optional:      true,
+							Computed:      true,
+							Validators:    []validator.String{stringvalidator.OneOf(allowedEventLabels...)},
+							PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
 						},
 						"end_event_label_id": schema.StringAttribute{
 							MarkdownDescription: "Label ID associated with the end event identifier. In the format of `gid://gitlab/GroupLabel/<id>` or `gid://gitlab/ProjectLabel/<id>`",
 							Optional:            true,
 							Computed:            true,
 							Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+							PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 						},
 						"start_event_identifier": schema.StringAttribute{
 							MarkdownDescription: fmt.Sprintf(`Start event identifier. Valid values are: %s`, utils.RenderValueListForDocs(allowedEventLabels)),
 							Optional:            true,
 							Computed:            true,
 							Validators:          []validator.String{stringvalidator.OneOf(allowedEventLabels...)},
+							PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 						},
 						"start_event_label_id": schema.StringAttribute{
 							MarkdownDescription: "Label ID associated with the start event identifier. In the format of `gid://gitlab/GroupLabel/<id>` or `gid://gitlab/ProjectLabel/<id>`",
 							Optional:            true,
 							Computed:            true,
 							Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+							PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 						},
 					},
 				},
@@ -443,105 +452,7 @@ func (r *gitlabValueStreamAnalyticsResource) Create(ctx context.Context, req res
 }
 
 func (r *gitlabValueStreamAnalyticsResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var data *gitlabValueStreamAnalyticsResourceModel
-
-	// Read Terraform plan data into the model
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
-
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	_, _, id, err := utils.ParseThreePartID(data.Id.ValueString())
-	if err != nil {
-		resp.Diagnostics.AddError("Value Stream Analytics", "Errors found while parsing three part id")
-		return
-	}
-	name := data.Name.ValueString()
-	stages := stagesStringBuilder(data.Stages)
-
-	var fullPath string
-	var fullPathIsGroupPath bool
-	if !data.GroupFullPath.IsNull() && data.GroupFullPath.ValueString() != "" {
-		fullPath = data.GroupFullPath.ValueString()
-		fullPathIsGroupPath = true
-	} else {
-		fullPath = data.ProjectFullPath.ValueString()
-		fullPathIsGroupPath = false
-	}
-
-	query := api.GraphQLQuery{
-		Query: fmt.Sprintf(`
-			mutation {
-				valueStreamUpdate(
-					input:{
-						id:"%s"
-						stages:[%s]
-						name:"%s"
-					}
-				)
-			{
-				valueStream {
-					id
-					name
-					namespace {
-						fullPath
-					}
-					stages{
-						id
-						name
-						custom
-						hidden
-						startEventIdentifier
-						startEventLabel {
-							id
-						}
-						endEventIdentifier
-						endEventLabel {
-							id
-						}
-					}
-				}
-				errors
-			}
-			}`, id, stages, name),
-	}
-	tflog.Debug(ctx, "executing GraphQL Query to update value stream analytics", map[string]interface{}{
-		"query": query.Query,
-	})
-
-	var response updateValueStreamResponse
-	if _, err := api.SendGraphQLRequest(ctx, r.client, query, &response); err != nil {
-		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to update value stream analytics: %s", err.Error()))
-		return
-	}
-
-	// check response for errors
-	var allerr string
-	if len(response.Errors) > 0 {
-		for i, err := range response.Errors {
-			allerr += fmt.Sprintf("Error %d Message: %s\n", i, err.Message)
-		}
-	}
-	if len(response.Data.ValueStreamUpdate.Errors) > 0 {
-		for i, err := range response.Data.ValueStreamUpdate.Errors {
-			allerr += fmt.Sprintf("Error %d Message: %s\n", i, err)
-		}
-	}
-	if len(allerr) > 0 {
-		resp.Diagnostics.AddError("GitLab GraphQL error occurred", allerr)
-		return
-	}
-	// persist API response in state model
-	r.valueStreamToStateModel(&response.Data.ValueStreamUpdate.ValueStream, data, fullPathIsGroupPath)
-
-	// Log the creation of the resource
-	tflog.Debug(ctx, "updated a value stream analytics", map[string]interface{}{
-		"id": data.Id.ValueString(), "fullPath": fullPath,
-	})
-
-	// Save updated data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	resp.Diagnostics.AddError("Provider Error, report upstream", "Somehow the resource was requested to perform an in-place upgrade which is not possible.")
 }
 
 func (r *gitlabValueStreamAnalyticsResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -554,6 +465,11 @@ func (r *gitlabValueStreamAnalyticsResource) Delete(ctx context.Context, req res
 		return
 	}
 
+	_, _, id, err := utils.ParseThreePartID(data.Id.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError("Error occured while parsing ID", fmt.Sprintf("Unable to parse ID: %s", err.Error()))
+	}
+
 	query := api.GraphQLQuery{
 		Query: fmt.Sprintf(`
 			mutation {
@@ -562,9 +478,10 @@ func (r *gitlabValueStreamAnalyticsResource) Delete(ctx context.Context, req res
 						id: "%s"
 					}
 				)
-				errors
+				{
+					errors
 				}
-			}`, data.Id),
+			}`, id),
 	}
 
 	tflog.Debug(ctx, "executing GraphQL Query to update value stream analytics", map[string]interface{}{
@@ -665,23 +582,6 @@ type createValueStreamResponse struct {
 			ValueStream valueStream `json:"valueStream"`
 			Errors      []string    `json:"errors"`
 		} `json:"valueStreamCreate"`
-	} `json:"data"`
-	Errors []struct {
-		Message   string `json:"message"`
-		Locations []struct {
-			Line   int `json:"line"`
-			Column int `json:"column"`
-		} `json:"locations"`
-		Path []string `json:"path"`
-	} `json:"errors"`
-}
-
-type updateValueStreamResponse struct {
-	Data struct {
-		ValueStreamUpdate struct {
-			ValueStream valueStream `json:"valueStream"`
-			Errors      []string    `json:"errors"`
-		} `json:"valueStreamUpdate"`
 	} `json:"data"`
 	Errors []struct {
 		Message   string `json:"message"`
