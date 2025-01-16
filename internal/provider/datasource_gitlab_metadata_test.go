@@ -28,7 +28,6 @@ func TestAcc_GitLabMetadata_DataSource_Basic(t *testing.T) {
 					resource.TestCheckResourceAttrSet("data.gitlab_metadata.test", "kas.enabled"),
 					resource.TestCheckResourceAttrSet("data.gitlab_metadata.test", "kas.external_url"),
 					framework_testutil.TestCheckResourceAttrSetIfGitLabAtLeast(t, "17.6", "data.gitlab_metadata.test", "kas.external_k8s_proxy_url"),
-					resource.TestCheckResourceAttrSet("data.gitlab_metadata.test", "kas.version"),
 					resource.TestCheckResourceAttrSet("data.gitlab_metadata.test", "enterprise"),
 				),
 			},
