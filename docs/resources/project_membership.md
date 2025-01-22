@@ -45,6 +45,7 @@ resource "gitlab_project_membership" "example" {
 ### Optional
 
 - `expires_at` (String) Expiration date for the project membership. Format: `YYYY-MM-DD`
+- `member_role_id` (Number) The ID of a custom member role. Only available for Ultimate instances.
 
 ### Read-Only
 
