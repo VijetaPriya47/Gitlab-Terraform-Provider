@@ -62,6 +62,11 @@ func gitlabProjectMembershipSchemaV1() map[string]*schema.Schema {
 			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(api.ValidProjectAccessLevelNames, false)),
 			Required:         true,
 		},
+		"member_role_id": {
+			Description: "The ID of a custom member role. Only available for Ultimate instances.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+		},
 		"expires_at": {
 			Description:  "Expiration date for the project membership. Format: `YYYY-MM-DD`",
 			Type:         schema.TypeString,
@@ -129,6 +134,11 @@ func resourceGitlabProjectMembershipCreate(ctx context.Context, d *schema.Resour
 		AccessLevel: &accessLevelId,
 		ExpiresAt:   &expiresAt,
 	}
+
+	if v, ok := d.GetOk("member_role_id"); v != nil && ok {
+		options.MemberRoleID = gitlab.Ptr(v.(int))
+	}
+
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab project membership for %d in %s", options.UserID, project))
 
 	_, _, err := client.ProjectMembers.AddProjectMember(project, options, gitlab.WithContext(ctx))
@@ -188,6 +198,11 @@ func resourceGitlabProjectMembershipUpdate(ctx context.Context, d *schema.Resour
 		AccessLevel: &accessLevelId,
 		ExpiresAt:   &expiresAt,
 	}
+
+	if v, ok := d.GetOk("member_role_id"); v != nil && ok {
+		options.MemberRoleID = gitlab.Ptr(v.(int))
+	}
+
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab project membership %v for %s", userId, project))
 
 	_, _, err := client.ProjectMembers.EditProjectMember(project, userId, &options, gitlab.WithContext(ctx))
@@ -221,6 +236,14 @@ func resourceGitlabProjectMembershipSetToState(d *schema.ResourceData, projectMe
 	d.Set("project", projectId)
 	d.Set("user_id", projectMember.ID)
 	d.Set("access_level", api.AccessLevelValueToName[projectMember.AccessLevel])
+
+	// If a custom member role is returned, save it to state
+	if projectMember.MemberRole != nil {
+		d.Set("member_role_id", projectMember.MemberRole.ID)
+	} else {
+		d.Set("member_role_id", nil)
+	}
+
 	if projectMember.ExpiresAt != nil {
 		d.Set("expires_at", projectMember.ExpiresAt.String())
 	} else {
