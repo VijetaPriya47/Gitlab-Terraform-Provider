@@ -1,5 +1,3 @@
-version: "3"
-
 # Acceptance tests depend on a running GitLab instance.
 # Only one of these services should be run at a time.
 services:

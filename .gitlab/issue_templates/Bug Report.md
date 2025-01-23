@@ -12,7 +12,7 @@ The more detailed and clear it is, the better we can help.
 
 ## Relevant Terraform Configuration
 
-<!-- 🚧 Please provide the relevent Terraform configuration below.
+<!-- 🚧 Please provide the relevant Terraform configuration below.
 
 Try to keep it as minimal and reproducible as possible.
 
@@ -26,7 +26,7 @@ Try to keep it as minimal and reproducible as possible.
 
 <!-- 🚧 Please provide the exact Terraform command that's causing the issue. -->
 
-```
+```sh
 terraform ...
 ```
 
@@ -35,9 +35,9 @@ terraform ...
  <!-- 🚧 Please provide the relevant log output below.
  
  If by any means possible, please provide the Terraform debug logs in JSON format.
- A log file can be produce by running Terraform like this:
+ A log file can be produced by running Terraform like this:
 
- ```
+ ```sh
 TF_LOG_PATH=$(pwd)/log.jsonl TF_LOG=JSON terraform ...
  ```
 
@@ -64,5 +64,5 @@ TF_LOG_PATH=$(pwd)/log.jsonl TF_LOG=JSON terraform ...
 <!-- 🚧 Please fill in the used versions below between the backticks. -->
 
 - GitLab Terraform Provider Version: ``
-- GitLab Version: ``
+- GitLab Instance Version: ``
 - Terraform Version: ``

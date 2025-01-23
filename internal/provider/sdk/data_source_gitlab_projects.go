@@ -233,9 +233,9 @@ var _ = registerDataSource("gitlab_projects", func() *schema.Resource {
 	return &schema.Resource{
 		Description: `The ` + "`gitlab_projects`" + ` data source allows details of multiple projects to be retrieved. Optionally filtered by the set attributes.
 
--> This data source supports all available filters exposed by the xanzy/go-gitlab package, which might not expose all available filters exposed by the Gitlab APIs.
+-> This data source supports all available filters exposed by the [client-go](https://gitlab.com/gitlab-org/api/client-go) package, which might not expose all available filters exposed by the GitLab APIs.
 
--> The [owner sub-attributes](#nestedobjatt--projects--owner) are only populated if the Gitlab token used has an administrator scope.
+-> The [owner sub-attributes](#nestedobjatt--projects--owner) are only populated if the GitLab token used has an administrator scope.
 
 **Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/projects.html#list-all-projects)`,
 
