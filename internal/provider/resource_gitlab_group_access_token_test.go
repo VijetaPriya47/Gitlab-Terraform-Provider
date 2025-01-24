@@ -154,13 +154,6 @@ func TestAccGitlabGroupAccessToken_basic(t *testing.T) {
 				  access_level = "maintainer"
 				  scopes = ["api"]
 				}
-
-				resource "gitlab_group_variable" "var" {
-				  group   = %[1]d
-				  key     = "my_grp_access_token"
-				  value   = gitlab_group_access_token.this.token
-				}
-
 				`, testGroup.ID, updatedExpiresAt.Format(api.Iso8601)),
 				// We aren't going to explicitly check the `gitlab_group_variable` because it's not part of our
 				// test other than it existing and the fact that TF doesn't error means it was created properly.

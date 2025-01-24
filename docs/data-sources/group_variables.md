@@ -40,7 +40,7 @@ data "gitlab_group_variables" "staging_vars" {
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `id` (String) The ID of this Terraform resource. In the format of `<group>:<service_account_id>`.
 - `variables` (List of Object) The list of variables returned by the search (see [below for nested schema](#nestedatt--variables))
 
 <a id="nestedatt--variables"></a>
