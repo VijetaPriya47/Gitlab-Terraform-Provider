@@ -1,8 +1,9 @@
 package utils
 
 import (
-	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"regexp"
+
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // HttpUrlValidator validates that URL starts with http or https schema

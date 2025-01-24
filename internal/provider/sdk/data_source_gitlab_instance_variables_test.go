@@ -5,10 +5,13 @@ package sdk
 
 import (
 	"fmt"
+	"maps"
+	"slices"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"gitlab.com/gitlab-org/api/client-go"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
@@ -36,4 +39,8 @@ func TestAccDataSourceGitlabInstanceVariables_basic(t *testing.T) {
 			},
 		},
 	})
+}
+
+func attributeNamesFromSchema(schema map[string]*schema.Schema) []string {
+	return slices.Collect(maps.Keys(schema))
 }

@@ -1,7 +1,7 @@
 //go:build acceptance
 // +build acceptance
 
-package sdk
+package provider
 
 import (
 	"context"
@@ -9,11 +9,13 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
+	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
+
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
+	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
@@ -23,8 +25,13 @@ func TestAccGitlabGroupVariable_basic(t *testing.T) {
 	rString := acctest.RandString(5)
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
-		CheckDestroy:             testAccCheckGitlabGroupVariableDestroy,
+		CheckDestroy: testAccCheckGitlabGroupVariableDestroy,
+		ExternalProviders: map[string]resource.ExternalProvider{
+			"gitlab": {
+				VersionConstraint: "~> 16.10",
+				Source:            "gitlabhq/gitlab",
+			},
+		},
 		Steps: []resource.TestStep{
 			// Create a group and variable with default options
 			{
@@ -53,7 +60,7 @@ func TestAccGitlabGroupVariable_basic(t *testing.T) {
 					}),
 				),
 			},
-			// Update the group variable to toggle the options back
+			// // Update the group variable to toggle the options back
 			{
 				Config: testAccGitlabGroupVariableConfig(rString),
 				Check: resource.ComposeTestCheckFunc(
@@ -119,8 +126,13 @@ func TestAccGitlabGroupVariable_sameVariableDifferentEnvironments(t *testing.T) 
 	group := testutil.CreateGroups(t, 1)[0]
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
-		CheckDestroy:             testAccCheckGitlabGroupVariableDestroy,
+		ExternalProviders: map[string]resource.ExternalProvider{
+			"gitlab": {
+				VersionConstraint: "~> 16.10",
+				Source:            "gitlabhq/gitlab",
+			},
+		},
+		CheckDestroy: testAccCheckGitlabGroupVariableDestroy,
 		Steps: []resource.TestStep{
 			// Create a group with 2 variables with different env scopes but the same name
 			{
@@ -203,8 +215,13 @@ func TestAccGitlabGroupVariable_scope(t *testing.T) {
 	defaultValueA := fmt.Sprintf("value-%s-a", rString)
 	defaultValueB := fmt.Sprintf("value-%s-b", rString)
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
-		CheckDestroy:             testAccCheckGitlabGroupVariableDestroy,
+		ExternalProviders: map[string]resource.ExternalProvider{
+			"gitlab": {
+				VersionConstraint: "~> 16.10",
+				Source:            "gitlabhq/gitlab",
+			},
+		},
+		CheckDestroy: testAccCheckGitlabGroupVariableDestroy,
 		Steps: []resource.TestStep{
 			// Create a group and variables with same keys, different scopes
 			{
@@ -287,7 +304,6 @@ func TestAccGitlabGroupVariable_scope(t *testing.T) {
 		},
 	})
 }
-
 func testAccCheckGitlabGroupVariableExists(n string, groupVariable *gitlab.GroupVariable) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
@@ -303,7 +319,7 @@ func testAccCheckGitlabGroupVariableExists(n string, groupVariable *gitlab.Group
 		if key == "" {
 			return fmt.Errorf("No variable key is set")
 		}
-		gotVariable, _, err := testutil.TestGitlabClient.GroupVariables.GetVariable(repoName, key, nil, withEnvironmentScopeFilter(context.Background(), rs.Primary.Attributes["environment_scope"]))
+		gotVariable, _, err := testutil.TestGitlabClient.GroupVariables.GetVariable(repoName, key, nil, utils.WithEnvironmentScopeFilter(context.Background(), rs.Primary.Attributes["environment_scope"]))
 		if err != nil {
 			return err
 		}
