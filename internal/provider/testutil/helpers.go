@@ -1212,6 +1212,37 @@ func CreateGroupServiceAccountsWithPrefix(t *testing.T, n int, groupID, prefix s
 	return serviceAccounts
 }
 
+func CreateInstanceServiceAccounts(t *testing.T, n int) []*gitlab.User {
+	return CreateInstanceServiceAccountsWithPrefix(t, n, "acctest-service-account")
+}
+
+func CreateInstanceServiceAccountsWithPrefix(t *testing.T, n int, prefix string) []*gitlab.User {
+	t.Helper()
+
+	serviceAccounts := make([]*gitlab.User, n)
+
+	for i := range serviceAccounts {
+		var err error
+		name := acctest.RandomWithPrefix(prefix)
+		username := acctest.RandomWithPrefix(prefix)
+		serviceAccounts[i], _, err = TestGitlabClient.Users.CreateServiceAccountUser(&gitlab.CreateServiceAccountUserOptions{
+			Name:     gitlab.Ptr(name),
+			Username: gitlab.Ptr(username),
+		})
+		if err != nil {
+			t.Fatalf("could not create test service account (username=%q): %v", username, err)
+		}
+
+		serviceAccountID := serviceAccounts[i].ID // Needed for closure.
+		t.Cleanup(func() {
+			if _, err := TestGitlabClient.Users.DeleteUser(serviceAccountID); err != nil {
+				t.Fatalf("could not cleanup test service account: %v", err)
+			}
+		})
+	}
+	return serviceAccounts
+}
+
 // CreateRunnerWithOptions is a test helper for creating a Runner given some options
 func CreateRunnerWithOptions(t *testing.T, opts *gitlab.CreateUserRunnerOptions) *gitlab.UserRunner {
 	t.Helper()
