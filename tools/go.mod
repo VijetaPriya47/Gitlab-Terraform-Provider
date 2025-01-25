@@ -1,6 +1,6 @@
 module gitlab.com/gitlab-org/terraform-provider-gitlab/tools
 
-go 1.23.4
+go 1.23.5
 
 require (
 	github.com/bflad/tfproviderlint v0.30.0

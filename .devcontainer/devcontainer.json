@@ -1,0 +1,28 @@
+// The Dev Container format allows you to configure your environment. At the heart of it
+// is a Docker image or Dockerfile which controls the tools available in your environment.
+//
+// See https://aka.ms/devcontainer.json for more information.
+{
+	"name": "devcontainer-client-go",
+	"image": "mcr.microsoft.com/vscode/devcontainers/base:ubuntu",
+
+	// Features add additional features to your environment. See https://containers.dev/features
+	"features": {
+        "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+		"ghcr.io/devcontainers/features/go:1": {
+			"version": "1.23.5"
+		}
+	},
+	// Extensions for VSCode
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"golang.Go",
+				"ms-vscode-remote.remote-containers",
+				"GitLab.gitlab-workflow",
+				"mhutchie.git-graph",
+				"hashicorp.terraform"
+			]
+		}
+	}
+}
