@@ -9,6 +9,9 @@
 	// Features add additional features to your environment. See https://containers.dev/features
 	"features": {
         "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+		"ghcr.io/devcontainers/features/terraform:1": {
+			"version": "1.4.0"
+		},
 		"ghcr.io/devcontainers/features/go:1": {
 			"version": "1.23.5"
 		}
@@ -17,11 +20,11 @@
 	"customizations": {
 		"vscode": {
 			"extensions": [
-				"golang.Go",
-				"ms-vscode-remote.remote-containers",
-				"GitLab.gitlab-workflow",
-				"mhutchie.git-graph",
-				"hashicorp.terraform"
+				"golang.Go", // for go dev
+				"ms-vscode-remote.remote-containers", // devcontainer support
+				"GitLab.gitlab-workflow", // gitlab extension
+				"hashicorp.terraform", // terraform extension
+				"mhutchie.git-graph" // visual git graph for thos who want it
 			]
 		}
 	}
