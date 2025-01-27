@@ -20,18 +20,61 @@ import (
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
+// Validates that the migration from the SDK to the Framework works appropriately, and
+// resources created using the SDK resource transition to the Framework properly.
+func TestAccGitlabGroupVariable_migrateFromSDKToFramework(t *testing.T) {
+	// Set up the group for testing variables
+	group := testutil.CreateGroups(t, 1)[0]
+
+	// Create common config for testing
+	randomString := acctest.RandString(5)
+	config := fmt.Sprintf(`resource "gitlab_group_variable" "foo" {
+		group = %d
+		key = "key_%s"
+		value = "value-%s"
+		variable_type = "file"
+		masked = false
+		description = "description-%s"
+	}`, group.ID, randomString, randomString, randomString)
+
+	resource.ParallelTest(t, resource.TestCase{
+		CheckDestroy: testAccCheckGitlabPersonalAccessTokenDestroy,
+		Steps: []resource.TestStep{
+			// Create the pipeline in the old provider version
+			{
+				ExternalProviders: map[string]resource.ExternalProvider{
+					"gitlab": {
+						VersionConstraint: "~> 16.10",
+						Source:            "gitlabhq/gitlab",
+					},
+				},
+				Config: config,
+				Check:  resource.TestCheckResourceAttrSet("gitlab_group_variable.foo", "id"),
+			},
+			// Create the config in the new provider version to ensure migration works
+			{
+				ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+				Config:                   config,
+				Check:                    resource.TestCheckResourceAttrSet("gitlab_group_variable.foo", "id"),
+			},
+			// Verify upstream attributes with an import
+			{
+				ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+				ResourceName:             "gitlab_group_variable.foo",
+				ImportState:              true,
+				ImportStateVerify:        true,
+			},
+		},
+	})
+}
+
 func TestAccGitlabGroupVariable_basic(t *testing.T) {
 	var groupVariable gitlab.GroupVariable
 	rString := acctest.RandString(5)
 
 	resource.ParallelTest(t, resource.TestCase{
-		CheckDestroy: testAccCheckGitlabGroupVariableDestroy,
-		ExternalProviders: map[string]resource.ExternalProvider{
-			"gitlab": {
-				VersionConstraint: "~> 16.10",
-				Source:            "gitlabhq/gitlab",
-			},
-		},
+		CheckDestroy:             testAccCheckGitlabGroupVariableDestroy,
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		Steps: []resource.TestStep{
 			// Create a group and variable with default options
 			{
@@ -87,7 +130,7 @@ func TestAccGitlabGroupVariable_basic(t *testing.T) {
 					}),
 				),
 				ExpectError: regexp.MustCompile(regexp.QuoteMeta(
-					"Invalid value for a masked variable. Check the masked variable requirements: https://docs.gitlab.com/ee/ci/variables/#masked-variable-requirements",
+					"Invalid value for a masked variable. Check the masked variable requirements: https://docs.gitlab.com/ee/ci/variables/#mask-a-cicd-variable",
 				)),
 			},
 			// Update the group variable to to enable "masked" and meet masking requirements
@@ -126,13 +169,8 @@ func TestAccGitlabGroupVariable_sameVariableDifferentEnvironments(t *testing.T) 
 	group := testutil.CreateGroups(t, 1)[0]
 
 	resource.ParallelTest(t, resource.TestCase{
-		ExternalProviders: map[string]resource.ExternalProvider{
-			"gitlab": {
-				VersionConstraint: "~> 16.10",
-				Source:            "gitlabhq/gitlab",
-			},
-		},
-		CheckDestroy: testAccCheckGitlabGroupVariableDestroy,
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		CheckDestroy:             testAccCheckGitlabGroupVariableDestroy,
 		Steps: []resource.TestStep{
 			// Create a group with 2 variables with different env scopes but the same name
 			{
@@ -215,13 +253,8 @@ func TestAccGitlabGroupVariable_scope(t *testing.T) {
 	defaultValueA := fmt.Sprintf("value-%s-a", rString)
 	defaultValueB := fmt.Sprintf("value-%s-b", rString)
 	resource.ParallelTest(t, resource.TestCase{
-		ExternalProviders: map[string]resource.ExternalProvider{
-			"gitlab": {
-				VersionConstraint: "~> 16.10",
-				Source:            "gitlabhq/gitlab",
-			},
-		},
-		CheckDestroy: testAccCheckGitlabGroupVariableDestroy,
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		CheckDestroy:             testAccCheckGitlabGroupVariableDestroy,
 		Steps: []resource.TestStep{
 			// Create a group and variables with same keys, different scopes
 			{
@@ -402,6 +435,7 @@ resource "gitlab_group_variable" "foo" {
   variable_type = "file"
   masked = false
   description = "description-%s"
+  protected = false
 }
 	`, rString, rString, rString, rString, rString)
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -31,6 +32,7 @@ var (
 	gitlabVariableTypeValues   = []string{"env_var", "file"}
 	stringToVariableTypelookup = map[string]gitlab.VariableTypeValue{"env_var": gitlab.EnvVariableType, "file": gitlab.FileVariableType}
 	regexpGitlabVariableName   = regexp.MustCompile(`^[a-zA-Z0-9_]+$`)
+	invalidMaskedValueSummary  = "Invalid value for a masked variable. Check the masked variable requirements: https://docs.gitlab.com/ee/ci/variables/#mask-a-cicd-variable"
 )
 
 func init() {
@@ -48,7 +50,7 @@ type gitlabGroupVariableResource struct {
 }
 
 func (r *gitlabGroupVariableResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_group_group_variable"
+	resp.TypeName = req.ProviderTypeName + "_group_variable"
 }
 
 // Struct for the schema
@@ -114,6 +116,7 @@ func (r *gitlabGroupVariableResource) Schema(_ context.Context, _ resource.Schem
 				MarkdownDescription: "The environment scope of the variable. Defaults to all environment (`*`). Note that in Community Editions of Gitlab, values other than `*` will cause inconsistent plans.",
 				Optional:            true,
 				Computed:            true,
+				Default:             stringdefault.StaticString("*"),
 				PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 			},
 			"raw": schema.BoolAttribute{
@@ -154,27 +157,38 @@ func (r *gitlabGroupVariableResource) Create(ctx context.Context, req resource.C
 
 	group := data.Group.ValueString()
 	key := data.Key.ValueString()
-	variableType, ok := stringToVariableTypelookup[data.VariableType.ValueString()]
-	if !ok {
-		resp.Diagnostics.AddError("Invalid variable type", fmt.Sprintf("The variable type '%s' is invalid", data.VariableType.ValueString()))
-		return
-	}
 
 	options := gitlab.CreateGroupVariableOptions{
-		Key:              gitlab.Ptr(data.Key.ValueString()),
-		Value:            gitlab.Ptr(data.Value.ValueString()),
-		VariableType:     &variableType,
-		Protected:        gitlab.Ptr(data.Protected.ValueBool()),
-		Masked:           gitlab.Ptr(data.Masked.ValueBool()),
+		Key:         gitlab.Ptr(data.Key.ValueString()),
+		Value:       gitlab.Ptr(data.Value.ValueString()),
+		Masked:      gitlab.Ptr(data.Masked.ValueBool()),
+		Raw:         gitlab.Ptr(data.Raw.ValueBool()),
+		Description: gitlab.Ptr(data.Description.ValueString()),
+
+		// Technically optional, but set here since it has a default.
 		EnvironmentScope: gitlab.Ptr(data.EnvironmentScope.ValueString()),
-		Raw:              gitlab.Ptr(data.Raw.ValueBool()),
-		Description:      gitlab.Ptr(data.Description.ValueString()),
 	}
+	if !data.Protected.IsNull() && !data.Protected.IsUnknown() {
+		options.Protected = gitlab.Ptr(data.Protected.ValueBool())
+	}
+	if !data.VariableType.IsNull() && !data.VariableType.IsUnknown() {
+		variableType, ok := stringToVariableTypelookup[data.VariableType.ValueString()]
+		if !ok {
+			resp.Diagnostics.AddError("Invalid variable type", fmt.Sprintf("The variable type '%s' is invalid", data.VariableType.ValueString()))
+			return
+		}
+		options.VariableType = &variableType
+	}
+	if !data.Masked.IsNull() && !data.Masked.IsUnknown() {
+		options.Masked = gitlab.Ptr(data.Masked.ValueBool())
+	}
+
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab group variable %s/%s", group, key))
 
-	_, _, err := r.client.GroupVariables.CreateVariable(group, &options, gitlab.WithContext(ctx))
+	variable, _, err := r.client.GroupVariables.CreateVariable(group, &options, gitlab.WithContext(ctx))
 	if err != nil {
-		if utils.AugmentVariableClientError(ctx, true, err, resp.Diagnostics) {
+		if notOk, err := utils.AugmentVariableClientError(ctx, true, err); notOk {
+			resp.Diagnostics.AddError(invalidMaskedValueSummary, err.Error())
 			return
 		}
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to create group variable: %s", err.Error()))
@@ -183,6 +197,7 @@ func (r *gitlabGroupVariableResource) Create(ctx context.Context, req resource.C
 
 	keyScope := fmt.Sprintf("%s:%s", key, data.EnvironmentScope.ValueString())
 	data.ID = types.StringValue(utils.BuildTwoPartID(&group, &keyScope))
+	data.groupVariableToStateModel(variable, group)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -226,7 +241,8 @@ func (r *gitlabGroupVariableResource) Read(ctx context.Context, req resource.Rea
 			resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 			return
 		}
-		if utils.AugmentVariableClientError(ctx, true, err, resp.Diagnostics) {
+		if notOk, err := utils.AugmentVariableClientError(ctx, true, err); notOk {
+			resp.Diagnostics.AddError(invalidMaskedValueSummary, err.Error())
 			return
 		}
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to read group variable: %s", err.Error()))
@@ -241,8 +257,8 @@ func (r *gitlabGroupVariableResource) Read(ctx context.Context, req resource.Rea
 func (r *gitlabGroupVariableResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var data *gitlabGroupVariableResourceModel
 
-	// Read Terraform prior state data into the model
-	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+	// Read Terraform plan data into the model
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -250,32 +266,42 @@ func (r *gitlabGroupVariableResource) Update(ctx context.Context, req resource.U
 
 	group := data.Group.ValueString()
 	key := data.Key.ValueString()
-	variableType, ok := stringToVariableTypelookup[data.VariableType.ValueString()]
-	if !ok {
-		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] invalid variable type %s", data.VariableType.ValueString()))
-	}
-	environmentScope := data.EnvironmentScope.ValueString()
-
 	options := &gitlab.UpdateGroupVariableOptions{
-		Value:            gitlab.Ptr(data.Value.ValueString()),
-		VariableType:     &variableType,
-		Protected:        gitlab.Ptr(data.Protected.ValueBool()),
-		Masked:           gitlab.Ptr(data.Masked.ValueBool()),
-		EnvironmentScope: gitlab.Ptr(environmentScope),
-		Raw:              gitlab.Ptr(data.Raw.ValueBool()),
-		Description:      gitlab.Ptr(data.Description.ValueString()),
+		Value:       gitlab.Ptr(data.Value.ValueString()),
+		Masked:      gitlab.Ptr(data.Masked.ValueBool()),
+		Raw:         gitlab.Ptr(data.Raw.ValueBool()),
+		Description: gitlab.Ptr(data.Description.ValueString()),
+
+		// Technically optional, but set here since it has a default.
+		EnvironmentScope: gitlab.Ptr(data.EnvironmentScope.ValueString()),
 	}
-	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab group variable %s/%s/%s", group, key, environmentScope))
+	if !data.Protected.IsNull() && !data.Protected.IsUnknown() {
+		options.Protected = gitlab.Ptr(data.Protected.ValueBool())
+	}
+	if !data.VariableType.IsNull() && !data.VariableType.IsUnknown() {
+		variableType, ok := stringToVariableTypelookup[data.VariableType.ValueString()]
+		if !ok {
+			resp.Diagnostics.AddError("Invalid variable type", fmt.Sprintf("The variable type '%s' is invalid", data.VariableType.ValueString()))
+			return
+		}
+		options.VariableType = &variableType
+	}
+	if !data.Masked.IsNull() && !data.Masked.IsUnknown() {
+		options.Masked = gitlab.Ptr(data.Masked.ValueBool())
+	}
+
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab group variable %s/%s", group, key))
 
 	variable, _, err := r.client.GroupVariables.UpdateVariable(
 		group,
 		key,
 		options,
 		gitlab.WithContext(ctx),
-		utils.WithEnvironmentScopeFilter(ctx, environmentScope),
+		utils.WithEnvironmentScopeFilter(ctx, data.EnvironmentScope.ValueString()),
 	)
 	if err != nil {
-		if utils.AugmentVariableClientError(ctx, true, err, resp.Diagnostics) {
+		if notOk, err := utils.AugmentVariableClientError(ctx, true, err); notOk {
+			resp.Diagnostics.AddError(invalidMaskedValueSummary, err.Error())
 			return
 		}
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to update group variable: %s", err.Error()))
@@ -307,7 +333,8 @@ func (r *gitlabGroupVariableResource) Delete(ctx context.Context, req resource.D
 		utils.WithEnvironmentScopeFilter(ctx, environmentScope),
 	)
 	if err != nil {
-		if utils.AugmentVariableClientError(ctx, true, err, resp.Diagnostics) {
+		if notOk, err := utils.AugmentVariableClientError(ctx, true, err); notOk {
+			resp.Diagnostics.AddError(invalidMaskedValueSummary, err.Error())
 			return
 		}
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to delete group variable: %s", err.Error()))
@@ -334,24 +361,3 @@ func (m *gitlabGroupVariableResourceModel) groupVariableToStateModel(variable *g
 	m.Raw = types.BoolValue(variable.Raw)
 	m.Description = types.StringValue(variable.Description)
 }
-
-// TODO: remove After test its not used
-// func findGitlabGroupVariable(client *gitlab.Client, group, key string) (*gitlab.GroupVariable, error) {
-// 	options := gitlab.ListGroupVariablesOptions{
-// 		PerPage: 20,
-// 		Page:    1,
-// 	}
-// 	for options.Page != 0 {
-// 		paginatedGroupVariables, resp, err := client.GroupVariables.ListVariables(group, &options)
-// 		if err != nil {
-// 			return nil, fmt.Errorf("unable to list group variables. %s", err)
-// 		}
-// 		for i := range paginatedGroupVariables {
-// 			if paginatedGroupVariables[i].Key == key {
-// 				return paginatedGroupVariables[i], nil
-// 			}
-// 		}
-// 		options.Page = resp.NextPage
-// 	}
-// 	return nil, fmt.Errorf("unable to find group variable in grou: %s with key: %s", group, key)
-// }
