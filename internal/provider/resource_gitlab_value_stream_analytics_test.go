@@ -6,6 +6,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -169,6 +170,98 @@ func TestProjectValueStreamAnalytics_ProjectCustom(t *testing.T) {
 				ResourceName:      "gitlab_value_stream_analytics.foo",
 				ImportState:       true,
 				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestProjectValueStreamAnalytics_EnsureErrorOnInvalidLabelEvent(t *testing.T) {
+	testutil.SkipIfCE(t)
+
+	testGroup := testutil.CreateGroups(t, 1)[0]
+	testProject := testutil.CreateProjectWithNamespace(t, testGroup.ID)
+	testLabels := testutil.CreateProjectLabels(t, testProject.PathWithNamespace, 2)
+	err_regex, err := regexp.Compile("Error: (Missing|Unexpected) Attribute")
+	if err != nil {
+		t.Errorf("Unable to format expected label error regex: %s", err)
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_value_stream_analytics" "foo" {
+						name = "test"
+						project_full_path = "%s"
+						stages = [
+							{
+								name = "No start label when required"
+								custom = true
+								hidden = false
+								start_event_identifier = "ISSUE_LABEL_ADDED"
+								end_event_identifier = "ISSUE_CLOSED"
+							}
+						]
+					}
+				`, testProject.PathWithNamespace),
+				ExpectError: err_regex,
+			},
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_value_stream_analytics" "foo" {
+						name = "test"
+						project_full_path = "%s"
+						stages = [
+							{
+								name = "No end label when required"
+								custom = true
+								hidden = false
+								start_event_identifier = "ISSUE_CREATED"
+								end_event_identifier = "ISSUE_LABEL_REMOVED"
+							}						
+						]
+					}
+					`, testProject.PathWithNamespace),
+				ExpectError: err_regex,
+			},
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_value_stream_analytics" "foo" {
+						name = "test"
+						project_full_path = "%s"
+						stages = [
+							{
+								name = "Start label when not required"
+								custom = true
+								hidden = false
+								start_event_identifier = "ISSUE_CREATED"
+								start_event_label_id = "gid://gitlab/GroupLabel/%d"
+								end_event_identifier = "ISSUE_CLOSED"
+							}
+						]
+					}
+					`, testProject.PathWithNamespace, testLabels[0].ID),
+				ExpectError: err_regex,
+			},
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_value_stream_analytics" "foo" {
+						name = "test"
+						project_full_path = "%s"
+						stages = [
+							{
+								name = "End label when not required"
+								custom = true
+								hidden = false
+								start_event_identifier = "ISSUE_CREATED"
+								end_event_identifier = "ISSUE_CLOSED"
+								end_event_label_id = "gid://gitlab/GroupLabel/%d"
+							}
+						]
+					}
+					`, testProject.PathWithNamespace, testLabels[1].ID),
+				ExpectError: err_regex,
 			},
 		},
 	})

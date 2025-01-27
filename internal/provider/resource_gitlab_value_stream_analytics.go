@@ -69,7 +69,7 @@ func (r *gitlabValueStreamAnalyticsResource) Schema(ctx context.Context, req res
 	allowedEventLabels := []string{"CODE_STAGE_START", "ISSUE_CLOSED", "ISSUE_CREATED", "ISSUE_DEPLOYED_TO_PRODUCTION",
 		"ISSUE_FIRST_ADDED_TO_BOARD", "ISSUE_FIRST_ADDED_TO_ITERATION", "ISSUE_FIRST_ASSIGNED_AT", "ISSUE_FIRST_ASSOCIATED_WITH_MILESTONE",
 		"ISSUE_FIRST_MENTIONED_IN_COMMIT", "ISSUE_LABEL_ADDED", "ISSUE_LABEL_REMOVED", "ISSUE_LAST_EDITED", "ISSUE_STAGE_END", "MERGE_REQUEST_CLOSED",
-		"MERGE_REQUEST_CREATED", "MERGE_REQUEST_FIRST_ASSIGNED_AT", "MERGE_REQUEST_FIRST_COMMIT_AT", "MERGE_REQUEST_FIRST_DEPLOYTED_TO_PRODUCTION",
+		"MERGE_REQUEST_CREATED", "MERGE_REQUEST_FIRST_ASSIGNED_AT", "MERGE_REQUEST_FIRST_COMMIT_AT", "MERGE_REQUEST_FIRST_DEPLOYED_TO_PRODUCTION",
 		"MERGE_REQUEST_LABEL_ADDED", "MERGE_REQUEST_LABEL_REMOVED", "MERGE_REQUEST_LAST_BUILD_FINISHED", "MERGE_REQUEST_LAST_BUILD_STARTED",
 		"MERGE_REQUEST_LAST_EDITED", "MERGE_REQUEST_MERGED", "MERGE_REQUEST_REVIEWER_FIRST_ASSIGNED", "MERGE_REQUEST_PLAN_STAGE_START"}
 
@@ -203,22 +203,24 @@ func (r *gitlabValueStreamAnalyticsResource) ModifyPlan(ctx context.Context, req
 	// Based on each stage's start and end event identifiers, validate whether a label id is provided or not.
 	for i, v := range planData.Stages {
 
-		if strings.Contains(v.StartEventIdentifier.ValueString(), "LABEL") {
-			if v.StartEventLabelId.IsNull() || v.StartEventLabelId.ValueString() == "" {
-				resp.Diagnostics.AddAttributeError(path.Root("stages").AtListIndex(i), "Missing Attribute", fmt.Sprintf("`start_event_label_id` is required when `start_event_identifier` is %s", v.StartEventIdentifier.ValueString()))
-			}
+		// If StartEventIdentifier uses labels, but no label ID is provided throw an error
+		if strings.Contains(v.StartEventIdentifier.ValueString(), "LABEL") && (v.StartEventLabelId.IsNull() || v.StartEventLabelId.ValueString() == "") {
+			resp.Diagnostics.AddAttributeError(path.Root("stages").AtListIndex(i), "Missing Attribute", fmt.Sprintf("`start_event_label_id` is required when `start_event_identifier` is %s", v.StartEventIdentifier.ValueString()))
+		}
 
-			if v.EndEventLabelId.IsNull() || v.EndEventLabelId.ValueString() == "" {
-				resp.Diagnostics.AddAttributeError(path.Root("stages").AtListIndex(i), "Missing Attribute", fmt.Sprintf("`end_event_label_id` is required when `end_event_identifier` is %s", v.EndEventIdentifier.ValueString()))
-			}
-		} else {
-			if !v.StartEventLabelId.IsNull() && v.StartEventLabelId.ValueString() != "" {
-				resp.Diagnostics.AddAttributeError(path.Root("stages").AtListIndex(i), "Unexpected Attribute", fmt.Sprintf("`start_event_label_id` is not allowed when `start_event_identifier` is %s", v.StartEventIdentifier.ValueString()))
-			}
+		// If StartEventIdentifier doesn't use labels, but a label ID is provided throw an error
+		if !strings.Contains(v.StartEventIdentifier.ValueString(), "LABEL") && !v.StartEventLabelId.IsNull() && v.StartEventLabelId.ValueString() != "" {
+			resp.Diagnostics.AddAttributeError(path.Root("stages").AtListIndex(i), "Unexpected Attribute", fmt.Sprintf("`start_event_label_id` is not allowed when `start_event_identifier` is %s", v.StartEventIdentifier.ValueString()))
+		}
 
-			if !v.EndEventLabelId.IsNull() && v.EndEventLabelId.ValueString() != "" {
-				resp.Diagnostics.AddAttributeError(path.Root("stages").AtListIndex(i), "Unexpected Attribute", fmt.Sprintf("`end_event_label_id` is not allowed when `end_event_identifier` is %s", v.EndEventIdentifier.ValueString()))
-			}
+		// If EndEventIdentifier uses labels, but no label ID is provided throw an error
+		if strings.Contains(v.EndEventIdentifier.ValueString(), "LABEL") && (v.EndEventLabelId.IsNull() || v.EndEventLabelId.ValueString() == "") {
+			resp.Diagnostics.AddAttributeError(path.Root("stages").AtListIndex(i), "Missing Attribute", fmt.Sprintf("`end_event_label_id` is required when `end_event_identifier` is %s", v.EndEventIdentifier.ValueString()))
+		}
+
+		// If EndEventIdentifier doesn't use labels, but a label ID is provided throw an error
+		if !strings.Contains(v.EndEventIdentifier.ValueString(), "LABEL") && !v.EndEventLabelId.IsNull() && v.EndEventLabelId.ValueString() != "" {
+			resp.Diagnostics.AddAttributeError(path.Root("stages").AtListIndex(i), "Unexpected Attribute", fmt.Sprintf("`end_event_label_id` is not allowed when `end_event_identifier` is %s", v.EndEventIdentifier.ValueString()))
 		}
 	}
 }
