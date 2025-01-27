@@ -22,7 +22,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
@@ -127,7 +127,7 @@ func (r *gitlabPersonalAccessTokenResource) Schema(ctx context.Context, req reso
 					stringplanmodifier.UseStateForUnknown(),
 				},
 				Validators: []validator.String{
-					stringvalidator.ExactlyOneOf(path.MatchRoot("rotation_configuration")),
+					stringvalidator.ConflictsWith(path.MatchRoot("rotation_configuration")),
 				},
 				Optional: true,
 				Computed: true,
@@ -153,7 +153,7 @@ func (r *gitlabPersonalAccessTokenResource) Schema(ctx context.Context, req reso
 				MarkdownDescription: "The configuration for when to rotate a token automatically. Will not rotate a token until `terraform apply` is run.",
 				Optional:            true,
 				Validators: []validator.Object{
-					objectvalidator.ExactlyOneOf(path.MatchRoot("expires_at")),
+					objectvalidator.ConflictsWith(path.MatchRoot("expires_at")),
 				},
 
 				// Rotation attributes
@@ -210,8 +210,13 @@ func (r *gitlabPersonalAccessTokenResource) personalAccessTokenToStateModel(data
 	if token.CreatedAt != nil {
 		data.CreatedAt = types.StringValue(token.CreatedAt.String())
 	}
+
 	if token.ExpiresAt != nil {
 		data.ExpiresAt = types.StringValue(token.ExpiresAt.String())
+	} else {
+		// This explicit null is required when token expiration is allowed to be null
+		// which can happen in self-hosted instances
+		data.ExpiresAt = types.StringNull()
 	}
 
 	// parse Scopes into []types.String

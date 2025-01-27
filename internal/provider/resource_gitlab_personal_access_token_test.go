@@ -12,7 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
@@ -463,6 +463,48 @@ func TestAccGitlabPersonalAccessToken_rotationConfiguration(t *testing.T) {
 					resource.TestCheckResourceAttr("gitlab_personal_access_token.this", "active", "true"),
 					resource.TestCheckResourceAttr("gitlab_personal_access_token.this", "expires_at", getCurrentTimePlusDays(20).String()),
 				),
+			},
+		},
+	})
+}
+
+// This test can't be run normally in CI/CD since we don't configure out instance
+// to disable the token expiration requirement. However, it validates that we can create
+// a new token without an expiration.
+func TestAccGitlabPersonalAccessToken_tokenWithoutExpiration(t *testing.T) {
+	t.Skip()
+
+	user := testutil.CreateUsers(t, 1)[0]
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabPersonalAccessTokenDestroy,
+		Steps: []resource.TestStep{
+			// Create a basic access token.
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_personal_access_token" "foo" {
+					user_id = %d
+					name    = "foo"
+					scopes  = ["api"]
+				}
+				`, user.ID),
+				// Check computed and default attributes.
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_personal_access_token.foo", "active", "true"),
+					resource.TestCheckResourceAttr("gitlab_personal_access_token.foo", "revoked", "false"),
+					resource.TestCheckResourceAttrSet("gitlab_personal_access_token.foo", "token"),
+					resource.TestCheckResourceAttrSet("gitlab_personal_access_token.foo", "created_at"),
+					resource.TestCheckResourceAttrSet("gitlab_personal_access_token.foo", "user_id"),
+				),
+			},
+			// Verify upstream resource with an import.
+			{
+				ResourceName:      "gitlab_personal_access_token.foo",
+				ImportState:       true,
+				ImportStateVerify: true,
+				// The token is only known during creating. We explicitly mention this limitation in the docs.
+				ImportStateVerifyIgnore: []string{"token"},
 			},
 		},
 	})
