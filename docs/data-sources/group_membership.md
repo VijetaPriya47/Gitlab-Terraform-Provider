@@ -39,19 +39,19 @@ data "gitlab_group_membership" "example" {
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
-- `members` (List of Object) The list of group members. (see [below for nested schema](#nestedatt--members))
+- `id` (String) The ID of the group membership. In the format of `<group-id:access-level>`.
+- `members` (Attributes List) The list of group members. (see [below for nested schema](#nestedatt--members))
 
 <a id="nestedatt--members"></a>
 ### Nested Schema for `members`
 
 Read-Only:
 
-- `access_level` (String)
-- `avatar_url` (String)
-- `expires_at` (String)
-- `id` (Number)
-- `name` (String)
-- `state` (String)
-- `username` (String)
-- `web_url` (String)
+- `access_level` (String) The level of access to the group.
+- `avatar_url` (String) The avatar URL of the user.
+- `expires_at` (String) Expiration date for the group membership.
+- `id` (Number) The unique id assigned to the user by the gitlab server.
+- `name` (String) The name of the user.
+- `state` (String) Whether the user is active or blocked.
+- `username` (String) The username of the user.
+- `web_url` (String) User's website URL.

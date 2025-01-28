@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
@@ -26,7 +26,6 @@ func TestAccGitlabProjectMembership_basic(t *testing.T) {
 		ProtoV6ProviderFactories: providerFactoriesV6,
 		CheckDestroy:             testAccCheckGitlabProjectMembershipDestroy,
 		Steps: []resource.TestStep{
-
 			// Assign member to the project as a developer
 			{
 				Config: testAccGitlabProjectMembershipConfig(rInt),
@@ -94,7 +93,7 @@ func TestAccGitlabProjectMembership_UseCustomRole(t *testing.T) {
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
-		CheckDestroy:             testAccCheckGitlabGroupMembershipDestroy,
+		CheckDestroy:             testAccCheckGitlabProjectMembershipDestroy,
 		Steps: []resource.TestStep{
 			// Assign member to the project as a custom reporter-based role
 			{
@@ -178,7 +177,6 @@ type testAccGitlabProjectMembershipExpectedAttributes struct {
 
 func testAccCheckGitlabProjectMembershipAttributes(membership *gitlab.ProjectMember, want *testAccGitlabProjectMembershipExpectedAttributes) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-
 		access_level_id, ok := api.AccessLevelValueToName[membership.AccessLevel]
 		if !ok {
 			return fmt.Errorf("Invalid access level '%s'", access_level_id)

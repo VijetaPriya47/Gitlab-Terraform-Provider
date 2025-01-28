@@ -1,7 +1,7 @@
 //go:build acceptance
 // +build acceptance
 
-package sdk
+package provider
 
 import (
 	"errors"
@@ -9,47 +9,95 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
-
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
 func TestAccGitlabGroupMembership_basic(t *testing.T) {
 	var groupMember gitlab.GroupMember
-	rInt := acctest.RandInt()
+	group := testutil.CreateGroups(t, 1)[0]
+	user := testutil.CreateUsers(t, 1)[0]
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabGroupMembershipDestroy,
 		Steps: []resource.TestStep{
-
 			// Assign member to the group as a developer
 			{
-				Config: testAccGitlabGroupMembershipConfig(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_group_membership" "foo" {
+  				    group_id 		= "%d"
+  				    user_id 		= "%d"
+  				    access_level 	= "developer"
+				}
+				`, group.ID, user.ID),
 				Check: resource.ComposeTestCheckFunc(testAccCheckGitlabGroupMembershipExists("gitlab_group_membership.foo", &groupMember), testAccCheckGitlabGroupMembershipAttributes(&groupMember, &testAccGitlabGroupMembershipExpectedAttributes{
 					accessLevel: "developer",
 				})),
 			},
-
-			//Update the group member to change the access level (use testAccGitlabGroupMembershipUpdateConfig for Config)
 			{
-				Config: testAccGitlabGroupMembershipUpdateConfig(rInt),
+				ResourceName:      "gitlab_group_membership.foo",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Update the group member to change the access level
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group_membership" "foo" {
+  				    group_id 		= "%d"
+  				    user_id 		= "%d"
+  				    access_level 	= "guest"
+				}
+				`, group.ID, user.ID),
 				Check: resource.ComposeTestCheckFunc(testAccCheckGitlabGroupMembershipExists("gitlab_group_membership.foo", &groupMember), testAccCheckGitlabGroupMembershipAttributes(&groupMember, &testAccGitlabGroupMembershipExpectedAttributes{
 					accessLevel: "guest",
+				})),
+			},
+			{
+				ResourceName:      "gitlab_group_membership.foo",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Update the group member to change the access level back
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group_membership" "foo" {
+  				    group_id 		= "%d"
+  				    user_id 		= "%d"
+  				    access_level 	= "developer"
+				}
+				`, group.ID, user.ID),
+				Check: resource.ComposeTestCheckFunc(testAccCheckGitlabGroupMembershipExists("gitlab_group_membership.foo", &groupMember), testAccCheckGitlabGroupMembershipAttributes(&groupMember, &testAccGitlabGroupMembershipExpectedAttributes{
+					accessLevel: "developer",
+				})),
+			},
+			{
+				ResourceName:      "gitlab_group_membership.foo",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Update the group member to add an expiry
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group_membership" "foo" {
+  				    group_id 		= "%d"
+  				    user_id 		= "%d"
+  				    access_level 	= "developer"
+					expires_at      = "2099-01-01"
+				}
+				`, group.ID, user.ID),
+				Check: resource.ComposeTestCheckFunc(testAccCheckGitlabGroupMembershipExists("gitlab_group_membership.foo", &groupMember), testAccCheckGitlabGroupMembershipAttributes(&groupMember, &testAccGitlabGroupMembershipExpectedAttributes{
+					accessLevel: "developer",
 					expiresAt:   "2099-01-01",
 				})),
 			},
-
-			// Update the group member to change the access level back
 			{
-				Config: testAccGitlabGroupMembershipConfig(rInt),
-				Check: resource.ComposeTestCheckFunc(testAccCheckGitlabGroupMembershipExists("gitlab_group_membership.foo", &groupMember), testAccCheckGitlabGroupMembershipAttributes(&groupMember, &testAccGitlabGroupMembershipExpectedAttributes{
-					accessLevel: "developer",
-				})),
+				ResourceName:      "gitlab_group_membership.foo",
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 	})
@@ -61,7 +109,7 @@ func TestAccGitlabGroupMembership_skipRemoveFromSubgroup(t *testing.T) {
 	testSubgroup := testutil.CreateSubGroups(t, testGroup, 1)[0]
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabGroupMembershipDestroy,
 		Steps: []resource.TestStep{
 			// Add user to main and subgroup individually
@@ -131,7 +179,7 @@ func TestAccGitlabGroupMembership_useCustomRole(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabGroupMembershipDestroy,
 		Steps: []resource.TestStep{
 			// Assign member to the group as a custom maintainer-based role
@@ -188,9 +236,9 @@ func testAccCheckGitlabGroupMembershipExists(n string, membership *gitlab.GroupM
 			return fmt.Errorf("Not found: %s", n)
 		}
 
-		groupId := rs.Primary.Attributes["group_id"]
-		if groupId == "" {
-			return fmt.Errorf("no group ID is set")
+		group := rs.Primary.Attributes["group_id"]
+		if group == "" {
+			return fmt.Errorf("no group is set")
 		}
 
 		userIdString := rs.Primary.Attributes["user_id"]
@@ -199,7 +247,7 @@ func testAccCheckGitlabGroupMembershipExists(n string, membership *gitlab.GroupM
 			return fmt.Errorf("No user userId is set")
 		}
 
-		gotGroupMembership, _, err := testutil.TestGitlabClient.GroupMembers.GetGroupMember(groupId, userId)
+		gotGroupMembership, _, err := testutil.TestGitlabClient.GroupMembers.GetGroupMember(group, userId)
 		if err != nil {
 			return err
 		}
@@ -216,7 +264,6 @@ type testAccGitlabGroupMembershipExpectedAttributes struct {
 
 func testAccCheckGitlabGroupMembershipAttributes(membership *gitlab.GroupMember, want *testAccGitlabGroupMembershipExpectedAttributes) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-
 		accessLevelId, ok := api.AccessLevelValueToName[membership.AccessLevel]
 		if !ok {
 			return fmt.Errorf("Invalid access level '%s'", accessLevelId)
@@ -255,45 +302,51 @@ func testAccCheckGitlabGroupMembershipDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccGitlabGroupMembershipConfig(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_group" "foo" {
-  name = "foo%d"
-  path = "foo%d"
-}
+func TestAccGitlabGroupMembership_migrateFromSDKToFramework(t *testing.T) {
+	group := testutil.CreateGroups(t, 1)[0]
+	user := testutil.CreateUsers(t, 1)[0]
 
-resource "gitlab_user" "test" {
-  name 		= "foo%d"
-  username  = "listest%d"
-  password  = "SvNwfHhbvPmHZr-%d"
-  email 	= "listest%d@ssss.com"
-}
-
-resource "gitlab_group_membership" "foo" {
-  group_id 		= "${gitlab_group.foo.id}"
-  user_id 		= "${gitlab_user.test.id}"
-  access_level 	= "developer"
-}`, rInt, rInt, rInt, rInt, rInt, rInt)
-}
-
-func testAccGitlabGroupMembershipUpdateConfig(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_group" "foo" {
-  name = "foo%d"
-  path = "foo%d"
-}
-
-resource "gitlab_user" "test" {
-  name 		= "foo%d"
-  username 	= "listest%d"
-  password 	= "SvNwfHhbvPmHZr-%d"
-  email 	= "listest%d@ssss.com"
-}
-
-resource "gitlab_group_membership" "foo" {
-  group_id 		= "${gitlab_group.foo.id}"
-  user_id 		= "${gitlab_user.test.id}"
-  expires_at    = "2099-01-01"
-  access_level 	= "guest"
-}`, rInt, rInt, rInt, rInt, rInt, rInt)
+	resource.ParallelTest(t, resource.TestCase{
+		CheckDestroy: testAccCheckGitlabGroupMembershipDestroy,
+		Steps: []resource.TestStep{
+			// Create the pipeline in the old provider version
+			{
+				ExternalProviders: map[string]resource.ExternalProvider{
+					"gitlab": {
+						VersionConstraint: "~> 17.8",
+						Source:            "gitlabhq/gitlab",
+					},
+				},
+				Config: fmt.Sprintf(`
+				resource "gitlab_group_membership" "foo" {
+  				    group_id 		= %d
+  				    user_id 		= "%d"
+  				    access_level 	= "developer"
+				}`, group.ID, user.ID),
+				Check: resource.TestCheckResourceAttr("gitlab_group_membership.foo", "access_level", "developer"),
+			},
+			// Create the config in the new provider version to ensure migration works
+			{
+				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+				Config: fmt.Sprintf(`
+				resource "gitlab_group_membership" "foo" {
+  				    group_id 		= "%d"
+  				    user_id 		= "%d"
+  				    access_level 	= "developer"
+				}`, group.ID, user.ID),
+				Check: resource.TestCheckResourceAttr("gitlab_group_membership.foo", "access_level", "developer"),
+			},
+			// Verify upstream attributes with an import
+			{
+				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+				ResourceName:             "gitlab_group_membership.foo",
+				ImportState:              true,
+				ImportStateVerify:        true,
+				ImportStateVerifyIgnore: []string{
+					"skip_subresources_on_destroy",
+					"unassign_issuables_on_destroy",
+				},
+			},
+		},
+	})
 }
