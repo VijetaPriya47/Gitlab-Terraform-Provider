@@ -55,7 +55,7 @@ func TestAccGitlabMemberRole_basic(t *testing.T) {
 						name = "Test role %d updated"
 						description = "A test member role updated"
 						base_access_level = "REPORTER"
-						enabled_permissions = ["READ_VULNERABILITY", "REMOVE_PROJECT"]
+						enabled_permissions = ["READ_VULNERABILITY", "REMOVE_PROJECT", "ADMIN_PROTECTED_BRANCH"]
 					}
 				`, rint),
 				Check: resource.ComposeTestCheckFunc(
