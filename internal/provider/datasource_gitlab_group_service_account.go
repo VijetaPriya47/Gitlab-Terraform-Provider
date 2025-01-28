@@ -68,11 +68,11 @@ func (d *gitlabGroupServiceAccountDataSource) Schema(_ context.Context, _ dataso
 			},
 			"name": schema.StringAttribute{
 				MarkdownDescription: "The name of the user. If not specified, the default Service account user name is used.",
-				Optional:            true,
+				Computed:            true,
 			},
 			"username": schema.StringAttribute{
 				MarkdownDescription: "The username of the user. If not specified, it's automatically generated.",
-				Optional:            true,
+				Computed:            true,
 			},
 		},
 	}
