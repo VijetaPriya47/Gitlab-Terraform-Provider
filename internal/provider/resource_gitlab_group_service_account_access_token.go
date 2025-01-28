@@ -94,7 +94,6 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Schema(ctx context.Contex
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "The ID of the group service account access token.",
-				PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 				Computed:            true,
 			},
 			"group": schema.StringAttribute{

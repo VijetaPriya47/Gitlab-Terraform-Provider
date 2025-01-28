@@ -5,6 +5,7 @@ package provider
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -119,10 +120,11 @@ func TestAccGitlabGroupServiceAccountAccessToken_rotationConfiguration(t *testin
 	groupID := strconv.Itoa(group.ID)
 
 	serviceAccount := testutil.CreateGroupServiceAccounts(t, 1, groupID)[0]
-
 	expiryDate := testutil.GetCurrentTimestampPlusDays(t, 7).Format(time.DateOnly)
+	futureDate := testutil.GetCurrentTimestampPlusDays(t, 10).Format(time.RFC3339)
 
-	resource.ParallelTest(t, resource.TestCase{
+	// Not parallel since "os.Setenv" leaks test state otherwise.
+	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		CheckDestroy:             testAccCheckGitlabGroupServiceAccountAccessTokenDestroy,
 		Steps: []resource.TestStep{
@@ -153,6 +155,36 @@ func TestAccGitlabGroupServiceAccountAccessToken_rotationConfiguration(t *testin
 				ImportStateVerify: true,
 				// The token is only known during creating. We explicitly mention this limitation in the docs.
 				ImportStateVerifyIgnore: []string{"token", "rotation_configuration"},
+			},
+			// Rotate the access token using the mocked date option to ensure the ID rotates properly.
+			{
+				PreConfig: func() {
+					os.Setenv("GITLAB_TESTING_TIME", futureDate)
+					t.Cleanup(func() {
+						os.Unsetenv("GITLAB_TESTING_TIME")
+					})
+				},
+				Config: fmt.Sprintf(`
+				resource "gitlab_group_service_account_access_token" "this" {
+					group    = %s 
+					user_id  = %d
+					name     = "foo"
+					scopes   = ["api"]
+
+					rotation_configuration = {
+						rotate_before_days = 1
+					}
+				}
+				`, groupID, serviceAccount.ID),
+				// Because we can't set the `expiryDate` on service accounts, the instance will always set them to 7 days in the future.
+				// This means that the mocked time doesn't prevent a second rotation after this one applies. However, if the rotation
+				// didn't work, an error would still cause the test to fail.
+				ExpectNonEmptyPlan: true,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_group_service_account_access_token.this", "rotation_configuration.rotate_before_days", "1"),
+					resource.TestCheckResourceAttr("gitlab_group_service_account_access_token.this", "expires_at", expiryDate),
+					resource.TestCheckResourceAttrSet("gitlab_group_service_account_access_token.this", "token"),
+				),
 			},
 		},
 	})
