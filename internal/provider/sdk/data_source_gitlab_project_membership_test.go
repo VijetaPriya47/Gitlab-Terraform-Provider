@@ -13,7 +13,6 @@ import (
 )
 
 func TestAccDataSourceGitlabProjectMembership_basic(t *testing.T) {
-
 	project := testutil.CreateProject(t)
 	users := testutil.CreateUsers(t, 1)
 	testutil.AddProjectMembers(t, project.ID, users)
@@ -22,7 +21,11 @@ func TestAccDataSourceGitlabProjectMembership_basic(t *testing.T) {
 		ProtoV6ProviderFactories: providerFactoriesV6,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataSourceGitlabProjectMembership(project.ID),
+				Config: fmt.Sprintf(`
+					data "gitlab_project_membership" "foo" {
+						project_id = "%d"
+					}
+				`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
 					// Members is 2 because the user owning the token is always added to the project
 					resource.TestCheckResourceAttr("data.gitlab_project_membership.foo", "members.#", "2"),
@@ -45,7 +48,11 @@ func TestAccDataSourceGitlabProjectMembership_pagination(t *testing.T) {
 		ProtoV6ProviderFactories: providerFactoriesV6,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataSourceGitlabProjectMembership(project.ID),
+				Config: fmt.Sprintf(`
+					data "gitlab_project_membership" "foo" {
+						project_id = "%d"
+					}
+				`, project.ID),
 				// one more for the user owning the token, which is always added to the project.
 				Check: resource.TestCheckResourceAttr("data.gitlab_project_membership.foo", "members.#", fmt.Sprintf("%d", userCount+1)),
 			},
@@ -75,11 +82,4 @@ func TestAccDataSourceGitlabProjectMembership_ByUserID(t *testing.T) {
 			},
 		},
 	})
-}
-
-func testAccDataSourceGitlabProjectMembership(projectID int) string {
-	return fmt.Sprintf(`
-data "gitlab_project_membership" "foo" {
-  project_id = "%d"
-}`, projectID)
 }

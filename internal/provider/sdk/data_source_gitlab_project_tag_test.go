@@ -22,7 +22,18 @@ func TestAccDataGitlabProjectTag_basic(t *testing.T) {
 		ProtoV6ProviderFactories: providerFactoriesV6,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataGitlabProjectTag(rInt, project.PathWithNamespace),
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_tag" "foo" {
+						name    = "tag-%[1]d"
+						ref     = "main"
+						project = "%s"
+					}
+					
+					data "gitlab_project_tag" "foo" {
+						name    = "${gitlab_project_tag.foo.name}"
+						project = "%s"
+					}
+				`, rInt, project.PathWithNamespace, project.PathWithNamespace),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceGitlabProjectTag("gitlab_project_tag.foo", "data.gitlab_project_tag.foo"),
 				),
@@ -33,7 +44,6 @@ func TestAccDataGitlabProjectTag_basic(t *testing.T) {
 
 func testAccDataSourceGitlabProjectTag(src, n string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-
 		tag := s.RootModule().Resources[src]
 		tagAttr := tag.Primary.Attributes
 
@@ -58,24 +68,4 @@ func testAccDataSourceGitlabProjectTag(src, n string) resource.TestCheckFunc {
 		}
 		return nil
 	}
-}
-
-func testAccDataGitlabProjectTag(rInt int, project string) string {
-	return fmt.Sprintf(`
-%s
-data "gitlab_project_tag" "foo" {
-  name    = "${gitlab_project_tag.foo.name}"
-  project = "%s"
-}
-`, testAccDataGitlabProjectTagSetup(rInt, project), project)
-}
-
-func testAccDataGitlabProjectTagSetup(rInt int, project string) string {
-	return fmt.Sprintf(`
-resource "gitlab_project_tag" "foo" {
-    name    = "tag-%[1]d"
-    ref     = "main"
-    project = "%s"
-}
-  `, rInt, project)
 }

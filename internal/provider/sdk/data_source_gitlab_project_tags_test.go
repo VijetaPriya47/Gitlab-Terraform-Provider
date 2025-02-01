@@ -21,7 +21,26 @@ func TestAccDataGitlabProjectTags_basic(t *testing.T) {
 		ProtoV6ProviderFactories: providerFactoriesV6,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataGitlabProjectTags(countTags, project.PathWithNamespace),
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_tag" "foo" {
+						count   = "%[1]d"
+						
+						name    = "${count.index}"
+						ref     = "main"
+						project = "%s"
+						message = "Tag ${count.index}"
+					}
+					
+					data "gitlab_project_tags" "foo" {
+						project  = "%s"
+						order_by = "name"
+						sort     = "asc"
+						
+						depends_on = [
+							gitlab_project_tag.foo,
+						]
+					}
+				`, countTags, project.PathWithNamespace, project.PathWithNamespace),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceGitlabProjectTags("gitlab_project_tag.foo", "data.gitlab_project_tags.foo", countTags),
 				),
@@ -59,32 +78,4 @@ func testAccDataSourceGitlabProjectTags(src string, n string, countTags int) res
 
 		return nil
 	}
-}
-
-func testAccDataGitlabProjectTags(countTags int, project string) string {
-	return fmt.Sprintf(`
-%s
-data "gitlab_project_tags" "foo" {
-  project  = "%s"
-  order_by = "name"
-  sort     = "asc"
-
-  depends_on = [
-    gitlab_project_tag.foo,
-  ]
-}
-`, testAccDataGitlabProjectTagsSetup(countTags, project), project)
-}
-
-func testAccDataGitlabProjectTagsSetup(countTags int, project string) string {
-	return fmt.Sprintf(`
-resource "gitlab_project_tag" "foo" {
-  count   = "%[1]d"
-
-  name    = "${count.index}"
-  ref     = "main"
-  project = "%s"
-  message = "Tag ${count.index}"
-}
-`, countTags, project)
 }

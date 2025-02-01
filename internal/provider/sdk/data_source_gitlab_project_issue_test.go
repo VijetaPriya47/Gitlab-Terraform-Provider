@@ -20,7 +20,19 @@ func TestAccDataSourceGitlabProjectIssue_basic(t *testing.T) {
 		ProtoV6ProviderFactories: providerFactoriesV6,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataGitlabProjectIssueConfig(testProject.ID),
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_issue" "this" {
+						project     = %d
+						title       = "Terraform acceptance tests"
+						description = "Some description"
+						due_date    = "1994-02-21"
+					}
+					
+					data "gitlab_project_issue" "this" {
+						project = %d
+						iid     = gitlab_project_issue.this.iid
+					}
+				`, testProject.ID, testProject.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceGitlabProjectIssue("gitlab_project_issue.this", "data.gitlab_project_issue.this"),
 				),
@@ -31,7 +43,6 @@ func TestAccDataSourceGitlabProjectIssue_basic(t *testing.T) {
 
 func testAccDataSourceGitlabProjectIssue(src, n string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-
 		resource := s.RootModule().Resources[src]
 		resourceAttributes := resource.Primary.Attributes
 
@@ -48,20 +59,4 @@ func testAccDataSourceGitlabProjectIssue(src, n string) resource.TestCheckFunc {
 
 		return nil
 	}
-}
-
-func testAccDataGitlabProjectIssueConfig(projectID int) string {
-	return fmt.Sprintf(`
-resource "gitlab_project_issue" "this" {
-  project     = %d
-  title       = "Terraform acceptance tests"
-  description = "Some description"
-  due_date    = "1994-02-21"
-}
-
-data "gitlab_project_issue" "this" {
-	project = %d
-	iid     = gitlab_project_issue.this.iid
-}
-`, projectID, projectID)
 }
