@@ -15,7 +15,7 @@ import (
 )
 
 func TestAccDataSourceGitlabGroup_basic(t *testing.T) {
-	rString := fmt.Sprintf("%s", acctest.RandString(5)) // nolint // TODO: Resolve this golangci-lint issue: S1025: the argument is already a string, there's no need to use fmt.Sprintf (gosimple)
+	rString := acctest.RandString(5)
 
 	groups := testutil.CreateGroups(t, 2)
 	withShare := testutil.GroupShareGroup(t, groups[0].ID, &groups[1].ID)
@@ -25,14 +25,59 @@ func TestAccDataSourceGitlabGroup_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Get group using its ID
 			{
-				Config: testAccDataGitlabGroupByID(rString),
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "foo-name-%[1]s"
+				  path = "foo-path-%[1]s"
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				
+				resource "gitlab_group" "sub_foo" {
+				  name      = "sub-foo-name-%[1]s"
+				  path      = "sub-foo-path-%[1]s"
+				  parent_id = "${gitlab_group.foo.id}"
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				
+				data "gitlab_group" "foo" {
+				  group_id = "${gitlab_group.foo.id}"
+				}
+				`, rString),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceGitlabGroup("gitlab_group.foo", "data.gitlab_group.foo"),
 				),
 			},
 			// Get group using its full path
 			{
-				Config: testAccDataGitlabGroupByFullPath(rString),
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "foo-name-%[1]s"
+				  path = "foo-path-%[1]s"
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				
+				resource "gitlab_group" "sub_foo" {
+				  name      = "sub-foo-name-%[1]s"
+				  path      = "sub-foo-path-%[1]s"
+				  parent_id = "${gitlab_group.foo.id}"
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				data "gitlab_group" "sub_foo" {
+				  full_path = "${gitlab_group.foo.path}/${gitlab_group.sub_foo.path}"
+				}
+				  `, rString),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceGitlabGroup("gitlab_group.sub_foo", "data.gitlab_group.sub_foo"),
 				),
@@ -71,9 +116,9 @@ func TestAccDataSourceGitlabGroup_basic(t *testing.T) {
 		},
 	})
 }
+
 func testAccDataSourceGitlabGroup(src, n string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-
 		group := s.RootModule().Resources[src]
 		groupResource := group.Primary.Attributes
 
@@ -105,47 +150,4 @@ func testAccDataSourceGitlabGroup(src, n string) resource.TestCheckFunc {
 
 		return nil
 	}
-}
-
-func testAccDataGitlabGroupByID(rString string) string {
-	return fmt.Sprintf(`
-%s
-
-data "gitlab_group" "foo" {
-  group_id = "${gitlab_group.foo.id}"
-}
-`, testAccDataGitlabGroupSetup(rString))
-}
-
-func testAccDataGitlabGroupByFullPath(rString string) string {
-	return fmt.Sprintf(`
-%s
-
-data "gitlab_group" "sub_foo" {
-  full_path = "${gitlab_group.foo.path}/${gitlab_group.sub_foo.path}"
-}
-`, testAccDataGitlabGroupSetup(rString))
-}
-
-func testAccDataGitlabGroupSetup(rString string) string {
-	return fmt.Sprintf(`
-resource "gitlab_group" "foo" {
-  name = "foo-name-%[1]s"
-  path = "foo-path-%[1]s"
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-
-resource "gitlab_group" "sub_foo" {
-  name      = "sub-foo-name-%[1]s"
-  path      = "sub-foo-path-%[1]s"
-  parent_id = "${gitlab_group.foo.id}"
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-  `, rString)
 }

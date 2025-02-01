@@ -25,7 +25,17 @@ func TestAccDataGitlabProjects_search(t *testing.T) {
 		ProtoV6ProviderFactories: providerFactoriesV6,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataGitlabProjectsConfigGetProjectSearch(projectName),
+				Config: fmt.Sprintf(`
+
+				resource "gitlab_project" "search" {
+				  name = "%s"
+				  path = "%s"
+				}
+				
+				data "gitlab_projects" "search" {
+				  search = gitlab_project.search.name
+				}
+					`, projectName, projectName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccDataSourceGitlabProjects(
 						"gitlab_project.search",
@@ -74,7 +84,22 @@ func TestAccDataGitlabProjects_groups(t *testing.T) {
 		ProtoV6ProviderFactories: providerFactoriesV6,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataGitlabProjectsConfigGetGroupProjectsByGroupId(groupName, projectName),
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "testGroup" {
+				  name = "%s"
+				  path = "%s"
+				  description = "Terraform acceptance tests"
+				}
+				
+				resource "gitlab_project" "testProject"{
+				  name = "%s"
+				  namespace_id = gitlab_group.testGroup.id
+				}
+				
+				data "gitlab_projects" "group" {
+				  group_id = gitlab_project.testProject.namespace_id
+				}
+					`, groupName, groupName, projectName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccDataSourceGitlabProjects(
 						"gitlab_project.testProject",
@@ -88,7 +113,44 @@ func TestAccDataGitlabProjects_groups(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccDataGitlabProjectsConfigGetNestedProjectsByParentGroupId(parentGroupName, subGroupName1, subGroupName2, subGroupProjectName1, subGroupProjectName2),
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "testGroup" {
+				  name = "%s"
+				  path = "%s"
+				}
+				
+				resource "gitlab_group" "testSubGroup1" {
+				  name = "%s"
+				  path = "%s"
+				  parent_id = gitlab_group.testGroup.id
+				}
+				
+				resource "gitlab_group" "testSubGroup2" {
+				  name = "%s"
+				  path = "%s"
+				  parent_id = gitlab_group.testGroup.id
+				}
+				
+				resource "gitlab_project" "testProject1"{
+				  name = "%s"
+				  namespace_id = gitlab_group.testSubGroup1.id
+				  description = gitlab_group.testGroup.id
+				}
+				
+				resource "gitlab_project" "testProject2"{
+				  name = "%s"
+				  namespace_id = gitlab_group.testSubGroup2.id
+				  // This is all just to avoid using explicit depends_on on the datasource
+				  // since it seems to break the acceptance tests
+				  description = gitlab_project.testProject1.description
+				}
+				
+				data "gitlab_projects" "subGroups" {
+				  // This is to ensure the projects have been created before running the datasource
+				  group_id = gitlab_project.testProject2.description
+				  include_subgroups = true
+				}
+					`, parentGroupName, parentGroupName, subGroupName1, subGroupName1, subGroupName2, subGroupName2, subGroupProjectName1, subGroupProjectName2),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceGitlabProjects(
 						"gitlab_project.testProject1",
@@ -111,7 +173,33 @@ func TestAccDataGitlabProjects_searchArchivedRepository(t *testing.T) {
 		ProtoV6ProviderFactories: providerFactoriesV6,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataGitlabProjectsConfigGetProjectArchivedRepositoryAll(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "test" {
+					name = "test-%d"
+					path = "test-%d"
+				}
+				
+				resource "gitlab_project" "archived_repo" {
+				  name         = "archived-%d"
+				  namespace_id = gitlab_group.test.id
+				  archived     = true
+				}
+				
+				resource "gitlab_project" "not_archived_repo" {
+				  name         = "not-archived-%d"
+				  namespace_id = gitlab_group.test.id
+				  archived     = false
+				}
+				
+				data "gitlab_projects" "search" {
+				  group_id = gitlab_group.test.id
+				  // NOTE: is required to have deterministic results
+				  order_by = "name"
+				  sort     = "asc"
+				
+				  depends_on = [gitlab_project.archived_repo, gitlab_project.not_archived_repo]
+				}
+					`, rInt, rInt, rInt, rInt),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
 						"data.gitlab_projects.search",
@@ -126,7 +214,35 @@ func TestAccDataGitlabProjects_searchArchivedRepository(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccDataGitlabProjectsConfigGetProjectArchivedRepository(rInt, "true"),
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "test" {
+					name = "test-%d"
+					path = "test-%d"
+				}
+				
+				resource "gitlab_project" "archived_repo" {
+				  name         = "archived-%d"
+				  namespace_id = gitlab_group.test.id
+				  archived     = true
+				}
+				
+				resource "gitlab_project" "not_archived_repo" {
+				  name         = "not-archived-%d"
+				  namespace_id = gitlab_group.test.id
+				  archived     = false
+				}
+				
+				data "gitlab_projects" "search" {
+				  group_id = gitlab_group.test.id
+				  // NOTE: is required to have deterministic results
+				  order_by = "name"
+				  sort     = "asc"
+				
+				  archived = %s
+				
+				  depends_on = [gitlab_project.archived_repo, gitlab_project.not_archived_repo]
+				}
+					`, rInt, rInt, rInt, rInt, "true"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
 						"data.gitlab_projects.search",
@@ -136,7 +252,35 @@ func TestAccDataGitlabProjects_searchArchivedRepository(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccDataGitlabProjectsConfigGetProjectArchivedRepository(rInt, "false"),
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "test" {
+					name = "test-%d"
+					path = "test-%d"
+				}
+				
+				resource "gitlab_project" "archived_repo" {
+				  name         = "archived-%d"
+				  namespace_id = gitlab_group.test.id
+				  archived     = true
+				}
+				
+				resource "gitlab_project" "not_archived_repo" {
+				  name         = "not-archived-%d"
+				  namespace_id = gitlab_group.test.id
+				  archived     = false
+				}
+				
+				data "gitlab_projects" "search" {
+				  group_id = gitlab_group.test.id
+				  // NOTE: is required to have deterministic results
+				  order_by = "name"
+				  sort     = "asc"
+				
+				  archived = %s
+				
+				  depends_on = [gitlab_project.archived_repo, gitlab_project.not_archived_repo]
+				}
+					`, rInt, rInt, rInt, rInt, "false"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
 						"data.gitlab_projects.search",
@@ -349,7 +493,6 @@ func testAccDataSourceGitlabProjectsContainsProjects(dsPath string, projects ...
 
 func testAccDataSourceGitlabProjects(src string, n string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-
 		project := s.RootModule().Resources[src]
 		projectResource := project.Primary.Attributes
 
@@ -388,7 +531,7 @@ func testAccDataSourceGitlabProjects(src string, n string) resource.TestCheckFun
 
 		var errorMessageExpected strings.Builder
 		for _, attr := range testAttributes {
-			errorMessageExpected.WriteString(fmt.Sprintf("%s=%v, ", attr, projectResource[fmt.Sprintf("%s", attr)])) // nolint // TODO: Resolve this golangci-lint issue: S1025: the argument is already a string, there's no need to use fmt.Sprintf (gosimple)
+			errorMessageExpected.WriteString(fmt.Sprintf("%s=%v, ", attr, projectResource[attr]))
 		}
 
 		var errorMessageGot strings.Builder
@@ -402,140 +545,4 @@ func testAccDataSourceGitlabProjects(src string, n string) resource.TestCheckFun
 
 		return fmt.Errorf("datasource did not return any match.\nExpected: %s\nGot:\n  %s", errorMessageExpected.String(), errorMessageGot.String())
 	}
-}
-
-func testAccDataGitlabProjectsConfigGetProjectSearch(projectName string) string {
-	return fmt.Sprintf(`
-
-resource "gitlab_project" "search" {
-  name = "%s"
-  path = "%s"
-}
-
-data "gitlab_projects" "search" {
-  search = gitlab_project.search.name
-}
-	`, projectName, projectName)
-}
-
-func testAccDataGitlabProjectsConfigGetProjectArchivedRepositoryAll(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_group" "test" {
-	name = "test-%d"
-	path = "test-%d"
-}
-
-resource "gitlab_project" "archived_repo" {
-  name         = "archived-%d"
-  namespace_id = gitlab_group.test.id
-  archived     = true
-}
-
-resource "gitlab_project" "not_archived_repo" {
-  name         = "not-archived-%d"
-  namespace_id = gitlab_group.test.id
-  archived     = false
-}
-
-data "gitlab_projects" "search" {
-  group_id = gitlab_group.test.id
-  // NOTE: is required to have deterministic results
-  order_by = "name"
-  sort     = "asc"
-
-  depends_on = [gitlab_project.archived_repo, gitlab_project.not_archived_repo]
-}
-	`, rInt, rInt, rInt, rInt)
-}
-
-func testAccDataGitlabProjectsConfigGetProjectArchivedRepository(rInt int, archived string) string {
-	return fmt.Sprintf(`
-resource "gitlab_group" "test" {
-	name = "test-%d"
-	path = "test-%d"
-}
-
-resource "gitlab_project" "archived_repo" {
-  name         = "archived-%d"
-  namespace_id = gitlab_group.test.id
-  archived     = true
-}
-
-resource "gitlab_project" "not_archived_repo" {
-  name         = "not-archived-%d"
-  namespace_id = gitlab_group.test.id
-  archived     = false
-}
-
-data "gitlab_projects" "search" {
-  group_id = gitlab_group.test.id
-  // NOTE: is required to have deterministic results
-  order_by = "name"
-  sort     = "asc"
-
-  archived = %s
-
-  depends_on = [gitlab_project.archived_repo, gitlab_project.not_archived_repo]
-}
-	`, rInt, rInt, rInt, rInt, archived)
-}
-
-func testAccDataGitlabProjectsConfigGetGroupProjectsByGroupId(groupName string, projectName string) string {
-	return fmt.Sprintf(`
-resource "gitlab_group" "testGroup" {
-  name = "%s"
-  path = "%s"
-  description = "Terraform acceptance tests"
-}
-
-resource "gitlab_project" "testProject"{
-  name = "%s"
-  namespace_id = gitlab_group.testGroup.id
-}
-
-data "gitlab_projects" "group" {
-  group_id = gitlab_project.testProject.namespace_id
-}
-	`, groupName, groupName, projectName)
-}
-
-func testAccDataGitlabProjectsConfigGetNestedProjectsByParentGroupId(parentGroupName string, subGroupName1 string, subGroupName2 string, projectName1 string, projectName2 string) string {
-	return fmt.Sprintf(`
-resource "gitlab_group" "testGroup" {
-  name = "%s"
-  path = "%s"
-}
-
-resource "gitlab_group" "testSubGroup1" {
-  name = "%s"
-  path = "%s"
-  parent_id = gitlab_group.testGroup.id
-}
-
-resource "gitlab_group" "testSubGroup2" {
-  name = "%s"
-  path = "%s"
-  parent_id = gitlab_group.testGroup.id
-}
-
-resource "gitlab_project" "testProject1"{
-  name = "%s"
-  namespace_id = gitlab_group.testSubGroup1.id
-  description = gitlab_group.testGroup.id
-}
-
-resource "gitlab_project" "testProject2"{
-  name = "%s"
-  namespace_id = gitlab_group.testSubGroup2.id
-  // This is all just to avoid using explicit depends_on on the datasource
-  // since it seems to break the acceptance tests
-  description = gitlab_project.testProject1.description
-}
-
-data "gitlab_projects" "subGroups" {
-  // This is to ensure the projects have been created before running the datasource
-  group_id = gitlab_project.testProject2.description
-  include_subgroups = true
-}
-	`, parentGroupName, parentGroupName, subGroupName1, subGroupName1, subGroupName2, subGroupName2, projectName1, projectName2)
 }
