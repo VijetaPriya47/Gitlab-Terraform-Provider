@@ -48,20 +48,21 @@ type gitlabProjectHookResourceModel struct {
 	Name        types.String `tfsdk:"name"`
 	Description types.String `tfsdk:"description"`
 
-	PushEvents               types.Bool   `tfsdk:"push_events"`
-	PushEventsBranchFilter   types.String `tfsdk:"push_events_branch_filter"`
-	IssuesEvents             types.Bool   `tfsdk:"issues_events"`
-	ConfidentialIssuesEvents types.Bool   `tfsdk:"confidential_issues_events"`
-	MergeRequestsEvents      types.Bool   `tfsdk:"merge_requests_events"`
-	TagPushEvents            types.Bool   `tfsdk:"tag_push_events"`
-	NoteEvents               types.Bool   `tfsdk:"note_events"`
-	ConfidentialNoteEvents   types.Bool   `tfsdk:"confidential_note_events"`
-	JobEvents                types.Bool   `tfsdk:"job_events"`
-	PipelineEvents           types.Bool   `tfsdk:"pipeline_events"`
-	WikiPageEvents           types.Bool   `tfsdk:"wiki_page_events"`
-	DeploymentEvents         types.Bool   `tfsdk:"deployment_events"`
-	ReleasesEvents           types.Bool   `tfsdk:"releases_events"`
-	EnableSSLVerification    types.Bool   `tfsdk:"enable_ssl_verification"`
+	PushEvents                types.Bool   `tfsdk:"push_events"`
+	PushEventsBranchFilter    types.String `tfsdk:"push_events_branch_filter"`
+	IssuesEvents              types.Bool   `tfsdk:"issues_events"`
+	ConfidentialIssuesEvents  types.Bool   `tfsdk:"confidential_issues_events"`
+	MergeRequestsEvents       types.Bool   `tfsdk:"merge_requests_events"`
+	TagPushEvents             types.Bool   `tfsdk:"tag_push_events"`
+	NoteEvents                types.Bool   `tfsdk:"note_events"`
+	ConfidentialNoteEvents    types.Bool   `tfsdk:"confidential_note_events"`
+	JobEvents                 types.Bool   `tfsdk:"job_events"`
+	PipelineEvents            types.Bool   `tfsdk:"pipeline_events"`
+	WikiPageEvents            types.Bool   `tfsdk:"wiki_page_events"`
+	ResourceAccessTokenEvents types.Bool   `tfsdk:"resource_access_token_events"`
+	DeploymentEvents          types.Bool   `tfsdk:"deployment_events"`
+	ReleasesEvents            types.Bool   `tfsdk:"releases_events"`
+	EnableSSLVerification     types.Bool   `tfsdk:"enable_ssl_verification"`
 
 	CustomWebhookTemplate types.String `tfsdk:"custom_webhook_template"`
 
@@ -105,24 +106,25 @@ func (r *gitlabProjectHookResource) Create(ctx context.Context, req resource.Cre
 	}
 
 	options := &gitlab.AddProjectHookOptions{
-		Name:                     data.Name.ValueStringPointer(),
-		Description:              data.Description.ValueStringPointer(),
-		URL:                      data.URL.ValueStringPointer(),
-		PushEvents:               data.PushEvents.ValueBoolPointer(),
-		PushEventsBranchFilter:   data.PushEventsBranchFilter.ValueStringPointer(),
-		IssuesEvents:             data.IssuesEvents.ValueBoolPointer(),
-		ConfidentialIssuesEvents: data.ConfidentialIssuesEvents.ValueBoolPointer(),
-		MergeRequestsEvents:      data.MergeRequestsEvents.ValueBoolPointer(),
-		TagPushEvents:            data.TagPushEvents.ValueBoolPointer(),
-		NoteEvents:               data.NoteEvents.ValueBoolPointer(),
-		ConfidentialNoteEvents:   data.ConfidentialNoteEvents.ValueBoolPointer(),
-		JobEvents:                data.JobEvents.ValueBoolPointer(),
-		PipelineEvents:           data.PipelineEvents.ValueBoolPointer(),
-		WikiPageEvents:           data.WikiPageEvents.ValueBoolPointer(),
-		DeploymentEvents:         data.DeploymentEvents.ValueBoolPointer(),
-		ReleasesEvents:           data.ReleasesEvents.ValueBoolPointer(),
-		EnableSSLVerification:    data.EnableSSLVerification.ValueBoolPointer(),
-		CustomWebhookTemplate:    data.CustomWebhookTemplate.ValueStringPointer(),
+		Name:                      data.Name.ValueStringPointer(),
+		Description:               data.Description.ValueStringPointer(),
+		URL:                       data.URL.ValueStringPointer(),
+		PushEvents:                data.PushEvents.ValueBoolPointer(),
+		PushEventsBranchFilter:    data.PushEventsBranchFilter.ValueStringPointer(),
+		IssuesEvents:              data.IssuesEvents.ValueBoolPointer(),
+		ConfidentialIssuesEvents:  data.ConfidentialIssuesEvents.ValueBoolPointer(),
+		MergeRequestsEvents:       data.MergeRequestsEvents.ValueBoolPointer(),
+		TagPushEvents:             data.TagPushEvents.ValueBoolPointer(),
+		NoteEvents:                data.NoteEvents.ValueBoolPointer(),
+		ConfidentialNoteEvents:    data.ConfidentialNoteEvents.ValueBoolPointer(),
+		JobEvents:                 data.JobEvents.ValueBoolPointer(),
+		PipelineEvents:            data.PipelineEvents.ValueBoolPointer(),
+		WikiPageEvents:            data.WikiPageEvents.ValueBoolPointer(),
+		ResourceAccessTokenEvents: data.ResourceAccessTokenEvents.ValueBoolPointer(),
+		DeploymentEvents:          data.DeploymentEvents.ValueBoolPointer(),
+		ReleasesEvents:            data.ReleasesEvents.ValueBoolPointer(),
+		EnableSSLVerification:     data.EnableSSLVerification.ValueBoolPointer(),
+		CustomWebhookTemplate:     data.CustomWebhookTemplate.ValueStringPointer(),
 	}
 
 	if !data.Token.IsNull() {
@@ -211,24 +213,25 @@ func (r *gitlabProjectHookResource) Update(ctx context.Context, req resource.Upd
 	}
 
 	options := &gitlab.EditProjectHookOptions{
-		Name:                     data.Name.ValueStringPointer(),
-		Description:              data.Description.ValueStringPointer(),
-		URL:                      data.URL.ValueStringPointer(),
-		PushEvents:               data.PushEvents.ValueBoolPointer(),
-		PushEventsBranchFilter:   data.PushEventsBranchFilter.ValueStringPointer(),
-		IssuesEvents:             data.IssuesEvents.ValueBoolPointer(),
-		ConfidentialIssuesEvents: data.ConfidentialIssuesEvents.ValueBoolPointer(),
-		MergeRequestsEvents:      data.MergeRequestsEvents.ValueBoolPointer(),
-		TagPushEvents:            data.TagPushEvents.ValueBoolPointer(),
-		NoteEvents:               data.NoteEvents.ValueBoolPointer(),
-		ConfidentialNoteEvents:   data.ConfidentialNoteEvents.ValueBoolPointer(),
-		JobEvents:                data.JobEvents.ValueBoolPointer(),
-		PipelineEvents:           data.PipelineEvents.ValueBoolPointer(),
-		WikiPageEvents:           data.WikiPageEvents.ValueBoolPointer(),
-		DeploymentEvents:         data.DeploymentEvents.ValueBoolPointer(),
-		ReleasesEvents:           data.ReleasesEvents.ValueBoolPointer(),
-		EnableSSLVerification:    data.EnableSSLVerification.ValueBoolPointer(),
-		CustomWebhookTemplate:    data.CustomWebhookTemplate.ValueStringPointer(),
+		Name:                      data.Name.ValueStringPointer(),
+		Description:               data.Description.ValueStringPointer(),
+		URL:                       data.URL.ValueStringPointer(),
+		PushEvents:                data.PushEvents.ValueBoolPointer(),
+		PushEventsBranchFilter:    data.PushEventsBranchFilter.ValueStringPointer(),
+		IssuesEvents:              data.IssuesEvents.ValueBoolPointer(),
+		ConfidentialIssuesEvents:  data.ConfidentialIssuesEvents.ValueBoolPointer(),
+		MergeRequestsEvents:       data.MergeRequestsEvents.ValueBoolPointer(),
+		TagPushEvents:             data.TagPushEvents.ValueBoolPointer(),
+		NoteEvents:                data.NoteEvents.ValueBoolPointer(),
+		ConfidentialNoteEvents:    data.ConfidentialNoteEvents.ValueBoolPointer(),
+		JobEvents:                 data.JobEvents.ValueBoolPointer(),
+		PipelineEvents:            data.PipelineEvents.ValueBoolPointer(),
+		WikiPageEvents:            data.WikiPageEvents.ValueBoolPointer(),
+		ResourceAccessTokenEvents: data.ResourceAccessTokenEvents.ValueBoolPointer(),
+		DeploymentEvents:          data.DeploymentEvents.ValueBoolPointer(),
+		ReleasesEvents:            data.ReleasesEvents.ValueBoolPointer(),
+		EnableSSLVerification:     data.EnableSSLVerification.ValueBoolPointer(),
+		CustomWebhookTemplate:     data.CustomWebhookTemplate.ValueStringPointer(),
 	}
 
 	if !data.Token.IsNull() {
@@ -424,6 +427,12 @@ func (d *gitlabProjectHookResource) getSchema() schema.Schema {
 				Computed:    true,
 				Default:     booldefault.StaticBool(false),
 			},
+			"resource_access_token_events": schema.BoolAttribute{
+				Description: "Invoke the hook for project access token expiry events.",
+				Optional:    true,
+				Computed:    true,
+				Default:     booldefault.StaticBool(false),
+			},
 			"deployment_events": schema.BoolAttribute{
 				Description: "Invoke the hook for deployment events.",
 				Optional:    true,
@@ -489,6 +498,7 @@ func (d *gitlabProjectHookResourceModel) modelToStateModel(a *gitlab.ProjectHook
 	d.JobEvents = types.BoolValue(a.JobEvents)
 	d.PipelineEvents = types.BoolValue(a.PipelineEvents)
 	d.WikiPageEvents = types.BoolValue(a.WikiPageEvents)
+	d.ResourceAccessTokenEvents = types.BoolValue(a.ResourceAccessTokenEvents)
 	d.DeploymentEvents = types.BoolValue(a.DeploymentEvents)
 	d.ReleasesEvents = types.BoolValue(a.ReleasesEvents)
 	d.EnableSSLVerification = types.BoolValue(a.EnableSSLVerification)
