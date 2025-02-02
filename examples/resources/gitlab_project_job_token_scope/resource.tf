@@ -6,6 +6,7 @@ resource "gitlab_project_job_token_scope" "allowed_single_project" {
 # Allow multiple projects
 locals {
   allowed_project_ids = [123, 456, 789]
+  allowed_group_ids   = [123, 456, 789]
 }
 
 data "gitlab_project" "deployment_project" {
@@ -17,4 +18,11 @@ resource "gitlab_project_job_token_scope" "allowed_project" {
 
   project           = data.gitlab_project.deployment_project.id
   target_project_id = each.key
+}
+
+resource "gitlab_project_job_token_scope" "allowed_group" {
+  for_each = toset(local.allowed_group_ids)
+
+  project         = data.gitlab_project.deployment_project.id
+  target_group_id = each.key
 }
