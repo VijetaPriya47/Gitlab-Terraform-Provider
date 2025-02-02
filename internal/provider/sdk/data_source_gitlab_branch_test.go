@@ -21,7 +21,18 @@ func TestAccDataGitlabBranch_basic(t *testing.T) {
 		ProtoV6ProviderFactories: providerFactoriesV6,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataGitlabBranch(rInt, project.PathWithNamespace),
+				Config: fmt.Sprintf(`
+					resource "gitlab_branch" "foo" {
+						name = "testbranch-%[1]d"
+						ref = "main"
+						project = "%s"
+					}
+					
+					data "gitlab_branch" "foo" {
+						name = "${gitlab_branch.foo.name}"
+						project = "%s"
+					}
+				`, rInt, project.PathWithNamespace, project.PathWithNamespace),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceGitlabBranch("gitlab_branch.foo", "data.gitlab_branch.foo"),
 				),
@@ -32,7 +43,6 @@ func TestAccDataGitlabBranch_basic(t *testing.T) {
 
 func testAccDataSourceGitlabBranch(src, n string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-
 		branch := s.RootModule().Resources[src]
 		branchAttr := branch.Primary.Attributes
 
@@ -61,25 +71,4 @@ func testAccDataSourceGitlabBranch(src, n string) resource.TestCheckFunc {
 		}
 		return nil
 	}
-}
-
-func testAccDataGitlabBranch(rInt int, project string) string {
-	return fmt.Sprintf(`
-%s
-
-data "gitlab_branch" "foo" {
-  name = "${gitlab_branch.foo.name}"
-  project = "%s"
-}
-`, testAccDataGitlabBranchSetup(rInt, project), project)
-}
-
-func testAccDataGitlabBranchSetup(rInt int, project string) string {
-	return fmt.Sprintf(`
-resource "gitlab_branch" "foo" {
-	name = "testbranch-%[1]d"
-	ref = "main"
-	project = "%s"
-}
-  `, rInt, project)
 }

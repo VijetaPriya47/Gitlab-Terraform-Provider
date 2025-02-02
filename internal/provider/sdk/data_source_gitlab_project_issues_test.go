@@ -20,7 +20,15 @@ func TestAccDataSourceGitlabProjectIssues_basic(t *testing.T) {
 		ProtoV6ProviderFactories: providerFactoriesV6,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataGitlabProjectIssuesConfig(testProject.ID),
+				Config: fmt.Sprintf(`
+					data "gitlab_project_issues" "this" {
+						project = %d
+					
+						// only for determinism
+						order_by = "relative_position"
+						sort     = "asc"
+					}
+				`, testProject.ID),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("data.gitlab_project_issues.this", "issues.#", fmt.Sprintf("%d", len(testIssues))),
 					resource.TestCheckResourceAttr("data.gitlab_project_issues.this", "issues.0.iid", "1"),
@@ -33,16 +41,4 @@ func TestAccDataSourceGitlabProjectIssues_basic(t *testing.T) {
 			},
 		},
 	})
-}
-
-func testAccDataGitlabProjectIssuesConfig(projectID int) string {
-	return fmt.Sprintf(`
-data "gitlab_project_issues" "this" {
-	project = %d
-
-	// only for determinism
-	order_by = "relative_position"
-	sort     = "asc"
-}
-`, projectID)
 }

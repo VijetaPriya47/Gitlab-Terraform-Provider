@@ -28,7 +28,13 @@ func TestAccDataSourceGitlabGroups_basic(t *testing.T) {
 		ProtoV6ProviderFactories: providerFactoriesV6,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataSourceGitlabGroupsConfigSearchSort(prefixFoo),
+				Config: `
+					data "gitlab_groups" "foos" {
+						sort = "asc"
+						search = "acctest-group-foo"
+						order_by = "id"
+					}
+				`,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("data.gitlab_groups.foos", "groups.#", "2"),
 					resource.TestCheckResourceAttr("data.gitlab_groups.foos", "groups.0.group_id", fmt.Sprint(groupsFoo[0].ID)),
@@ -51,19 +57,33 @@ func TestAccDataSourceGitlabGroups_basic(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccDataSourceGitlabLotsOfGroupsSearch(prefixLotsOf),
+				Config: `
+					data "gitlab_groups" "lotsof" {
+						search = "acctest-group-lotsof"
+					}
+				`,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("data.gitlab_groups.lotsof", "groups.#", "42"),
 				),
 			},
 			{
-				Config: testAccDataSourceGitlabWithTopLevelOnly(prefixParent),
+				Config: `
+					data "gitlab_groups" "toplevel" {
+						top_level_only = true
+						search = "acctest-group-parent"
+					}
+				`,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("data.gitlab_groups.toplevel", "groups.#", "1"),
 				),
 			},
 			{
-				Config: testAccDataSourceGitlabWithoutTopLevelOnly(prefixParent),
+				Config: `
+					data "gitlab_groups" "sublevel" {
+						top_level_only = false
+						search = "acctest-group-parent"
+					}
+				`,
 				Check: resource.ComposeTestCheckFunc(
 					// check if all subgroups are returned
 					resource.TestCheckResourceAttr("data.gitlab_groups.sublevel", "groups.#", "2"),
@@ -76,40 +96,4 @@ func TestAccDataSourceGitlabGroups_basic(t *testing.T) {
 			},
 		},
 	})
-}
-
-func testAccDataSourceGitlabGroupsConfigSearchSort(prefix string) string {
-	return fmt.Sprintf(`
-data "gitlab_groups" "foos" {
-  sort = "asc"
-  search = "%s"
-  order_by = "id"
-}
-	`, prefix)
-}
-
-func testAccDataSourceGitlabLotsOfGroupsSearch(prefix string) string {
-	return fmt.Sprintf(`
-data "gitlab_groups" "lotsof" {
-	search = "%s"
-}
-	`, prefix)
-}
-
-func testAccDataSourceGitlabWithTopLevelOnly(prefix string) string {
-	return fmt.Sprintf(`
-data "gitlab_groups" "toplevel" {
-	top_level_only = true
-	search = "%s"
-}
-	`, prefix)
-}
-
-func testAccDataSourceGitlabWithoutTopLevelOnly(prefix string) string {
-	return fmt.Sprintf(`
-data "gitlab_groups" "sublevel" {
-	top_level_only = false
-	search = "%s"
-}
-	`, prefix)
 }

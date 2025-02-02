@@ -11,8 +11,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
 
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
@@ -25,18 +25,54 @@ func TestAccDataGitlabProject_basic(t *testing.T) {
 		ProtoV6ProviderFactories: providerFactoriesV6,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataGitlabProjectConfigByPathWithNamespace(projectname),
+				Config: fmt.Sprintf(`
+					resource "gitlab_project" "test"{
+						name = "%s"
+						path = "%s"
+						description = "Terraform acceptance tests"
+						visibility_level = "public"
+					}
+					
+					data "gitlab_project" "foo" {
+						path_with_namespace = gitlab_project.test.path_with_namespace
+					}
+				`, projectname, projectname),
 				Check: testAccDataSourceGitlabProject("gitlab_project.test", "data.gitlab_project.foo",
 					[]string{"id", "name", "path", "visibility", "description"}),
 			},
 			{
-				Config: testAccDataGitlabProjectConfig(projectname),
+				Config: fmt.Sprintf(`
+					resource "gitlab_project" "test"{
+						name = "%s"
+						path = "%s"
+						description = "Terraform acceptance tests"
+						visibility_level = "public"
+					}
+					
+					data "gitlab_project" "foo" {
+						id = "${gitlab_project.test.id}"
+					}
+				`, projectname, projectname),
 				Check: testAccDataSourceGitlabProject("gitlab_project.test", "data.gitlab_project.foo",
 					[]string{"id", "name", "path", "visibility", "description"}),
 			},
 			{
 				SkipFunc: testutil.IsRunningInCE,
-				Config:   testAccDataGitlabProjectConfigPushRules(projectname),
+				Config: fmt.Sprintf(`
+					resource "gitlab_project" "test"{
+						name = "%[1]s"
+						path = "%[1]s"
+						description = "Terraform acceptance tests"
+						visibility_level = "public"
+						push_rules {
+							author_email_regex = "foo"
+						}
+					}
+					
+					data "gitlab_project" "foo" {
+						id = gitlab_project.test.id
+					}
+				`, projectname),
 				Check: testAccDataSourceGitlabProject("gitlab_project.test", "data.gitlab_project.foo",
 					[]string{"push_rules.0.author_email_regex"}),
 			},
@@ -223,7 +259,6 @@ func TestAccDataGitlabProject_CIPipelineVariablesMinimumOverrideRole(t *testing.
 
 func testAccDataSourceGitlabProject(resourceName, dataSourceName string, testAttributes []string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-
 		project := s.RootModule().Resources[resourceName]
 		projectResource := project.Primary.Attributes
 
@@ -241,52 +276,4 @@ func testAccDataSourceGitlabProject(resourceName, dataSourceName string, testAtt
 		}
 		return nil
 	}
-}
-
-func testAccDataGitlabProjectConfig(projectname string) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "test"{
-	name = "%s"
-	path = "%s"
-	description = "Terraform acceptance tests"
-	visibility_level = "public"
-}
-
-data "gitlab_project" "foo" {
-	id = "${gitlab_project.test.id}"
-}
-	`, projectname, projectname)
-}
-
-func testAccDataGitlabProjectConfigByPathWithNamespace(projectname string) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "test"{
-	name = "%s"
-	path = "%s"
-	description = "Terraform acceptance tests"
-	visibility_level = "public"
-}
-
-data "gitlab_project" "foo" {
-	path_with_namespace = gitlab_project.test.path_with_namespace
-}
-	`, projectname, projectname)
-}
-
-func testAccDataGitlabProjectConfigPushRules(projectName string) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "test"{
-	name = "%[1]s"
-	path = "%[1]s"
-	description = "Terraform acceptance tests"
-	visibility_level = "public"
-    push_rules {
-        author_email_regex = "foo"
-    }
-}
-
-data "gitlab_project" "foo" {
-	id = gitlab_project.test.id
-}
-	`, projectName)
 }
