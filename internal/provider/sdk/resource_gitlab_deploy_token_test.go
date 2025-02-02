@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
@@ -171,7 +171,39 @@ func TestAccGitlabDeployToken_basic(t *testing.T) {
 		CheckDestroy:             testAccCheckGitlabDeployTokenDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccGitlabDeployTokenConfig(testProject.ID, testGroup.ID),
+				Config: fmt.Sprintf(`
+					resource "gitlab_deploy_token" "project_token" {
+						project  = "%d"
+						name     = "project-deploy-token"
+						username = "my-username"
+						
+						expires_at = "2021-03-14T07:20:50.000Z"
+						
+						scopes = [
+							"read_registry",
+							"read_repository",
+							"read_package_registry",
+							"write_registry",
+							"write_package_registry",
+						]
+					}
+					
+					resource "gitlab_deploy_token" "group_token" {
+						group  = "%d"
+						name     = "group-deploy-token"
+						username = "my-username"
+						
+						expires_at = "2021-03-14T07:20:50.000Z"
+						
+						scopes = [
+							"read_registry",
+							"read_repository",
+							"read_package_registry",
+							"write_registry",
+							"write_package_registry",
+						]
+					}
+				`, testProject.ID, testGroup.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabDeployTokenExists("gitlab_deploy_token.project_token", &projectDeployToken),
 					resource.TestCheckResourceAttrSet("gitlab_deploy_token.project_token", "token"),
@@ -197,6 +229,7 @@ func TestAccGitlabDeployToken_basic(t *testing.T) {
 		},
 	})
 }
+
 func TestAccGitlabDeployToken_nousername(t *testing.T) {
 	var projectDeployToken gitlab.DeployToken
 	var groupDeployToken gitlab.DeployToken
@@ -265,6 +298,7 @@ func TestAccGitlabDeployToken_nousername(t *testing.T) {
 		},
 	})
 }
+
 func TestAccGitlabDeployToken_pagination(t *testing.T) {
 	testGroup := testutil.CreateGroups(t, 1)[0]
 	testProject := testutil.CreateProject(t)
@@ -274,13 +308,45 @@ func TestAccGitlabDeployToken_pagination(t *testing.T) {
 		CheckDestroy:             testAccCheckGitlabDeployTokenDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccGitlabDeployTokenPaginationConfig(25, testGroup.ID, testProject.ID),
+				Config: fmt.Sprintf(`
+					resource "gitlab_deploy_token" "example_group" {
+						group  = %d
+						name   = "deploy-token-${count.index}"
+						scopes = ["read_registry"]
+						
+						count = %d
+					}
+					
+					resource "gitlab_deploy_token" "example_project" {
+						project  = %d
+						name   = "deploy-token-${count.index}"
+						scopes = ["read_registry"]
+						
+						count = %d
+					}
+				`, testGroup.ID, 25, testProject.ID, 25),
 			},
 			// In case pagination wouldn't properly work, we would get that the plan isn't empty,
 			// because some of the deploy tokens wouldn't be in the first page and therefore
 			// considered non-existing, ...
 			{
-				Config:   testAccGitlabDeployTokenPaginationConfig(25, testGroup.ID, testProject.ID),
+				Config: fmt.Sprintf(`
+					resource "gitlab_deploy_token" "example_group" {
+						group  = %d
+						name   = "deploy-token-${count.index}"
+						scopes = ["read_registry"]
+						
+						count = %d
+					}
+					
+					resource "gitlab_deploy_token" "example_project" {
+						project  = %d
+						name   = "deploy-token-${count.index}"
+						scopes = ["read_registry"]
+						
+						count = %d
+					}
+				`, testGroup.ID, 25, testProject.ID, 25),
 				PlanOnly: true,
 			},
 		},
@@ -349,62 +415,6 @@ func testAccCheckGitlabDeployTokenDestroy(s *terraform.State) error {
 	}
 
 	return nil
-}
-
-func testAccGitlabDeployTokenConfig(projectID int, groupID int) string {
-	return fmt.Sprintf(`
-resource "gitlab_deploy_token" "project_token" {
-  project  = "%d"
-  name     = "project-deploy-token"
-  username = "my-username"
-
-  expires_at = "2021-03-14T07:20:50.000Z"
-
-  scopes = [
-	"read_registry",
-	"read_repository",
-	"read_package_registry",
-	"write_registry",
-	"write_package_registry",
-  ]
-}
-
-resource "gitlab_deploy_token" "group_token" {
-  group  = "%d"
-  name     = "group-deploy-token"
-  username = "my-username"
-
-  expires_at = "2021-03-14T07:20:50.000Z"
-
-  scopes = [
-	"read_registry",
-	"read_repository",
-	"read_package_registry",
-	"write_registry",
-	"write_package_registry",
-  ]
-}
-  `, projectID, groupID)
-}
-
-func testAccGitlabDeployTokenPaginationConfig(numberOfTokens int, groupID int, projectID int) string {
-	return fmt.Sprintf(`
-resource "gitlab_deploy_token" "example_group" {
-  group  = %d
-  name   = "deploy-token-${count.index}"
-  scopes = ["read_registry"]
-
-  count = %d
-}
-
-resource "gitlab_deploy_token" "example_project" {
-  project  = %d
-  name   = "deploy-token-${count.index}"
-  scopes = ["read_registry"]
-
-  count = %d
-}
-  `, groupID, numberOfTokens, projectID, numberOfTokens)
 }
 
 type expiresAtSuppressFuncTest struct {

@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
@@ -27,7 +27,24 @@ func TestAccGitlabGroupBadge_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create a group and badge
 			{
-				Config: testAccGitlabGroupBadgeConfig(rInt),
+				Config: fmt.Sprintf(`
+					resource "gitlab_group" "foo" {
+						name        = "foo-%d"
+						path        = "foo-%d"
+						description = "Terraform acceptance tests"
+						
+						# So that acceptance tests can be run in a gitlab organization
+						# with no billing
+						visibility_level = "public"
+					}
+					
+					resource "gitlab_group_badge" "foo" {
+						group     = "${gitlab_group.foo.id}"
+						link_url  = "https://example.com/badge-%d"
+						image_url = "https://example.com/badge-%d.svg"
+						name      = "badge"
+					}
+				`, rInt, rInt, rInt, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabGroupBadgeExists("gitlab_group_badge.foo", &badge),
 					testAccCheckGitlabGroupBadgeAttributes(&badge, &testAccGitlabGroupBadgeExpectedAttributes{
@@ -45,7 +62,25 @@ func TestAccGitlabGroupBadge_basic(t *testing.T) {
 			},
 			// Update the group badge
 			{
-				Config: testAccGitlabGroupBadgeUpdateConfig(rInt),
+				Config: fmt.Sprintf(`
+					resource "gitlab_group" "foo" {
+						name        = "foo-%d"
+						path        = "foo-%d"
+						description = "Terraform acceptance tests"
+						
+						# So that acceptance tests can be run in a gitlab organization
+						# with no billing
+						visibility_level = "public"
+					}
+					
+					# change link and image url
+					resource "gitlab_group_badge" "foo" {
+						group     = "${gitlab_group.foo.id}"
+						link_url  = "https://example.com/new-badge-%d"
+						image_url = "https://example.com/new-badge-%d.svg"
+						name      = "badge-updated"
+					}
+				`, rInt, rInt, rInt, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabGroupBadgeExists("gitlab_group_badge.foo", &badge),
 					testAccCheckGitlabGroupBadgeAttributes(&badge, &testAccGitlabGroupBadgeExpectedAttributes{
@@ -130,47 +165,4 @@ func testAccCheckGitlabGroupBadgeDestroy(s *terraform.State) error {
 		return nil
 	}
 	return nil
-}
-
-func testAccGitlabGroupBadgeConfig(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_group" "foo" {
-  name        = "foo-%d"
-  path        = "foo-%d"
-  description = "Terraform acceptance tests"
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-
-resource "gitlab_group_badge" "foo" {
-  group     = "${gitlab_group.foo.id}"
-  link_url  = "https://example.com/badge-%d"
-  image_url = "https://example.com/badge-%d.svg"
-  name      = "badge"
-}
-	`, rInt, rInt, rInt, rInt)
-}
-
-func testAccGitlabGroupBadgeUpdateConfig(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_group" "foo" {
-  name        = "foo-%d"
-  path        = "foo-%d"
-  description = "Terraform acceptance tests"
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-
-# change link and image url
-resource "gitlab_group_badge" "foo" {
-  group     = "${gitlab_group.foo.id}"
-  link_url  = "https://example.com/new-badge-%d"
-  image_url = "https://example.com/new-badge-%d.svg"
-  name      = "badge-updated"
-}
-	`, rInt, rInt, rInt, rInt)
 }

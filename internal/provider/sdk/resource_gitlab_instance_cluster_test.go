@@ -11,8 +11,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
 
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
@@ -27,7 +27,23 @@ func TestAccGitlabInstanceCluster_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create an instance cluster with default options
 			{
-				Config: testAccGitlabInstanceClusterConfig(rInt, true),
+				Config: fmt.Sprintf(`
+					variable "cert" {
+						default = <<EOF
+%s
+EOF
+					}
+					
+					resource gitlab_instance_cluster "foo" {
+						name                          = "foo-cluster-%d"
+						domain                        = "example.com"
+						managed                       = "%s"
+						kubernetes_api_url            = "https://123.123.123"
+						kubernetes_token              = "some-token"
+						kubernetes_ca_cert            = var.cert
+						kubernetes_authorization_type = "abac"
+					}
+				`, instanceClusterFakeCert, rInt, "true"),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabInstanceClusterExists("gitlab_instance_cluster.foo", &cluster),
 					testAccCheckGitlabInstanceClusterAttributes(&cluster, &testAccGitlabInstanceClusterExpectedAttributes{
@@ -42,7 +58,23 @@ func TestAccGitlabInstanceCluster_basic(t *testing.T) {
 			},
 			// create an unmanaged cluster
 			{
-				Config: testAccGitlabInstanceClusterConfig(rInt, false),
+				Config: fmt.Sprintf(`
+					variable "cert" {
+						default = <<EOF
+%s
+EOF
+					}
+					
+					resource gitlab_instance_cluster "foo" {
+						name                          = "foo-cluster-%d"
+						domain                        = "example.com"
+						managed                       = "%s"
+						kubernetes_api_url            = "https://123.123.123"
+						kubernetes_token              = "some-token"
+						kubernetes_ca_cert            = var.cert
+						kubernetes_authorization_type = "abac"
+					}
+				`, instanceClusterFakeCert, rInt, "false"),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabInstanceClusterExists("gitlab_instance_cluster.foo", &cluster),
 					testAccCheckGitlabInstanceClusterAttributes(&cluster, &testAccGitlabInstanceClusterExpectedAttributes{
@@ -58,7 +90,22 @@ func TestAccGitlabInstanceCluster_basic(t *testing.T) {
 			},
 			// Update cluster
 			{
-				Config: testAccGitlabInstanceClusterUpdateConfig(rInt, "abac"),
+				Config: fmt.Sprintf(`
+					variable "cert" {
+						default = <<EOF
+%s
+EOF
+					}
+					
+					resource gitlab_instance_cluster "foo" {
+						name                          = "foo-cluster-%d"
+						domain                        = "example-new.com"
+						kubernetes_api_url            = "https://124.124.124"
+						kubernetes_token              = "some-token"
+						kubernetes_ca_cert            = var.cert
+						kubernetes_authorization_type = "%s"
+					}
+				`, instanceClusterFakeCert, rInt, "abac"),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabInstanceClusterExists("gitlab_instance_cluster.foo", &cluster),
 					testAccCheckGitlabInstanceClusterAttributes(&cluster, &testAccGitlabInstanceClusterExpectedAttributes{
@@ -73,7 +120,22 @@ func TestAccGitlabInstanceCluster_basic(t *testing.T) {
 			},
 			// Update authorization type cluster
 			{
-				Config: testAccGitlabInstanceClusterUpdateConfig(rInt, "rbac"),
+				Config: fmt.Sprintf(`
+					variable "cert" {
+						default = <<EOF
+%s
+EOF
+					}
+					
+					resource gitlab_instance_cluster "foo" {
+						name                          = "foo-cluster-%d"
+						domain                        = "example-new.com"
+						kubernetes_api_url            = "https://124.124.124"
+						kubernetes_token              = "some-token"
+						kubernetes_ca_cert            = var.cert
+						kubernetes_authorization_type = "%s"
+					}
+				`, instanceClusterFakeCert, rInt, "rbac"),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabInstanceClusterExists("gitlab_instance_cluster.foo", &cluster),
 					testAccCheckGitlabInstanceClusterAttributes(&cluster, &testAccGitlabInstanceClusterExpectedAttributes{
@@ -88,7 +150,23 @@ func TestAccGitlabInstanceCluster_basic(t *testing.T) {
 			},
 			// Create cluster with management_project_id
 			{
-				Config: testAccGitlabInstanceClusterConfig(rInt, true),
+				Config: fmt.Sprintf(`
+					variable "cert" {
+						default = <<EOF
+%s
+EOF
+					}
+					
+					resource gitlab_instance_cluster "foo" {
+						name                          = "foo-cluster-%d"
+						domain                        = "example.com"
+						managed                       = "%s"
+						kubernetes_api_url            = "https://123.123.123"
+						kubernetes_token              = "some-token"
+						kubernetes_ca_cert            = var.cert
+						kubernetes_authorization_type = "abac"
+					}
+				`, instanceClusterFakeCert, rInt, "true"),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabInstanceClusterExists("gitlab_instance_cluster.foo", &cluster),
 					testAccCheckGitlabInstanceClusterAttributes(&cluster, &testAccGitlabInstanceClusterExpectedAttributes{
@@ -200,47 +278,6 @@ func testAccCheckGitlabInstanceClusterAttributes(cluster *gitlab.InstanceCluster
 
 		return nil
 	}
-}
-
-func testAccGitlabInstanceClusterConfig(rInt int, managed bool) string {
-	m := fmt.Sprintf("%t", managed)
-
-	return fmt.Sprintf(`
-variable "cert" {
-  default = <<EOF
-%s
-EOF
-}
-
-resource gitlab_instance_cluster "foo" {
-  name                          = "foo-cluster-%d"
-  domain                        = "example.com"
-  managed                       = "%s"
-  kubernetes_api_url            = "https://123.123.123"
-  kubernetes_token              = "some-token"
-	kubernetes_ca_cert            = var.cert
-  kubernetes_authorization_type = "abac"
-}
-`, instanceClusterFakeCert, rInt, m)
-}
-
-func testAccGitlabInstanceClusterUpdateConfig(rInt int, authType string) string {
-	return fmt.Sprintf(`
-variable "cert" {
-  default = <<EOF
-%s
-EOF
-}
-
-resource gitlab_instance_cluster "foo" {
-  name                          = "foo-cluster-%d"
-  domain                        = "example-new.com"
-  kubernetes_api_url            = "https://124.124.124"
-  kubernetes_token              = "some-token"
-  kubernetes_ca_cert            = var.cert
-  kubernetes_authorization_type = "%s"
-}
-`, instanceClusterFakeCert, rInt, authType)
 }
 
 var instanceClusterFakeCert = `-----BEGIN CERTIFICATE-----
