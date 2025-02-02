@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
@@ -38,7 +38,13 @@ func TestAccGitlabProjectIssue_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// create Issue with required values only
 			{
-				Config: testAccGitlabProjectIssueConfigRequiredOnly(testProject),
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_issue" "this" {
+						// required
+						project = "%s"
+						title   = "Terraform test issue"
+					}
+				`, testProject.PathWithNamespace),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectIssueExists("gitlab_project_issue.this", &testIssue),
 					resource.TestCheckResourceAttr("gitlab_project_issue.this", "project", testProject.PathWithNamespace),
@@ -62,7 +68,22 @@ func TestAccGitlabProjectIssue_basic(t *testing.T) {
 			},
 			// update some Issue attributes
 			{
-				Config: testAccGitlabProjectIssueConfigAll(testProject, testMilestone, testUser),
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_issue" "this" {
+						// required
+						project = "%s"
+						title   = "Terraform test issue"
+					
+						assignee_ids      = [%d]
+						confidential      = true
+						description       = "Terraform test issue description"
+						issue_type        = "issue"
+						labels            = ["foo", "bar"]
+						milestone_id      = %d
+						state 	          = "opened"
+						discussion_locked = true
+					}
+				`, testProject.PathWithNamespace, testUser.ID, testMilestone.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectIssueExists("gitlab_project_issue.this", &updatedTestIssue),
 					resource.TestCheckResourceAttr("gitlab_project_issue.this", "project", testProject.PathWithNamespace),
@@ -86,7 +107,13 @@ func TestAccGitlabProjectIssue_basic(t *testing.T) {
 			},
 			// go back to required values only
 			{
-				Config: testAccGitlabProjectIssueConfigRequiredOnly(testProject),
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_issue" "this" {
+						// required
+						project = "%s"
+						title   = "Terraform test issue"
+					}
+				`, testProject.PathWithNamespace),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectIssueExists("gitlab_project_issue.this", &testIssue),
 					resource.TestCheckResourceAttr("gitlab_project_issue.this", "project", testProject.PathWithNamespace),
@@ -109,7 +136,14 @@ func TestAccGitlabProjectIssue_basic(t *testing.T) {
 			},
 			// close issue
 			{
-				Config: testAccGitlabProjectIssueConfigWithState(testProject, "closed"),
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_issue" "this" {
+						project  = "%s"
+						title    = "Terraform test issue"
+					
+						state    = "%s"
+					}
+				`, testProject.PathWithNamespace, "closed"),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectIssueExists("gitlab_project_issue.this", &testIssue),
 					resource.TestCheckResourceAttr("gitlab_project_issue.this", "state", "closed"),
@@ -132,7 +166,14 @@ func TestAccGitlabProjectIssue_basic(t *testing.T) {
 			},
 			// re-open issue
 			{
-				Config: testAccGitlabProjectIssueConfigWithState(testProject, "opened"),
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_issue" "this" {
+						project  = "%s"
+						title    = "Terraform test issue"
+					
+						state    = "%s"
+					}
+				`, testProject.PathWithNamespace, "opened"),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectIssueExists("gitlab_project_issue.this", &testIssue),
 					resource.TestCheckResourceAttr("gitlab_project_issue.this", "state", "opened"),
@@ -165,7 +206,23 @@ func TestAccGitlabProjectIssue_basicEE(t *testing.T) {
 		Steps: []resource.TestStep{
 			// create Issue with EE features set
 			{
-				Config: testAccGitlabProjectIssueConfigEE(testProject, testMilestone, testUser),
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_issue" "this" {
+						// required
+						project = "%s"
+						title   = "Terraform test issue"
+					
+						assignee_ids      = [%d]
+						confidential      = true
+						description       = "Terraform test issue description"
+						issue_type        = "issue"
+						labels            = ["foo", "bar"]
+						milestone_id      = %d
+						weight            = 42
+						state 	          = "opened"
+						discussion_locked = true
+					}
+				`, testProject.PathWithNamespace, testUser.ID, testMilestone.ID),
 			},
 			// Verify import
 			{
@@ -187,7 +244,14 @@ func TestAccGitlabProjectIssue_deleteOnDestroy(t *testing.T) {
 		Steps: []resource.TestStep{
 			// create Issue with required values only
 			{
-				Config: testAccGitlabProjectIssueConfigDeleteOnDestroy(testProject),
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_issue" "this" {
+						project = "%s"
+						title   = "Terraform test issue"
+					
+						delete_on_destroy = true
+					}
+				`, testProject.PathWithNamespace),
 			},
 		},
 	})
@@ -244,71 +308,4 @@ func testAccCheckGitlabProjectIssueDestroy(s *terraform.State) error {
 		return nil
 	}
 	return nil
-}
-
-func testAccGitlabProjectIssueConfigRequiredOnly(project *gitlab.Project) string {
-	return fmt.Sprintf(`
-resource "gitlab_project_issue" "this" {
-	// required
-	project = "%s"
-	title   = "Terraform test issue"
-
-}`, project.PathWithNamespace)
-}
-
-func testAccGitlabProjectIssueConfigWithState(project *gitlab.Project, state string) string {
-	return fmt.Sprintf(`
-resource "gitlab_project_issue" "this" {
-	project  = "%s"
-	title    = "Terraform test issue"
-
-	state    = "%s"
-}`, project.PathWithNamespace, state)
-}
-
-func testAccGitlabProjectIssueConfigDeleteOnDestroy(project *gitlab.Project) string {
-	return fmt.Sprintf(`
-resource "gitlab_project_issue" "this" {
-	project = "%s"
-	title   = "Terraform test issue"
-
-	delete_on_destroy = true
-}`, project.PathWithNamespace)
-}
-
-func testAccGitlabProjectIssueConfigAll(project *gitlab.Project, milestone *gitlab.Milestone, assignee *gitlab.User) string {
-	return fmt.Sprintf(`
-resource "gitlab_project_issue" "this" {
-	// required
-	project = "%s"
-	title   = "Terraform test issue"
-
-	assignee_ids = [%d]
-	confidential = true
-	description  = "Terraform test issue description"
-	issue_type   = "issue"
-	labels       = ["foo", "bar"]
-	milestone_id = %d
-	state 	     = "opened"
-	discussion_locked = true
-}`, project.PathWithNamespace, assignee.ID, milestone.ID)
-}
-
-func testAccGitlabProjectIssueConfigEE(project *gitlab.Project, milestone *gitlab.Milestone, assignee *gitlab.User) string {
-	return fmt.Sprintf(`
-resource "gitlab_project_issue" "this" {
-	// required
-	project = "%s"
-	title   = "Terraform test issue"
-
-	assignee_ids = [%d]
-	confidential = true
-	description  = "Terraform test issue description"
-	issue_type   = "issue"
-	labels       = ["foo", "bar"]
-	milestone_id = %d
-	weight       = 42
-	state 	     = "opened"
-	discussion_locked = true
-}`, project.PathWithNamespace, assignee.ID, milestone.ID)
 }

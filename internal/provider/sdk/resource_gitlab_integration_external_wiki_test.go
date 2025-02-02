@@ -20,8 +20,8 @@ func TestAccGitlabIntegrationExternalWiki_backwardsCompatibleToService(t *testin
 
 	var externalWikiService gitlab.ExternalWikiService
 
-	var externalWikiURL1 = "http://mynumberonewiki.com"
-	var externalWikiResourceName = "gitlab_service_external_wiki.this"
+	externalWikiURL1 := "http://mynumberonewiki.com"
+	externalWikiResourceName := "gitlab_service_external_wiki.this"
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
@@ -64,9 +64,9 @@ func TestAccGitlabIntegrationExternalWiki_basic(t *testing.T) {
 
 	var externalWikiService gitlab.ExternalWikiService
 
-	var externalWikiURL1 = "http://mynumberonewiki.com"
-	var externalWikiURL2 = "http://mynumbertwowiki.com"
-	var externalWikiResourceName = "gitlab_integration_external_wiki.this"
+	externalWikiURL1 := "http://mynumberonewiki.com"
+	externalWikiURL2 := "http://mynumbertwowiki.com"
+	externalWikiResourceName := "gitlab_integration_external_wiki.this"
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
@@ -74,7 +74,12 @@ func TestAccGitlabIntegrationExternalWiki_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create an External Wiki service
 			{
-				Config: testAccGitlabIntegrationExternalWikiConfig(testProject.ID, externalWikiURL1),
+				Config: fmt.Sprintf(`
+					resource "gitlab_integration_external_wiki" "this" {
+						project           = %[1]d
+						external_wiki_url = "%[2]s"
+					}
+				`, testProject.ID, externalWikiURL1),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabIntegrationExternalWikiExists(externalWikiResourceName, &externalWikiService),
 					resource.TestCheckResourceAttr(externalWikiResourceName, "external_wiki_url", externalWikiURL1),
@@ -97,7 +102,12 @@ func TestAccGitlabIntegrationExternalWiki_basic(t *testing.T) {
 			},
 			// Update the External Wiki service
 			{
-				Config: testAccGitlabIntegrationExternalWikiConfig(testProject.ID, externalWikiURL2),
+				Config: fmt.Sprintf(`
+					resource "gitlab_integration_external_wiki" "this" {
+						project           = %[1]d
+						external_wiki_url = "%[2]s"
+					}
+				`, testProject.ID, externalWikiURL2),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabIntegrationExternalWikiExists(externalWikiResourceName, &externalWikiService),
 					resource.TestCheckResourceAttr(externalWikiResourceName, "external_wiki_url", externalWikiURL2),
@@ -125,7 +135,12 @@ func TestAccGitlabIntegrationExternalWiki_basic(t *testing.T) {
 			},
 			// Update the External Wiki service to get back to previous settings
 			{
-				Config: testAccGitlabIntegrationExternalWikiConfig(testProject.ID, externalWikiURL1),
+				Config: fmt.Sprintf(`
+					resource "gitlab_integration_external_wiki" "this" {
+						project           = %[1]d
+						external_wiki_url = "%[2]s"
+					}
+				`, testProject.ID, externalWikiURL1),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabIntegrationExternalWikiExists(externalWikiResourceName, &externalWikiService),
 					resource.TestCheckResourceAttr(externalWikiResourceName, "external_wiki_url", externalWikiURL1),
@@ -181,13 +196,4 @@ func testAccCheckGitlabServiceExternalWikiDestroy(s *terraform.State) error {
 		}
 	}
 	return nil
-}
-
-func testAccGitlabIntegrationExternalWikiConfig(projectID int, externalWikiURL string) string {
-	return fmt.Sprintf(`
-resource "gitlab_integration_external_wiki" "this" {
-	project           = %[1]d
-	external_wiki_url = "%[2]s"
-}
-`, projectID, externalWikiURL)
 }

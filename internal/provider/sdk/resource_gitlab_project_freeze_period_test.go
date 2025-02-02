@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
@@ -25,7 +25,23 @@ func TestAccGitlabProjectFreezePeriod_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create a project and freeze period with default options
 			{
-				Config: testAccGitlabProjectFreezePeriodConfig(rInt),
+				Config: fmt.Sprintf(`
+					resource "gitlab_project" "foo" {
+						name        = "foo-%d"
+						description = "Terraform acceptance tests"
+						
+						# So that acceptance tests can be run in a gitlab organization
+						# with no billing
+						visibility_level = "public"
+					}
+					
+					resource "gitlab_project_freeze_period" "schedule" {
+						project       = gitlab_project.foo.id
+						freeze_start  = "0 23 * * 5"
+						freeze_end    =  "0 7 * * 1"
+						cron_timezone = "UTC"
+					}
+				`, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectFreezePeriodExists("gitlab_project_freeze_period.schedule", &schedule),
 					testAccCheckGitlabProjectFreezePeriodAttributes(&schedule, &testAccGitlabProjectFreezePeriodExpectedAttributes{
@@ -43,7 +59,23 @@ func TestAccGitlabProjectFreezePeriod_basic(t *testing.T) {
 			},
 			// Update the freeze period to change the parameters
 			{
-				Config: testAccGitlabProjectFreezePeriodUpdateConfig(rInt),
+				Config: fmt.Sprintf(`
+					resource "gitlab_project" "foo" {
+						name        = "foo-%d"
+						description = "Terraform acceptance tests"
+						
+						# So that acceptance tests can be run in a gitlab organization
+						# with no billing
+						visibility_level = "public"
+					}
+					
+					resource "gitlab_project_freeze_period" "schedule" {
+						project       = gitlab_project.foo.id
+						freeze_start  = "0 20 * * 6"
+						freeze_end    =  "0 7 * * 3"
+						cron_timezone = "EST"
+					}
+				`, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectFreezePeriodExists("gitlab_project_freeze_period.schedule", &schedule),
 					testAccCheckGitlabProjectFreezePeriodAttributes(&schedule, &testAccGitlabProjectFreezePeriodExpectedAttributes{
@@ -61,7 +93,23 @@ func TestAccGitlabProjectFreezePeriod_basic(t *testing.T) {
 			},
 			// Update the freeze period to get back to initial settings
 			{
-				Config: testAccGitlabProjectFreezePeriodConfig(rInt),
+				Config: fmt.Sprintf(`
+					resource "gitlab_project" "foo" {
+						name        = "foo-%d"
+						description = "Terraform acceptance tests"
+						
+						# So that acceptance tests can be run in a gitlab organization
+						# with no billing
+						visibility_level = "public"
+					}
+					
+					resource "gitlab_project_freeze_period" "schedule" {
+						project       = gitlab_project.foo.id
+						freeze_start  = "0 23 * * 5"
+						freeze_end    =  "0 7 * * 1"
+						cron_timezone = "UTC"
+					}
+				`, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectFreezePeriodExists("gitlab_project_freeze_period.schedule", &schedule),
 					testAccCheckGitlabProjectFreezePeriodAttributes(&schedule, &testAccGitlabProjectFreezePeriodExpectedAttributes{
@@ -125,44 +173,4 @@ func testAccCheckGitlabProjectFreezePeriodAttributes(freezePeriod *gitlab.Freeze
 
 		return nil
 	}
-}
-
-func testAccGitlabProjectFreezePeriodConfig(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "foo" {
-  name = "foo-%d"
-  description = "Terraform acceptance tests"
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-
-resource "gitlab_project_freeze_period" "schedule" {
-	project = gitlab_project.foo.id
-	freeze_start = "0 23 * * 5"
-	freeze_end =  "0 7 * * 1"
-	cron_timezone = "UTC"
-}
-	`, rInt)
-}
-
-func testAccGitlabProjectFreezePeriodUpdateConfig(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "foo" {
-  name = "foo-%d"
-  description = "Terraform acceptance tests"
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-
-resource "gitlab_project_freeze_period" "schedule" {
-	project = gitlab_project.foo.id
-  freeze_start = "0 20 * * 6"
-  freeze_end =  "0 7 * * 3"
-  cron_timezone = "EST"
-}
-	`, rInt)
 }

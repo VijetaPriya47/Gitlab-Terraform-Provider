@@ -24,11 +24,11 @@ func TestAccGitlabProjectEnvironment_basic(t *testing.T) {
 	rInt := acctest.RandInt()
 	testProject := testutil.CreateProject(t)
 
-	var env1 = gitlab.Environment{
+	env1 := gitlab.Environment{
 		Name: fmt.Sprintf("ProjectEnvironment-%d", rInt),
 	}
 
-	var env2 = gitlab.Environment{
+	env2 := gitlab.Environment{
 		Name:        fmt.Sprintf("ProjectEnvironment-%d", rInt),
 		ExternalURL: "https://example.com",
 	}
@@ -39,7 +39,14 @@ func TestAccGitlabProjectEnvironment_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create an Environment with default options
 			{
-				Config: testAccGitlabProjectEnvironmentConfig(testProject.ID, rInt),
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_environment" "this" {
+						project = %d
+						name    = "ProjectEnvironment-%d"
+					
+						stop_before_destroy = true
+					}
+				`, testProject.ID, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectEnvironmentExists("gitlab_project_environment.this", &env1),
 					testAccCheckGitlabProjectEnvironmentAttributes(&env1, &testAccGitlabProjectEnvironmentExpectedAttributes{
@@ -65,7 +72,14 @@ func TestAccGitlabProjectEnvironment_basic(t *testing.T) {
 			},
 			// Update the Environment
 			{
-				Config: testAccGitlabProjectEnvironmentUpdateConfig(testProject.ID, rInt),
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_environment" "this" {
+						project      = %d
+						name         = "ProjectEnvironment-%d"
+						external_url = "https://example.com"
+						tier         = "production"
+					}
+				`, testProject.ID, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectEnvironmentExists("gitlab_project_environment.this", &env2),
 					testAccCheckGitlabProjectEnvironmentAttributes(&env2, &testAccGitlabProjectEnvironmentExpectedAttributes{
@@ -99,7 +113,14 @@ func TestAccGitlabProjectEnvironment_basic(t *testing.T) {
 			},
 			// Update the Environment to get back to initial settings
 			{
-				Config: testAccGitlabProjectEnvironmentConfig(testProject.ID, rInt),
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_environment" "this" {
+						project = %d
+						name    = "ProjectEnvironment-%d"
+					
+						stop_before_destroy = true
+					}
+				`, testProject.ID, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectEnvironmentExists("gitlab_project_environment.this", &env1),
 					testAccCheckGitlabProjectEnvironmentAttributes(&env1, &testAccGitlabProjectEnvironmentExpectedAttributes{
@@ -130,16 +151,37 @@ func TestAccGitlabProjectEnvironment_stopBeforeDestroyDisabled(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create environment with `stop_before_destroy = false`
 			{
-				Config: testAccGitlabProjectEnvironmentStopBeforeDestroyFalse(testProject.ID, rInt),
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_environment" "this" {
+						project = %d
+						name    = "ProjectEnvironment-%d"
+						
+						stop_before_destroy = false
+					}
+				`, testProject.ID, rInt),
 			},
 			{
-				Config:      testAccGitlabProjectEnvironmentStopBeforeDestroyFalse(testProject.ID, rInt),
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_environment" "this" {
+						project = %d
+						name    = "ProjectEnvironment-%d"
+						
+						stop_before_destroy = false
+					}
+				`, testProject.ID, rInt),
 				ExpectError: regexp.MustCompile("Environment must be in a stopped state before deletion"),
 				Destroy:     true,
 			},
 			// Update stop flag
 			{
-				Config: testAccGitlabProjectEnvironmentConfig(testProject.ID, rInt),
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_environment" "this" {
+						project = %d
+						name    = "ProjectEnvironment-%d"
+					
+						stop_before_destroy = true
+					}
+				`, testProject.ID, rInt),
 			},
 		},
 	})
@@ -350,37 +392,4 @@ func testAccCheckGitlabProjectEnvironmentDestroy(s *terraform.State) error {
 	}
 
 	return nil
-}
-
-func testAccGitlabProjectEnvironmentConfig(projectID int, rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_project_environment" "this" {
-  project = %d
-  name    = "ProjectEnvironment-%d"
-
-	stop_before_destroy = true
-}
-`, projectID, rInt)
-}
-
-func testAccGitlabProjectEnvironmentUpdateConfig(projectID int, rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_project_environment" "this" {
-  project      = %d
-  name         = "ProjectEnvironment-%d"
-  external_url = "https://example.com"
-  tier         = "production"
-}
-`, projectID, rInt)
-}
-
-func testAccGitlabProjectEnvironmentStopBeforeDestroyFalse(projectID int, rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_project_environment" "this" {
-  project = %d
-  name    = "ProjectEnvironment-%d"
-
-  stop_before_destroy = false
-}
-`, projectID, rInt)
 }

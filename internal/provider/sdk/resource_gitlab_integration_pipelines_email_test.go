@@ -28,7 +28,17 @@ func TestAccGitlabIntegrationPipelinesEmail_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create a project and a pipelines email integration
 			{
-				Config: testAccGitlabIntegrationPipelinesEmailConfig(rInt),
+				Config: fmt.Sprintf(`
+					resource "gitlab_project" "foo" {
+						name         = "foo-%d"
+						description  = "Terraform acceptance tests"
+					}
+					
+					resource "gitlab_integration_pipelines_email" "email" {
+						project    = gitlab_project.foo.id
+						recipients = ["test@example.com"]
+					}
+				`, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabIntegrationPipelinesEmailExists(pipelinesEmailResourceName, &pipelinesEmailService),
 					testRecipients(&pipelinesEmailService, []string{"test@example.com"}),
@@ -44,7 +54,19 @@ func TestAccGitlabIntegrationPipelinesEmail_basic(t *testing.T) {
 			},
 			// Update the pipelinesEmail integration
 			{
-				Config: testAccGitlabIntegrationPipelinesEmailUpdateConfig(rInt),
+				Config: fmt.Sprintf(`
+					resource "gitlab_project" "foo" {
+						name         = "foo-%d"
+						description  = "Terraform acceptance tests"
+					}
+					
+					resource "gitlab_integration_pipelines_email" "email" {
+						project                      = gitlab_project.foo.id
+						recipients                   = ["test@example.com", "test2@example.com"]
+						notify_only_broken_pipelines = false
+						branches_to_be_notified      = "all"
+					}
+				`, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabIntegrationPipelinesEmailExists(pipelinesEmailResourceName, &pipelinesEmailService),
 					testRecipients(&pipelinesEmailService, []string{"test@example.com", "test2@example.com"}),
@@ -60,7 +82,17 @@ func TestAccGitlabIntegrationPipelinesEmail_basic(t *testing.T) {
 			},
 			// Update the pipelinesEmail integration to get back to previous settings
 			{
-				Config: testAccGitlabIntegrationPipelinesEmailConfig(rInt),
+				Config: fmt.Sprintf(`
+					resource "gitlab_project" "foo" {
+						name         = "foo-%d"
+						description  = "Terraform acceptance tests"
+					}
+					
+					resource "gitlab_integration_pipelines_email" "email" {
+						project    = gitlab_project.foo.id
+						recipients = ["test@example.com"]
+					}
+				`, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabIntegrationPipelinesEmailExists(pipelinesEmailResourceName, &pipelinesEmailService),
 					testRecipients(&pipelinesEmailService, []string{"test@example.com"}),
@@ -178,34 +210,4 @@ func testAccCheckGitlabIntegrationPipelinesEmailDestroy(s *terraform.State) erro
 		return nil
 	}
 	return nil
-}
-
-func testAccGitlabIntegrationPipelinesEmailConfig(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "foo" {
-    name         = "foo-%d"
-    description  = "Terraform acceptance tests"
-}
-
-resource "gitlab_integration_pipelines_email" "email" {
-    project                      = gitlab_project.foo.id
-    recipients                   = ["test@example.com"]
-}
-`, rInt)
-}
-
-func testAccGitlabIntegrationPipelinesEmailUpdateConfig(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "foo" {
-    name         = "foo-%d"
-    description  = "Terraform acceptance tests"
-}
-
-resource "gitlab_integration_pipelines_email" "email" {
-    project                      = gitlab_project.foo.id
-    recipients                   = ["test@example.com", "test2@example.com"]
-    notify_only_broken_pipelines = false
-    branches_to_be_notified      = "all"
-}
-`, rInt)
 }

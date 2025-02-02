@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
@@ -61,7 +61,6 @@ func TestAccGitlabProjectLabel_StateUpgradeV0(t *testing.T) {
 				t.Fatalf("\n\nexpected:\n\n%#v\n\ngot:\n\n%#v\n\n", tc.expectedV1State, actualV1State)
 			}
 		})
-
 	}
 }
 
@@ -75,7 +74,23 @@ func TestAccGitlabProjectLabel_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create a project and label with default options
 			{
-				Config: testAccGitlabProjectLabelConfig(rInt),
+				Config: fmt.Sprintf(`
+					resource "gitlab_project" "foo" {
+						name        = "foo-%d"
+						description = "Terraform acceptance tests"
+						
+						# So that acceptance tests can be run in a gitlab organization
+						# with no billing
+						visibility_level = "public"
+					}
+					
+					resource "gitlab_project_label" "fixme" {
+						project     = "${gitlab_project.foo.id}"
+						name        = "FIXME-%d"
+						color       = "#ffcc00"
+						description = "fix this test"
+					}
+				`, rInt, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectLabelExists("gitlab_project_label.fixme", &label),
 					testAccCheckGitlabProjectLabelAttributes(&label, &testAccGitlabProjectLabelExpectedAttributes{
@@ -87,7 +102,23 @@ func TestAccGitlabProjectLabel_basic(t *testing.T) {
 			},
 			// Update the label to change the parameters
 			{
-				Config: testAccGitlabProjectLabelUpdateConfig(rInt),
+				Config: fmt.Sprintf(`
+					resource "gitlab_project" "foo" {
+						name        = "foo-%d"
+						description = "Terraform acceptance tests"
+						
+						# So that acceptance tests can be run in a gitlab organization
+						# with no billing
+						visibility_level = "public"
+					}
+					
+					resource "gitlab_project_label" "fixme" {
+						project     = "${gitlab_project.foo.id}"
+						name        = "FIXME-%d"
+						color       = "#ff0000"
+						description = "red label"
+					}
+				`, rInt, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectLabelExists("gitlab_project_label.fixme", &label),
 					testAccCheckGitlabProjectLabelAttributes(&label, &testAccGitlabProjectLabelExpectedAttributes{
@@ -99,7 +130,23 @@ func TestAccGitlabProjectLabel_basic(t *testing.T) {
 			},
 			// Update the label to get back to initial settings
 			{
-				Config: testAccGitlabProjectLabelConfig(rInt),
+				Config: fmt.Sprintf(`
+					resource "gitlab_project" "foo" {
+						name        = "foo-%d"
+						description = "Terraform acceptance tests"
+						
+						# So that acceptance tests can be run in a gitlab organization
+						# with no billing
+						visibility_level = "public"
+					}
+					
+					resource "gitlab_project_label" "fixme" {
+						project     = "${gitlab_project.foo.id}"
+						name        = "FIXME-%d"
+						color       = "#ffcc00"
+						description = "fix this test"
+					}
+				`, rInt, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectLabelExists("gitlab_project_label.fixme", &label),
 					testAccCheckGitlabProjectLabelAttributes(&label, &testAccGitlabProjectLabelExpectedAttributes{
@@ -182,44 +229,4 @@ func testAccCheckGitlabProjectLabelDestroy(s *terraform.State) error {
 		return nil
 	}
 	return nil
-}
-
-func testAccGitlabProjectLabelConfig(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "foo" {
-  name = "foo-%d"
-  description = "Terraform acceptance tests"
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-
-resource "gitlab_project_label" "fixme" {
-  project = "${gitlab_project.foo.id}"
-  name = "FIXME-%d"
-  color = "#ffcc00"
-  description = "fix this test"
-}
-	`, rInt, rInt)
-}
-
-func testAccGitlabProjectLabelUpdateConfig(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "foo" {
-  name = "foo-%d"
-  description = "Terraform acceptance tests"
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-
-resource "gitlab_project_label" "fixme" {
-  project = "${gitlab_project.foo.id}"
-  name = "FIXME-%d"
-  color = "#ff0000"
-  description = "red label"
-}
-	`, rInt, rInt)
 }

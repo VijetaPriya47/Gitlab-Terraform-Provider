@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
@@ -26,7 +26,29 @@ func TestAccGitlabServiceMicrosoftTeams_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create a project and a teams integration
 			{
-				Config: testAccGitlabIntegrationMicrosoftTeamsConfig(rInt),
+				Config: fmt.Sprintf(`
+					resource "gitlab_project" "foo" {
+						name             = "foo-%d"
+						description      = "Terraform acceptance tests"
+						visibility_level = "public"
+					}
+					
+					resource "gitlab_integration_microsoft_teams" "teams" {
+						project                      = "${gitlab_project.foo.id}"
+						webhook                      = "https://test.com/?token=4"
+						notify_only_broken_pipelines = false
+						branches_to_be_notified      = "all"
+						push_events                  = false
+						issues_events                = false
+						confidential_issues_events   = false
+						merge_requests_events        = false
+						tag_push_events              = false
+						note_events                  = false
+						confidential_note_events     = false
+						pipeline_events              = false
+						wiki_page_events             = false
+					}
+				`, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabIntegrationMicrosoftTeamsExists(teamsResourceName, &teamsService),
 					resource.TestCheckResourceAttr(teamsResourceName, "webhook", "https://test.com/?token=4"),
@@ -45,7 +67,29 @@ func TestAccGitlabServiceMicrosoftTeams_basic(t *testing.T) {
 			},
 			// Update the teams integration
 			{
-				Config: testAccGitlabIntegrationMicrosoftTeamsUpdateConfig(rInt),
+				Config: fmt.Sprintf(`
+					resource "gitlab_project" "foo" {
+						name             = "foo-%d"
+						description      = "Terraform acceptance tests"
+						visibility_level = "public"
+					}
+					
+					resource "gitlab_integration_microsoft_teams" "teams" {
+						project                      = "${gitlab_project.foo.id}"
+						webhook                      = "https://testurl.com/?token=5"
+						notify_only_broken_pipelines = true
+						branches_to_be_notified      = "default"
+						push_events                  = true
+						issues_events                = true
+						confidential_issues_events   = true
+						merge_requests_events        = true
+						tag_push_events              = true
+						note_events                  = true
+						confidential_note_events     = true
+						pipeline_events              = true
+						wiki_page_events             = true
+					}
+				`, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabIntegrationMicrosoftTeamsExists(teamsResourceName, &teamsService),
 					resource.TestCheckResourceAttr(teamsResourceName, "webhook", "https://testurl.com/?token=5"),
@@ -64,7 +108,29 @@ func TestAccGitlabServiceMicrosoftTeams_basic(t *testing.T) {
 			},
 			// Update the teams integration to get back to previous settings
 			{
-				Config: testAccGitlabIntegrationMicrosoftTeamsConfig(rInt),
+				Config: fmt.Sprintf(`
+					resource "gitlab_project" "foo" {
+						name             = "foo-%d"
+						description      = "Terraform acceptance tests"
+						visibility_level = "public"
+					}
+					
+					resource "gitlab_integration_microsoft_teams" "teams" {
+						project                      = "${gitlab_project.foo.id}"
+						webhook                      = "https://test.com/?token=4"
+						notify_only_broken_pipelines = false
+						branches_to_be_notified      = "all"
+						push_events                  = false
+						issues_events                = false
+						confidential_issues_events   = false
+						merge_requests_events        = false
+						tag_push_events              = false
+						note_events                  = false
+						confidential_note_events     = false
+						pipeline_events              = false
+						wiki_page_events             = false
+					}
+				`, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabIntegrationMicrosoftTeamsExists(teamsResourceName, &teamsService),
 					resource.TestCheckResourceAttr(teamsResourceName, "webhook", "https://test.com/?token=4"),
@@ -196,56 +262,4 @@ func testAccCheckGitlabIntegrationMicrosoftTeamsDestroy(s *terraform.State) erro
 		return nil
 	}
 	return nil
-}
-
-func testAccGitlabIntegrationMicrosoftTeamsConfig(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "foo" {
-  name        = "foo-%d"
-  description = "Terraform acceptance tests"
-  visibility_level = "public"
-}
-
-resource "gitlab_integration_microsoft_teams" "teams" {
-  project  = "${gitlab_project.foo.id}"
-  webhook = "https://test.com/?token=4"
-  notify_only_broken_pipelines = false
-  branches_to_be_notified = "all"
-  push_events = false
-  issues_events = false
-  confidential_issues_events = false
-  merge_requests_events = false
-  tag_push_events = false
-  note_events = false
-  confidential_note_events = false
-  pipeline_events = false
-  wiki_page_events = false
-}
-`, rInt)
-}
-
-func testAccGitlabIntegrationMicrosoftTeamsUpdateConfig(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "foo" {
-  name        = "foo-%d"
-  description = "Terraform acceptance tests"
-  visibility_level = "public"
-}
-
-resource "gitlab_integration_microsoft_teams" "teams" {
-  project  = "${gitlab_project.foo.id}"
-  webhook = "https://testurl.com/?token=5"
-  notify_only_broken_pipelines = true
-  branches_to_be_notified = "default"
-  push_events = true
-  issues_events = true
-  confidential_issues_events = true
-  merge_requests_events = true
-  tag_push_events = true
-  note_events = true
-  confidential_note_events = true
-  pipeline_events = true
-  wiki_page_events = true
-}
-`, rInt)
 }
