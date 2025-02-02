@@ -61,7 +61,6 @@ func TestAccGitlabGroupLabel_StateUpgradeV0(t *testing.T) {
 				t.Fatalf("\n\nexpected:\n\n%#v\n\ngot:\n\n%#v\n\n", tc.expectedV1State, actualV1State)
 			}
 		})
-
 	}
 }
 
@@ -176,7 +175,21 @@ func TestAccGitlabGroupLabel_basic(t *testing.T) {
 		CheckDestroy:             testAccCheckGitlabGroupLabelDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccGitlabGroupLabelConfig(rInt),
+				Config: fmt.Sprintf(`
+					resource "gitlab_group" "foo" {
+						name             = "foo-%d"
+						path             = "foo-%d"
+						description      = "Terraform acceptance tests"
+						visibility_level = "public"
+					}
+					
+					resource "gitlab_group_label" "fixme" {
+						group       = "${gitlab_group.foo.id}"
+						name        = "FIXME-%d"
+						color       = "#ffcc00"
+						description = "fix this test"
+					}
+				`, rInt, rInt, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabGroupLabelExists("gitlab_group_label.fixme", &label),
 					testAccCheckGitlabGroupLabelAttributes(&label, &testAccGitlabGroupLabelExpectedAttributes{
@@ -187,7 +200,21 @@ func TestAccGitlabGroupLabel_basic(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccGitlabGroupLabelUpdateConfig(rInt),
+				Config: fmt.Sprintf(`
+					resource "gitlab_group" "foo" {
+						name             = "foo-%d"
+						path             = "foo-%d"
+						description      = "Terraform acceptance tests"
+						visibility_level = "public"
+					}
+					
+					resource "gitlab_group_label" "fixme" {
+						group       = "${gitlab_group.foo.id}"
+						name        = "FIXME-AGAIN-%d"
+						color       = "#ff0000"
+						description = "red label"
+					}
+				`, rInt, rInt, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabGroupLabelExists("gitlab_group_label.fixme", &label),
 					testAccCheckGitlabGroupLabelAttributes(&label, &testAccGitlabGroupLabelExpectedAttributes{
@@ -198,7 +225,21 @@ func TestAccGitlabGroupLabel_basic(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccGitlabGroupLabelConfig(rInt),
+				Config: fmt.Sprintf(`
+					resource "gitlab_group" "foo" {
+						name             = "foo-%d"
+						path             = "foo-%d"
+						description      = "Terraform acceptance tests"
+						visibility_level = "public"
+					}
+					
+					resource "gitlab_group_label" "fixme" {
+						group       = "${gitlab_group.foo.id}"
+						name        = "FIXME-%d"
+						color       = "#ffcc00"
+						description = "fix this test"
+					}
+				`, rInt, rInt, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabGroupLabelExists("gitlab_group_label.fixme", &label),
 					testAccCheckGitlabGroupLabelAttributes(&label, &testAccGitlabGroupLabelExpectedAttributes{
@@ -280,40 +321,4 @@ func testAccCheckGitlabGroupLabelDestroy(s *terraform.State) error {
 		return fmt.Errorf("Group Label %q stil exists", rs.Primary.ID)
 	}
 	return nil
-}
-
-func testAccGitlabGroupLabelConfig(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_group" "foo" {
-  name             = "foo-%d"
-  path             = "foo-%d"
-  description      = "Terraform acceptance tests"
-  visibility_level = "public"
-}
-
-resource "gitlab_group_label" "fixme" {
-  group       = "${gitlab_group.foo.id}"
-  name        = "FIXME-%d"
-  color       = "#ffcc00"
-  description = "fix this test"
-}
-	`, rInt, rInt, rInt)
-}
-
-func testAccGitlabGroupLabelUpdateConfig(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_group" "foo" {
-  name             = "foo-%d"
-  path             = "foo-%d"
-  description      = "Terraform acceptance tests"
-  visibility_level = "public"
-}
-
-resource "gitlab_group_label" "fixme" {
-  group       = "${gitlab_group.foo.id}"
-  name        = "FIXME-AGAIN-%d"
-  color       = "#ff0000"
-  description = "red label"
-}
-	`, rInt, rInt, rInt)
 }

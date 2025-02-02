@@ -31,7 +31,18 @@ func TestAccGitlabBranch_basic(t *testing.T) {
 		CheckDestroy:             testAccCheckGitlabBranchDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccGitlabBranchConfig(rInt, project.PathWithNamespace),
+				Config: fmt.Sprintf(`
+					resource "gitlab_branch" "foo" {
+						name = "testbranch-%[1]d"
+						ref = "main"
+						project = "%[2]s"
+					}
+					resource "gitlab_branch" "foo2" {
+						name = "testbranch2-%[1]d"
+						ref = gitlab_branch.foo.name
+						project = "%[2]s"
+					}
+			  	`, rInt, project.PathWithNamespace),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabBranchExists("foo", &branch),
 					testAccCheckGitlabBranchExists("foo2", &branch2),
@@ -59,7 +70,18 @@ func TestAccGitlabBranch_basic(t *testing.T) {
 			},
 			// update properties in resource
 			{
-				Config: testAccGitlabBranchConfig(rInt2, project.PathWithNamespace),
+				Config: fmt.Sprintf(`
+					resource "gitlab_branch" "foo" {
+						name = "testbranch-%[1]d"
+						ref = "main"
+						project = "%[2]s"
+					}
+					resource "gitlab_branch" "foo2" {
+						name = "testbranch2-%[1]d"
+						ref = gitlab_branch.foo.name
+						project = "%[2]s"
+					}
+			  	`, rInt2, project.PathWithNamespace),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabBranchExists("foo", &branch),
 					testAccCheckGitlabBranchExists("foo2", &branch2),
@@ -227,21 +249,6 @@ func testAccCheckGitlabBranchExists(n string, branch *gitlab.Branch) resource.Te
 		*branch = *gotBranch
 		return err
 	}
-}
-
-func testAccGitlabBranchConfig(rInt int, project string) string {
-	return fmt.Sprintf(`
-	resource "gitlab_branch" "foo" {
-		name = "testbranch-%[1]d"
-		ref = "main"
-		project = "%[2]s"
-	}
-	resource "gitlab_branch" "foo2" {
-		name = "testbranch2-%[1]d"
-		ref = gitlab_branch.foo.name
-		project = "%[2]s"
-	}
-  `, rInt, project)
 }
 
 type testAccGitlabBranchExpectedAttributes struct {

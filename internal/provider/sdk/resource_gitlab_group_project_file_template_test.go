@@ -10,7 +10,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
@@ -28,7 +28,12 @@ func TestAccGitlabGroupProjectFileTemplate_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				SkipFunc: testutil.IsRunningInCE,
-				Config:   testAccGroupProjectFileTemplateConfig(baseGroup.ID, firstProject.ID),
+				Config: fmt.Sprintf(`
+					resource "gitlab_group_project_file_template" "linking_template" {
+						group_id = %d
+						file_template_project_id = %d
+					}
+				`, baseGroup.ID, firstProject.ID),
 				Check: resource.ComposeTestCheckFunc(
 					// Note - we can't use the testAccCheckGitlabGroupAttributes, because that checks the TF
 					// state attributes, and file project template explicitly doesn't exist there.
@@ -38,9 +43,14 @@ func TestAccGitlabGroupProjectFileTemplate_basic(t *testing.T) {
 				),
 			},
 			{
-				//Test that when we update the project name, it re-links the group to the new project
+				// Test that when we update the project name, it re-links the group to the new project
 				SkipFunc: testutil.IsRunningInCE,
-				Config:   testAccGroupProjectFileTemplateConfig(baseGroup.ID, secondProject.ID),
+				Config: fmt.Sprintf(`
+				resource "gitlab_group_project_file_template" "linking_template" {
+					group_id = %d
+					file_template_project_id = %d
+				}
+				`, baseGroup.ID, secondProject.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabGroupFileTemplateValue(baseGroup, secondProject),
 					resource.TestCheckResourceAttr("gitlab_group_project_file_template.linking_template", "group_id", strconv.Itoa(baseGroup.ID)),
@@ -54,7 +64,7 @@ func TestAccGitlabGroupProjectFileTemplate_basic(t *testing.T) {
 
 func testAccCheckGitlabGroupFileTemplateValue(g *gitlab.Group, p *gitlab.Project) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		//Re-retrieve the group to ensure we have the most up-to-date group info
+		// Re-retrieve the group to ensure we have the most up-to-date group info
 		g, _, err := testutil.TestGitlabClient.Groups.GetGroup(g.ID, &gitlab.GetGroupOptions{})
 		if api.Is404(err) {
 			return fmt.Errorf("Group no longer exists, expected group to exist with a file_template_project_id")
@@ -87,14 +97,4 @@ func testAccCheckProjectFileTemplateDestroy(state *terraform.State) error {
 		return nil
 	}
 	return nil
-}
-
-func testAccGroupProjectFileTemplateConfig(groupID int, projectID int) string {
-	return fmt.Sprintf(
-		`
-resource "gitlab_group_project_file_template" "linking_template" {
- group_id = %d
- file_template_project_id = %d
-}
-`, groupID, projectID)
 }

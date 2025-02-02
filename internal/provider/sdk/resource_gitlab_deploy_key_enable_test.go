@@ -35,7 +35,12 @@ func TestAccGitlabDeployKeyEnable_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Enable a deployKey on project with default options
 			{
-				Config: testAccGitlabDeployKeyEnableConfig(testProjectKeyShared.ID, parentProjectDeployKey.ID),
+				Config: fmt.Sprintf(`
+					resource "gitlab_deploy_key_enable" "foo" {
+						project = %[1]d
+						key_id  = %[2]d
+					}
+				`, testProjectKeyShared.ID, parentProjectDeployKey.ID),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("gitlab_deploy_key_enable.foo", "key"),
 					resource.TestCheckResourceAttrSet("gitlab_deploy_key_enable.foo", "title"),
@@ -49,7 +54,13 @@ func TestAccGitlabDeployKeyEnable_basic(t *testing.T) {
 			},
 			// Define canPush to true
 			{
-				Config: testAccGitlabDeployKeyEnableConfigCanPush(testProjectKeyShared.ID, parentProjectDeployKey.ID, true),
+				Config: fmt.Sprintf(`
+					resource "gitlab_deploy_key_enable" "foo" {
+						project  = %[1]d
+						key_id   = %[2]d
+						can_push = %[3]t
+					}
+				`, testProjectKeyShared.ID, parentProjectDeployKey.ID, true),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("gitlab_deploy_key_enable.foo", "key"),
 					resource.TestCheckResourceAttrSet("gitlab_deploy_key_enable.foo", "title"),
@@ -63,7 +74,13 @@ func TestAccGitlabDeployKeyEnable_basic(t *testing.T) {
 			},
 			// Define canPush to false
 			{
-				Config: testAccGitlabDeployKeyEnableConfigCanPush(testProjectKeyShared.ID, parentProjectDeployKey.ID, false),
+				Config: fmt.Sprintf(`
+					resource "gitlab_deploy_key_enable" "foo" {
+						project  = %[1]d
+						key_id   = %[2]d
+						can_push = %[3]t
+					}
+				`, testProjectKeyShared.ID, parentProjectDeployKey.ID, false),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("gitlab_deploy_key_enable.foo", "key"),
 					resource.TestCheckResourceAttrSet("gitlab_deploy_key_enable.foo", "title"),
@@ -77,7 +94,12 @@ func TestAccGitlabDeployKeyEnable_basic(t *testing.T) {
 			},
 			// Get back to default options
 			{
-				Config: testAccGitlabDeployKeyEnableConfig(testProjectKeyShared.ID, parentProjectDeployKey.ID),
+				Config: fmt.Sprintf(`
+					resource "gitlab_deploy_key_enable" "foo" {
+						project = %[1]d
+						key_id  = %[2]d
+					}
+				`, testProjectKeyShared.ID, parentProjectDeployKey.ID),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("gitlab_deploy_key_enable.foo", "key"),
 					resource.TestCheckResourceAttrSet("gitlab_deploy_key_enable.foo", "title"),
@@ -111,23 +133,4 @@ func testAccCheckGitlabDeployKeyEnableDestroy(s *terraform.State) error {
 		}
 	}
 	return nil
-}
-
-func testAccGitlabDeployKeyEnableConfig(shareProjectId int, keyId int) string {
-	return fmt.Sprintf(`
-resource "gitlab_deploy_key_enable" "foo" {
-  project = %[1]d
-  key_id  = %[2]d
-}
-  `, shareProjectId, keyId)
-}
-
-func testAccGitlabDeployKeyEnableConfigCanPush(shareProjectId int, keyId int, canPush bool) string {
-	return fmt.Sprintf(`
-resource "gitlab_deploy_key_enable" "foo" {
-  project  = %[1]d
-  key_id   = %[2]d
-  can_push = %[3]t
-}
-  `, shareProjectId, keyId, canPush)
 }
