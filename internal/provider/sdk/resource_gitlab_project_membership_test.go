@@ -28,7 +28,26 @@ func TestAccGitlabProjectMembership_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Assign member to the project as a developer
 			{
-				Config: testAccGitlabProjectMembershipConfig(rInt),
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_membership" "foo" {
+						project      = "${gitlab_project.foo.id}"
+						user_id      = "${gitlab_user.test.id}"
+						access_level = "developer"
+					}
+					
+					resource "gitlab_project" "foo" {
+						name             = "foo%d"
+						description      = "Terraform acceptance tests"
+						visibility_level = "public"
+					}
+					
+					resource "gitlab_user" "test" {
+						name     = "foo%d"
+						username = "listest%d"
+						password = "BWgdRictHtkXfK-%d"
+						email    = "listest%d@ssss.com"
+					}
+				`, rInt, rInt, rInt, rInt, rInt),
 				Check: resource.ComposeTestCheckFunc(testAccCheckGitlabProjectMembershipExists("gitlab_project_membership.foo", &membership), testAccCheckGitlabProjectMembershipAttributes(&membership, &testAccGitlabProjectMembershipExpectedAttributes{
 					access_level: "developer",
 				})),
@@ -36,7 +55,27 @@ func TestAccGitlabProjectMembership_basic(t *testing.T) {
 
 			// Update the project member to change the access level (use testAccGitlabProjectMembershipUpdateConfig for Config)
 			{
-				Config: testAccGitlabProjectMembershipUpdateConfig(rInt),
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_membership" "foo" {
+						project      = "${gitlab_project.foo.id}"
+						user_id      = "${gitlab_user.test.id}"
+						expires_at   = "2099-01-01"
+						access_level = "guest"
+					}
+					
+					resource "gitlab_project" "foo" {
+						name             = "foo%d"
+						description      = "Terraform acceptance tests"
+						visibility_level = "public"
+					}
+					
+					resource "gitlab_user" "test" {
+						name     = "foo%d"
+						username = "listest%d"
+						password = "BWgdRictHtkXfK-%d"
+						email    = "listest%d@ssss.com"
+					}
+				`, rInt, rInt, rInt, rInt, rInt),
 				Check: resource.ComposeTestCheckFunc(testAccCheckGitlabProjectMembershipExists("gitlab_project_membership.foo", &membership), testAccCheckGitlabProjectMembershipAttributes(&membership, &testAccGitlabProjectMembershipExpectedAttributes{
 					access_level: "guest",
 					expiresAt:    "2099-01-01",
@@ -45,7 +84,26 @@ func TestAccGitlabProjectMembership_basic(t *testing.T) {
 
 			// Update the project member to change the access level back
 			{
-				Config: testAccGitlabProjectMembershipConfig(rInt),
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_membership" "foo" {
+						project      = "${gitlab_project.foo.id}"
+						user_id      = "${gitlab_user.test.id}"
+						access_level = "developer"
+					}
+					
+					resource "gitlab_project" "foo" {
+						name             = "foo%d"
+						description      = "Terraform acceptance tests"
+						visibility_level = "public"
+					}
+					
+					resource "gitlab_user" "test" {
+						name     = "foo%d"
+						username = "listest%d"
+						password = "BWgdRictHtkXfK-%d"
+						email    = "listest%d@ssss.com"
+					}
+				`, rInt, rInt, rInt, rInt, rInt),
 				Check: resource.ComposeTestCheckFunc(testAccCheckGitlabProjectMembershipExists("gitlab_project_membership.foo", &membership), testAccCheckGitlabProjectMembershipAttributes(&membership, &testAccGitlabProjectMembershipExpectedAttributes{
 					access_level: "developer",
 				})),
@@ -213,51 +271,4 @@ func testAccCheckGitlabProjectMembershipDestroy(s *terraform.State) error {
 		return nil
 	}
 	return nil
-}
-
-func testAccGitlabProjectMembershipConfig(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_project_membership" "foo" {
-  project = "${gitlab_project.foo.id}"
-  user_id = "${gitlab_user.test.id}"
-  access_level = "developer"
-}
-
-resource "gitlab_project" "foo" {
-  name = "foo%d"
-  description = "Terraform acceptance tests"
-  visibility_level ="public"
-}
-
-resource "gitlab_user" "test" {
-  name = "foo%d"
-  username = "listest%d"
-  password = "BWgdRictHtkXfK-%d"
-  email = "listest%d@ssss.com"
-}
-`, rInt, rInt, rInt, rInt, rInt)
-}
-
-func testAccGitlabProjectMembershipUpdateConfig(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_project_membership" "foo" {
-  project = "${gitlab_project.foo.id}"
-  user_id = "${gitlab_user.test.id}"
-  expires_at = "2099-01-01"
-  access_level = "guest"
-}
-
-resource "gitlab_project" "foo" {
-  name = "foo%d"
-  description = "Terraform acceptance tests"
- visibility_level ="public"
-}
-
-resource "gitlab_user" "test" {
-  name = "foo%d"
-  username = "listest%d"
-  password = "BWgdRictHtkXfK-%d"
-  email = "listest%d@ssss.com"
-}
-`, rInt, rInt, rInt, rInt, rInt)
 }

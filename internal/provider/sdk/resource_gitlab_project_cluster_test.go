@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
@@ -27,7 +27,33 @@ func TestAccGitlabProjectCluster_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create a project and cluster with default options
 			{
-				Config: testAccGitlabProjectClusterConfig(rInt, true),
+				Config: fmt.Sprintf(`
+					variable "cert" {
+						default = <<EOF
+%s
+EOF
+					}
+					
+					resource "gitlab_project" "foo" {
+						name        = "foo-project-%d"
+						description = "Terraform acceptance tests"
+						
+						# So that acceptance tests can be run in a gitlab organization
+						# with no billing
+						visibility_level = "public"
+					}
+					
+					resource gitlab_project_cluster "foo" {
+						project                       = "${gitlab_project.foo.id}"
+						name                          = "foo-cluster-%d"
+						domain                        = "example.com"
+						managed                       = "%s"
+						kubernetes_api_url            = "https://123.123.123"
+						kubernetes_token              = "some-token"
+						kubernetes_ca_cert            = var.cert
+						kubernetes_authorization_type = "abac"
+					}
+				`, projectClusterFakeCert, rInt, rInt, "true"),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectClusterExists("gitlab_project_cluster.foo", &cluster),
 					testAccCheckGitlabProjectClusterAttributes(&cluster, &testAccGitlabProjectClusterExpectedAttributes{
@@ -42,7 +68,33 @@ func TestAccGitlabProjectCluster_basic(t *testing.T) {
 			},
 			// create an unmanaged cluster
 			{
-				Config: testAccGitlabProjectClusterConfig(rInt, false),
+				Config: fmt.Sprintf(`
+					variable "cert" {
+						default = <<EOF
+%s
+EOF
+					}
+					
+					resource "gitlab_project" "foo" {
+						name        = "foo-project-%d"
+						description = "Terraform acceptance tests"
+						
+						# So that acceptance tests can be run in a gitlab organization
+						# with no billing
+						visibility_level = "public"
+					}
+					
+					resource gitlab_project_cluster "foo" {
+						project                       = "${gitlab_project.foo.id}"
+						name                          = "foo-cluster-%d"
+						domain                        = "example.com"
+						managed                       = "%s"
+						kubernetes_api_url            = "https://123.123.123"
+						kubernetes_token              = "some-token"
+						kubernetes_ca_cert            = var.cert
+						kubernetes_authorization_type = "abac"
+					}
+				`, projectClusterFakeCert, rInt, rInt, "false"),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectClusterExists("gitlab_project_cluster.foo", &cluster),
 					testAccCheckGitlabProjectClusterAttributes(&cluster, &testAccGitlabProjectClusterExpectedAttributes{
@@ -57,7 +109,33 @@ func TestAccGitlabProjectCluster_basic(t *testing.T) {
 			},
 			// Update cluster
 			{
-				Config: testAccGitlabProjectClusterUpdateConfig(rInt, "abac"),
+				Config: fmt.Sprintf(`
+					variable "cert" {
+						default = <<EOF
+%s
+EOF
+					}
+					
+					resource "gitlab_project" "foo" {
+						name        = "foo-project-%d"
+						description = "Terraform acceptance tests"
+						
+						# So that acceptance tests can be run in a gitlab organization
+						# with no billing
+						visibility_level = "public"
+					}
+					
+					resource gitlab_project_cluster "foo" {
+						project                       = "${gitlab_project.foo.id}"
+						name                          = "foo-cluster-%d"
+						domain                        = "example-new.com"
+						kubernetes_api_url            = "https://124.124.124"
+						kubernetes_token              = "some-token"
+						kubernetes_ca_cert            = var.cert
+						kubernetes_namespace          = "changed-namespace"
+						kubernetes_authorization_type = "%s"
+					}
+				`, projectClusterFakeCert, rInt, rInt, "abac"),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectClusterExists("gitlab_project_cluster.foo", &cluster),
 					testAccCheckGitlabProjectClusterAttributes(&cluster, &testAccGitlabProjectClusterExpectedAttributes{
@@ -73,7 +151,33 @@ func TestAccGitlabProjectCluster_basic(t *testing.T) {
 			},
 			// Update authorization type cluster
 			{
-				Config: testAccGitlabProjectClusterUpdateConfig(rInt, "rbac"),
+				Config: fmt.Sprintf(`
+					variable "cert" {
+						default = <<EOF
+%s
+EOF
+					}
+					
+					resource "gitlab_project" "foo" {
+						name        = "foo-project-%d"
+						description = "Terraform acceptance tests"
+						
+						# So that acceptance tests can be run in a gitlab organization
+						# with no billing
+						visibility_level = "public"
+					}
+					
+					resource gitlab_project_cluster "foo" {
+						project                       = "${gitlab_project.foo.id}"
+						name                          = "foo-cluster-%d"
+						domain                        = "example-new.com"
+						kubernetes_api_url            = "https://124.124.124"
+						kubernetes_token              = "some-token"
+						kubernetes_ca_cert            = var.cert
+						kubernetes_namespace          = "changed-namespace"
+						kubernetes_authorization_type = "%s"
+					}
+				`, projectClusterFakeCert, rInt, rInt, "rbac"),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectClusterExists("gitlab_project_cluster.foo", &cluster),
 					testAccCheckGitlabProjectClusterAttributes(&cluster, &testAccGitlabProjectClusterExpectedAttributes{
@@ -89,7 +193,39 @@ func TestAccGitlabProjectCluster_basic(t *testing.T) {
 			},
 			// Create cluster with management_project_id
 			{
-				Config: testAccGitlabProjectClusterManagement(rInt, true),
+				Config: fmt.Sprintf(`
+					variable "cert" {
+						default = <<EOF
+%s
+EOF
+					}
+					
+					resource "gitlab_project" "foo" {
+						name        = "foo-project-%d"
+						description = "Terraform acceptance tests"
+						
+						# So that acceptance tests can be run in a gitlab organization
+						# with no billing
+						visibility_level = "public"
+					}
+					
+					resource "gitlab_project" "cluster-management" {
+						name                   = "cluster-management-%d"
+						visibility_level       = "public"
+					}
+					
+					resource gitlab_project_cluster "foo" {
+						project                       = "${gitlab_project.foo.id}"
+						name                          = "foo-cluster-%d"
+						domain                        = "example.com"
+						managed                       = "%s"
+						kubernetes_api_url            = "https://123.123.123"
+						kubernetes_token              = "some-token"
+						kubernetes_ca_cert            = var.cert
+						kubernetes_authorization_type = "abac"
+						management_project_id         = "${gitlab_project.cluster-management.id}"
+					}
+				`, projectClusterFakeCert, rInt, rInt, rInt, "true"),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectClusterExists("gitlab_project_cluster.foo", &cluster),
 					testAccCheckGitlabProjectClusterAttributes(&cluster, &testAccGitlabProjectClusterExpectedAttributes{
@@ -204,112 +340,6 @@ func testAccCheckGitlabProjectClusterAttributes(cluster *gitlab.ProjectCluster, 
 
 		return nil
 	}
-}
-
-func testAccGitlabProjectClusterConfig(rInt int, managed bool) string {
-	m := "false"
-	if managed {
-		m = "true"
-	}
-
-	return fmt.Sprintf(`
-variable "cert" {
-  default = <<EOF
-%s
-EOF
-}
-
-resource "gitlab_project" "foo" {
-  name = "foo-project-%d"
-  description = "Terraform acceptance tests"
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-
-resource gitlab_project_cluster "foo" {
-  project                       = "${gitlab_project.foo.id}"
-  name                          = "foo-cluster-%d"
-  domain                        = "example.com"
-  managed                       = "%s"
-  kubernetes_api_url            = "https://123.123.123"
-  kubernetes_token              = "some-token"
-  kubernetes_ca_cert            = var.cert
-  kubernetes_authorization_type = "abac"
-}
-`, projectClusterFakeCert, rInt, rInt, m)
-}
-
-func testAccGitlabProjectClusterUpdateConfig(rInt int, authType string) string {
-	return fmt.Sprintf(`
-variable "cert" {
-  default = <<EOF
-%s
-EOF
-}
-
-resource "gitlab_project" "foo" {
-  name = "foo-project-%d"
-  description = "Terraform acceptance tests"
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-
-resource gitlab_project_cluster "foo" {
-  project                       = "${gitlab_project.foo.id}"
-  name                          = "foo-cluster-%d"
-  domain                        = "example-new.com"
-  kubernetes_api_url            = "https://124.124.124"
-  kubernetes_token              = "some-token"
-  kubernetes_ca_cert            = var.cert
-  kubernetes_namespace          = "changed-namespace"
-  kubernetes_authorization_type = "%s"
-}
-`, projectClusterFakeCert, rInt, rInt, authType)
-}
-
-func testAccGitlabProjectClusterManagement(rInt int, managed bool) string {
-	m := "false"
-	if managed {
-		m = "true"
-	}
-
-	return fmt.Sprintf(`
-variable "cert" {
-  default = <<EOF
-%s
-EOF
-}
-
-resource "gitlab_project" "foo" {
-  name = "foo-project-%d"
-  description = "Terraform acceptance tests"
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-
-resource "gitlab_project" "cluster-management" {
-	name                   = "cluster-management-%d"
-	visibility_level       = "public"
-}
-
-resource gitlab_project_cluster "foo" {
-  project                       = "${gitlab_project.foo.id}"
-  name                          = "foo-cluster-%d"
-  domain                        = "example.com"
-  managed                       = "%s"
-  kubernetes_api_url            = "https://123.123.123"
-  kubernetes_token              = "some-token"
-  kubernetes_ca_cert            = var.cert
-  kubernetes_authorization_type = "abac"
-  management_project_id         = "${gitlab_project.cluster-management.id}"
-}
-`, projectClusterFakeCert, rInt, rInt, rInt, m)
 }
 
 var projectClusterFakeCert = `-----BEGIN CERTIFICATE-----
