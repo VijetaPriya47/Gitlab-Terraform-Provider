@@ -125,6 +125,7 @@ func TestAccGitlabProjectHook_basic(t *testing.T) {
 				  job_events = true
 				  pipeline_events = true
 				  wiki_page_events = true
+				  resource_access_token_events = true
 				  deployment_events = true
 				  releases_events = true
 				}
@@ -132,23 +133,24 @@ func TestAccGitlabProjectHook_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectHookExists("gitlab_project_hook.foo", &hook),
 					testAccCheckGitlabProjectHookAttributes(&hook, &testAccGitlabProjectHookExpectedAttributes{
-						URL:                      fmt.Sprintf("https://example.com/hook-%d", rInt),
-						Name:                     "",
-						Description:              "",
-						PushEvents:               true,
-						PushEventsBranchFilter:   "devel",
-						IssuesEvents:             false,
-						ConfidentialIssuesEvents: false,
-						MergeRequestsEvents:      true,
-						TagPushEvents:            true,
-						NoteEvents:               true,
-						ConfidentialNoteEvents:   true,
-						JobEvents:                true,
-						PipelineEvents:           true,
-						WikiPageEvents:           true,
-						DeploymentEvents:         true,
-						ReleasesEvents:           true,
-						EnableSSLVerification:    false,
+						URL:                       fmt.Sprintf("https://example.com/hook-%d", rInt),
+						Name:                      "",
+						Description:               "",
+						PushEvents:                true,
+						PushEventsBranchFilter:    "devel",
+						IssuesEvents:              false,
+						ConfidentialIssuesEvents:  false,
+						MergeRequestsEvents:       true,
+						TagPushEvents:             true,
+						NoteEvents:                true,
+						ConfidentialNoteEvents:    true,
+						JobEvents:                 true,
+						PipelineEvents:            true,
+						WikiPageEvents:            true,
+						DeploymentEvents:          true,
+						ReleasesEvents:            true,
+						ResourceAccessTokenEvents: true,
+						EnableSSLVerification:     false,
 					}),
 				),
 			},
@@ -217,6 +219,7 @@ func TestAccGitlabProjectHook_customTemplate(t *testing.T) {
 					job_events = true
 					pipeline_events = true
 					wiki_page_events = true
+					resource_access_token_events = true
 					deployment_events = true
 					releases_events = true
 					custom_webhook_template = "{\"event\":\"{{object_kind}}\"}"
@@ -224,22 +227,23 @@ func TestAccGitlabProjectHook_customTemplate(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectHookExists("gitlab_project_hook.foo", &hook),
 					testAccCheckGitlabProjectHookAttributes(&hook, &testAccGitlabProjectHookExpectedAttributes{
-						URL:                      fmt.Sprintf("https://example.com/hook-%d", rInt),
-						PushEvents:               true,
-						PushEventsBranchFilter:   "devel",
-						IssuesEvents:             false,
-						ConfidentialIssuesEvents: false,
-						MergeRequestsEvents:      true,
-						TagPushEvents:            true,
-						NoteEvents:               true,
-						ConfidentialNoteEvents:   true,
-						JobEvents:                true,
-						PipelineEvents:           true,
-						WikiPageEvents:           true,
-						DeploymentEvents:         true,
-						ReleasesEvents:           true,
-						EnableSSLVerification:    false,
-						CustomWebhookTemplate:    "{\"event\":\"{{object_kind}}\"}",
+						URL:                       fmt.Sprintf("https://example.com/hook-%d", rInt),
+						PushEvents:                true,
+						PushEventsBranchFilter:    "devel",
+						IssuesEvents:              false,
+						ConfidentialIssuesEvents:  false,
+						MergeRequestsEvents:       true,
+						TagPushEvents:             true,
+						NoteEvents:                true,
+						ConfidentialNoteEvents:    true,
+						JobEvents:                 true,
+						PipelineEvents:            true,
+						WikiPageEvents:            true,
+						ResourceAccessTokenEvents: true,
+						DeploymentEvents:          true,
+						ReleasesEvents:            true,
+						EnableSSLVerification:     false,
+						CustomWebhookTemplate:     "{\"event\":\"{{object_kind}}\"}",
 					}),
 				),
 			},
@@ -497,24 +501,25 @@ func TestResourceGitlabProjectHook_StateUpgradeV0(t *testing.T) {
 }
 
 type testAccGitlabProjectHookExpectedAttributes struct {
-	URL                      string
-	Name                     string
-	Description              string
-	PushEvents               bool
-	PushEventsBranchFilter   string
-	IssuesEvents             bool
-	ConfidentialIssuesEvents bool
-	MergeRequestsEvents      bool
-	TagPushEvents            bool
-	NoteEvents               bool
-	ConfidentialNoteEvents   bool
-	JobEvents                bool
-	PipelineEvents           bool
-	WikiPageEvents           bool
-	DeploymentEvents         bool
-	ReleasesEvents           bool
-	EnableSSLVerification    bool
-	CustomWebhookTemplate    string
+	URL                       string
+	Name                      string
+	Description               string
+	PushEvents                bool
+	PushEventsBranchFilter    string
+	IssuesEvents              bool
+	ConfidentialIssuesEvents  bool
+	MergeRequestsEvents       bool
+	TagPushEvents             bool
+	NoteEvents                bool
+	ConfidentialNoteEvents    bool
+	JobEvents                 bool
+	PipelineEvents            bool
+	WikiPageEvents            bool
+	ResourceAccessTokenEvents bool
+	DeploymentEvents          bool
+	ReleasesEvents            bool
+	EnableSSLVerification     bool
+	CustomWebhookTemplate     string
 }
 
 func testAccCheckGitlabProjectHookAttributes(hook *gitlab.ProjectHook, want *testAccGitlabProjectHookExpectedAttributes) resource.TestCheckFunc {
@@ -577,6 +582,10 @@ func testAccCheckGitlabProjectHookAttributes(hook *gitlab.ProjectHook, want *tes
 
 		if hook.WikiPageEvents != want.WikiPageEvents {
 			return fmt.Errorf("got wiki_page_events %t; want %t", hook.WikiPageEvents, want.WikiPageEvents)
+		}
+
+		if hook.ResourceAccessTokenEvents != want.ResourceAccessTokenEvents {
+			return fmt.Errorf("got resource_access_token_events %t; want %t", hook.ResourceAccessTokenEvents, want.ResourceAccessTokenEvents)
 		}
 
 		if hook.DeploymentEvents != want.DeploymentEvents {
