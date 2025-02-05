@@ -506,10 +506,24 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Delete(ctx context.Contex
 			return
 		}
 	} else {
+		expiresAt := data.ExpiresAt.ValueString()
+		expiresAtTime, err := time.Parse(api.Iso8601, expiresAt)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Error parsing expiry date",
+				fmt.Sprintf("Could not parse expiry date %q: %s", expiresAt, err),
+			)
+			return
+		}
+
+		if expiresAtTime.Before(api.CurrentTime()) {
+			resp.Diagnostics.AddWarning("Deleting an already expired token, removing from state.", fmt.Sprintf("Token expired on %s", expiresAt))
+			return
+		}
 
 		// Create a new client from the token that exists in state, and use that client to delete the existing token.
 		tflog.Debug(ctx, "[DEBUG] Deleting GroupServiceAccountAccessToken - This will use the token that's in state to delete the token instead of relying on the provier's configured token.", map[string]interface{}{"token_id": accessTokenID, "user_id": userID})
-		tokenClient, err := r.newGitLabClient(ctx, WithToken(data.Token.ValueString()))
+		tokenClient, err := r.newGitLabClient(ctx, WithToken(data.Token.ValueString()), WithEarlyAuth(false))
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Error deleting group service account access token",
