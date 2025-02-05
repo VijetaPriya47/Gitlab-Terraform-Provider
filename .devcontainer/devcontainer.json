@@ -13,7 +13,7 @@
 			"version": "1.4.0"
 		},
 		"ghcr.io/devcontainers/features/go:1": {
-			"version": "1.23.5"
+			"version": "1.23.6"
 		}
 	},
 	// Extensions for VSCode
