@@ -14,7 +14,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
@@ -290,7 +290,6 @@ func TestAccGitlabGroupServiceAccountAccessToken_rotationUsingExpiresAt(t *testi
 					resource.TestCheckResourceAttr("gitlab_group_service_account_access_token.this", "expires_at", initialExpires),
 				),
 			},
-
 			// Update Access Token to change expires
 			{
 				Config: fmt.Sprintf(`
@@ -328,6 +327,110 @@ func TestAccGitlabGroupServiceAccountAccessToken_rotationUsingExpiresAt(t *testi
 				ImportStateVerify: true,
 				// The token is only known during creating. We explicitly mention this limitation in the docs.
 				ImportStateVerifyIgnore: []string{"token"},
+			},
+		},
+	})
+}
+
+// This test ensures that a user who is an Owner level will be able to use and rotate the token using the state data
+// even when they can't normally read the service account token's information and the token is expired.
+func TestAccGitlabGroupServiceAccountAccessToken_nonAdminTokenExpired(t *testing.T) {
+	testutil.SkipIfCE(t)
+
+	ownerUser := testutil.CreateUsers(t, 1)[0]
+	token := testutil.CreatePersonalAccessToken(t, ownerUser)
+
+	group := testutil.CreateGroups(t, 1)[0]
+	groupID := strconv.Itoa(group.ID)
+
+	// Add the user to the group with owner permissions
+	testutil.AddGroupMembersWithAccessLevel(t, groupID, []*gitlab.User{ownerUser}, gitlab.OwnerPermissions)
+
+	serviceAccount := testutil.CreateGroupServiceAccounts(t, 1, groupID)[0]
+
+	initialExpires := testutil.GetCurrentTimePlusDays(t, 5).String()
+	newExpires := testutil.GetCurrentTimePlusDays(t, 11).String()
+	futureDate := testutil.GetCurrentTimestampPlusDays(t, 10).Format(time.RFC3339)
+	tokenToCheck := ""
+
+	// Explicitly don't run this as a parallel test, since membership additions happen async, and a busier instance
+	// means it's more likely to fail because the background process hasn't run yet.
+	// And since "os.Setenv" leaks test state otherwise.
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabGroupServiceAccountAccessTokenDestroy,
+		Steps: []resource.TestStep{
+			// Create a basic access token.
+			{
+				// lintignore:AT004  // we need the provider configuration here to attempt to create the service account as a different user
+				Config: fmt.Sprintf(`
+				provider "gitlab" {
+					token = "%s"
+				}
+
+				resource "gitlab_group_service_account_access_token" "foo" {
+					group = %s 
+					user_id  = %d
+					name     = "foo"
+					scopes   = ["api"]
+
+					expires_at = "%s"
+				}
+				`, token.Token, groupID, serviceAccount.ID, initialExpires),
+				// Check computed and default attributes.
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_group_service_account_access_token.foo", "active", "true"),
+					resource.TestCheckResourceAttr("gitlab_group_service_account_access_token.foo", "revoked", "false"),
+					resource.TestCheckResourceAttrSet("gitlab_group_service_account_access_token.foo", "created_at"),
+					resource.TestCheckResourceAttrSet("gitlab_group_service_account_access_token.foo", "user_id"),
+					resource.TestCheckResourceAttrWith("gitlab_group_service_account_access_token.foo", "token", func(value string) error {
+						// Set the token that we have in state
+						tokenToCheck = value
+						return nil
+					}),
+				),
+			},
+			// Recreate the access token when it has expired.
+			{
+				PreConfig: func() {
+					// Use the testClient to revoke the token (to ensure it's expired)
+					_, err := testutil.TestGitlabClient.PersonalAccessTokens.RevokePersonalAccessTokenSelf(gitlab.WithToken(gitlab.PrivateToken, tokenToCheck))
+					if err != nil {
+						t.Fatalf("failed to revoke token: %v", err)
+					}
+					// Set the `apit.GetCurrentTime()` to return in the future so the provider knows the
+					// token is expired when it checks.
+					os.Setenv("GITLAB_TESTING_TIME", futureDate)
+					t.Cleanup(func() {
+						os.Unsetenv("GITLAB_TESTING_TIME")
+					})
+				},
+				// lintignore:AT004  // we need the provider configuration here to attempt to create the service account as a different user
+				Config: fmt.Sprintf(`
+				provider "gitlab" {
+					token = "%s"
+				}
+
+				resource "gitlab_group_service_account_access_token" "foo" {
+					group = %s 
+					user_id  = %d
+					name     = "foo"
+					scopes   = ["api"]
+
+					expires_at = "%s"
+				}
+				`, token.Token, groupID, serviceAccount.ID, newExpires),
+				// Check computed and default attributes.
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrWith("gitlab_group_service_account_access_token.foo", "token", func(value string) error {
+						// The token shouldn't match what we have from the previous apply. It should have been rotated
+						if value == tokenToCheck {
+							return fmt.Errorf("token did not rotate")
+						}
+
+						return nil
+					}),
+				),
 			},
 		},
 	})

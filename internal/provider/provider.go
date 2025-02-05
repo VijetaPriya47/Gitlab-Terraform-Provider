@@ -11,8 +11,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"gitlab.com/gitlab-org/api/client-go"
 
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
@@ -273,8 +273,10 @@ func New(version string) func() provider.Provider {
 	}
 }
 
-type GitLabClientOptionApplyFunc = func(api.Config) api.Config
-type GitLabClientFactory = func(ctx context.Context, configFuncs ...GitLabClientOptionApplyFunc) (*gitlab.Client, error)
+type (
+	GitLabClientOptionApplyFunc = func(api.Config) api.Config
+	GitLabClientFactory         = func(ctx context.Context, configFuncs ...GitLabClientOptionApplyFunc) (*gitlab.Client, error)
+)
 
 // Attributes passed into Datasources from the Provider
 type GitLabDatasourceData struct {
@@ -308,6 +310,13 @@ func newGitLabClient(config api.Config, tfVersion, providerVersion string) GitLa
 func WithToken(token string) GitLabClientOptionApplyFunc {
 	return func(config api.Config) api.Config {
 		config.Token = token
+		return config
+	}
+}
+
+func WithEarlyAuth(earlyAuth bool) GitLabClientOptionApplyFunc {
+	return func(config api.Config) api.Config {
+		config.EarlyAuthFail = earlyAuth
 		return config
 	}
 }
