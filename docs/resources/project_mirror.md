@@ -9,9 +9,6 @@ description: |-
   -> Warning By default, the provider sets the keep_divergent_refs argument to True.
   If you manually set keep_divergent_refs to False, GitLab mirroring removes branches in the target that aren't in the source.
   This action can result in unexpected branch deletions.
-  -> Destroy Behavior GitLab 14.10 introduced an API endpoint to delete a project mirror.
-  Therefore, for GitLab 14.10 and newer the project mirror will be destroyed when the resource is destroyed.
-  For older versions, the mirror will be disabled and the resource will be destroyed.
   Upstream API: GitLab REST API docs https://docs.gitlab.com/ee/api/remote_mirrors.html
 ---
 
@@ -25,10 +22,6 @@ import_url, mirror, and mirror_trigger_builds properties on the gitlab_project r
 -> **Warning** By default, the provider sets the `keep_divergent_refs` argument to `True`.
    If you manually set `keep_divergent_refs` to `False`, GitLab mirroring removes branches in the target that aren't in the source.
    This action can result in unexpected branch deletions.
-
--> **Destroy Behavior** GitLab 14.10 introduced an API endpoint to delete a project mirror.
-   Therefore, for GitLab 14.10 and newer the project mirror will be destroyed when the resource is destroyed.
-   For older versions, the mirror will be disabled and the resource will be destroyed.
 
 **Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/remote_mirrors.html)
 
@@ -57,7 +50,7 @@ resource "gitlab_project_mirror" "foo" {
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `id` (String) The id of the project mirror. In the format of `project:mirror_id`
 - `mirror_id` (Number) Mirror ID.
 
 ## Import
