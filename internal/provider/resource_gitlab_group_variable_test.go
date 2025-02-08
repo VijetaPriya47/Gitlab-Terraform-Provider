@@ -11,6 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	gitlab "gitlab.com/gitlab-org/api/client-go"
@@ -251,6 +252,148 @@ EOF
 			},
 		},
 	})
+}
+
+func TestAccGitlabGroupVariable_hidden(t *testing.T) {
+	foodGroup := testutil.CreateGroups(t, 1)[0]
+	rString := acctest.RandString(5)
+
+	defaultValueA := fmt.Sprintf("value-%s-a", rString)
+	defaultValueB := fmt.Sprintf("value-%s-b", rString)
+
+	resource.ParallelTest(t, resource.TestCase{
+		CheckDestroy:             testAccCheckGitlabGroupVariableDestroy,
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		Steps: []resource.TestStep{
+			// Update to be masked and hidden.
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_group_variable" "foo" {
+						group = "%d"
+						key = "keys"
+						value = "%s"
+						variable_type = "env_var"
+						masked = true
+						hidden = true
+					}
+				`, foodGroup.ID, defaultValueA),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("gitlab_group_variable.foo", "masked"),
+					resource.TestCheckResourceAttrSet("gitlab_group_variable.foo", "hidden"),
+					resource.TestCheckResourceAttr("gitlab_group_variable.foo", "value", defaultValueA),
+				),
+			},
+			// Update value
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_group_variable" "foo" {
+						group = "%d"
+						key = "keys"
+						value = "%s"
+						variable_type = "env_var"
+						masked = true
+						hidden = true
+					}
+				`, foodGroup.ID, defaultValueB),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_group_variable.foo", "value", defaultValueB),
+				),
+				// Check that an "Update" is being performed, not a Replace
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("gitlab_group_variable.foo", plancheck.ResourceActionUpdate),
+					},
+				},
+			},
+			// Update type
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_group_variable" "foo" {
+						group = "%d"
+						key = "keys"
+						value = "%s"
+						variable_type = "file"
+						masked = true
+						hidden = true
+					}
+				`, foodGroup.ID, defaultValueB),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_group_variable.foo", "value", defaultValueB),
+				),
+				// Check that an "Update" is being performed, not a Replace
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("gitlab_group_variable.foo", plancheck.ResourceActionUpdate),
+					},
+				},
+			},
+			// Update hidden to false (should require replace)
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_group_variable" "foo" {
+						group = "%d"
+						key = "keys"
+						value = "%s"
+						variable_type = "file"
+						masked = true
+						hidden = false
+					}
+				`, foodGroup.ID, defaultValueA),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_group_variable.foo", "value", defaultValueA),
+				),
+				// Check that a "Replace" is being performed, not a Update
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("gitlab_group_variable.foo", plancheck.ResourceActionReplace),
+					},
+				},
+			},
+		},
+	})
+}
+
+func TestAccGitlabGroupVariable_validationErrors(t *testing.T) {
+	foodGroup := testutil.CreateGroups(t, 1)[0]
+
+	resource.ParallelTest(t, resource.TestCase{
+		CheckDestroy:             testAccCheckGitlabGroupVariableDestroy,
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		Steps: []resource.TestStep{
+			// Try to update hidden without masked.
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_group_variable" "foo" {
+						group = "%d"
+						key = "key"
+						value = "value"
+						variable_type = "env_var"
+						hidden = true
+					}
+				`, foodGroup.ID),
+				ExpectError: regexp.MustCompile(regexp.QuoteMeta(
+					`Attribute "masked" must be specified when "hidden" is specified`,
+				)),
+			},
+			// Try to update hidden without masked being set to "true" (which is checked in ValidatConfig)
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_group_variable" "foo" {
+						group = "%d"
+						key = "key"
+						value = "value"
+						variable_type = "env_var"
+						masked = false
+						hidden = true
+					}
+				`, foodGroup.ID),
+				ExpectError: regexp.MustCompile(regexp.QuoteMeta(
+					`Invalid value for a masked variable`,
+				)),
+			},
+		},
+	})
+
 }
 
 func TestAccGitlabGroupVariable_sameVariableDifferentEnvironments(t *testing.T) {
@@ -531,6 +674,7 @@ type testAccGitlabGroupVariableExpectedAttributes struct {
 	Value            string
 	Protected        bool
 	Masked           bool
+	Hidden           bool
 	EnvironmentScope string
 	Description      string
 }
@@ -551,6 +695,10 @@ func testAccCheckGitlabGroupVariableAttributes(variable *gitlab.GroupVariable, w
 
 		if variable.Masked != want.Masked {
 			return fmt.Errorf("got masked %t; want %t", variable.Masked, want.Masked)
+		}
+
+		if variable.Hidden != want.Hidden {
+			return fmt.Errorf("got hidden %t; want %t", variable.Hidden, want.Hidden)
 		}
 
 		if variable.EnvironmentScope != want.EnvironmentScope {
