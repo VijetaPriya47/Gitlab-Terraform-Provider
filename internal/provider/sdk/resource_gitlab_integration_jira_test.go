@@ -4,13 +4,12 @@
 package sdk
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
@@ -153,20 +152,6 @@ func TestAcc_GitlabIntegrationJira_projectKey(t *testing.T) {
 	jiraResourceName := "gitlab_integration_jira.jira"
 	project := testutil.CreateProject(t)
 
-	importSkipAttributes := []string{
-		"password",
-	}
-
-	isVersionUnder17, err := api.IsGitLabVersionLessThan(context.Background(), testutil.TestGitlabClient, "17.0")()
-	if err != nil {
-		t.Fatal("Failed to read GitLab version")
-	}
-
-	// We need to skip import validation on project key when we're below 17.0
-	if isVersionUnder17 {
-		importSkipAttributes = append(importSkipAttributes, "project_key")
-	}
-
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
 		CheckDestroy:             testAccCheckGitlabIntegrationJiraDestroy,
@@ -190,10 +175,12 @@ func TestAcc_GitlabIntegrationJira_projectKey(t *testing.T) {
 			},
 			// Verify Import
 			{
-				ResourceName:            jiraResourceName,
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: importSkipAttributes,
+				ResourceName:      jiraResourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"password",
+				},
 			},
 		},
 	})

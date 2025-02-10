@@ -22,7 +22,6 @@ import (
 )
 
 func TestAccGitlabGroup_basic(t *testing.T) {
-
 	var group gitlab.Group
 	rInt := acctest.RandInt()
 
@@ -154,7 +153,6 @@ func TestAccGitlabGroup_basic(t *testing.T) {
 			},
 			// Update the group to use new value in `default_branch_protection_defaults`
 			{
-				SkipFunc: api.IsGitLabVersionLessThan(context.Background(), testutil.TestGitlabClient, "16.1"),
 				Config: fmt.Sprintf(`
 				resource "gitlab_group" "foo" {
 				  name = "bar-name-%d"
@@ -281,7 +279,6 @@ func TestAccGitlabGroup_basic(t *testing.T) {
 }
 
 func TestAccGitlabGroup_defaultBranch(t *testing.T) {
-
 	var group gitlab.Group
 	rInt := acctest.RandInt()
 
@@ -565,7 +562,6 @@ func TestAccGitlabGroup_basic_deprecated(t *testing.T) {
 			},
 			// Update the group to use new value 4 for `default_branch_protection`
 			{
-				SkipFunc: api.IsGitLabVersionLessThan(context.Background(), testutil.TestGitlabClient, "16.1"),
 				Config: fmt.Sprintf(`
 				resource "gitlab_group" "foo" {
 				  name = "bar-name-%d"

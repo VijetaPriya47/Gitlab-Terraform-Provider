@@ -4,7 +4,6 @@
 package provider
 
 import (
-	"context"
 	"fmt"
 	"regexp"
 	"testing"
@@ -90,9 +89,8 @@ func TestAccGitlabGroupHook_basic(t *testing.T) {
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"token"},
 			},
-			// Update group hook to use a custom template, only after version 16.10
+			// Update group hook to use a custom template
 			{
-				SkipFunc: api.IsGitLabVersionLessThan(context.Background(), testutil.TestGitlabClient, "16.10"),
 				Config: fmt.Sprintf(`
 				resource "gitlab_group_hook" "this" {
 					group = "%s"
