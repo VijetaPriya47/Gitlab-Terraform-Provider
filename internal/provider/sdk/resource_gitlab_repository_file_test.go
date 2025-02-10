@@ -10,7 +10,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
@@ -24,7 +24,17 @@ func TestAccGitlabRepositoryFile_basic(t *testing.T) {
 		CheckDestroy:             testAccCheckGitlabRepositoryFileDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccGitlabRepositoryFileConfig(testProject.ID),
+				Config: fmt.Sprintf(`
+					resource "gitlab_repository_file" "this" {
+						project        = %d
+						file_path      = "meow.txt"
+						branch         = "main"
+						content        = "bWVvdyBtZW93IG1lb3c="
+						author_email   = "meow@catnip.com"
+						author_name    = "Meow Meowington"
+						commit_message = "feature: add launch codes"
+					}
+				`, testProject.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabRepositoryFileExists("gitlab_repository_file.this", &file),
 					testAccCheckGitlabRepositoryFileAttributes(&file, &testAccGitlabRepositoryFileAttributes{
@@ -41,7 +51,17 @@ func TestAccGitlabRepositoryFile_basic(t *testing.T) {
 				ImportStateVerifyIgnore: []string{"author_email", "author_name", "commit_message"},
 			},
 			{
-				Config: testAccGitlabRepositoryFileUpdateConfig(testProject.ID),
+				Config: fmt.Sprintf(`
+					resource "gitlab_repository_file" "this" {
+						project        = %d
+						file_path      = "meow.txt"
+						branch         = "main"
+						content        = "bWVvdyBtZW93IG1lb3cgbWVvdyBtZW93Cg=="
+						author_email   = "meow@catnip.com"
+						author_name    = "Meow Meowington"
+						commit_message = "feature: change launch codes"
+					}
+				`, testProject.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabRepositoryFileExists("gitlab_repository_file.this", &file),
 					testAccCheckGitlabRepositoryFileAttributes(&file, &testAccGitlabRepositoryFileAttributes{
@@ -72,17 +92,17 @@ func TestAccGitlabRepositoryFile_SeparateCreateUpdateCommitMessages(t *testing.T
 			{
 				Config: fmt.Sprintf(`
 				resource "gitlab_repository_file" "this" {
-				  project = %d
-				  file_path = "meow.txt"
-				  branch = "main"
-				  content = "bWVvdyBtZW93IG1lb3c="
-				  author_email = "meow@catnip.com"
-				  author_name = "Meow Meowington"
+				  project               = %d
+				  file_path             = "meow.txt"
+				  branch                = "main"
+				  content               = "bWVvdyBtZW93IG1lb3c="
+				  author_email          = "meow@catnip.com"
+				  author_name           = "Meow Meowington"
 				  create_commit_message = "feature: add launch codes"
 				  update_commit_message = "update: updated launch codes"
 				  delete_commit_message = "delete: deleted launch codes"
 				}
-					`, testProject.ID),
+				`, testProject.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabRepositoryFileExists("gitlab_repository_file.this", &file),
 					testAccCheckGitlabRepositoryFileAttributes(&file, &testAccGitlabRepositoryFileAttributes{
@@ -102,17 +122,17 @@ func TestAccGitlabRepositoryFile_SeparateCreateUpdateCommitMessages(t *testing.T
 			{
 				Config: fmt.Sprintf(`
 				resource "gitlab_repository_file" "this" {
-				  project = %d
-				  file_path = "meow.txt"
-				  branch = "main"
-				  content = "bWVvdyBtZW93IG1lb3cgbWVvdyBtZW93Cg=="
-				  author_email = "meow@catnip.com"
-				  author_name = "Meow Meowington"
+				  project               = %d
+				  file_path             = "meow.txt"
+				  branch                = "main"
+				  content               = "bWVvdyBtZW93IG1lb3cgbWVvdyBtZW93Cg=="
+				  author_email          = "meow@catnip.com"
+				  author_name           = "Meow Meowington"
 				  create_commit_message = "feature: add launch codes"
 				  update_commit_message = "update: updated launch codes"
 				  delete_commit_message = "delete: deleted launch codes"
 				}
-					`, testProject.ID),
+				`, testProject.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabRepositoryFileExists("gitlab_repository_file.this", &file),
 					testAccCheckGitlabRepositoryFileAttributes(&file, &testAccGitlabRepositoryFileAttributes{
@@ -132,17 +152,17 @@ func TestAccGitlabRepositoryFile_SeparateCreateUpdateCommitMessages(t *testing.T
 			{
 				Config: fmt.Sprintf(`
 					resource "gitlab_repository_file" "this" {
-						project = %d
-						file_path = "meow.txt"
-						branch = "main"
-						content = "bWVvdyBtZW93IG1lb3cgbWVvdyBtZW93Cg=="
-						author_email = "meow@catnip.com"
-						author_name = "Meow Meowington"
+						project               = %d
+						file_path             = "meow.txt"
+						branch                = "main"
+						content               = "bWVvdyBtZW93IG1lb3cgbWVvdyBtZW93Cg=="
+						author_email          = "meow@catnip.com"
+						author_name           = "Meow Meowington"
 						create_commit_message = "feature: add launch codes"
 						update_commit_message = "update: updated launch codes"
 						delete_commit_message = "delete: deleted launch codes"
 					}
-						`, testProject.ID),
+				`, testProject.ID),
 				Destroy: true,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabRepositoryFileDeleteCommitMessage("gitlab_repository_file.this", "delete: deleted launch codes"),
@@ -172,33 +192,33 @@ func TestAccGitlabRepositoryFile_EnsureErrorsWithCommitMessage(t *testing.T) {
 			{
 				Config: fmt.Sprintf(`
 				resource "gitlab_repository_file" "this" {
-				  project = %d
-				  file_path = "meow.txt"
-				  branch = "main"
-				  content = "bWVvdyBtZW93IG1lb3c="
-				  author_email = "meow@catnip.com"
-				  author_name = "Meow Meowington"
-				  commit_message = "Extra commit message"
+				  project               = %d
+				  file_path             = "meow.txt"
+				  branch                = "main"
+				  content               = "bWVvdyBtZW93IG1lb3c="
+				  author_email          = "meow@catnip.com"
+				  author_name           = "Meow Meowington"
+				  commit_message        = "Extra commit message"
 				  create_commit_message = "feature: add launch codes"
 				  update_commit_message = "update: updated launch codes"
 				  delete_commit_message = "delete: deleted launch codes"
 				}
-					`, testProject.ID),
+				`, testProject.ID),
 				ExpectError: err_incompatable_commit_messages,
 			},
 			{
 				Config: fmt.Sprintf(`
 				resource "gitlab_repository_file" "this" {
-				  project = %d
-				  file_path = "meow.txt"
-				  branch = "main"
-				  content = "bWVvdyBtZW93IG1lb3c="
-				  author_email = "meow@catnip.com"
-				  author_name = "Meow Meowington"
+				  project               = %d
+				  file_path             = "meow.txt"
+				  branch                = "main"
+				  content               = "bWVvdyBtZW93IG1lb3c="
+				  author_email          = "meow@catnip.com"
+				  author_name           = "Meow Meowington"
 				  create_commit_message = "feature: add launch codes"
 				  delete_commit_message = "delete: deleted launch codes"
 				}
-					`, testProject.ID),
+				`, testProject.ID),
 				ExpectError: err_missing_update_commit_message,
 			},
 		},
@@ -224,12 +244,12 @@ func TestAccGitlabRepositoryFile_stateMigration(t *testing.T) {
 				},
 				Config: fmt.Sprintf(`
 				resource "gitlab_repository_file" "this" {
-				  project = %d
-				  file_path = "meow.txt"
-				  branch = "main"
-				  content = "Example Plaintext Data"
-				  author_email = "meow@catnip.com"
-				  author_name = "Meow Meowington"
+				  project        = %d
+				  file_path      = "meow.txt"
+				  branch         = "main"
+				  content        = "Example Plaintext Data"
+				  author_email   = "meow@catnip.com"
+				  author_name    = "Meow Meowington"
 				  commit_message = "feature: add launch codes"
 				}
 				`, testProject.ID),
@@ -240,13 +260,13 @@ func TestAccGitlabRepositoryFile_stateMigration(t *testing.T) {
 				ProtoV6ProviderFactories: providerFactoriesV6,
 				Config: fmt.Sprintf(`
 				resource "gitlab_repository_file" "this" {
-				  project = %d
-				  file_path = "meow.txt"
-				  branch = "main"
-				  content = "Example Plaintext Data"
-				  encoding = "text"
-				  author_email = "meow@catnip.com"
-				  author_name = "Meow Meowington"
+				  project        = %d
+				  file_path      = "meow.txt"
+				  branch         = "main"
+				  content        = "Example Plaintext Data"
+				  encoding       = "text"
+				  author_email   = "meow@catnip.com"
+				  author_name    = "Meow Meowington"
 				  commit_message = "feature: add launch codes"
 				}
 				`, testProject.ID),
@@ -280,16 +300,16 @@ func TestAccGitlabRepositoryFile_overwriteOnCreate(t *testing.T) {
 				},
 				Config: fmt.Sprintf(`
 				resource "gitlab_repository_file" "this" {
-				  project = %d
-				  file_path = "animal-noise.txt"
-				  branch = "main"
-				  content = "d29vZiB3b29mIHdvb2YK"
-				  author_email = "bark@dogbone.com"
-				  author_name = "Bark Woofman"
-				  commit_message = "feature: dog"
+				  project             = %d
+				  file_path           = "animal-noise.txt"
+				  branch              = "main"
+				  content             = "d29vZiB3b29mIHdvb2YK"
+				  author_email        = "bark@dogbone.com"
+				  author_name         = "Bark Woofman"
+				  commit_message      = "feature: dog"
 				  overwrite_on_create = true
 				}
-					`, testProject.ID),
+				`, testProject.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabRepositoryFileExists("gitlab_repository_file.this", &file),
 					testAccCheckGitlabRepositoryFileAttributes(&file, &testAccGitlabRepositoryFileAttributes{
@@ -319,16 +339,16 @@ func TestAccGitlabRepositoryFile_overwriteOnCreateNewFile(t *testing.T) {
 			{
 				Config: fmt.Sprintf(`
 				resource "gitlab_repository_file" "this" {
-				  project = %d
-				  file_path = "animal-noise.txt"
-				  branch = "main"
-				  content = "d29vZiB3b29mIHdvb2YK"
-				  author_email = "bark@dogbone.com"
-				  author_name = "Bark Woofman"
-				  commit_message = "feature: dog"
+				  project             = %d
+				  file_path           = "animal-noise.txt"
+				  branch              = "main"
+				  content             = "d29vZiB3b29mIHdvb2YK"
+				  author_email        = "bark@dogbone.com"
+				  author_name         = "Bark Woofman"
+				  commit_message      = "feature: dog"
 				  overwrite_on_create = true
 				}
-					`, testProject.ID),
+				`, testProject.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabRepositoryFileExists("gitlab_repository_file.this", &file),
 					testAccCheckGitlabRepositoryFileAttributes(&file, &testAccGitlabRepositoryFileAttributes{
@@ -358,7 +378,27 @@ func TestAccGitlabRepositoryFile_createSameFileDifferentRepository(t *testing.T)
 		CheckDestroy:             testAccCheckGitlabRepositoryFileDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccGitlabRepositoryFileSameFileDifferentRepositoryConfig(firstTestProject.ID, secondTestProject.ID),
+				Config: fmt.Sprintf(`
+					resource "gitlab_repository_file" "foo_file" {
+						project        = %d
+						file_path      = "meow.txt"
+						branch         = "main"
+						content        = "bWVvdyBtZW93IG1lb3c="
+						author_email   = "meow@catnip.com"
+						author_name    = "Meow Meowington"
+						commit_message = "feature: add launch codes"
+					}
+					
+					resource "gitlab_repository_file" "bar_file" {
+						project        = %d
+						file_path      = "meow.txt"
+						branch         = "main"
+						content        = "bWVvdyBtZW93IG1lb3c="
+						author_email   = "meow@catnip.com"
+						author_name    = "Meow Meowington"
+						commit_message = "feature: add launch codes"
+					}
+				`, firstTestProject.ID, secondTestProject.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabRepositoryFileExists("gitlab_repository_file.foo_file", &fooFile),
 					testAccCheckGitlabRepositoryFileAttributes(&fooFile, &testAccGitlabRepositoryFileAttributes{
@@ -386,13 +426,43 @@ func TestAccGitlabRepositoryFile_concurrentResources(t *testing.T) {
 			// NOTE: we don't need to check anything here, just make sure no terraform errors are being raised,
 			//       the other test cases will do the actual testing :)
 			{
-				Config: testAccGitlabRepositoryFileConcurrentResourcesConfig(testProject.ID),
+				Config: fmt.Sprintf(`
+					resource "gitlab_repository_file" "this" {
+						project        = "%d"
+						file_path      = "file-${count.index}.txt"
+						branch         = "main"
+						content        = base64encode("content-${count.index}")
+						commit_message = "Add file ${count.index}"
+						
+						count = 50
+					}
+				`, testProject.ID),
 			},
 			{
-				Config: testAccGitlabRepositoryFileConcurrentResourcesConfigUpdate(testProject.ID),
+				Config: fmt.Sprintf(`
+					resource "gitlab_repository_file" "this" {
+						project        = "%d"
+						file_path      = "file-${count.index}.txt"
+						branch         = "main"
+						content        = base64encode("updated-content-${count.index}")
+						commit_message = "Add file ${count.index}"
+						
+						count = 50
+					}
+				`, testProject.ID),
 			},
 			{
-				Config:  testAccGitlabRepositoryFileConcurrentResourcesConfigUpdate(testProject.ID),
+				Config: fmt.Sprintf(`
+					resource "gitlab_repository_file" "this" {
+						project        = "%d"
+						file_path      = "file-${count.index}.txt"
+						branch         = "main"
+						content        = base64encode("updated-content-${count.index}")
+						commit_message = "Add file ${count.index}"
+						
+						count = 50
+					}
+				`, testProject.ID),
 				Destroy: true,
 			},
 		},
@@ -408,7 +478,18 @@ func TestAccGitlabRepositoryFile_createOnNewBranch(t *testing.T) {
 		CheckDestroy:             testAccCheckGitlabRepositoryFileDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccGitlabRepositoryFileStartBranchConfig(testProject.ID),
+				Config: fmt.Sprintf(`
+					resource "gitlab_repository_file" "this" {
+						project        = %d
+						file_path      = "meow.txt"
+						branch         = "meow-branch"
+						start_branch   = "main"
+						content        = "bWVvdyBtZW93IG1lb3c="
+						author_email   = "meow@catnip.com"
+						author_name    = "Meow Meowington"
+						commit_message = "feature: add launch codes"
+					}
+				`, testProject.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabRepositoryFileExists("gitlab_repository_file.this", &file),
 					testAccCheckGitlabRepositoryFileAttributes(&file, &testAccGitlabRepositoryFileAttributes{
@@ -433,27 +514,27 @@ func TestAccGitlabRepositoryFile_validationFuncOnfilePath(t *testing.T) {
 			{
 				Config: fmt.Sprintf(`
 				resource "gitlab_repository_file" "this" {
-					project = %d
-					file_path = "./meow.txt"
-					branch = "main"
-					content = "bWVvdyBtZW93IG1lb3c="
-					author_email = "meow@catnip.com"
-					author_name = "Meow Meowington"
+					project        = %d
+					file_path      = "./meow.txt"
+					branch         = "main"
+					content        = "bWVvdyBtZW93IG1lb3c="
+					author_email   = "meow@catnip.com"
+					author_name    = "Meow Meowington"
 					commit_message = "feature: add launch codes"
-				  }`, testProject.ID),
+				}`, testProject.ID),
 				ExpectError: regexp.MustCompile("`file_path` cannot start with a `/` or `./`. See https://gitlab.com/gitlab-org/gitlab/-/issues/363112 for more information."),
 			},
 			{
 				Config: fmt.Sprintf(`
 				resource "gitlab_repository_file" "this" {
-					project = %d
-					file_path = "/meow.txt"
-					branch = "main"
-					content = "bWVvdyBtZW93IG1lb3c="
-					author_email = "meow@catnip.com"
-					author_name = "Meow Meowington"
+					project        = %d
+					file_path      = "/meow.txt"
+					branch         = "main"
+					content        = "bWVvdyBtZW93IG1lb3c="
+					author_email   = "meow@catnip.com"
+					author_name    = "Meow Meowington"
 					commit_message = "feature: add launch codes"
-				  }`, testProject.ID),
+				}`, testProject.ID),
 				ExpectError: regexp.MustCompile("`file_path` cannot start with a `/` or `./`. See https://gitlab.com/gitlab-org/gitlab/-/issues/363112 for more information."),
 			},
 		},
@@ -471,15 +552,15 @@ func TestAccGitlabRepositoryFile_base64EncodingWithTextContent(t *testing.T) {
 			{
 				Config: fmt.Sprintf(`
 					resource "gitlab_repository_file" "this" {
-						project = %d
+						project   = %d
 						file_path = "meow.txt"
-						branch = "main"
+						branch    = "main"
 
 						encoding = "text"
 						content  = "Hello World, meow"
 						
-						author_email = "meow@catnip.com"
-						author_name = "Meow Meowington"
+						author_email   = "meow@catnip.com"
+						author_name    = "Meow Meowington"
 						commit_message = "feature: add launch codes"
 					}
 				`, testProject.ID),
@@ -497,15 +578,15 @@ func TestAccGitlabRepositoryFile_base64EncodingWithTextContent(t *testing.T) {
 			{
 				Config: fmt.Sprintf(`
 					resource "gitlab_repository_file" "this" {
-						project = %d
+						project   = %d
 						file_path = "meow.txt"
-						branch = "main"
+						branch    = "main"
 
 						encoding = "base64"
-						content = base64encode("Hello World, meow")
+						content  = base64encode("Hello World, meow")
 
-						author_email = "meow@catnip.com"
-						author_name = "Meow Meowington"
+						author_email   = "meow@catnip.com"
+						author_name    = "Meow Meowington"
 						commit_message = "feature: add launch codes"
 					}
 				`, testProject.ID),
@@ -532,13 +613,13 @@ func TestAccGitlabRepositoryFile_createWithExecuteFilemode(t *testing.T) {
 			{
 				Config: fmt.Sprintf(`
 					resource "gitlab_repository_file" "this" {
-						project = %d
-						file_path = "meow.txt"
-						branch = "main"
-						content = "bWVvdyBtZW93IG1lb3cgbWVvdyBtZW93Cg=="
-						author_email = "meow@catnip.com"
-						author_name = "Meow Meowington"
-						commit_message = "feature: change launch codes"
+						project          = %d
+						file_path        = "meow.txt"
+						branch           = "main"
+						content          = "bWVvdyBtZW93IG1lb3cgbWVvdyBtZW93Cg=="
+						author_email     = "meow@catnip.com"
+						author_name      = "Meow Meowington"
+						commit_message   = "feature: change launch codes"
 						execute_filemode = false
 					}
 				`, testProject.ID),
@@ -553,13 +634,13 @@ func TestAccGitlabRepositoryFile_createWithExecuteFilemode(t *testing.T) {
 			{
 				Config: fmt.Sprintf(`
 					resource "gitlab_repository_file" "this" {
-						project = %d
-						file_path = "meow.txt"
-						branch = "main"
-						content = "bWVvdyBtZW93IG1lb3cgbWVvdyBtZW93Cg=="
-						author_email = "meow@catnip.com"
-						author_name = "Meow Meowington"
-						commit_message = "feature: change launch codes"
+						project          = %d
+						file_path        = "meow.txt"
+						branch           = "main"
+						content          = "bWVvdyBtZW93IG1lb3cgbWVvdyBtZW93Cg=="
+						author_email     = "meow@catnip.com"
+						author_name      = "Meow Meowington"
+						commit_message   = "feature: change launch codes"
 						execute_filemode = true
 					}
 				`, testProject.ID),
@@ -586,7 +667,7 @@ func testAccCheckGitlabRepositoryFileExists(n string, file *gitlab.File) resourc
 		if err != nil {
 			return fmt.Errorf("Error parsing repository file ID: %s", err)
 		}
-		// branch := rs.Primary.Attributes["branch"]
+
 		if branch == "" {
 			return fmt.Errorf("No branch set")
 		}
@@ -726,99 +807,4 @@ func testAccCheckGitlabRepositoryFileDestroy(s *terraform.State) error {
 		return nil
 	}
 	return nil
-}
-
-func testAccGitlabRepositoryFileConfig(projectID int) string {
-	return fmt.Sprintf(`
-resource "gitlab_repository_file" "this" {
-  project = %d
-  file_path = "meow.txt"
-  branch = "main"
-  content = "bWVvdyBtZW93IG1lb3c="
-  author_email = "meow@catnip.com"
-  author_name = "Meow Meowington"
-  commit_message = "feature: add launch codes"
-}
-	`, projectID)
-}
-
-func testAccGitlabRepositoryFileStartBranchConfig(projectID int) string {
-	return fmt.Sprintf(`
-resource "gitlab_repository_file" "this" {
-  project = %d
-  file_path = "meow.txt"
-  branch = "meow-branch"
-  start_branch = "main"
-  content = "bWVvdyBtZW93IG1lb3c="
-  author_email = "meow@catnip.com"
-  author_name = "Meow Meowington"
-  commit_message = "feature: add launch codes"
-}
-	`, projectID)
-}
-
-func testAccGitlabRepositoryFileUpdateConfig(projectID int) string {
-	return fmt.Sprintf(`
-resource "gitlab_repository_file" "this" {
-  project = %d
-  file_path = "meow.txt"
-  branch = "main"
-  content = "bWVvdyBtZW93IG1lb3cgbWVvdyBtZW93Cg=="
-  author_email = "meow@catnip.com"
-  author_name = "Meow Meowington"
-  commit_message = "feature: change launch codes"
-}
-	`, projectID)
-}
-
-func testAccGitlabRepositoryFileSameFileDifferentRepositoryConfig(firstProjectID, secondProjectID int) string {
-	return fmt.Sprintf(`
-resource "gitlab_repository_file" "foo_file" {
-  project = %d
-  file_path = "meow.txt"
-  branch = "main"
-  content = "bWVvdyBtZW93IG1lb3c="
-  author_email = "meow@catnip.com"
-  author_name = "Meow Meowington"
-  commit_message = "feature: add launch codes"
-}
-
-resource "gitlab_repository_file" "bar_file" {
-  project = %d
-  file_path = "meow.txt"
-  branch = "main"
-  content = "bWVvdyBtZW93IG1lb3c="
-  author_email = "meow@catnip.com"
-  author_name = "Meow Meowington"
-  commit_message = "feature: add launch codes"
-}
-	`, firstProjectID, secondProjectID)
-}
-
-func testAccGitlabRepositoryFileConcurrentResourcesConfig(projectID int) string {
-	return fmt.Sprintf(`
-resource "gitlab_repository_file" "this" {
-  project = "%d"
-  file_path = "file-${count.index}.txt"
-  branch = "main"
-  content = base64encode("content-${count.index}")
-  commit_message = "Add file ${count.index}"
-
-  count = 50
-}
-	`, projectID)
-}
-
-func testAccGitlabRepositoryFileConcurrentResourcesConfigUpdate(projectID int) string {
-	return fmt.Sprintf(`
-resource "gitlab_repository_file" "this" {
-  project = "%d"
-  file_path = "file-${count.index}.txt"
-  branch = "main"
-  content = base64encode("updated-content-${count.index}")
-  commit_message = "Add file ${count.index}"
-
-  count = 50
-}
-	`, projectID)
 }

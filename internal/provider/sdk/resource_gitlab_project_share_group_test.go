@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
@@ -57,25 +57,72 @@ func TestAccGitlabProjectShareGroup_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Share a new project with a new group.
 			{
-				Config: testAccGitlabProjectShareGroupConfig(randName, "guest"),
-				Check:  testAccCheckGitlabProjectSharedWithGroup("root/"+randName, randName, gitlab.GuestPermissions),
+				Config: fmt.Sprintf(`
+					resource "gitlab_project" "test" {
+						name = "%[1]s"
+						
+						# So that acceptance tests can be run in a gitlab organization with no billing.
+						visibility_level = "public"
+					}
+					
+					resource "gitlab_group" "test" {
+						name = "%[1]s"
+						path = "%[1]s"
+					}
+					
+					resource "gitlab_project_share_group" "test" {
+						project      = gitlab_project.test.id
+						group_id     = gitlab_group.test.id
+						group_access = "%[2]s"
+					}
+				`, randName, "guest"),
+				Check: testAccCheckGitlabProjectSharedWithGroup("root/"+randName, randName, gitlab.GuestPermissions),
 			},
 			// Update the access level.
 			{
-				Config: testAccGitlabProjectShareGroupConfig(randName, "reporter"),
-				Check:  testAccCheckGitlabProjectSharedWithGroup("root/"+randName, randName, gitlab.ReporterPermissions),
+				Config: fmt.Sprintf(`
+					resource "gitlab_project" "test" {
+						name = "%[1]s"
+						
+						# So that acceptance tests can be run in a gitlab organization with no billing.
+						visibility_level = "public"
+					}
+					
+					resource "gitlab_group" "test" {
+						name = "%[1]s"
+						path = "%[1]s"
+					}
+					
+					resource "gitlab_project_share_group" "test" {
+						project      = gitlab_project.test.id
+						group_id     = gitlab_group.test.id
+						group_access = "%[2]s"
+					}
+				`, randName, "reporter"),
+				Check: testAccCheckGitlabProjectSharedWithGroup("root/"+randName, randName, gitlab.ReporterPermissions),
 			},
 			// Delete the gitlab_project_share_group resource.
 			{
-				Config: testAccGitlabProjectShareGroupConfigDeleteShare(randName),
-				Check:  testAccCheckGitlabProjectIsNotShared("root/" + randName),
+				Config: fmt.Sprintf(`
+					resource "gitlab_project" "test" {
+						name = "%[1]s"
+						
+						# So that acceptance tests can be run in a gitlab organization with no billing.
+						visibility_level = "public"
+					}
+					
+					resource "gitlab_group" "test" {
+						name = "%[1]s"
+						path = "%[1]s"
+					}
+				`, randName),
+				Check: testAccCheckGitlabProjectIsNotShared("root/" + randName),
 			},
 		},
 	})
 }
 
 func TestAccGitlabProjectShareGroup_modifiedOutsideTerraform(t *testing.T) {
-
 	// Create the project and groups to use
 	project := testutil.CreateProject(t)
 	group := testutil.CreateGroups(t, 1)[0]
@@ -88,8 +135,8 @@ func TestAccGitlabProjectShareGroup_modifiedOutsideTerraform(t *testing.T) {
 			{
 				Config: fmt.Sprintf(`
 				  resource "gitlab_project_share_group" "test" {
-					project  = %d
-					group_id = %d
+					project      = %d
+					group_id     = %d
 					group_access = "reporter"
 				  }
 				`, project.ID, group.ID),
@@ -110,8 +157,8 @@ func TestAccGitlabProjectShareGroup_modifiedOutsideTerraform(t *testing.T) {
 				// Then run our plan
 				Config: fmt.Sprintf(`
 				  resource "gitlab_project_share_group" "test" {
-					project  = %d
-					group_id = %d
+					project      = %d
+					group_id     = %d
 					group_access = "reporter"
 				  }
 				`, project.ID, group.ID),
@@ -188,42 +235,4 @@ func testAccCheckGitlabProjectShareGroupDestroy(s *terraform.State) error {
 	}
 
 	return nil
-}
-
-func testAccGitlabProjectShareGroupConfig(randName, accessLevel string) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "test" {
-  name = "%[1]s"
-
-  # So that acceptance tests can be run in a gitlab organization with no billing.
-  visibility_level = "public"
-}
-
-resource "gitlab_group" "test" {
-  name = "%[1]s"
-  path = "%[1]s"
-}
-
-resource "gitlab_project_share_group" "test" {
-  project  = gitlab_project.test.id
-  group_id = gitlab_group.test.id
-  group_access = "%[2]s"
-}
-`, randName, accessLevel)
-}
-
-func testAccGitlabProjectShareGroupConfigDeleteShare(randName string) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "test" {
-  name = "%[1]s"
-
-  # So that acceptance tests can be run in a gitlab organization with no billing.
-  visibility_level = "public"
-}
-
-resource "gitlab_group" "test" {
-  name = "%[1]s"
-  path = "%[1]s"
-}
-`, randName)
 }

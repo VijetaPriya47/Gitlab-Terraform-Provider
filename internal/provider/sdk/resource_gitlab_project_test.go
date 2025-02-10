@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 
@@ -59,6 +59,7 @@ func TestAccGitlabProject_minimal(t *testing.T) {
 func TestAccGitlabProject_basic(t *testing.T) {
 	var received, defaults, defaultsMainBranch gitlab.Project
 	rInt := acctest.RandInt()
+	topic := acctest.RandString(4)
 
 	defaults = testProjectDefaults(rInt)
 
@@ -71,7 +72,60 @@ func TestAccGitlabProject_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create a project with all the features on (note: "archived" is "false")
 			{
-				Config: testAccGitlabProjectConfig(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_project" "foo" {
+					name = "foo-%d"
+					path = "foo.%d"
+					description = "Terraform acceptance tests"
+					
+					# NOTE: replaces by topics
+					# tags = [
+					# "tag1",
+					# ]
+					
+					# So that acceptance tests can be run in a gitlab organization
+					# with no billing
+					visibility_level = "public"
+					merge_method = "ff"
+					only_allow_merge_if_pipeline_succeeds = true
+					only_allow_merge_if_all_discussions_are_resolved = true
+					squash_option = "default_off"
+					pages_access_level = "public"
+					allow_merge_on_skipped_pipeline = false
+					restrict_user_defined_variables = false
+					ci_config_path = ".gitlab-ci.yml@mynamespace/myproject"
+					resolve_outdated_diff_discussions = true
+					analytics_access_level = "enabled"
+					auto_cancel_pending_pipelines = "enabled"
+					auto_devops_deploy_strategy = "continuous"
+					auto_devops_enabled = true
+					autoclose_referenced_issues = true
+					build_git_strategy = "fetch"
+					build_timeout = 42 * 60
+					builds_access_level = "enabled"
+					
+					emails_enabled = false
+					forking_access_level = "enabled"
+					issues_access_level = "enabled"
+					merge_requests_access_level = "enabled"
+					public_jobs = false
+					repository_access_level = "enabled"
+					repository_storage = "default"
+					security_and_compliance_access_level = "enabled"
+					snippets_access_level = "enabled"
+					suggestion_commit_message = "hello suggestion"
+					topics = ["%s"]
+					wiki_access_level = "enabled"
+					squash_commit_template = "hello squash"
+					merge_commit_template = "hello merge"
+					ci_default_git_depth = 42
+					releases_access_level = "enabled"
+					environments_access_level = "enabled"
+					feature_flags_access_level = "enabled"
+					infrastructure_access_level = "enabled"
+					monitor_access_level = "enabled"
+				}
+				`, rInt, rInt, topic),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectExists("gitlab_project.foo", &received),
 					testAccCheckAggregateGitlabProject(&defaults, &received),
@@ -79,7 +133,69 @@ func TestAccGitlabProject_basic(t *testing.T) {
 			},
 			// Update the project to turn the features off (note: "archived" is "true")
 			{
-				Config: testAccGitlabProjectUpdateConfig(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_project" "foo" {
+				  name = "foo-%d"
+				  path = "foo.%d"
+				  description = "Terraform acceptance tests!"
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				  merge_method = "ff"
+				  only_allow_merge_if_pipeline_succeeds = true
+				  only_allow_merge_if_all_discussions_are_resolved = true
+				  squash_option = "default_on"
+				  allow_merge_on_skipped_pipeline = true
+				  restrict_user_defined_variables = false
+				  request_access_enabled = false
+				  issues_enabled = false
+				  merge_requests_enabled = false
+				  pipelines_enabled = false
+				  approvals_before_merge = 0
+				  wiki_enabled = false
+				  snippets_enabled = false
+				  lfs_enabled = false
+				  shared_runners_enabled = false
+				  group_runners_enabled = false
+				  archived = true
+				  packages_enabled = false
+				  pages_access_level = "disabled"
+				  ci_forward_deployment_enabled = false
+				  ci_separated_caches = false
+				  keep_latest_artifact = false
+				  merge_pipelines_enabled = false
+				  merge_trains_enabled = false
+				  resolve_outdated_diff_discussions = false
+				  analytics_access_level = "disabled"
+				  auto_cancel_pending_pipelines = "disabled"
+				  auto_devops_deploy_strategy = "manual"
+				  auto_devops_enabled = false
+				  autoclose_referenced_issues = false
+				  build_git_strategy = "fetch"
+				  build_timeout = 10 * 60
+				  builds_access_level = "disabled"
+				  emails_enabled = true
+				  forking_access_level = "disabled"
+				  issues_access_level = "disabled"
+				  merge_requests_access_level = "disabled"
+				  public_jobs = false
+				  repository_access_level = "disabled"
+				  repository_storage = "default"
+				  security_and_compliance_access_level = "disabled"
+				  snippets_access_level = "disabled"
+				  topics = []
+				  wiki_access_level = "disabled"
+				  squash_commit_template = "goodby squash"
+				  merge_commit_template = "goodby merge"
+				  ci_default_git_depth = 84
+				  releases_access_level = "disabled"
+				  environments_access_level = "disabled"
+				  feature_flags_access_level = "disabled"
+				  infrastructure_access_level = "disabled"
+				  monitor_access_level = "disabled"
+				}
+				`, rInt, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectExists("gitlab_project.foo", &received),
 					testAccCheckAggregateGitlabProject(&gitlab.Project{
@@ -143,7 +259,60 @@ func TestAccGitlabProject_basic(t *testing.T) {
 			},
 			// Update the project to turn the features on again (note: "archived" is "false")
 			{
-				Config: testAccGitlabProjectConfig(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_project" "foo" {
+					name = "foo-%d"
+					path = "foo.%d"
+					description = "Terraform acceptance tests"
+					
+					# NOTE: replaces by topics
+					# tags = [
+					# "tag1",
+					# ]
+					
+					# So that acceptance tests can be run in a gitlab organization
+					# with no billing
+					visibility_level = "public"
+					merge_method = "ff"
+					only_allow_merge_if_pipeline_succeeds = true
+					only_allow_merge_if_all_discussions_are_resolved = true
+					squash_option = "default_off"
+					pages_access_level = "public"
+					allow_merge_on_skipped_pipeline = false
+					restrict_user_defined_variables = false
+					ci_config_path = ".gitlab-ci.yml@mynamespace/myproject"
+					resolve_outdated_diff_discussions = true
+					analytics_access_level = "enabled"
+					auto_cancel_pending_pipelines = "enabled"
+					auto_devops_deploy_strategy = "continuous"
+					auto_devops_enabled = true
+					autoclose_referenced_issues = true
+					build_git_strategy = "fetch"
+					build_timeout = 42 * 60
+					builds_access_level = "enabled"
+					
+					emails_enabled = false
+					forking_access_level = "enabled"
+					issues_access_level = "enabled"
+					merge_requests_access_level = "enabled"
+					public_jobs = false
+					repository_access_level = "enabled"
+					repository_storage = "default"
+					security_and_compliance_access_level = "enabled"
+					snippets_access_level = "enabled"
+					suggestion_commit_message = "hello suggestion"
+					topics = ["%s"]
+					wiki_access_level = "enabled"
+					squash_commit_template = "hello squash"
+					merge_commit_template = "hello merge"
+					ci_default_git_depth = 42
+					releases_access_level = "enabled"
+					environments_access_level = "enabled"
+					feature_flags_access_level = "enabled"
+					infrastructure_access_level = "enabled"
+					monitor_access_level = "enabled"
+				}
+				`, rInt, rInt, topic),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectExists("gitlab_project.foo", &received),
 					testAccCheckAggregateGitlabProject(&defaults, &received),
@@ -153,7 +322,62 @@ func TestAccGitlabProject_basic(t *testing.T) {
 			{
 				// Get the ID from the project data at the previous step
 				SkipFunc: testAccGitlabProjectConfigDefaultBranchSkipFunc(&received, "main"),
-				Config:   testAccGitlabProjectConfigDefaultBranch(rInt, "main"),
+				Config: fmt.Sprintf(`
+				resource "gitlab_project" "foo" {
+					name = "foo-%d"
+					path = "foo.%d"
+					description = "Terraform acceptance tests"
+					
+					default_branch = "main"
+					
+					# NOTE: replaces by topics
+					# tags = [
+					# "tag1",
+					# ]
+					
+					# So that acceptance tests can be run in a gitlab organization
+					# with no billing
+					visibility_level = "public"
+					merge_method = "ff"
+					only_allow_merge_if_pipeline_succeeds = true
+					only_allow_merge_if_all_discussions_are_resolved = true
+					squash_option = "default_off"
+					pages_access_level = "public"
+					allow_merge_on_skipped_pipeline = false
+					restrict_user_defined_variables = false
+					ci_config_path = ".gitlab-ci.yml@mynamespace/myproject"
+					resolve_outdated_diff_discussions = true
+					analytics_access_level = "enabled"
+					auto_cancel_pending_pipelines = "enabled"
+					auto_devops_deploy_strategy = "continuous"
+					auto_devops_enabled = true
+					autoclose_referenced_issues = true
+					build_git_strategy = "fetch"
+					build_timeout = 42 * 60
+					builds_access_level = "enabled"
+					
+					emails_enabled = false
+					forking_access_level = "enabled"
+					issues_access_level = "enabled"
+					merge_requests_access_level = "enabled"
+					public_jobs = false
+					repository_access_level = "enabled"
+					repository_storage = "default"
+					security_and_compliance_access_level = "enabled"
+					snippets_access_level = "enabled"
+					suggestion_commit_message = "hello suggestion"
+					topics = ["%s"]
+					wiki_access_level = "enabled"
+					squash_commit_template = "hello squash"
+					merge_commit_template = "hello merge"
+					ci_default_git_depth = 42
+					releases_access_level = "enabled"
+					environments_access_level = "enabled"
+					feature_flags_access_level = "enabled"
+					infrastructure_access_level = "enabled"
+					monitor_access_level = "enabled"
+				}
+				`, rInt, rInt, topic),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectExists("gitlab_project.foo", &received),
 					testAccCheckAggregateGitlabProject(&defaultsMainBranch, &received),
@@ -168,21 +392,60 @@ func TestAccGitlabProject_basic(t *testing.T) {
 			// Add all push rules to an existing project
 			{
 				SkipFunc: testutil.IsRunningInCE,
-				Config: testAccGitlabProjectConfigPushRules(rInt, `
-author_email_regex = "foo_author"
-branch_name_regex = "foo_branch"
-commit_message_regex = "foo_commit"
-commit_message_negative_regex = "foo_not_commit"
-file_name_regex = "foo_file"
-commit_committer_check = true
-commit_committer_name_check = true
-deny_delete_tag = true
-member_check = true
-prevent_secrets = true
-reject_unsigned_commits = true
-reject_non_dco_commits = true
-max_file_size = 123
-`),
+				Config: fmt.Sprintf(`
+				resource "gitlab_project" "foo" {
+				  name = "foo-%[1]d"
+				  path = "foo.%[1]d"
+				  description = "Terraform acceptance tests"
+				
+				  push_rules {
+					author_email_regex = "foo_author"
+					branch_name_regex = "foo_branch"
+					commit_message_regex = "foo_commit"
+					commit_message_negative_regex = "foo_not_commit"
+					file_name_regex = "foo_file"
+					commit_committer_check = true
+					commit_committer_name_check = true
+					deny_delete_tag = true
+					member_check = true
+					prevent_secrets = true
+					reject_unsigned_commits = true
+					reject_non_dco_commits = true
+					max_file_size = 123
+				  }
+				
+				  resolve_outdated_diff_discussions = true
+				  analytics_access_level = "enabled"
+				  auto_cancel_pending_pipelines = "enabled"
+				  auto_devops_deploy_strategy = "continuous"
+				  auto_devops_enabled = true
+				  autoclose_referenced_issues = true
+				  build_git_strategy = "fetch"
+				  build_timeout = 42 * 60
+				  builds_access_level = "enabled"
+				  emails_enabled = false
+				  forking_access_level = "enabled"
+				  issues_access_level = "enabled"
+				  merge_requests_access_level = "enabled"
+				  public_jobs = false
+				  repository_access_level = "enabled"
+				  repository_storage = "default"
+				  security_and_compliance_access_level = "enabled"
+				  snippets_access_level = "enabled"
+				  suggestion_commit_message = "hello suggestion"
+				  wiki_access_level = "enabled"
+				  squash_commit_template = "hello squash"
+				  merge_commit_template = "hello merge"
+				  releases_access_level = "enabled"
+				  environments_access_level = "enabled"
+				  feature_flags_access_level = "enabled"
+				  infrastructure_access_level = "enabled"
+				  monitor_access_level = "enabled"
+				
+				  # So that acceptance tests can be run in a gitlab organization with no billing.
+				  visibility_level = "public"
+				}
+				`, rInt),
 				Check: testAccCheckGitlabProjectPushRules("gitlab_project.foo", &gitlab.ProjectPushRules{
 					AuthorEmailRegex:           "foo_author",
 					BranchNameRegex:            "foo_branch",
@@ -209,21 +472,60 @@ max_file_size = 123
 			// Update some push rules but not others
 			{
 				SkipFunc: testutil.IsRunningInCE,
-				Config: testAccGitlabProjectConfigPushRules(rInt, `
-author_email_regex = "foo_author"
-branch_name_regex = "foo_branch"
-commit_message_regex = "foo_commit"
-commit_message_negative_regex = "foo_not_commit"
-file_name_regex = "foo_file_2"
-commit_committer_check = true
-commit_committer_name_check = false
-deny_delete_tag = true
-member_check = false
-prevent_secrets = true
-reject_unsigned_commits = true
-reject_non_dco_commits = true
-max_file_size = 1234
-`),
+				Config: fmt.Sprintf(`
+				resource "gitlab_project" "foo" {
+				  name = "foo-%[1]d"
+				  path = "foo.%[1]d"
+				  description = "Terraform acceptance tests"
+				
+				  push_rules {
+					author_email_regex = "foo_author"
+					branch_name_regex = "foo_branch"
+					commit_message_regex = "foo_commit"
+					commit_message_negative_regex = "foo_not_commit"
+					file_name_regex = "foo_file_2"
+					commit_committer_check = true
+					commit_committer_name_check = false
+					deny_delete_tag = true
+					member_check = false
+					prevent_secrets = true
+					reject_unsigned_commits = true
+					reject_non_dco_commits = true
+					max_file_size = 1234
+				  }
+				
+				  resolve_outdated_diff_discussions = true
+				  analytics_access_level = "enabled"
+				  auto_cancel_pending_pipelines = "enabled"
+				  auto_devops_deploy_strategy = "continuous"
+				  auto_devops_enabled = true
+				  autoclose_referenced_issues = true
+				  build_git_strategy = "fetch"
+				  build_timeout = 42 * 60
+				  builds_access_level = "enabled"
+				  emails_enabled = false
+				  forking_access_level = "enabled"
+				  issues_access_level = "enabled"
+				  merge_requests_access_level = "enabled"
+				  public_jobs = false
+				  repository_access_level = "enabled"
+				  repository_storage = "default"
+				  security_and_compliance_access_level = "enabled"
+				  snippets_access_level = "enabled"
+				  suggestion_commit_message = "hello suggestion"
+				  wiki_access_level = "enabled"
+				  squash_commit_template = "hello squash"
+				  merge_commit_template = "hello merge"
+				  releases_access_level = "enabled"
+				  environments_access_level = "enabled"
+				  feature_flags_access_level = "enabled"
+				  infrastructure_access_level = "enabled"
+				  monitor_access_level = "enabled"
+				
+				  # So that acceptance tests can be run in a gitlab organization with no billing.
+				  visibility_level = "public"
+				}
+				`, rInt),
 				Check: testAccCheckGitlabProjectPushRules("gitlab_project.foo", &gitlab.ProjectPushRules{
 					AuthorEmailRegex:           "foo_author",
 					BranchNameRegex:            "foo_branch",
@@ -242,14 +544,96 @@ max_file_size = 1234
 			},
 			// Try to add push rules to an existing project in CE
 			{
-				SkipFunc:    testutil.IsRunningInEE,
-				Config:      testAccGitlabProjectConfigPushRules(rInt, `author_email_regex = "foo_author"`),
+				SkipFunc: testutil.IsRunningInEE,
+				Config: fmt.Sprintf(`
+				resource "gitlab_project" "foo" {
+				  name = "foo-%[1]d"
+				  path = "foo.%[1]d"
+				  description = "Terraform acceptance tests"
+				
+				  push_rules {
+					author_email_regex = "foo_author"
+				  }
+				
+				  resolve_outdated_diff_discussions = true
+				  analytics_access_level = "enabled"
+				  auto_cancel_pending_pipelines = "enabled"
+				  auto_devops_deploy_strategy = "continuous"
+				  auto_devops_enabled = true
+				  autoclose_referenced_issues = true
+				  build_git_strategy = "fetch"
+				  build_timeout = 42 * 60
+				  builds_access_level = "enabled"
+				  emails_enabled = false
+				  forking_access_level = "enabled"
+				  issues_access_level = "enabled"
+				  merge_requests_access_level = "enabled"
+				  public_jobs = false
+				  repository_access_level = "enabled"
+				  repository_storage = "default"
+				  security_and_compliance_access_level = "enabled"
+				  snippets_access_level = "enabled"
+				  suggestion_commit_message = "hello suggestion"
+				  wiki_access_level = "enabled"
+				  squash_commit_template = "hello squash"
+				  merge_commit_template = "hello merge"
+				  releases_access_level = "enabled"
+				  environments_access_level = "enabled"
+				  feature_flags_access_level = "enabled"
+				  infrastructure_access_level = "enabled"
+				  monitor_access_level = "enabled"
+				
+				  # So that acceptance tests can be run in a gitlab organization with no billing.
+				  visibility_level = "public"
+				}
+				`, rInt),
 				ExpectError: regexp.MustCompile(regexp.QuoteMeta("Project push rules are not supported in your version of GitLab")),
 			},
 			// Update push rules
 			{
 				SkipFunc: testutil.IsRunningInCE,
-				Config:   testAccGitlabProjectConfigPushRules(rInt, `author_email_regex = "foo_author"`),
+				Config: fmt.Sprintf(`
+				resource "gitlab_project" "foo" {
+				  name = "foo-%[1]d"
+				  path = "foo.%[1]d"
+				  description = "Terraform acceptance tests"
+				
+				  push_rules {
+					author_email_regex = "foo_author"
+				  }
+				
+				  resolve_outdated_diff_discussions = true
+				  analytics_access_level = "enabled"
+				  auto_cancel_pending_pipelines = "enabled"
+				  auto_devops_deploy_strategy = "continuous"
+				  auto_devops_enabled = true
+				  autoclose_referenced_issues = true
+				  build_git_strategy = "fetch"
+				  build_timeout = 42 * 60
+				  builds_access_level = "enabled"
+				  emails_enabled = false
+				  forking_access_level = "enabled"
+				  issues_access_level = "enabled"
+				  merge_requests_access_level = "enabled"
+				  public_jobs = false
+				  repository_access_level = "enabled"
+				  repository_storage = "default"
+				  security_and_compliance_access_level = "enabled"
+				  snippets_access_level = "enabled"
+				  suggestion_commit_message = "hello suggestion"
+				  wiki_access_level = "enabled"
+				  squash_commit_template = "hello squash"
+				  merge_commit_template = "hello merge"
+				  releases_access_level = "enabled"
+				  environments_access_level = "enabled"
+				  feature_flags_access_level = "enabled"
+				  infrastructure_access_level = "enabled"
+				  monitor_access_level = "enabled"
+				
+				  # So that acceptance tests can be run in a gitlab organization with no billing.
+				  visibility_level = "public"
+				}
+				`, rInt),
 				Check: testAccCheckGitlabProjectPushRules("gitlab_project.foo", &gitlab.ProjectPushRules{
 					AuthorEmailRegex: "foo_author",
 				}),
@@ -258,7 +642,62 @@ max_file_size = 1234
 			// NOTE: The push rules will still exist upstream because the push_rules block is computed.
 			{
 				SkipFunc: testutil.IsRunningInCE,
-				Config:   testAccGitlabProjectConfigDefaultBranch(rInt, "main"),
+				Config: fmt.Sprintf(`
+				resource "gitlab_project" "foo" {
+					name = "foo-%d"
+					path = "foo.%d"
+					description = "Terraform acceptance tests"
+					
+					default_branch = "main"
+					
+					# NOTE: replaces by topics
+					# tags = [
+					# "tag1",
+					# ]
+					
+					# So that acceptance tests can be run in a gitlab organization
+					# with no billing
+					visibility_level = "public"
+					merge_method = "ff"
+					only_allow_merge_if_pipeline_succeeds = true
+					only_allow_merge_if_all_discussions_are_resolved = true
+					squash_option = "default_off"
+					pages_access_level = "public"
+					allow_merge_on_skipped_pipeline = false
+					restrict_user_defined_variables = false
+					ci_config_path = ".gitlab-ci.yml@mynamespace/myproject"
+					resolve_outdated_diff_discussions = true
+					analytics_access_level = "enabled"
+					auto_cancel_pending_pipelines = "enabled"
+					auto_devops_deploy_strategy = "continuous"
+					auto_devops_enabled = true
+					autoclose_referenced_issues = true
+					build_git_strategy = "fetch"
+					build_timeout = 42 * 60
+					builds_access_level = "enabled"
+					
+					emails_enabled = false
+					forking_access_level = "enabled"
+					issues_access_level = "enabled"
+					merge_requests_access_level = "enabled"
+					public_jobs = false
+					repository_access_level = "enabled"
+					repository_storage = "default"
+					security_and_compliance_access_level = "enabled"
+					snippets_access_level = "enabled"
+					suggestion_commit_message = "hello suggestion"
+					topics = ["%s"]
+					wiki_access_level = "enabled"
+					squash_commit_template = "hello squash"
+					merge_commit_template = "hello merge"
+					ci_default_git_depth = 42
+					releases_access_level = "enabled"
+					environments_access_level = "enabled"
+					feature_flags_access_level = "enabled"
+					infrastructure_access_level = "enabled"
+					monitor_access_level = "enabled"
+				}
+				`, rInt, rInt, topic),
 				Check: testAccCheckGitlabProjectPushRules("gitlab_project.foo", &gitlab.ProjectPushRules{
 					AuthorEmailRegex: "foo_author",
 				}),
@@ -266,7 +705,48 @@ max_file_size = 1234
 			// Add different push rules after the block was removed previously
 			{
 				SkipFunc: testutil.IsRunningInCE,
-				Config:   testAccGitlabProjectConfigPushRules(rInt, `branch_name_regex = "(feature|hotfix)\\/*"`),
+				Config: fmt.Sprintf(`
+				resource "gitlab_project" "foo" {
+				  name = "foo-%[1]d"
+				  path = "foo.%[1]d"
+				  description = "Terraform acceptance tests"
+				
+				  push_rules {
+					branch_name_regex = "(feature|hotfix)\\/*"
+				  }
+				
+				  resolve_outdated_diff_discussions = true
+				  analytics_access_level = "enabled"
+				  auto_cancel_pending_pipelines = "enabled"
+				  auto_devops_deploy_strategy = "continuous"
+				  auto_devops_enabled = true
+				  autoclose_referenced_issues = true
+				  build_git_strategy = "fetch"
+				  build_timeout = 42 * 60
+				  builds_access_level = "enabled"
+				  emails_enabled = false
+				  forking_access_level = "enabled"
+				  issues_access_level = "enabled"
+				  merge_requests_access_level = "enabled"
+				  public_jobs = false
+				  repository_access_level = "enabled"
+				  repository_storage = "default"
+				  security_and_compliance_access_level = "enabled"
+				  snippets_access_level = "enabled"
+				  suggestion_commit_message = "hello suggestion"
+				  wiki_access_level = "enabled"
+				  squash_commit_template = "hello squash"
+				  merge_commit_template = "hello merge"
+				  releases_access_level = "enabled"
+				  environments_access_level = "enabled"
+				  feature_flags_access_level = "enabled"
+				  infrastructure_access_level = "enabled"
+				  monitor_access_level = "enabled"
+				
+				  # So that acceptance tests can be run in a gitlab organization with no billing.
+				  visibility_level = "public"
+				}
+				`, rInt),
 				Check: testAccCheckGitlabProjectPushRules("gitlab_project.foo", &gitlab.ProjectPushRules{
 					BranchNameRegex: `(feature|hotfix)\/*`,
 				}),
@@ -295,7 +775,20 @@ func TestAccGitlabProject_templates(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create a project using custom template name
 			{
-				Config:   testAccGitlabProjectConfigTemplateNameCustom(rInt, templateProject.Name),
+				Config: fmt.Sprintf(`
+				resource "gitlab_project" "template-name-custom" {
+				  name = "template-name-custom-%d"
+				  path = "template-name-custom.%d"
+				  description = "Terraform acceptance tests"
+				  template_name = "%s"
+				  use_custom_template = true
+				  skip_wait_for_default_branch_protection = "false"
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				`, rInt, rInt, templateProject.Name),
 				SkipFunc: testutil.IsRunningInCE,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectExists("gitlab_project.template-name-custom", &received),
@@ -313,7 +806,20 @@ func TestAccGitlabProject_templates(t *testing.T) {
 			},
 			// Create a project using custom template project id
 			{
-				Config:   testAccGitlabProjectConfigTemplateProjectID(rInt, templateProject.ID),
+				Config: fmt.Sprintf(`
+				resource "gitlab_project" "template-id" {
+				  name = "template-id-%d"
+				  path = "template-id.%d"
+				  description = "Terraform acceptance tests"
+				  template_project_id = %d
+				  use_custom_template = true
+				  skip_wait_for_default_branch_protection = "false"
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				`, rInt, rInt, templateProject.ID),
 				SkipFunc: testutil.IsRunningInCE,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectExists("gitlab_project.template-id", &received),
@@ -335,6 +841,7 @@ func TestAccGitlabProject_templates(t *testing.T) {
 
 func TestAccGitlabProject_PushRules(t *testing.T) {
 	rInt := acctest.RandInt()
+	topic := acctest.RandString(4)
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
@@ -343,10 +850,49 @@ func TestAccGitlabProject_PushRules(t *testing.T) {
 			// Create a new project with push rules
 			{
 				SkipFunc: testutil.IsRunningInCE,
-				Config: testAccGitlabProjectConfigPushRules(rInt, `
-author_email_regex = "foo_author"
-max_file_size = 123
-`),
+				Config: fmt.Sprintf(`
+				resource "gitlab_project" "foo" {
+				  name = "foo-%[1]d"
+				  path = "foo.%[1]d"
+				  description = "Terraform acceptance tests"
+				
+				  push_rules {
+					author_email_regex = "foo_author"
+					max_file_size = 123
+				  }
+				
+				  resolve_outdated_diff_discussions = true
+				  analytics_access_level = "enabled"
+				  auto_cancel_pending_pipelines = "enabled"
+				  auto_devops_deploy_strategy = "continuous"
+				  auto_devops_enabled = true
+				  autoclose_referenced_issues = true
+				  build_git_strategy = "fetch"
+				  build_timeout = 42 * 60
+				  builds_access_level = "enabled"
+				  emails_enabled = false
+				  forking_access_level = "enabled"
+				  issues_access_level = "enabled"
+				  merge_requests_access_level = "enabled"
+				  public_jobs = false
+				  repository_access_level = "enabled"
+				  repository_storage = "default"
+				  security_and_compliance_access_level = "enabled"
+				  snippets_access_level = "enabled"
+				  suggestion_commit_message = "hello suggestion"
+				  wiki_access_level = "enabled"
+				  squash_commit_template = "hello squash"
+				  merge_commit_template = "hello merge"
+				  releases_access_level = "enabled"
+				  environments_access_level = "enabled"
+				  feature_flags_access_level = "enabled"
+				  infrastructure_access_level = "enabled"
+				  monitor_access_level = "enabled"
+				
+				  # So that acceptance tests can be run in a gitlab organization with no billing.
+				  visibility_level = "public"
+				}
+				`, rInt),
 				Check: testAccCheckGitlabProjectPushRules("gitlab_project.foo", &gitlab.ProjectPushRules{
 					AuthorEmailRegex: "foo_author",
 					MaxFileSize:      123,
@@ -362,7 +908,60 @@ max_file_size = 123
 			// Update to original project config
 			{
 				SkipFunc: testutil.IsRunningInCE,
-				Config:   testAccGitlabProjectConfig(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_project" "foo" {
+					name = "foo-%d"
+					path = "foo.%d"
+					description = "Terraform acceptance tests"
+					
+					# NOTE: replaces by topics
+					# tags = [
+					# "tag1",
+					# ]
+					
+					# So that acceptance tests can be run in a gitlab organization
+					# with no billing
+					visibility_level = "public"
+					merge_method = "ff"
+					only_allow_merge_if_pipeline_succeeds = true
+					only_allow_merge_if_all_discussions_are_resolved = true
+					squash_option = "default_off"
+					pages_access_level = "public"
+					allow_merge_on_skipped_pipeline = false
+					restrict_user_defined_variables = false
+					ci_config_path = ".gitlab-ci.yml@mynamespace/myproject"
+					resolve_outdated_diff_discussions = true
+					analytics_access_level = "enabled"
+					auto_cancel_pending_pipelines = "enabled"
+					auto_devops_deploy_strategy = "continuous"
+					auto_devops_enabled = true
+					autoclose_referenced_issues = true
+					build_git_strategy = "fetch"
+					build_timeout = 42 * 60
+					builds_access_level = "enabled"
+					
+					emails_enabled = false
+					forking_access_level = "enabled"
+					issues_access_level = "enabled"
+					merge_requests_access_level = "enabled"
+					public_jobs = false
+					repository_access_level = "enabled"
+					repository_storage = "default"
+					security_and_compliance_access_level = "enabled"
+					snippets_access_level = "enabled"
+					suggestion_commit_message = "hello suggestion"
+					topics = ["%s"]
+					wiki_access_level = "enabled"
+					squash_commit_template = "hello squash"
+					merge_commit_template = "hello merge"
+					ci_default_git_depth = 42
+					releases_access_level = "enabled"
+					environments_access_level = "enabled"
+					feature_flags_access_level = "enabled"
+					infrastructure_access_level = "enabled"
+					monitor_access_level = "enabled"
+				}
+				`, rInt, rInt, topic),
 			},
 			// Verify import
 			{
@@ -373,8 +972,49 @@ max_file_size = 123
 			},
 			// Try to create a new project with all push rules in CE
 			{
-				SkipFunc:    testutil.IsRunningInEE,
-				Config:      testAccGitlabProjectConfigPushRules(rInt, `author_email_regex = "foo_author"`),
+				SkipFunc: testutil.IsRunningInEE,
+				Config: fmt.Sprintf(`
+				resource "gitlab_project" "foo" {
+				  name = "foo-%[1]d"
+				  path = "foo.%[1]d"
+				  description = "Terraform acceptance tests"
+				
+				  push_rules {
+					author_email_regex = "foo_author"
+				  }
+				
+				  resolve_outdated_diff_discussions = true
+				  analytics_access_level = "enabled"
+				  auto_cancel_pending_pipelines = "enabled"
+				  auto_devops_deploy_strategy = "continuous"
+				  auto_devops_enabled = true
+				  autoclose_referenced_issues = true
+				  build_git_strategy = "fetch"
+				  build_timeout = 42 * 60
+				  builds_access_level = "enabled"
+				  emails_enabled = false
+				  forking_access_level = "enabled"
+				  issues_access_level = "enabled"
+				  merge_requests_access_level = "enabled"
+				  public_jobs = false
+				  repository_access_level = "enabled"
+				  repository_storage = "default"
+				  security_and_compliance_access_level = "enabled"
+				  snippets_access_level = "enabled"
+				  suggestion_commit_message = "hello suggestion"
+				  wiki_access_level = "enabled"
+				  squash_commit_template = "hello squash"
+				  merge_commit_template = "hello merge"
+				  releases_access_level = "enabled"
+				  environments_access_level = "enabled"
+				  feature_flags_access_level = "enabled"
+				  infrastructure_access_level = "enabled"
+				  monitor_access_level = "enabled"
+				
+				  # So that acceptance tests can be run in a gitlab organization with no billing.
+				  visibility_level = "public"
+				}
+				`, rInt),
 				ExpectError: regexp.MustCompile(regexp.QuoteMeta("Project push rules are not supported in your version of GitLab")),
 			},
 		},
@@ -390,7 +1030,21 @@ func TestAccGitlabProject_initializeWithReadme(t *testing.T) {
 		CheckDestroy:             testAccCheckGitlabProjectDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccGitlabProjectConfigInitializeWithReadme(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_project" "foo" {
+				  name                   = "foo-%d"
+				  path                   = "foo.%d"
+				  description            = "Terraform acceptance tests"
+				  initialize_with_readme = true
+				
+				  # Not required for the test, and makes it much more stable
+				  skip_wait_for_default_branch_protection = true
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				`, rInt, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectExists("gitlab_project.foo", &project),
 					func(state *terraform.State) error {
@@ -416,7 +1070,18 @@ func TestAccGitlabProject_initializeWithoutReadme(t *testing.T) {
 		CheckDestroy:             testAccCheckGitlabProjectDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccGitlabProjectConfigInitializeWithoutReadme(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_project" "foo" {
+				  name                   = "foo-%d"
+				  path                   = "foo.%d"
+				  description            = "Terraform acceptance tests"
+				  initialize_with_readme = false
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				`, rInt, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectExists("gitlab_project.foo", &project),
 					func(s *terraform.State) error {
@@ -444,7 +1109,19 @@ func TestAccGitlabProject_archiveOnDestroy(t *testing.T) {
 		CheckDestroy:             testAccCheckGitlabProjectArchivedOnDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccGitlabProjectConfigArchiveOnDestroy(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_project" "foo" {
+				  name = "foo-%d"
+				  path = "foo.%d"
+				  description = "Terraform acceptance tests"
+				  archive_on_destroy = true
+				  archived = false
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				`, rInt, rInt),
 			},
 		},
 	})
@@ -459,9 +1136,48 @@ func TestAccGitlabProject_setSinglePushRuleToDefault(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				SkipFunc: testutil.IsRunningInCE,
-				Config: testAccGitlabProjectConfigPushRules(rInt, `
-member_check = false
-`),
+				Config: fmt.Sprintf(`
+				resource "gitlab_project" "foo" {
+				  name = "foo-%[1]d"
+				  path = "foo.%[1]d"
+				  description = "Terraform acceptance tests"
+				
+				  push_rules {
+					member_check = false
+				  }
+				
+				  resolve_outdated_diff_discussions = true
+				  analytics_access_level = "enabled"
+				  auto_cancel_pending_pipelines = "enabled"
+				  auto_devops_deploy_strategy = "continuous"
+				  auto_devops_enabled = true
+				  autoclose_referenced_issues = true
+				  build_git_strategy = "fetch"
+				  build_timeout = 42 * 60
+				  builds_access_level = "enabled"
+				  emails_enabled = false
+				  forking_access_level = "enabled"
+				  issues_access_level = "enabled"
+				  merge_requests_access_level = "enabled"
+				  public_jobs = false
+				  repository_access_level = "enabled"
+				  repository_storage = "default"
+				  security_and_compliance_access_level = "enabled"
+				  snippets_access_level = "enabled"
+				  suggestion_commit_message = "hello suggestion"
+				  wiki_access_level = "enabled"
+				  squash_commit_template = "hello squash"
+				  merge_commit_template = "hello merge"
+				  releases_access_level = "enabled"
+				  environments_access_level = "enabled"
+				  feature_flags_access_level = "enabled"
+				  infrastructure_access_level = "enabled"
+				  monitor_access_level = "enabled"
+				
+				  # So that acceptance tests can be run in a gitlab organization with no billing.
+				  visibility_level = "public"
+				}
+				`, rInt),
 				Check: testAccCheckGitlabProjectPushRules("gitlab_project.foo", &gitlab.ProjectPushRules{
 					MemberCheck: false,
 				}),
@@ -479,16 +1195,56 @@ func TestAccGitlabProject_groupWithoutDefaultBranchProtection(t *testing.T) {
 		CheckDestroy:             testAccCheckGitlabProjectDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccGitlabProjectConfigWithoutDefaultBranchProtection(rInt),
-				Check:  testAccCheckGitlabProjectExists("gitlab_project.foo", &project),
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "foogroup-%d"
+				  path = "foogroup-%d"
+				  default_branch_protection = 0
+				  visibility_level = "public"
+				}
+				
+				resource "gitlab_project" "foo" {
+				  name = "foo-%d"
+				  description = "Terraform acceptance tests"
+				  namespace_id = "${gitlab_group.foo.id}"
+				}
+				`, rInt, rInt, rInt),
+				Check: testAccCheckGitlabProjectExists("gitlab_project.foo", &project),
 			},
 			{
-				Config:  testAccGitlabProjectConfigWithoutDefaultBranchProtection(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "foogroup-%d"
+				  path = "foogroup-%d"
+				  default_branch_protection = 0
+				  visibility_level = "public"
+				}
+				
+				resource "gitlab_project" "foo" {
+				  name = "foo-%d"
+				  description = "Terraform acceptance tests"
+				  namespace_id = "${gitlab_group.foo.id}"
+				}
+				`, rInt, rInt, rInt),
 				Destroy: true,
 			},
 			{
-				Config: testAccGitlabProjectConfigWithoutDefaultBranchProtectionInitializeReadme(rInt),
-				Check:  testAccCheckGitlabProjectExists("gitlab_project.foo", &project),
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "foogroup2-%d"
+				  path = "foogroup2-%d"
+				  default_branch_protection = 0
+				  visibility_level = "public"
+				}
+				
+				resource "gitlab_project" "foo" {
+				  name = "foo-%d"
+				  description = "Terraform acceptance tests"
+				  namespace_id = "${gitlab_group.foo.id}"
+				  initialize_with_readme = true
+				}
+				`, rInt, rInt, rInt),
+				Check: testAccCheckGitlabProjectExists("gitlab_project.foo", &project),
 			},
 		},
 	})
@@ -504,7 +1260,19 @@ func TestAccGitlabProject_IssueMergeRequestTemplates(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				SkipFunc: testutil.IsRunningInCE,
-				Config:   testAccGitlabProjectConfigIssueMergeRequestTemplates(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_project" "foo" {
+				  name = "foo-%d"
+				  path = "foo.%d"
+				  description = "Terraform acceptance tests"
+				  issues_template = "foo"
+				  merge_requests_template = "bar"
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				`, rInt, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectExists("gitlab_project.foo", &project),
 					func(s *terraform.State) error {
@@ -534,7 +1302,18 @@ func TestAccGitlabProject_MergePipelines(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				SkipFunc: testutil.IsRunningInCE,
-				Config:   testAccGitLabProjectMergePipelinesEnabled(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_project" "foo" {
+				  name = "foo-%d"
+				  path = "foo.%d"
+				  description = "Terraform acceptance tests"
+				  merge_pipelines_enabled = true
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				`, rInt, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectExists("gitlab_project.foo", &project),
 					func(s *terraform.State) error {
@@ -560,7 +1339,19 @@ func TestAccGitlabProject_MergeTrains(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				SkipFunc: testutil.IsRunningInCE,
-				Config:   testAccGitLabProjectMergeTrainsEnabled(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_project" "foo" {
+				  name = "foo-%d"
+				  path = "foo.%d"
+				  description = "Terraform acceptance tests"
+				  merge_pipelines_enabled = true
+				  merge_trains_enabled = true
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				`, rInt, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectExists("gitlab_project.foo", &project),
 					func(s *terraform.State) error {
@@ -627,17 +1418,134 @@ func TestAccGitlabProject_willErrorOnAPIFailure(t *testing.T) {
 // lintignore: AT002 // specialized import test
 func TestAccGitlabProject_import(t *testing.T) {
 	rInt := acctest.RandInt()
+	topic := acctest.RandString(4)
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
 		CheckDestroy:             testAccCheckGitlabProjectDestroy,
 		Steps: []resource.TestStep{
 			{
 				SkipFunc: testutil.IsRunningInEE,
-				Config:   testAccGitlabProjectConfig(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_project" "foo" {
+					name = "foo-%d"
+					path = "foo.%d"
+					description = "Terraform acceptance tests"
+					
+					# NOTE: replaces by topics
+					# tags = [
+					# "tag1",
+					# ]
+					
+					# So that acceptance tests can be run in a gitlab organization
+					# with no billing
+					visibility_level = "public"
+					merge_method = "ff"
+					only_allow_merge_if_pipeline_succeeds = true
+					only_allow_merge_if_all_discussions_are_resolved = true
+					squash_option = "default_off"
+					pages_access_level = "public"
+					allow_merge_on_skipped_pipeline = false
+					restrict_user_defined_variables = false
+					ci_config_path = ".gitlab-ci.yml@mynamespace/myproject"
+					resolve_outdated_diff_discussions = true
+					analytics_access_level = "enabled"
+					auto_cancel_pending_pipelines = "enabled"
+					auto_devops_deploy_strategy = "continuous"
+					auto_devops_enabled = true
+					autoclose_referenced_issues = true
+					build_git_strategy = "fetch"
+					build_timeout = 42 * 60
+					builds_access_level = "enabled"
+					
+					emails_enabled = false
+					forking_access_level = "enabled"
+					issues_access_level = "enabled"
+					merge_requests_access_level = "enabled"
+					public_jobs = false
+					repository_access_level = "enabled"
+					repository_storage = "default"
+					security_and_compliance_access_level = "enabled"
+					snippets_access_level = "enabled"
+					suggestion_commit_message = "hello suggestion"
+					topics = ["%s"]
+					wiki_access_level = "enabled"
+					squash_commit_template = "hello squash"
+					merge_commit_template = "hello merge"
+					ci_default_git_depth = 42
+					releases_access_level = "enabled"
+					environments_access_level = "enabled"
+					feature_flags_access_level = "enabled"
+					infrastructure_access_level = "enabled"
+					monitor_access_level = "enabled"
+				}
+				`, rInt, rInt, topic),
 			},
 			{
 				SkipFunc: testutil.IsRunningInCE,
-				Config:   testAccGitlabProjectConfigEE(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_project" "foo" {
+					name = "foo-%d"
+					path = "foo.%d"
+					description = "Terraform acceptance tests"
+					default_branch = "main"
+					
+					# NOTE: replaces by topics
+					# tags = [
+					# "tag1",
+					# ]
+					
+					# So that acceptance tests can be run in a gitlab organization
+					# with no billing
+					visibility_level = "public"
+					merge_method = "ff"
+					only_allow_merge_if_pipeline_succeeds = true
+					only_allow_merge_if_all_discussions_are_resolved = true
+					squash_option = "default_off"
+					pages_access_level = "public"
+					allow_merge_on_skipped_pipeline = false
+					restrict_user_defined_variables = false
+					ci_config_path = ".gitlab-ci.yml@mynamespace/myproject"
+					resolve_outdated_diff_discussions = true
+					analytics_access_level = "enabled"
+					auto_cancel_pending_pipelines = "enabled"
+					auto_devops_deploy_strategy = "continuous"
+					auto_devops_enabled = true
+					autoclose_referenced_issues = true
+					build_git_strategy = "fetch"
+					build_timeout = 42 * 60
+					builds_access_level = "enabled"
+					emails_enabled = false
+					forking_access_level = "enabled"
+					issues_access_level = "enabled"
+					merge_requests_access_level = "enabled"
+					public_jobs = false
+					repository_access_level = "enabled"
+					repository_storage = "default"
+					security_and_compliance_access_level = "enabled"
+					snippets_access_level = "enabled"
+					suggestion_commit_message = "hello suggestion"
+					topics = ["%s"]
+					wiki_access_level = "enabled"
+					squash_commit_template = "hello squash"
+					merge_commit_template = "hello merge"
+					ci_default_git_depth = 42
+					releases_access_level = "enabled"
+					environments_access_level = "enabled"
+					feature_flags_access_level = "enabled"
+					infrastructure_access_level = "enabled"
+					monitor_access_level = "enabled"
+					
+					# EE features
+					approvals_before_merge = 2
+					external_authorization_classification_label = "test"
+					requirements_access_level = "enabled"
+					model_experiments_access_level = "enabled"
+					model_registry_access_level = "enabled"
+					# are tested in separate test case
+					# mirror_trigger_builds = true
+					# mirror = true
+				}
+				`, rInt, rInt, topic),
 			},
 			{
 				ResourceName:      "gitlab_project.foo",
@@ -656,7 +1564,23 @@ func TestAccGitlabProject_nestedImport(t *testing.T) {
 		CheckDestroy:             testAccCheckGitlabProjectDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccGitlabProjectInGroupConfig(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name             = "foogroup-%d"
+				  path             = "foogroup-%d"
+				  visibility_level = "public"
+				}
+				
+				resource "gitlab_project" "foo" {
+				  name         = "foo-%d"
+				  description  = "Terraform acceptance tests"
+				  namespace_id = "${gitlab_group.foo.id}"
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				`, rInt, rInt, rInt),
 			},
 			{
 				ResourceName:      "gitlab_project.foo",
@@ -710,7 +1634,30 @@ func TestAccGitlabProject_transfer(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create a project in a group
 			{
-				Config: testAccGitlabProjectTransferBetweenGroupsBefore(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "foogroup-%d"
+				  path = "foogroup-%d"
+				  visibility_level = "public"
+				}
+				
+				resource "gitlab_project" "foo" {
+				  name = "foo-%d"
+				  description = "Terraform acceptance tests"
+				  namespace_id = "${gitlab_group.foo.id}"
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				
+				resource "gitlab_project_variable" "foo" {
+				  project = "${gitlab_project.foo.id}"
+				
+				  key = "FOO"
+				  value = "${gitlab_project.foo.path_with_namespace}"
+				}
+				`, rInt, rInt, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectExists("gitlab_project.foo", &received),
 					resource.TestCheckResourceAttrPtr("gitlab_project_variable.foo", "value", &pathBeforeTransfer),
@@ -718,7 +1665,36 @@ func TestAccGitlabProject_transfer(t *testing.T) {
 			},
 			// Create a second group and set the transfer the project to this group
 			{
-				Config: testAccGitlabProjectTransferBetweenGroupsAfter(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "foogroup-%d"
+				  path = "foogroup-%d"
+				  visibility_level = "public"
+				}
+				
+				resource "gitlab_group" "foo2" {
+				  name = "foo2group-%d"
+				  path = "foo2group-%d"
+				  visibility_level = "public"
+				}
+				
+				resource "gitlab_project" "foo" {
+				  name = "foo-%d"
+				  description = "Terraform acceptance tests"
+				  namespace_id = "${gitlab_group.foo2.id}"
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				
+				resource "gitlab_project_variable" "foo" {
+				  project = "${gitlab_project.foo.id}"
+				
+				  key = "FOO"
+				  value = "${gitlab_project.foo.path_with_namespace}"
+				}
+				`, rInt, rInt, rInt, rInt, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectExists("gitlab_project.foo", &received),
 					testAccCheckAggregateGitlabProject(&transferred, &received),
@@ -731,7 +1707,6 @@ func TestAccGitlabProject_transfer(t *testing.T) {
 
 // lintignore: AT002 // not a Terraform import test
 func TestAccGitlabProject_importURL(t *testing.T) {
-
 	rInt := acctest.RandInt()
 
 	// Create a base project for importing.
@@ -760,7 +1735,17 @@ func TestAccGitlabProject_importURL(t *testing.T) {
 		CheckDestroy:             testAccCheckGitlabProjectDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccGitlabProjectConfigImportURL(rInt, baseProject.HTTPURLToRepo),
+				Config: fmt.Sprintf(`
+				resource "gitlab_project" "imported" {
+				  name      = "imported-%d"
+				  default_branch = "main"
+				  import_url     = "%s"
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				`, rInt, baseProject.HTTPURLToRepo),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("gitlab_project.imported", "import_url", baseProject.HTTPURLToRepo),
 					func(state *terraform.State) error {
@@ -781,7 +1766,6 @@ func TestAccGitlabProject_importURL(t *testing.T) {
 
 // lintignore: AT002 // specialized import test
 func TestAccGitlabProject_importURLWithPassword(t *testing.T) {
-
 	rInt := acctest.RandInt()
 
 	// Create a base project for importing.
@@ -858,7 +1842,6 @@ func TestAccGitlabProject_importURLWithPassword(t *testing.T) {
 
 // lintignore: AT002 // specialized import test
 func TestAccGitlabProject_importURL_publicRepository(t *testing.T) {
-
 	testImportedProjectName := acctest.RandomWithPrefix("acctest")
 	testProject := testutil.CreateProject(t)
 
@@ -894,7 +1877,6 @@ func TestAccGitlabProject_importURL_publicRepository(t *testing.T) {
 
 // lintignore: AT002 // specialized import test
 func TestAccGitlabProject_importURL_privateRepository(t *testing.T) {
-
 	testutil.SkipIfCE(t)
 
 	testImportedProjectName := acctest.RandomWithPrefix("acctest")
@@ -1387,7 +2369,6 @@ func TestAccGitlabProject_InstanceBranchProtectionDisabled(t *testing.T) {
 
 // lintignore: AT002 // not a Terraform import test
 func TestAccGitlabProject_ImportURLMirrored(t *testing.T) {
-
 	var mirror gitlab.Project
 	rInt := acctest.RandInt()
 
@@ -1418,7 +2399,21 @@ func TestAccGitlabProject_ImportURLMirrored(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// First, import, as mirrored
-				Config:   testAccGitlabProjectConfigImportURLMirror(rInt, baseProject.HTTPURLToRepo),
+				Config: fmt.Sprintf(`
+				resource "gitlab_project" "imported" {
+				  name                                = "imported-%d"
+				  default_branch                      = "main"
+				  import_url                          = "%s"
+				  mirror                              = true
+				  mirror_trigger_builds               = true
+				  mirror_overwrites_diverged_branches = true
+				  only_mirror_protected_branches      = true
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				`, rInt, baseProject.HTTPURLToRepo),
 				SkipFunc: testutil.IsRunningInCE,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectExists("gitlab_project.imported", &mirror),
@@ -1444,7 +2439,21 @@ func TestAccGitlabProject_ImportURLMirrored(t *testing.T) {
 			},
 			{
 				// Second, disable all optional mirroring options
-				Config:   testAccGitlabProjectConfigImportURLMirrorDisabledOptionals(rInt, baseProject.HTTPURLToRepo),
+				Config: fmt.Sprintf(`
+				resource "gitlab_project" "imported" {
+				  name                                = "imported-%d"
+				  default_branch                      = "main"
+				  import_url                          = "%s"
+				  mirror                              = true
+				  mirror_trigger_builds               = false
+				  mirror_overwrites_diverged_branches = false
+				  only_mirror_protected_branches      = false
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				`, rInt, baseProject.HTTPURLToRepo),
 				SkipFunc: testutil.IsRunningInCE,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectExists("gitlab_project.imported", &mirror),
@@ -1471,7 +2480,21 @@ func TestAccGitlabProject_ImportURLMirrored(t *testing.T) {
 			},
 			{
 				// Third, disable mirroring, using the original ImportURL acceptance test
-				Config:   testAccGitlabProjectConfigImportURLMirrorDisabled(rInt, baseProject.HTTPURLToRepo),
+				Config: fmt.Sprintf(`
+				resource "gitlab_project" "imported" {
+				  name                                = "imported-%d"
+				  default_branch                      = "main"
+				  import_url                          = "%s"
+				  mirror                              = false
+				  mirror_trigger_builds               = false
+				  mirror_overwrites_diverged_branches = false
+				  only_mirror_protected_branches      = false
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				`, rInt, baseProject.HTTPURLToRepo),
 				SkipFunc: testutil.IsRunningInCE,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectExists("gitlab_project.imported", &mirror),
@@ -1508,7 +2531,21 @@ func TestAccGitlabProject_templateMutualExclusiveNameAndID(t *testing.T) {
 		CheckDestroy:             testAccCheckGitlabProjectDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccCheckMutualExclusiveNameAndID(rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_project" "template-mutual-exclusive" {
+				  name = "template-mutual-exclusive-%d"
+				  path = "template-mutual-exclusive.%d"
+				  description = "Terraform acceptance tests"
+				  template_name = "rails"
+				  template_project_id = 999
+				  use_custom_template = true
+				  default_branch = "master"
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				`, rInt, rInt),
 				SkipFunc:    testutil.IsRunningInCE,
 				ExpectError: regexp.MustCompile(regexp.QuoteMeta(`"template_project_id": conflicts with template_name`)),
 			},
@@ -2053,7 +3090,6 @@ func TestAccGitlabProject_WithAvatar(t *testing.T) {
 // something we can handle on the provider side by simply not passing the value in.
 // See https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/issues/6154#note_2143274743 for details.
 func TestAccGitlabProject_FalseCustomTemplate(t *testing.T) {
-
 	name := acctest.RandomWithPrefix("acctest")
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -2524,188 +3560,6 @@ func testAccCheckGitlabProjectPushRules(name string, wantPushRules *gitlab.Proje
 	}
 }
 
-func testAccGitlabProjectInGroupConfig(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_group" "foo" {
-  name = "foogroup-%d"
-  path = "foogroup-%d"
-  visibility_level = "public"
-}
-
-resource "gitlab_project" "foo" {
-  name = "foo-%d"
-  description = "Terraform acceptance tests"
-  namespace_id = "${gitlab_group.foo.id}"
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-	`, rInt, rInt, rInt)
-}
-
-func testAccGitlabProjectConfigWithoutDefaultBranchProtection(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_group" "foo" {
-  name = "foogroup-%d"
-  path = "foogroup-%d"
-  default_branch_protection = 0
-  visibility_level = "public"
-}
-
-resource "gitlab_project" "foo" {
-  name = "foo-%d"
-  description = "Terraform acceptance tests"
-  namespace_id = "${gitlab_group.foo.id}"
-}
-	`, rInt, rInt, rInt)
-}
-
-func testAccGitlabProjectConfigWithoutDefaultBranchProtectionInitializeReadme(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_group" "foo" {
-  name = "foogroup2-%d"
-  path = "foogroup2-%d"
-  default_branch_protection = 0
-  visibility_level = "public"
-}
-
-resource "gitlab_project" "foo" {
-  name = "foo-%d"
-  description = "Terraform acceptance tests"
-  namespace_id = "${gitlab_group.foo.id}"
-  initialize_with_readme = true
-}
-	`, rInt, rInt, rInt)
-}
-
-func testAccGitlabProjectTransferBetweenGroupsBefore(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_group" "foo" {
-  name = "foogroup-%d"
-  path = "foogroup-%d"
-  visibility_level = "public"
-}
-
-resource "gitlab_project" "foo" {
-  name = "foo-%d"
-  description = "Terraform acceptance tests"
-  namespace_id = "${gitlab_group.foo.id}"
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-
-resource "gitlab_project_variable" "foo" {
-  project = "${gitlab_project.foo.id}"
-
-  key = "FOO"
-  value = "${gitlab_project.foo.path_with_namespace}"
-}
-	`, rInt, rInt, rInt)
-}
-
-func testAccGitlabProjectTransferBetweenGroupsAfter(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_group" "foo" {
-  name = "foogroup-%d"
-  path = "foogroup-%d"
-  visibility_level = "public"
-}
-
-resource "gitlab_group" "foo2" {
-  name = "foo2group-%d"
-  path = "foo2group-%d"
-  visibility_level = "public"
-}
-
-resource "gitlab_project" "foo" {
-  name = "foo-%d"
-  description = "Terraform acceptance tests"
-  namespace_id = "${gitlab_group.foo2.id}"
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-
-resource "gitlab_project_variable" "foo" {
-  project = "${gitlab_project.foo.id}"
-
-  key = "FOO"
-  value = "${gitlab_project.foo.path_with_namespace}"
-}
-	`, rInt, rInt, rInt, rInt, rInt)
-}
-
-func testAccGitlabProjectConfigDefaultBranch(rInt int, defaultBranch string) string {
-	defaultBranchStatement := ""
-
-	if len(defaultBranch) > 0 {
-		defaultBranchStatement = fmt.Sprintf("default_branch = \"%s\"", defaultBranch)
-	}
-
-	topic := acctest.RandString(4)
-
-	return fmt.Sprintf(`
-resource "gitlab_project" "foo" {
-  name = "foo-%d"
-  path = "foo.%d"
-  description = "Terraform acceptance tests"
-
-  %s
-
-  # NOTE: replaces by topics
-  # tags = [
-  # "tag1",
-  # ]
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-  merge_method = "ff"
-  only_allow_merge_if_pipeline_succeeds = true
-  only_allow_merge_if_all_discussions_are_resolved = true
-  squash_option = "default_off"
-  pages_access_level = "public"
-  allow_merge_on_skipped_pipeline = false
-  restrict_user_defined_variables = false
-  ci_config_path = ".gitlab-ci.yml@mynamespace/myproject"
-  resolve_outdated_diff_discussions = true
-  analytics_access_level = "enabled"
-  auto_cancel_pending_pipelines = "enabled"
-  auto_devops_deploy_strategy = "continuous"
-  auto_devops_enabled = true
-  autoclose_referenced_issues = true
-  build_git_strategy = "fetch"
-  build_timeout = 42 * 60
-  builds_access_level = "enabled"
-
-  emails_enabled = false
-  forking_access_level = "enabled"
-  issues_access_level = "enabled"
-  merge_requests_access_level = "enabled"
-  public_jobs = false
-  repository_access_level = "enabled"
-  repository_storage = "default"
-  security_and_compliance_access_level = "enabled"
-  snippets_access_level = "enabled"
-  suggestion_commit_message = "hello suggestion"
-  topics = ["%s"]
-  wiki_access_level = "enabled"
-  squash_commit_template = "hello squash"
-  merge_commit_template = "hello merge"
-  ci_default_git_depth = 42
-  releases_access_level = "enabled"
-  environments_access_level = "enabled"
-  feature_flags_access_level = "enabled"
-  infrastructure_access_level = "enabled"
-  monitor_access_level = "enabled"
-}
-	`, rInt, rInt, defaultBranchStatement, topic)
-}
-
 func testAccGitlabProjectConfigDefaultBranchSkipFunc(project *gitlab.Project, defaultBranch string) func() (bool, error) {
 	return func() (bool, error) {
 		// Commit data
@@ -2729,413 +3583,6 @@ func testAccGitlabProjectConfigDefaultBranchSkipFunc(project *gitlab.Project, de
 
 		return false, err
 	}
-}
-
-func testAccGitlabProjectConfig(rInt int) string {
-	return testAccGitlabProjectConfigDefaultBranch(rInt, "")
-}
-
-func testAccGitlabProjectUpdateConfig(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "foo" {
-  name = "foo-%d"
-  path = "foo.%d"
-  description = "Terraform acceptance tests!"
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-  merge_method = "ff"
-  only_allow_merge_if_pipeline_succeeds = true
-  only_allow_merge_if_all_discussions_are_resolved = true
-  squash_option = "default_on"
-  allow_merge_on_skipped_pipeline = true
-  restrict_user_defined_variables = false
-  request_access_enabled = false
-  issues_enabled = false
-  merge_requests_enabled = false
-  pipelines_enabled = false
-  approvals_before_merge = 0
-  wiki_enabled = false
-  snippets_enabled = false
-  lfs_enabled = false
-  shared_runners_enabled = false
-  group_runners_enabled = false
-  archived = true
-  packages_enabled = false
-  pages_access_level = "disabled"
-  ci_forward_deployment_enabled = false
-  ci_separated_caches = false
-  keep_latest_artifact = false
-  merge_pipelines_enabled = false
-  merge_trains_enabled = false
-  resolve_outdated_diff_discussions = false
-  analytics_access_level = "disabled"
-  auto_cancel_pending_pipelines = "disabled"
-  auto_devops_deploy_strategy = "manual"
-  auto_devops_enabled = false
-  autoclose_referenced_issues = false
-  build_git_strategy = "fetch"
-  build_timeout = 10 * 60
-  builds_access_level = "disabled"
-  emails_enabled = true
-  forking_access_level = "disabled"
-  issues_access_level = "disabled"
-  merge_requests_access_level = "disabled"
-  public_jobs = false
-  repository_access_level = "disabled"
-  repository_storage = "default"
-  security_and_compliance_access_level = "disabled"
-  snippets_access_level = "disabled"
-  topics = []
-  wiki_access_level = "disabled"
-  squash_commit_template = "goodby squash"
-  merge_commit_template = "goodby merge"
-  ci_default_git_depth = 84
-  releases_access_level = "disabled"
-  environments_access_level = "disabled"
-  feature_flags_access_level = "disabled"
-  infrastructure_access_level = "disabled"
-  monitor_access_level = "disabled"
-}
-	`, rInt, rInt)
-}
-
-func testAccGitlabProjectConfigInitializeWithReadme(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "foo" {
-  name = "foo-%d"
-  path = "foo.%d"
-  description = "Terraform acceptance tests"
-  initialize_with_readme = true
-
-  # Not required for the test, and makes it much more stable
-  skip_wait_for_default_branch_protection = true
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-	`, rInt, rInt)
-}
-
-func testAccGitlabProjectConfigInitializeWithoutReadme(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "foo" {
-  name = "foo-%d"
-  path = "foo.%d"
-  description = "Terraform acceptance tests"
-  initialize_with_readme = false
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-	`, rInt, rInt)
-}
-
-func testAccGitlabProjectConfigImportURL(rInt int, importURL string) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "imported" {
-  name = "imported-%d"
-  default_branch = "main"
-  import_url = "%s"
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-`, rInt, importURL)
-}
-
-func testAccGitlabProjectConfigImportURLMirror(rInt int, importURL string) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "imported" {
-  name = "imported-%d"
-  default_branch = "main"
-  import_url = "%s"
-  mirror = true
-  mirror_trigger_builds = true
-  mirror_overwrites_diverged_branches = true
-  only_mirror_protected_branches = true
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-`, rInt, importURL)
-}
-
-func testAccGitlabProjectConfigImportURLMirrorDisabledOptionals(rInt int, importURL string) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "imported" {
-  name = "imported-%d"
-  default_branch = "main"
-  import_url = "%s"
-  mirror = true
-  mirror_trigger_builds = false
-  mirror_overwrites_diverged_branches = false
-  only_mirror_protected_branches = false
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-`, rInt, importURL)
-}
-
-func testAccGitlabProjectConfigImportURLMirrorDisabled(rInt int, importURL string) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "imported" {
-  name = "imported-%d"
-  default_branch = "main"
-  import_url = "%s"
-  mirror = false
-  mirror_trigger_builds = false
-  mirror_overwrites_diverged_branches = false
-  only_mirror_protected_branches = false
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-`, rInt, importURL)
-}
-
-func testAccGitlabProjectConfigPushRules(rInt int, pushRules string) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "foo" {
-  name = "foo-%[1]d"
-  path = "foo.%[1]d"
-  description = "Terraform acceptance tests"
-
-  push_rules {
-%[2]s
-  }
-
-  resolve_outdated_diff_discussions = true
-  analytics_access_level = "enabled"
-  auto_cancel_pending_pipelines = "enabled"
-  auto_devops_deploy_strategy = "continuous"
-  auto_devops_enabled = true
-  autoclose_referenced_issues = true
-  build_git_strategy = "fetch"
-  build_timeout = 42 * 60
-  builds_access_level = "enabled"
-  emails_enabled = false
-  forking_access_level = "enabled"
-  issues_access_level = "enabled"
-  merge_requests_access_level = "enabled"
-  public_jobs = false
-  repository_access_level = "enabled"
-  repository_storage = "default"
-  security_and_compliance_access_level = "enabled"
-  snippets_access_level = "enabled"
-  suggestion_commit_message = "hello suggestion"
-  wiki_access_level = "enabled"
-  squash_commit_template = "hello squash"
-  merge_commit_template = "hello merge"
-  releases_access_level = "enabled"
-  environments_access_level = "enabled"
-  feature_flags_access_level = "enabled"
-  infrastructure_access_level = "enabled"
-  monitor_access_level = "enabled"
-
-  # So that acceptance tests can be run in a gitlab organization with no billing.
-  visibility_level = "public"
-}
-	`, rInt, pushRules)
-}
-
-// 2020-09-07: Currently Gitlab (version 13.3.6 ) doesn't allow in admin API
-// ability to set a group as instance level templates.
-// To test resource_gitlab_project_test template features we add
-// group, admin settings directly in scripts/healthcheck-and-setup.sh
-// Once Gitlab add admin template in API we could manage group/settings
-// directly in tests like TestAccGitlabProject_basic.
-func testAccGitlabProjectConfigTemplateNameCustom(rInt int, templateName string) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "template-name-custom" {
-  name = "template-name-custom-%d"
-  path = "template-name-custom.%d"
-  description = "Terraform acceptance tests"
-  template_name = "%s"
-  use_custom_template = true
-  skip_wait_for_default_branch_protection = "false"
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-	`, rInt, rInt, templateName)
-}
-
-func testAccGitlabProjectConfigTemplateProjectID(rInt int, templateProjectID int) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "template-id" {
-  name = "template-id-%d"
-  path = "template-id.%d"
-  description = "Terraform acceptance tests"
-  template_project_id = %d
-  use_custom_template = true
-  skip_wait_for_default_branch_protection = "false"
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-	`, rInt, rInt, templateProjectID)
-}
-
-func testAccCheckMutualExclusiveNameAndID(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "template-mutual-exclusive" {
-  name = "template-mutual-exclusive-%d"
-  path = "template-mutual-exclusive.%d"
-  description = "Terraform acceptance tests"
-  template_name = "rails"
-  template_project_id = 999
-  use_custom_template = true
-  default_branch = "master"
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-	`, rInt, rInt)
-}
-
-func testAccGitlabProjectConfigIssueMergeRequestTemplates(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "foo" {
-  name = "foo-%d"
-  path = "foo.%d"
-  description = "Terraform acceptance tests"
-  issues_template = "foo"
-  merge_requests_template = "bar"
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-	`, rInt, rInt)
-}
-
-func testAccGitlabProjectConfigArchiveOnDestroy(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "foo" {
-  name = "foo-%d"
-  path = "foo.%d"
-  description = "Terraform acceptance tests"
-  archive_on_destroy = true
-  archived = false
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-	`, rInt, rInt)
-}
-
-func testAccGitLabProjectMergePipelinesEnabled(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "foo" {
-  name = "foo-%d"
-  path = "foo.%d"
-  description = "Terraform acceptance tests"
-  merge_pipelines_enabled = true
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-	`, rInt, rInt)
-}
-
-func testAccGitLabProjectMergeTrainsEnabled(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_project" "foo" {
-  name = "foo-%d"
-  path = "foo.%d"
-  description = "Terraform acceptance tests"
-  merge_pipelines_enabled = true
-  merge_trains_enabled = true
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-}
-	`, rInt, rInt)
-}
-
-func testAccGitlabProjectConfigEE(rInt int) string {
-
-	topic := acctest.RandString(4)
-
-	return fmt.Sprintf(`
-resource "gitlab_project" "foo" {
-  name = "foo-%d"
-  path = "foo.%d"
-  description = "Terraform acceptance tests"
-  default_branch = "main"
-
-  # NOTE: replaces by topics
-  # tags = [
-  # "tag1",
-  # ]
-
-  # So that acceptance tests can be run in a gitlab organization
-  # with no billing
-  visibility_level = "public"
-  merge_method = "ff"
-  only_allow_merge_if_pipeline_succeeds = true
-  only_allow_merge_if_all_discussions_are_resolved = true
-  squash_option = "default_off"
-  pages_access_level = "public"
-  allow_merge_on_skipped_pipeline = false
-  restrict_user_defined_variables = false
-  ci_config_path = ".gitlab-ci.yml@mynamespace/myproject"
-  resolve_outdated_diff_discussions = true
-  analytics_access_level = "enabled"
-  auto_cancel_pending_pipelines = "enabled"
-  auto_devops_deploy_strategy = "continuous"
-  auto_devops_enabled = true
-  autoclose_referenced_issues = true
-  build_git_strategy = "fetch"
-  build_timeout = 42 * 60
-  builds_access_level = "enabled"
-  emails_enabled = false
-  forking_access_level = "enabled"
-  issues_access_level = "enabled"
-  merge_requests_access_level = "enabled"
-  public_jobs = false
-  repository_access_level = "enabled"
-  repository_storage = "default"
-  security_and_compliance_access_level = "enabled"
-  snippets_access_level = "enabled"
-  suggestion_commit_message = "hello suggestion"
-  topics = ["%s"]
-  wiki_access_level = "enabled"
-  squash_commit_template = "hello squash"
-  merge_commit_template = "hello merge"
-  ci_default_git_depth = 42
-  releases_access_level = "enabled"
-  environments_access_level = "enabled"
-  feature_flags_access_level = "enabled"
-  infrastructure_access_level = "enabled"
-  monitor_access_level = "enabled"
-
-  # EE features
-  approvals_before_merge = 2
-  external_authorization_classification_label = "test"
-  requirements_access_level = "enabled"
-  model_experiments_access_level = "enabled"
-  model_registry_access_level = "enabled"
-  # are tested in separate test case
-  # mirror_trigger_builds = true
-  # mirror = true
-}
-	`, rInt, rInt, topic)
 }
 
 func testProjectDefaults(rInt int) gitlab.Project {

@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
@@ -27,7 +27,17 @@ func TestAccGitlabSystemHook_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create a hook with all options
 			{
-				Config: testAccGitlabSystemHookConfig(rInt),
+				Config: fmt.Sprintf(`
+					resource "gitlab_system_hook" "this" {
+						url                      = "https://example.com/hook-%d"
+						token                    = "secret-token"
+						push_events              = true
+						tag_push_events          = true
+						merge_requests_events    = true
+						repository_update_events = true
+						enable_ssl_verification  = true
+					}
+				`, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabSystemHookExists("gitlab_system_hook.this", &hook),
 					resource.TestCheckResourceAttrSet("gitlab_system_hook.this", "created_at"),
@@ -42,7 +52,17 @@ func TestAccGitlabSystemHook_basic(t *testing.T) {
 			},
 			// Update the hook to toggle all the values to their inverse
 			{
-				Config: testAccGitlabSystemHookUpdateConfig(rInt),
+				Config: fmt.Sprintf(`
+					resource "gitlab_system_hook" "this" {
+						url                      = "https://example.com/hook-%d"
+						token                    = "another-secret-token"
+						push_events              = false
+						tag_push_events          = false
+						merge_requests_events    = false
+						repository_update_events = false
+						enable_ssl_verification  = false
+					}
+				`, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabSystemHookExists("gitlab_system_hook.this", &hook),
 				),
@@ -101,32 +121,4 @@ func testAccCheckGitlabSystemHookDestroy(s *terraform.State) error {
 		return nil
 	}
 	return nil
-}
-
-func testAccGitlabSystemHookConfig(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_system_hook" "this" {
-  url                      = "https://example.com/hook-%d"
-  token                    = "secret-token"
-  push_events              = true
-  tag_push_events          = true
-  merge_requests_events    = true
-  repository_update_events = true
-  enable_ssl_verification  = true
-}
-	`, rInt)
-}
-
-func testAccGitlabSystemHookUpdateConfig(rInt int) string {
-	return fmt.Sprintf(`
-resource "gitlab_system_hook" "this" {
-  url                      = "https://example.com/hook-%d"
-  token                    = "another-secret-token"
-  push_events              = false
-  tag_push_events          = false
-  merge_requests_events    = false
-  repository_update_events = false
-  enable_ssl_verification  = false
-}
-	`, rInt)
 }
