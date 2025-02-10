@@ -161,7 +161,7 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 		},
 
 		"auto_ban_user_on_excessive_projects_download": {
-			Description: "When enabled, users will get automatically banned from the application when they download more than the maximum number of unique projects in the time period specified by max_number_of_repository_downloads and max_number_of_repository_downloads_within_time_period respectively. Introduced in GitLab 15.4. Self-managed, Ultimate only.",
+			Description: "When enabled, users will get automatically banned from the application when they download more than the maximum number of unique projects in the time period specified by max_number_of_repository_downloads and max_number_of_repository_downloads_within_time_period respectively. Self-managed, Ultimate only.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
@@ -196,21 +196,21 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 		},
 
 		"bulk_import_enabled": {
-			Description: "Enable migrating GitLab groups by direct transfer. Introduced in GitLab 15.8.",
+			Description: "Enable migrating GitLab groups by direct transfer.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
 		},
 
 		"bulk_import_max_download_file_size": {
-			Description: "Maximum download file size when importing from source GitLab instances by direct transfer. Introduced in GitLab 16.3.",
+			Description: "Maximum download file size when importing from source GitLab instances by direct transfer.",
 			Type:        schema.TypeInt,
 			Optional:    true,
 			Computed:    true,
 		},
 
 		"can_create_group": {
-			Description: "Indicates whether users can create top-level groups. Introduced in GitLab 15.5.",
+			Description: "Indicates whether users can create top-level groups.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
@@ -245,21 +245,21 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 		},
 
 		"concurrent_bitbucket_import_jobs_limit": {
-			Description: "Maximum number of simultaneous import jobs for the Bitbucket Cloud importer. Introduced in GitLab 16.11.",
+			Description: "Maximum number of simultaneous import jobs for the Bitbucket Cloud importer.",
 			Type:        schema.TypeInt,
 			Optional:    true,
 			Computed:    true,
 		},
 
 		"concurrent_bitbucket_server_import_jobs_limit": {
-			Description: "Maximum number of simultaneous import jobs for the Bitbucket Server importer. Introduced in GitLab 16.11.",
+			Description: "Maximum number of simultaneous import jobs for the Bitbucket Server importer.",
 			Type:        schema.TypeInt,
 			Optional:    true,
 			Computed:    true,
 		},
 
 		"concurrent_github_import_jobs_limit": {
-			Description: "Maximum number of simultaneous import jobs for the GitHub importer. Introduced in GitLab 16.11.",
+			Description: "Maximum number of simultaneous import jobs for the GitHub importer.",
 			Type:        schema.TypeInt,
 			Optional:    true,
 			Computed:    true,
@@ -322,14 +322,14 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 		},
 
 		"deactivate_dormant_users_period": {
-			Description: "Length of time (in days) after which a user is considered dormant. Introduced in GitLab 15.3.",
+			Description: "Length of time (in days) after which a user is considered dormant.",
 			Type:        schema.TypeInt,
 			Optional:    true,
 			Computed:    true,
 		},
 
 		"decompress_archive_file_timeout": {
-			Description: "Default timeout for decompressing archived files, in seconds. Set to 0 to disable timeouts. Introduced in GitLab 16.4.",
+			Description: "Default timeout for decompressing archived files, in seconds. Set to 0 to disable timeouts.",
 			Type:        schema.TypeInt,
 			Optional:    true,
 			Computed:    true,
@@ -343,7 +343,7 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 		},
 
 		"default_branch_name": {
-			Description: "Instance-level custom initial branch name (introduced in GitLab 13.2).",
+			Description: "Instance-level custom initial branch name",
 			Type:        schema.TypeString,
 			Optional:    true,
 			Computed:    true,
@@ -444,7 +444,7 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 		},
 
 		"delete_inactive_projects": {
-			Description: "Enable inactive project deletion feature. Introduced in GitLab 14.10. Became operational in GitLab 15.0 (with feature flag inactive_projects_deletion).",
+			Description: "Enable inactive project deletion feature.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
@@ -458,7 +458,7 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 		},
 
 		"delete_unconfirmed_users": {
-			Description: "Specifies whether users who have not confirmed their email should be deleted. When set to true, unconfirmed users are deleted after unconfirmed_users_delete_after_days days. Introduced in GitLab 16.1. Self-managed, Premium and Ultimate only.",
+			Description: "Specifies whether users who have not confirmed their email should be deleted. When set to true, unconfirmed users are deleted after unconfirmed_users_delete_after_days days. Self-managed, Premium and Ultimate only.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
@@ -509,21 +509,21 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 		},
 
 		"disable_admin_oauth_scopes": {
-			Description: "Stops administrators from connecting their GitLab accounts to non-trusted OAuth 2.0 applications that have the api, read_api, read_repository, write_repository, read_registry, write_registry, or sudo scopes. Introduced in GitLab 15.6.",
+			Description: "Stops administrators from connecting their GitLab accounts to non-trusted OAuth 2.0 applications that have the api, read_api, read_repository, write_repository, read_registry, write_registry, or sudo scopes.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
 		},
 
 		"disable_feed_token": {
-			Description: "Disable display of RSS/Atom and calendar feed tokens (introduced in GitLab 13.7).",
+			Description: "Disable display of RSS/Atom and calendar feed tokens.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
 		},
 
 		"disable_personal_access_tokens": {
-			Description: "Disable personal access tokens. Introduced in GitLab 15.7. Self-managed, Premium and Ultimate only. There is no method available to enable a personal access token that’s been disabled through the API. This is a known issue.",
+			Description: "Disable personal access tokens. Self-managed, Premium and Ultimate only. There is no method available to enable a personal access token that’s been disabled through the API. This is a known issue.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
@@ -568,7 +568,7 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 		},
 
 		"downstream_pipeline_trigger_limit_per_project_user_sha": {
-			Description: "Maximum downstream pipeline trigger rate. Introduced in GitLab 16.10.",
+			Description: "Maximum downstream pipeline trigger rate.",
 			Type:        schema.TypeInt,
 			Optional:    true,
 			Computed:    true,
@@ -582,7 +582,7 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 		},
 
 		"duo_features_enabled": {
-			Description: "Indicates whether GitLab Duo features are enabled for this instance. Introduced in GitLab 16.10. Self-managed, Premium and Ultimate only.",
+			Description: "Indicates whether GitLab Duo features are enabled for this instance. Self-managed, Premium and Ultimate only.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
@@ -949,7 +949,7 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 		},
 
 		"git_rate_limit_users_alertlist": {
-			Description: "List of user IDs that are emailed when the Git abuse rate limit is exceeded. Maximum: 100 user IDs. Introduced in GitLab 15.9. Self-managed, Ultimate only.",
+			Description: "List of user IDs that are emailed when the Git abuse rate limit is exceeded. Maximum: 100 user IDs. Self-managed, Ultimate only.",
 			Type:        schema.TypeList,
 			Elem:        &schema.Schema{Type: schema.TypeInt},
 			Optional:    true,
@@ -957,7 +957,7 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 		},
 
 		"git_rate_limit_users_allowlist": {
-			Description: "List of usernames excluded from Git anti-abuse rate limits. Maximum: 100 usernames. Introduced in GitLab 15.2. Self-managed, Ultimate only.",
+			Description: "List of usernames excluded from Git anti-abuse rate limits. Maximum: 100 usernames. Self-managed, Ultimate only.",
 			Type:        schema.TypeList,
 			Elem:        &schema.Schema{Type: schema.TypeString},
 			Optional:    true,
@@ -1005,7 +1005,7 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 		},
 
 		"gitlab_shell_operation_limit": {
-			Description: "Maximum number of Git operations per minute a user can perform. Introduced in GitLab 16.2.",
+			Description: "Maximum number of Git operations per minute a user can perform.",
 			Type:        schema.TypeInt,
 			Optional:    true,
 			Computed:    true,
@@ -1181,28 +1181,28 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 		},
 
 		"inactive_projects_delete_after_months": {
-			Description: "If delete_inactive_projects is true, the time (in months) to wait before deleting inactive projects. Introduced in GitLab 14.10. Became operational in GitLab 15.0.",
+			Description: "If delete_inactive_projects is true, the time (in months) to wait before deleting inactive projects.",
 			Type:        schema.TypeInt,
 			Optional:    true,
 			Computed:    true,
 		},
 
 		"inactive_projects_min_size_mb": {
-			Description: "If delete_inactive_projects is true, the minimum repository size for projects to be checked for inactivity. Introduced in GitLab 14.10. Became operational in GitLab 15.0.",
+			Description: "If delete_inactive_projects is true, the minimum repository size for projects to be checked for inactivity.",
 			Type:        schema.TypeInt,
 			Optional:    true,
 			Computed:    true,
 		},
 
 		"inactive_projects_send_warning_email_after_months": {
-			Description: "If delete_inactive_projects is true, sets the time (in months) to wait before emailing maintainers that the project is scheduled be deleted because it is inactive. Introduced in GitLab 14.10. Became operational in GitLab 15.0.",
+			Description: "If delete_inactive_projects is true, sets the time (in months) to wait before emailing maintainers that the project is scheduled be deleted because it is inactive.",
 			Type:        schema.TypeInt,
 			Optional:    true,
 			Computed:    true,
 		},
 
 		"include_optional_metrics_in_service_ping": {
-			Description: "Whether or not optional metrics are enabled in Service Ping. Introduced in GitLab 16.10.",
+			Description: "Whether or not optional metrics are enabled in Service Ping.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
@@ -1258,7 +1258,7 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 		},
 
 		"lock_duo_features_enabled": {
-			Description: "Indicates whether the GitLab Duo features enabled setting is enforced for all subgroups. Introduced in GitLab 16.10. Self-managed, Premium and Ultimate only.",
+			Description: "Indicates whether the GitLab Duo features enabled setting is enforced for all subgroups. Self-managed, Premium and Ultimate only.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
@@ -1329,7 +1329,7 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 		},
 
 		"max_import_remote_file_size": {
-			Description: "Maximum remote file size for imports from external object storages. Introduced in GitLab 16.3.",
+			Description: "Maximum remote file size for imports from external object storages.",
 			Type:        schema.TypeInt,
 			Optional:    true,
 			Computed:    true,
@@ -1364,7 +1364,7 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 		},
 
 		"max_ssh_key_lifetime": {
-			Description: "Maximum allowable lifetime for SSH keys in days. Introduced in GitLab 14.6.",
+			Description: "Maximum allowable lifetime for SSH keys in days.",
 			Type:        schema.TypeInt,
 			Optional:    true,
 			Computed:    true,
@@ -1385,14 +1385,14 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 		},
 
 		"max_number_of_repository_downloads": {
-			Description: "Maximum number of unique repositories a user can download in the specified time period before they are banned. Maximum: 10,000 repositories. Introduced in GitLab 15.1.",
+			Description: "Maximum number of unique repositories a user can download in the specified time period before they are banned. Maximum: 10,000 repositories.",
 			Type:        schema.TypeInt,
 			Optional:    true,
 			Computed:    true,
 		},
 
 		"max_number_of_repository_downloads_within_time_period": {
-			Description: "Reporting time period (in seconds). Maximum: 864000 seconds (10 days). Introduced in GitLab 15.1.",
+			Description: "Reporting time period (in seconds). Maximum: 864000 seconds (10 days).",
 			Type:        schema.TypeInt,
 			Optional:    true,
 			Computed:    true,
@@ -1485,35 +1485,35 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 		},
 
 		"minimum_password_length": {
-			Description: "Indicates whether passwords require a minimum length. Introduced in GitLab 15.1. Premium and Ultimate only.",
+			Description: "Indicates whether passwords require a minimum length. Premium and Ultimate only.",
 			Type:        schema.TypeInt,
 			Optional:    true,
 			Computed:    true,
 		},
 
 		"password_number_required": {
-			Description: "Indicates whether passwords require at least one number. Introduced in GitLab 15.1.",
+			Description: "Indicates whether passwords require at least one number.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
 		},
 
 		"password_symbol_required": {
-			Description: "Indicates whether passwords require at least one symbol character. Introduced in GitLab 15.1.",
+			Description: "Indicates whether passwords require at least one symbol character.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
 		},
 
 		"password_uppercase_required": {
-			Description: "Indicates whether passwords require at least one uppercase letter. Introduced in GitLab 15.1.",
+			Description: "Indicates whether passwords require at least one uppercase letter.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
 		},
 
 		"password_lowercase_required": {
-			Description: "Indicates whether passwords require at least one lowercase letter. Introduced in GitLab 15.1.",
+			Description: "Indicates whether passwords require at least one lowercase letter.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
@@ -1569,14 +1569,14 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 		},
 
 		"project_jobs_api_rate_limit": {
-			Description: "Maximum authenticated requests to /project/:id/jobs per minute. Introduced in GitLab 16.5.",
+			Description: "Maximum authenticated requests to /project/:id/jobs per minute.",
 			Type:        schema.TypeInt,
 			Optional:    true,
 			Computed:    true,
 		},
 
 		"projects_api_rate_limit_unauthenticated": {
-			Description: "Introduced in GitLab 15.10. Max number of requests per 10 minutes per IP address for unauthenticated requests to the list all projects API. To disable throttling set to 0.",
+			Description: "Max number of requests per 10 minutes per IP address for unauthenticated requests to the list all projects API. To disable throttling set to 0.",
 			Type:        schema.TypeInt,
 			Optional:    true,
 			Computed:    true,
@@ -1639,7 +1639,7 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 		},
 
 		"remember_me_enabled": {
-			Description: "Enable Remember me setting. Introduced in GitLab 16.0.",
+			Description: "Enable Remember me setting.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
@@ -1777,7 +1777,7 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 		},
 
 		"security_txt_content": {
-			Description: "Public security contact information. Introduced in GitLab 16.7.",
+			Description: "Public security contact information.",
 			Type:        schema.TypeString,
 			Optional:    true,
 			Computed:    true,
@@ -2172,7 +2172,7 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 		},
 
 		"unconfirmed_users_delete_after_days": {
-			Description: "Specifies how many days after sign-up to delete users who have not confirmed their email. Only applicable if delete_unconfirmed_users is set to true. Must be 1 or greater. Introduced in GitLab 16.1. Self-managed, Premium and Ultimate only.",
+			Description: "Specifies how many days after sign-up to delete users who have not confirmed their email. Only applicable if delete_unconfirmed_users is set to true. Must be 1 or greater. Self-managed, Premium and Ultimate only.",
 			Type:        schema.TypeInt,
 			Optional:    true,
 			Computed:    true,
@@ -2242,7 +2242,7 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 		},
 
 		"user_defaults_to_private_profile": {
-			Description: "Newly created users have private profile by default. Introduced in GitLab 15.8.",
+			Description: "Newly created users have private profile by default.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
@@ -3835,5 +3835,4 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 		options.WikiPageMaxContentBytes = gitlab.Ptr(d.Get("wiki_page_max_content_bytes").(int))
 	}
 	return &options
-
 }

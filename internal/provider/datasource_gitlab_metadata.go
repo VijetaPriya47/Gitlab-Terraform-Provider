@@ -92,7 +92,7 @@ func (d *gitlabMetadataDataSource) Schema(_ context.Context, _ datasource.Schema
 				},
 			},
 			"enterprise": schema.BoolAttribute{
-				MarkdownDescription: "If the GitLab instance is an enterprise instance or not. Supported for GitLab 15.6 onwards.",
+				MarkdownDescription: "If the GitLab instance is an enterprise instance or not.",
 				Computed:            true,
 			},
 		},

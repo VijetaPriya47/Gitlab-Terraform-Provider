@@ -149,7 +149,7 @@ Optional:
 
 - `author_email_regex` (String) All commit author emails must match this regex, e.g. `@my-company.com$`.
 - `branch_name_regex` (String) All branch names must match this regex, e.g. `(feature|hotfix)\/*`.
-- `commit_committer_check` (Boolean) Only commits pushed using verified emails are allowed.  **Note** This attribute is only supported in GitLab versions >= 16.4.
+- `commit_committer_check` (Boolean) Only commits pushed using verified emails are allowed.
 - `commit_committer_name_check` (Boolean) Users can only push commits to this repository if the commit author name is consistent with their GitLab account name.
 - `commit_message_negative_regex` (String) No commit message is allowed to match this regex, for example `ssh\:\/\/`.
 - `commit_message_regex` (String) All commit messages must match this regex, e.g. `Fixed \d+\..*`.
@@ -159,7 +159,7 @@ Optional:
 - `member_check` (Boolean) Allows only GitLab users to author commits.
 - `prevent_secrets` (Boolean) GitLab will reject any files that are likely to contain secrets.
 - `reject_non_dco_commits` (Boolean) Reject commit when it’s not DCO certified.
-- `reject_unsigned_commits` (Boolean) Only commits signed through GPG are allowed.  **Note** This attribute is only supported in GitLab versions >= 16.4.
+- `reject_unsigned_commits` (Boolean) Only commits signed through GPG are allowed.
 
 ## Import
 

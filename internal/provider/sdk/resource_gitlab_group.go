@@ -318,7 +318,7 @@ var _ = registerResource("gitlab_group", func() *schema.Resource {
 							Computed:    true,
 						},
 						"commit_committer_check": {
-							Description: "Only commits pushed using verified emails are allowed.  **Note** This attribute is only supported in GitLab versions >= 16.4.",
+							Description: "Only commits pushed using verified emails are allowed.",
 							Type:        schema.TypeBool,
 							Optional:    true,
 							Computed:    true,
@@ -348,7 +348,7 @@ var _ = registerResource("gitlab_group", func() *schema.Resource {
 							Computed:    true,
 						},
 						"reject_unsigned_commits": {
-							Description: "Only commits signed through GPG are allowed.  **Note** This attribute is only supported in GitLab versions >= 16.4.",
+							Description: "Only commits signed through GPG are allowed.",
 							Type:        schema.TypeBool,
 							Optional:    true,
 							Computed:    true,

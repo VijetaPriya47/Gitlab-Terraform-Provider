@@ -24,7 +24,7 @@ data "gitlab_metadata" "this" {}
 
 ### Read-Only
 
-- `enterprise` (Boolean) If the GitLab instance is an enterprise instance or not. Supported for GitLab 15.6 onwards.
+- `enterprise` (Boolean) If the GitLab instance is an enterprise instance or not.
 - `id` (String) The id of the data source. It will always be `1`
 - `kas` (Attributes) Metadata about the GitLab agent server for Kubernetes (KAS). (see [below for nested schema](#nestedatt--kas))
 - `revision` (String) Revision of the GitLab instance.

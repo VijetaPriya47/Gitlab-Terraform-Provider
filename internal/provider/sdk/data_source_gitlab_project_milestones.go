@@ -51,7 +51,7 @@ var _ = registerDataSource("gitlab_project_milestones", func() *schema.Resource 
 				Optional:    true,
 			},
 			"include_parent_milestones": {
-				Description: "Include group milestones from parent group and its ancestors. Introduced in GitLab 13.4.",
+				Description: "Include group milestones from parent group and its ancestors.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 			},

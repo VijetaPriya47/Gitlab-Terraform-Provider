@@ -119,7 +119,7 @@ func resourceGitlabIntegrationJiraSchema(description string) *schema.Resource {
 				Optional:    true,
 			},
 			"jira_issue_transition_id": {
-				Description: "The ID of a transition that moves issues to a closed state. You can find this number under the JIRA workflow administration (Administration > Issues > Workflows) by selecting View under Operations of the desired workflow of your project. By default, this ID is set to 2. *Note**: importing this field is only supported since GitLab 15.2.",
+				Description: "The ID of a transition that moves issues to a closed state. You can find this number under the JIRA workflow administration (Administration > Issues > Workflows) by selecting View under Operations of the desired workflow of your project. By default, this ID is set to 2.",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},

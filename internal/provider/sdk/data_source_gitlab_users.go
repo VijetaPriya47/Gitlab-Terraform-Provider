@@ -31,8 +31,10 @@ var _ = registerDataSource("gitlab_users", func() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Default:     "id",
-				ValidateFunc: validation.StringInSlice([]string{"id", "name",
-					"username", "created_at", "updated_at"}, true),
+				ValidateFunc: validation.StringInSlice([]string{
+					"id", "name",
+					"username", "created_at", "updated_at",
+				}, true),
 			},
 			"sort": {
 				Description:  "Sort users' list in asc or desc order. (Requires administrator privileges)",
@@ -93,7 +95,7 @@ var _ = registerDataSource("gitlab_users", func() *schema.Resource {
 							Computed:    true,
 						},
 						"email": {
-							Description: "The public email address of the user. **Note**: before GitLab 14.8 the lookup was based on the users primary email address.",
+							Description: "The public email address of the user.",
 							Type:        schema.TypeString,
 							Computed:    true,
 						},
@@ -218,7 +220,7 @@ var _ = registerDataSource("gitlab_users", func() *schema.Resource {
 							Computed:    true,
 						},
 						"namespace_id": {
-							Description: "The ID of the user's namespace. Requires admin token to access this field. Available since GitLab 14.10.",
+							Description: "The ID of the user's namespace. Requires admin token to access this field.",
 							Type:        schema.TypeInt,
 							Optional:    true,
 							Computed:    true,

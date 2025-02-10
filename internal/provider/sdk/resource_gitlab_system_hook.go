@@ -17,8 +17,6 @@ var _ = registerResource("gitlab_system_hook", func() *schema.Resource {
 	return &schema.Resource{
 		Description: `The ` + "`gitlab_system_hook`" + ` resource allows to manage the lifecycle of a system hook.
 
--> This resource requires GitLab 14.9
-
 **Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/system_hooks.html)`,
 
 		CreateContext: resourceGitlabSystemHookCreate,
