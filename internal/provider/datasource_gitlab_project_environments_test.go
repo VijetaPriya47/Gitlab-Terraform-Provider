@@ -24,7 +24,7 @@ func TestAccDataProjectEnvironment_basic(t *testing.T) {
 	}
 	environment := testutil.CreateProjectEnvironment(t, project.ID, &optsCreateEnvironmentOptions)
 
-	//lintignore:AT001 // Data sources don't need check destroy in their tests
+	// lintignore:AT001 // Data sources don't need check destroy in their tests
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		Steps: []resource.TestStep{
@@ -85,7 +85,7 @@ func TestAccDataProjectEnvironment_filter(t *testing.T) {
 	}
 	environmentProd := testutil.CreateProjectEnvironment(t, project.ID, &optsCreateEnvironmentOptionsProd)
 
-	//lintignore:AT001 // Data sources don't need check destroy in their tests
+	// lintignore:AT001 // Data sources don't need check destroy in their tests
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		Steps: []resource.TestStep{
@@ -167,8 +167,6 @@ func TestAccDataProjectEnvironment_filter(t *testing.T) {
 }
 
 func TestAccDataProjectEnvironment_clusterAgent(t *testing.T) {
-	testutil.RunIfAtLeast(t, "17.5")
-
 	project := testutil.CreateProject(t)
 	agent := testutil.CreateClusterAgents(t, project.ID, 1)[0]
 	testutil.SetupUserAccess(t, project, agent)
@@ -180,7 +178,7 @@ func TestAccDataProjectEnvironment_clusterAgent(t *testing.T) {
 	}
 	environment := testutil.CreateProjectEnvironment(t, project.ID, &optsCreateEnvironmentOptionsClusterAgent)
 
-	//lintignore:AT001 // Data sources don't need check destroy in their tests
+	// lintignore:AT001 // Data sources don't need check destroy in their tests
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		Steps: []resource.TestStep{

@@ -2044,7 +2044,6 @@ func TestAccGitlabProject_CreateProjectInUserNamespace(t *testing.T) {
 	user := testutil.CreateUsers(t, 1)[0]
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testutil.RunIfAtLeast(t, "14.10") },
 		ProtoV6ProviderFactories: providerFactoriesV6,
 		CheckDestroy:             testAccCheckGitlabProjectDestroy,
 		Steps: []resource.TestStep{
@@ -2108,7 +2107,6 @@ func TestAccGitlabProject_ciRestrictPipelineCancellationRole(t *testing.T) {
 
 	// This value is only present in 16.8 and beyond, and only in EE
 	testutil.SkipIfCE(t)
-	testutil.RunIfAtLeast(t, "16.8")
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
@@ -2157,7 +2155,6 @@ func TestAccGitlabProject_ciRestrictPipelineCancellationRole(t *testing.T) {
 func TestAccGitlabProject_ciPipelineVariablesMinimumOverrideRole(t *testing.T) {
 	// This value is only present in 16.8 and beyond, and only in EE
 	testutil.SkipIfCE(t)
-	testutil.RunIfAtLeast(t, "16.8")
 
 	var received gitlab.Project
 	rInt := acctest.RandInt()
@@ -3115,11 +3112,6 @@ func TestAccGitlabProject_FalseCustomTemplate(t *testing.T) {
 
 func TestAccGitlabProject_SecretsPushDetection(t *testing.T) {
 	testutil.SkipIfCE(t)
-	if !testutil.IsRunningAtLeast(t, "17.3") {
-		// Skip for earlier versions of GitLab, since secret
-		// detection isn't supported
-		t.Skip()
-	}
 
 	projectName := acctest.RandomWithPrefix("acctest")
 
@@ -3169,7 +3161,6 @@ func TestAccGitlabProject_DeploymentApproverConfig_Create(t *testing.T) {
 	// The `allow_pipeline_trigger_approve_deployment` attribute is only
 	// available on Premium/Ultimate and from GitLab 15.10 onwards.
 	testutil.SkipIfCE(t)
-	testutil.RunIfAtLeast(t, "15.10")
 
 	projectName := acctest.RandomWithPrefix("acctest")
 
@@ -3217,7 +3208,6 @@ func TestAccGitlabProject_DeploymentApproverConfig_Update(t *testing.T) {
 	// The `allow_pipeline_trigger_approve_deployment` attribute is only
 	// available on Premium/Ultimate and from GitLab 15.10 onwards.
 	testutil.SkipIfCE(t)
-	testutil.RunIfAtLeast(t, "15.10")
 
 	projectName := acctest.RandomWithPrefix("acctest")
 

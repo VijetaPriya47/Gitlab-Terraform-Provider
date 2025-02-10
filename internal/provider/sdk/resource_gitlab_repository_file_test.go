@@ -606,7 +606,6 @@ func TestAccGitlabRepositoryFile_createWithExecuteFilemode(t *testing.T) {
 	testProject := testutil.CreateProject(t)
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testutil.RunIfAtLeast(t, "14.10") },
 		ProtoV6ProviderFactories: providerFactoriesV6,
 		CheckDestroy:             testAccCheckGitlabRepositoryFileDestroy,
 		Steps: []resource.TestStep{

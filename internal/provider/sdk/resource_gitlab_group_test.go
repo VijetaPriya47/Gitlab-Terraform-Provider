@@ -22,7 +22,6 @@ import (
 )
 
 func TestAccGitlabGroup_basic(t *testing.T) {
-
 	var group gitlab.Group
 	rInt := acctest.RandInt()
 
@@ -281,7 +280,6 @@ func TestAccGitlabGroup_basic(t *testing.T) {
 }
 
 func TestAccGitlabGroup_defaultBranch(t *testing.T) {
-
 	var group gitlab.Group
 	rInt := acctest.RandInt()
 
@@ -326,9 +324,6 @@ func TestAccGitlabGroup_defaultBranch(t *testing.T) {
 }
 
 func TestAccGitlabGroup_defaultBranchProtectionDefaults(t *testing.T) {
-	// Default Branch Protection Defaults added in 17.0
-	testutil.RunIfAtLeast(t, "17.0")
-
 	var group gitlab.Group
 	rInt := acctest.RandInt()
 
@@ -1173,8 +1168,6 @@ func TestAccGitlabGroup_IPRestricted(t *testing.T) {
 }
 
 func TestAccGitlabGroup_PreexistingEmailDomain(t *testing.T) {
-	testutil.RunIfAtLeast(t, "17.4")
-
 	var group gitlab.Group
 	rInt := acctest.RandInt()
 
@@ -1221,7 +1214,6 @@ func TestAccGitlabGroup_PreexistingEmailDomain(t *testing.T) {
 
 func TestAccGitlabGroup_EmailDomains(t *testing.T) {
 	testutil.SkipIfCE(t)
-	testutil.RunIfAtLeast(t, "17.4")
 
 	var group gitlab.Group
 	rInt := acctest.RandInt()

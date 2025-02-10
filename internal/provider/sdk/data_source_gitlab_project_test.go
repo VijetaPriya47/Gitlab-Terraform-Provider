@@ -183,9 +183,6 @@ func TestAccDataGitlabProject_CIRestrictPipeline(t *testing.T) {
 	// Requires EE
 	testutil.SkipIfCE(t)
 
-	// Requires GitLab 16.8 or greater
-	testutil.RunIfAtLeast(t, "16.8")
-
 	// Create a new project using testutil, and update it's pipelines cancellation
 	// to "developer"
 	client := testutil.TestGitlabClient
@@ -222,9 +219,6 @@ func TestAccDataGitlabProject_CIRestrictPipeline(t *testing.T) {
 // override role value using testUtil, then uses a terraform
 // `gitlab_project` datasource to read and validate that it matches
 func TestAccDataGitlabProject_CIPipelineVariablesMinimumOverrideRole(t *testing.T) {
-	// Requires GitLab 17.1 or greater
-	testutil.RunIfAtLeast(t, "17.1")
-
 	// Create a new project using testutil, and update it's pipelines cancellation
 	// to "developer"
 	client := testutil.TestGitlabClient
