@@ -1953,10 +1953,6 @@ func TestAccGitlabProject_importURL_privateRepository(t *testing.T) {
 }
 
 func TestAccGitlabProject_initializeWithReadmeAndCustomDefaultBranch(t *testing.T) {
-	// There is a bug with the caching logic in 17.2 that makes this test fail even though
-	// it's created properly, so disabling this until 17.3
-	t.Skip()
-
 	var project gitlab.Project
 	rInt := acctest.RandInt()
 
@@ -2747,37 +2743,6 @@ func TestAccGitlabProject_doubleContainerExpirationPolicyRegexError(t *testing.T
 						visibility_level = "public"
 					}`, rInt),
 				ExpectError: regexp.MustCompile("Error: Conflicting configuration arguments"),
-			},
-		},
-	})
-}
-
-func TestAccGitlabProject_DeprecatedBuildCoverageRegex(t *testing.T) {
-	var received gitlab.Project
-	rInt := acctest.RandInt()
-
-	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
-		CheckDestroy:             testAccCheckGitlabProjectDestroy,
-		Steps: []resource.TestStep{
-			{
-				SkipFunc: api.IsGitLabVersionAtLeast(context.Background(), testutil.TestGitlabClient, "15.0"),
-				Config: fmt.Sprintf(`
-					resource "gitlab_project" "this" {
-						name = "foo-%d"
-						visibility_level = "public"
-
-						build_coverage_regex = "helloWorld"
-					}`, rInt),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabProjectExists("gitlab_project.this", &received),
-				),
-			},
-			{
-				SkipFunc:          api.IsGitLabVersionAtLeast(context.Background(), testutil.TestGitlabClient, "15.0"),
-				ResourceName:      "gitlab_project.this",
-				ImportState:       true,
-				ImportStateVerify: true,
 			},
 		},
 	})
