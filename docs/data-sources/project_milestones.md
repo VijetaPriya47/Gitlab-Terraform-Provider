@@ -37,7 +37,7 @@ data "gitlab_project_milestones" "example" {
 ### Optional
 
 - `iids` (List of Number) Return only the milestones having the given `iid` (Note: ignored if `include_parent_milestones` is set as `true`).
-- `include_parent_milestones` (Boolean) Include group milestones from parent group and its ancestors. Introduced in GitLab 13.4.
+- `include_parent_milestones` (Boolean) Include group milestones from parent group and its ancestors.
 - `search` (String) Return only milestones with a title or description matching the provided string.
 - `state` (String) Return only `active` or `closed` milestones.
 - `title` (String) Return only the milestones having the given `title`.

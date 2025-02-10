@@ -126,7 +126,7 @@ var _ = registerResource("gitlab_user", func() *schema.Resource {
 				ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(validUserStateValues, false)),
 			},
 			"namespace_id": {
-				Description: "The ID of the user's namespace. Available since GitLab 14.10.",
+				Description: "The ID of the user's namespace.",
 				Type:        schema.TypeInt,
 				Optional:    true,
 				Computed:    true,

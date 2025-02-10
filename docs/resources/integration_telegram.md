@@ -60,7 +60,7 @@ resource "gitlab_integration_telegram" "default" {
 
 ### Optional
 
-- `branches_to_be_notified` (String) Branches to send notifications for (introduced in GitLab 16.5). Update of this attribute was not supported before Gitlab 16.11 due to API bug. Valid options are `all`, `default`, `protected`, `default_and_protected`.
+- `branches_to_be_notified` (String) Branches to send notifications for. Valid options are `all`, `default`, `protected`, `default_and_protected`.
 - `notify_only_broken_pipelines` (Boolean) Send notifications for broken pipelines.
 
 ### Read-Only

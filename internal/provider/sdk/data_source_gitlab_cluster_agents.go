@@ -16,8 +16,6 @@ var _ = registerDataSource("gitlab_cluster_agents", func() *schema.Resource {
 	return &schema.Resource{
 		Description: `The ` + "`gitlab_cluster_agents`" + ` data source allows details of GitLab Agents for Kubernetes in a project.
 
--> Requires at least GitLab 14.10
-
 **Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/cluster_agents.html)`,
 
 		ReadContext: dataSourceGitlabClusterAgentsRead,
@@ -76,7 +74,7 @@ func flattenClusterAgentsForState(clusterAgents []*gitlab.Agent) (values []map[s
 			"created_at":         clusterAgent.CreatedAt.Format(time.RFC3339),
 			"created_by_user_id": clusterAgent.CreatedByUserID,
 
-			//convert required because schema is `TypeString`
+			// convert required because schema is `TypeString`
 			"project": strconv.Itoa(clusterAgent.ConfigProject.ID),
 		})
 	}

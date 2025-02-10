@@ -114,7 +114,7 @@ func (r *gitlabIntegrationTelegramResource) Schema(_ context.Context, _ resource
 				Default:             booldefault.StaticBool(true),
 			},
 			"branches_to_be_notified": schema.StringAttribute{
-				MarkdownDescription: fmt.Sprintf("Branches to send notifications for (introduced in GitLab 16.5). Update of this attribute was not supported before Gitlab 16.11 due to API bug. Valid options are %s.", utils.RenderValueListForDocs(api.ValidBranchesToBeNotified)),
+				MarkdownDescription: fmt.Sprintf("Branches to send notifications for. Valid options are %s.", utils.RenderValueListForDocs(api.ValidBranchesToBeNotified)),
 				Optional:            true,
 				Computed:            true,
 				Validators:          []validator.String{stringvalidator.OneOf(api.ValidBranchesToBeNotified...)},

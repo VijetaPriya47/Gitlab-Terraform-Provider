@@ -17,8 +17,7 @@ var _ = registerDataSource("gitlab_user", func() *schema.Resource {
 
 -> Some attributes might not be returned depending on if you're an admin or not.
 
-~> When using the ` + "`email`" + ` attribute, an exact match is not guaranteed. The most related match will be returned. Starting with GitLab 16.6,
-the most related match will prioritize an exact match if one is available.
+~> When using the ` + "`email`" + ` attribute, an exact match is not guaranteed. The most related match will be returned. The most related match will prioritize an exact match if one is available.
 
 **Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/users.html#single-user)`,
 
@@ -45,7 +44,7 @@ the most related match will prioritize an exact match if one is available.
 				},
 			},
 			"email": {
-				Description: "The public email address of the user. **Note**: before GitLab 14.8 the lookup was based on the users primary email address.",
+				Description: "The public email address of the user.",
 				Type:        schema.TypeString,
 				Computed:    true,
 				Optional:    true,
@@ -180,7 +179,7 @@ the most related match will prioritize an exact match if one is available.
 				Computed:    true,
 			},
 			"namespace_id": {
-				Description: "The ID of the user's namespace. Requires admin token to access this field. Available since GitLab 14.10.",
+				Description: "The ID of the user's namespace. Requires admin token to access this field.",
 				Type:        schema.TypeInt,
 				Optional:    true,
 				Computed:    true,

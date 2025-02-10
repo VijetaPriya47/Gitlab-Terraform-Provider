@@ -994,12 +994,12 @@ var _ = registerDataSource("gitlab_projects", func() *schema.Resource {
 							Computed:    true,
 						},
 						"squash_commit_template": {
-							Description: "Template used to create squash commit message in merge requests. (Introduced in GitLab 14.6.)",
+							Description: "Template used to create squash commit message in merge requests.",
 							Type:        schema.TypeString,
 							Computed:    true,
 						},
 						"merge_commit_template": {
-							Description: "Template used to create merge commit message in merge requests. (Introduced in GitLab 14.5.)",
+							Description: "Template used to create merge commit message in merge requests.",
 							Type:        schema.TypeString,
 							Computed:    true,
 						},
@@ -1035,7 +1035,7 @@ var _ = registerDataSource("gitlab_projects", func() *schema.Resource {
 							Computed:    true,
 						},
 						"ci_restrict_pipeline_cancellation_role": {
-							Description: fmt.Sprintf("The role required to cancel a pipeline or job. Introduced in GitLab 16.8. Premium and Ultimate only. Valid values are %s", utils.RenderValueListForDocs(api.ValidCIRestrictPipelineCancellationRoleValues)),
+							Description: fmt.Sprintf("The role required to cancel a pipeline or job. Premium and Ultimate only. Valid values are %s", utils.RenderValueListForDocs(api.ValidCIRestrictPipelineCancellationRoleValues)),
 							Type:        schema.TypeString,
 							Computed:    true,
 						},

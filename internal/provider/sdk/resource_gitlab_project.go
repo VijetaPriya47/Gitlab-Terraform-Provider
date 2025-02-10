@@ -276,7 +276,7 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 		ConflictsWith: []string{"import_url", "forked_from_project_id"},
 	},
 	"squash_option": {
-		Description:  "Squash commits when merge request. Valid values are `never`, `always`, `default_on`, or `default_off`. The default value is `default_off`. [GitLab >= 14.1]",
+		Description:  "Squash commits when merge request. Valid values are `never`, `always`, `default_on`, or `default_off`. The default value is `default_off`.",
 		Type:         schema.TypeString,
 		Optional:     true,
 		Computed:     true,
@@ -477,7 +477,7 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 		Computed:    true,
 	},
 	"ci_restrict_pipeline_cancellation_role": {
-		Description: fmt.Sprintf("The role required to cancel a pipeline or job. Introduced in GitLab 16.8. Premium and Ultimate only. Valid values are %s", utils.RenderValueListForDocs(api.ValidCIRestrictPipelineCancellationRoleValues)),
+		Description: fmt.Sprintf("The role required to cancel a pipeline or job. Premium and Ultimate only. Valid values are %s", utils.RenderValueListForDocs(api.ValidCIRestrictPipelineCancellationRoleValues)),
 		Type:        schema.TypeString,
 		Optional:    true,
 		Computed:    true,
@@ -682,12 +682,12 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 		ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(validProjectAccessLevels, false)),
 	},
 	"squash_commit_template": {
-		Description: "Template used to create squash commit message in merge requests. (Introduced in GitLab 14.6.)",
+		Description: "Template used to create squash commit message in merge requests.",
 		Type:        schema.TypeString,
 		Optional:    true,
 	},
 	"merge_commit_template": {
-		Description: "Template used to create merge commit message in merge requests. (Introduced in GitLab 14.5.)",
+		Description: "Template used to create merge commit message in merge requests.",
 		Type:        schema.TypeString,
 		Optional:    true,
 	},
@@ -2055,7 +2055,6 @@ func constructImportUrl(importURL string, username string, password string) (str
 // Create a project. Extracted from the main `create` function for readability and to differentiate from
 // creating a _forked_ project.
 func createProject(ctx context.Context, d *schema.ResourceData, client *gitlab.Client) (*gitlab.Project, diag.Diagnostics) {
-
 	options := &gitlab.CreateProjectOptions{
 		Name: gitlab.Ptr(d.Get("name").(string)),
 	}
@@ -2420,7 +2419,6 @@ func createProject(ctx context.Context, d *schema.ResourceData, client *gitlab.C
 // Create a forked project. Extracted from the main `create` function for readability and to differentiate from
 // creating a "normal" project
 func createForkedProject(ctx context.Context, forkedFromProjectID int, d *schema.ResourceData, client *gitlab.Client) (*gitlab.Project, diag.Diagnostics) {
-
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] forking project %d", forkedFromProjectID))
 
 	options := gitlab.ForkProjectOptions{}
@@ -2458,7 +2456,6 @@ func createForkedProject(ctx context.Context, forkedFromProjectID int, d *schema
 // only supported in the `Update` API. This function handles updating the `editPojectOptions` to include
 // those options.
 func updatePostCreateEditOptions(ctx context.Context, editProjectOptions *gitlab.EditProjectOptions, d *schema.ResourceData, client *gitlab.Client, project *gitlab.Project) diag.Diagnostics {
-
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 	if v, ok := d.GetOkExists("mirror_overwrites_diverged_branches"); ok {
@@ -2885,7 +2882,6 @@ func updatePostCreateEditOptions(ctx context.Context, editProjectOptions *gitlab
 }
 
 func updateProjectSecretDetectionValue(ctx context.Context, client *gitlab.Client, projectPath string, input bool) error {
-
 	// check if the version of GitLab is at least 17.3 before the call is attempted, and return with no error if lower than
 	// 17.3 to skip the call
 	versionOk, err := api.IsGitLabVersionAtLeast(ctx, client, "17.3")()

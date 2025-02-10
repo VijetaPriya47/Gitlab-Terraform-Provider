@@ -50,7 +50,7 @@ func gitlabRepositoryFileGetSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"execute_filemode": {
-			Description: "Enables or disables the execute flag on the file. **Note**: requires GitLab 14.10 or newer.",
+			Description: "Enables or disables the execute flag on the file.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 		},

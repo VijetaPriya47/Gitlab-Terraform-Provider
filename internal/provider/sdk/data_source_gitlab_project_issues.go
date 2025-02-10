@@ -113,7 +113,7 @@ var _ = registerDataSource("gitlab_project_issues", func() *schema.Resource {
 				Optional:    true,
 			},
 			"issue_type": {
-				Description:      fmt.Sprintf("Filter to a given type of issue. Valid values are %s. (Introduced in GitLab 13.12)", validIssueTypes),
+				Description:      fmt.Sprintf("Filter to a given type of issue. Valid values are %s.", validIssueTypes),
 				Type:             schema.TypeString,
 				Optional:         true,
 				ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(validIssueTypes, false)),
@@ -200,7 +200,7 @@ var _ = registerDataSource("gitlab_project_issues", func() *schema.Resource {
 				Optional:    true,
 			},
 			"with_labels_details": {
-				Description: "If true, the response returns more details for each label in labels field: :name, :color, :description, :description_html, :text_color. Default is false. description_html was introduced in GitLab 12.7",
+				Description: "If true, the response returns more details for each label in labels field: :name, :color, :description, :description_html, :text_color. Default is false.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 			},

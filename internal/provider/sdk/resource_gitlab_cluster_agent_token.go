@@ -19,8 +19,6 @@ var _ = registerResource("gitlab_cluster_agent_token", func() *schema.Resource {
 
 -> Requires at least maintainer permissions on the project.
 
--> Requires at least GitLab 15.0
-
 **Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/cluster_agents.html#create-an-agent-token)`,
 
 		CreateContext: resourceGitlabClusterAgentTokenCreate,

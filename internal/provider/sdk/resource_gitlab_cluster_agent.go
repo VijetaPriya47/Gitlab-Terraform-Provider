@@ -24,8 +24,6 @@ var _ = registerResource("gitlab_cluster_agent", func() *schema.Resource {
 
 -> Requires at least maintainer permissions on the project.
 
--> Requires at least GitLab 14.10
-
 **Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/cluster_agents.html)`,
 
 		CreateContext: resourceGitlabClusterAgentCreate,
