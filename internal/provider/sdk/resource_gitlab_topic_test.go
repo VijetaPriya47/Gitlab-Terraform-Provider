@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
@@ -28,7 +28,11 @@ func TestAccGitlabTopic_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create a topic with default options
 			{
-				Config: testAccGitlabTopicRequiredConfig(t, rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_topic" "foo" {
+				  name  = "foo-req-%d"
+				  title = "Foo Req %d"
+				}`, rInt, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabTopicExists("gitlab_topic.foo", &topic),
 					testAccCheckGitlabTopicAttributes(&topic, &testAccGitlabTopicExpectedAttributes{
@@ -44,7 +48,12 @@ func TestAccGitlabTopic_basic(t *testing.T) {
 			},
 			// Update the topics values
 			{
-				Config: testAccGitlabTopicFullConfig(t, rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_topic" "foo" {
+				  name        = "foo-full-%d"
+				  title       = "Foo Req %d"
+				  description = "Terraform acceptance tests"
+				}`, rInt, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabTopicExists("gitlab_topic.foo", &topic),
 					testAccCheckGitlabTopicAttributes(&topic, &testAccGitlabTopicExpectedAttributes{
@@ -61,7 +70,11 @@ func TestAccGitlabTopic_basic(t *testing.T) {
 			},
 			// Update the topics values back to their initial state
 			{
-				Config: testAccGitlabTopicRequiredConfig(t, rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_topic" "foo" {
+				  name  = "foo-req-%d"
+				  title = "Foo Req %d"
+				}`, rInt, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabTopicExists("gitlab_topic.foo", &topic),
 					testAccCheckGitlabTopicAttributes(&topic, &testAccGitlabTopicExpectedAttributes{
@@ -77,7 +90,12 @@ func TestAccGitlabTopic_basic(t *testing.T) {
 			},
 			// Updating the topic to have a description before it is deleted
 			{
-				Config: testAccGitlabTopicFullConfig(t, rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_topic" "foo" {
+				  name        = "foo-full-%d"
+				  title       = "Foo Req %d"
+				  description = "Terraform acceptance tests"
+				}`, rInt, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabTopicExists("gitlab_topic.foo", &topic),
 					testAccCheckGitlabTopicAttributes(&topic, &testAccGitlabTopicExpectedAttributes{
@@ -136,7 +154,14 @@ func TestAccGitlabTopic_softDestroy(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create a topic with soft_destroy enabled
 			{
-				Config: testAccGitlabTopicSoftDestroyConfig(t, rInt),
+				Config: fmt.Sprintf(`
+				resource "gitlab_topic" "foo" {
+				  name        = "foo-soft-destroy-%d"
+				  title       = "Foo Req %d"
+				  description = "Terraform acceptance tests"
+				
+				  soft_destroy = true
+				}`, rInt, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabTopicExists("gitlab_topic.foo", &topic),
 				),
@@ -187,7 +212,6 @@ func TestAccGitlabTopic_titleSupport(t *testing.T) {
 
 func testAccCheckGitlabTopicExists(n string, assign *gitlab.Topic) resource.TestCheckFunc {
 	return func(s *terraform.State) (err error) {
-
 		defer func() {
 			if err != nil {
 				err = fmt.Errorf("checking for gitlab topic existence failed: %w", err)
@@ -232,7 +256,6 @@ func testAccCheckGitlabTopicAttributes(topic *gitlab.Topic, want *testAccGitlabT
 }
 
 func testAccCheckGitlabTopicDestroy(s *terraform.State) (err error) {
-
 	defer func() {
 		if err != nil {
 			err = fmt.Errorf("destroying gitlab topic failed: %w", err)
@@ -264,7 +287,6 @@ func testAccCheckGitlabTopicDestroy(s *terraform.State) (err error) {
 }
 
 func testAccCheckGitlabTopicSoftDestroy(s *terraform.State) (err error) {
-
 	defer func() {
 		if err != nil {
 			err = fmt.Errorf("destroying gitlab topic failed: %w", err)
@@ -296,45 +318,4 @@ func testAccCheckGitlabTopicSoftDestroy(s *terraform.State) (err error) {
 		return nil
 	}
 	return nil
-}
-
-func testAccGitlabTopicRequiredConfig(t *testing.T, rInt int) string {
-	var titleConfig string
-	if testutil.IsRunningAtLeast(t, "15.0") {
-		titleConfig = fmt.Sprintf(`title = "Foo Req %d"`, rInt)
-	}
-
-	return fmt.Sprintf(`
-resource "gitlab_topic" "foo" {
-  name = "foo-req-%d"
-  %s
-}`, rInt, titleConfig)
-}
-
-func testAccGitlabTopicFullConfig(t *testing.T, rInt int) string {
-	var titleConfig string
-	if testutil.IsRunningAtLeast(t, "15.0") {
-		titleConfig = fmt.Sprintf(`title = "Foo Req %d"`, rInt)
-	}
-	return fmt.Sprintf(`
-resource "gitlab_topic" "foo" {
-  name        = "foo-full-%d"
-  %s
-  description = "Terraform acceptance tests"
-}`, rInt, titleConfig)
-}
-
-func testAccGitlabTopicSoftDestroyConfig(t *testing.T, rInt int) string {
-	var titleConfig string
-	if testutil.IsRunningAtLeast(t, "15.0") {
-		titleConfig = fmt.Sprintf(`title = "Foo Req %d"`, rInt)
-	}
-	return fmt.Sprintf(`
-resource "gitlab_topic" "foo" {
-  name        = "foo-soft-destroy-%d"
-  %s
-  description = "Terraform acceptance tests"
-
-  soft_destroy = true
-}`, rInt, titleConfig)
 }

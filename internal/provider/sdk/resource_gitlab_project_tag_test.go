@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 
@@ -30,7 +30,19 @@ func TestAccGitlabProjectTag_basic(t *testing.T) {
 		CheckDestroy:             testAccCheckGitlabProjectTagDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccGitlabProjectTagConfig(rInt, rInt2, project.PathWithNamespace, branches[0].Name),
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_tag" "foo" {
+						name    = "tag-%[1]d"
+						ref     = "main"
+						project = "%[3]s"
+					}
+					resource "gitlab_project_tag" "foo2" {
+						name    = "tag-%[2]d"
+						ref     = "%[4]s"
+						project = "%[3]s"
+						message = "tag-%[2]d"
+					}
+			  	`, rInt, rInt2, project.PathWithNamespace, branches[0].Name),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectTagExists("foo", &tag),
 					testAccCheckGitlabProjectTagExists("foo2", &tag2),
@@ -55,7 +67,19 @@ func TestAccGitlabProjectTag_basic(t *testing.T) {
 			},
 			// update properties in resource
 			{
-				Config: testAccGitlabProjectTagConfig(rInt, rInt3, project.PathWithNamespace, branches[0].Name),
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_tag" "foo" {
+						name    = "tag-%[1]d"
+						ref     = "main"
+						project = "%[3]s"
+					}
+					resource "gitlab_project_tag" "foo2" {
+						name    = "tag-%[2]d"
+						ref     = "%[4]s"
+						project = "%[3]s"
+						message = "tag-%[2]d"
+					}
+			  	`, rInt, rInt3, project.PathWithNamespace, branches[0].Name),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectTagExists("foo2", &tag2),
 					testAccCheckGitlabProjectTagAttributes("foo2", &tag2, &testAccGitlabProjectTagExpectedAttributes{
@@ -136,22 +160,6 @@ func testAccCheckGitlabProjectTagExists(n string, tag *gitlab.Tag) resource.Test
 		*tag = *gotTag
 		return err
 	}
-}
-
-func testAccGitlabProjectTagConfig(rInt int, rInt2 int, project string, branch string) string {
-	return fmt.Sprintf(`
-    resource "gitlab_project_tag" "foo" {
-        name    = "tag-%[1]d"
-        ref     = "main"
-        project = "%[3]s"
-    }
-    resource "gitlab_project_tag" "foo2" {
-        name    = "tag-%[2]d"
-        ref     = "%[4]s"
-        project = "%[3]s"
-        message = "tag-%[2]d"
-    }
-  `, rInt, rInt2, project, branch)
 }
 
 type testAccGitlabProjectTagExpectedAttributes struct {

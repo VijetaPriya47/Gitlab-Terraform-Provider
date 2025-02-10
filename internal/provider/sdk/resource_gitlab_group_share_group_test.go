@@ -9,8 +9,8 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
 
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
@@ -24,12 +24,14 @@ func TestAccGitlabGroupShareGroup_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Share a new group with another group
 			{
-				Config: testAccGitlabGroupShareGroupConfig(mainGroup.ID, sharedGroup.ID,
-					`
-					group_access 	 = "guest"
-					expires_at     = "2099-01-01"
-					`,
-				),
+				Config: fmt.Sprintf(`
+					resource "gitlab_group_share_group" "test" {
+					  	group_id       = %[1]d
+						share_group_id = %[2]d
+						group_access   = "guest"
+						expires_at     = "2099-01-01"
+					}
+				`, mainGroup.ID, sharedGroup.ID),
 				Check: testAccCheckGitlabGroupSharedWithGroup(mainGroup.Name, sharedGroup.Name, "2099-01-01", gitlab.GuestPermissions),
 			},
 			{
@@ -40,8 +42,14 @@ func TestAccGitlabGroupShareGroup_basic(t *testing.T) {
 			},
 			// Update the share group
 			{
-				Config: testAccGitlabGroupShareGroupConfig(mainGroup.ID, sharedGroup.ID, `group_access = "reporter"`),
-				Check:  testAccCheckGitlabGroupSharedWithGroup(mainGroup.Name, sharedGroup.Name, "", gitlab.ReporterPermissions),
+				Config: fmt.Sprintf(`
+					resource "gitlab_group_share_group" "test" {
+					  	group_id       = %[1]d
+						share_group_id = %[2]d
+						group_access   = "reporter"
+					}
+				`, mainGroup.ID, sharedGroup.ID),
+				Check: testAccCheckGitlabGroupSharedWithGroup(mainGroup.Name, sharedGroup.Name, "", gitlab.ReporterPermissions),
 			},
 			{
 				// Verify Import
@@ -51,12 +59,14 @@ func TestAccGitlabGroupShareGroup_basic(t *testing.T) {
 			},
 			// Update share group back to initial settings
 			{
-				Config: testAccGitlabGroupShareGroupConfig(mainGroup.ID, sharedGroup.ID,
-					`
-					group_access 	 = "guest"
-					expires_at     = "2099-01-01"
-					`,
-				),
+				Config: fmt.Sprintf(`
+					resource "gitlab_group_share_group" "test" {
+					  	group_id       = %[1]d
+						share_group_id = %[2]d
+						group_access   = "guest"
+						expires_at     = "2099-01-01"
+					}
+				`, mainGroup.ID, sharedGroup.ID),
 				Check: testAccCheckGitlabGroupSharedWithGroup(mainGroup.Name, sharedGroup.Name, "2099-01-01", gitlab.GuestPermissions),
 			},
 			{
@@ -129,19 +139,4 @@ func testAccCheckGitlabShareGroupDestroy(s *terraform.State) error {
 	}
 
 	return nil
-}
-
-func testAccGitlabGroupShareGroupConfig(mainGroupId int, shareGroupId int, shareGroupSettings string) string {
-	return fmt.Sprintf(
-		`
-		resource "gitlab_group_share_group" "test" {
-		  group_id       = %[1]d
-			share_group_id = %[2]d
-			%[3]s
-		}
-		`,
-		mainGroupId,
-		shareGroupId,
-		shareGroupSettings,
-	)
 }
