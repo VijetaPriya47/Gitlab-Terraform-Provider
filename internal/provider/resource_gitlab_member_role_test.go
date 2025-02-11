@@ -175,7 +175,6 @@ func TestAccGitlabMemberRole_UpdateWithMemberAssigned(t *testing.T) {
 					if _, err := testutil.TestGitlabClient.GroupMembers.RemoveGroupMember(testGroup.ID, user.ID, nil, nil); err != nil {
 						t.Errorf("Error removing group member from test group: %s", err)
 					}
-
 				},
 				Config: fmt.Sprintf(`
 					resource "gitlab_member_role" "foo" {
@@ -189,6 +188,7 @@ func TestAccGitlabMemberRole_UpdateWithMemberAssigned(t *testing.T) {
 		},
 	})
 }
+
 func TestAccGitlabMemberRole_EnsureReplacement(t *testing.T) {
 	testutil.SkipIfCE(t)
 
@@ -384,60 +384,6 @@ func TestAccGitlabMemberRole_EnsureErrorOnInvalidPermission(t *testing.T) {
 					}
 				`, rint),
 				Destroy: true,
-			},
-		},
-	})
-}
-
-// This tests ensures that the changes from types.List -> types.Set in the 17.6 release
-// doesn't cause and problems. It can likely be removed after the release is completed.
-// to save on CI time.
-func TestAccGitlabMemberRole_convertListToSet(t *testing.T) {
-	testutil.SkipIfCE(t)
-
-	rint := acctest.RandInt()
-	config := fmt.Sprintf(`
-		resource "gitlab_member_role" "foo" {
-			name = "Test role %d"
-			base_access_level = "REPORTER"
-			enabled_permissions = ["READ_VULNERABILITY"]
-		}
-	`, rint)
-
-	resource.ParallelTest(t, resource.TestCase{
-		CheckDestroy: testAcc_GitlabMemberRole_CheckDestroy,
-		Steps: []resource.TestStep{
-			// Create a member role with only required attributes
-			{
-				ExternalProviders: map[string]resource.ExternalProvider{
-					"gitlab": {
-						VersionConstraint: "= 17.5",
-						Source:            "gitlabhq/gitlab",
-					},
-				},
-				Config: config,
-			},
-			{
-				ExternalProviders: map[string]resource.ExternalProvider{
-					"gitlab": {
-						VersionConstraint: "= 17.5",
-						Source:            "gitlabhq/gitlab",
-					},
-				},
-				ResourceName:      "gitlab_member_role.foo",
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
-			// Update name, description, and permissions of member role
-			{
-				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-				Config:                   config,
-			},
-			{
-				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-				ResourceName:             "gitlab_member_role.foo",
-				ImportState:              true,
-				ImportStateVerify:        true,
 			},
 		},
 	})
