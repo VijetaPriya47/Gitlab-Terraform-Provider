@@ -4,7 +4,6 @@
 package provider
 
 import (
-	"context"
 	"fmt"
 	"slices"
 	"strconv"
@@ -13,7 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
@@ -30,7 +29,7 @@ func TestAccGitlabBranchProtection_allowSpecificUserAndNoRoleToPush(t *testing.T
 	// Add users as members to project
 	testutil.AddProjectMembers(t, testProject.ID, testUsers)
 
-	//list existing project members
+	// list existing project members
 	testutil.ListProjectMembers(t, testProject.ID)
 
 	// add a sleep to determine if there is a race condition in group membership for protected
@@ -116,15 +115,6 @@ func TestAccGitlabBranchProtection_allowSpecificUserAndNoRoleToPush(t *testing.T
 
 func TestAccGitlabBranchProtection_allowSpecificDeployKeyToPush(t *testing.T) {
 	testutil.SkipIfCE(t)
-
-	// deploy_key_id is only available for configuration since 17.5
-	isFeatureSupported, err := api.IsGitLabVersionAtLeast(context.Background(), testutil.TestGitlabClient, "17.5")()
-	if err != nil {
-		t.Fatal("Failed to read GitLab version")
-	}
-	if !isFeatureSupported {
-		t.Skipf("Feature not supported yet")
-	}
 
 	// Set up the project for the protected branch
 	testProject := testutil.CreateProject(t)

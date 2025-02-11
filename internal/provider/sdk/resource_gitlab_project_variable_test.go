@@ -13,10 +13,8 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
 
-	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
-
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
@@ -86,7 +84,6 @@ func TestAccGitlabProjectVariable_StateUpgradeV0(t *testing.T) {
 				t.Fatalf("\n\nexpected:\n\n%#v\n\ngot:\n\n%#v\n\n", tc.expectedV1State, actualV1State)
 			}
 		})
-
 	}
 }
 
@@ -319,9 +316,7 @@ resource "gitlab_project_variable" "bar" {
 				ImportStateVerify: true,
 			},
 			// Update an attribute on one of the variables.
-			// Updating a variable with a non-unique key only works reliably on GitLab v13.4+.
 			{
-				SkipFunc: api.IsGitLabVersionLessThan(context.Background(), testutil.TestGitlabClient, "13.4"),
 				Config: fmt.Sprintf(`
 resource "gitlab_project_variable" "foo" {
   project = %[1]d
@@ -343,9 +338,7 @@ resource "gitlab_project_variable" "bar" {
 				),
 			},
 			// Try to have two variables with the same keys and scopes.
-			// On versions of GitLab < 13.4 this can sometimes result in an inconsistent state instead of an error.
 			{
-				SkipFunc: api.IsGitLabVersionLessThan(context.Background(), testutil.TestGitlabClient, "13.4"),
 				Config: fmt.Sprintf(`
 resource "gitlab_project_variable" "foo" {
   project = %[1]d

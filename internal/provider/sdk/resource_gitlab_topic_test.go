@@ -4,9 +4,7 @@
 package sdk
 
 import (
-	"context"
 	"fmt"
-	"regexp"
 	"strconv"
 	"testing"
 
@@ -165,46 +163,6 @@ func TestAccGitlabTopic_softDestroy(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabTopicExists("gitlab_topic.foo", &topic),
 				),
-			},
-		},
-	})
-}
-
-func TestAccGitlabTopic_titleSupport(t *testing.T) {
-	rInt := acctest.RandInt()
-
-	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
-		CheckDestroy:             testAccCheckGitlabTopicDestroy,
-		Steps: []resource.TestStep{
-			{
-				SkipFunc: api.IsGitLabVersionAtLeast(context.TODO(), testutil.TestGitlabClient, "15.0"),
-				Config: fmt.Sprintf(`
-					resource "gitlab_topic" "this" {
-						name = "foo-%d"
-						title = "Foo-%d"
-					}
-				`, rInt, rInt),
-				ExpectError: regexp.MustCompile(`title is not supported by your version of GitLab. At least GitLab 15.0 is required`),
-			},
-			{
-				SkipFunc: api.IsGitLabVersionAtLeast(context.TODO(), testutil.TestGitlabClient, "15.0"),
-				Config: fmt.Sprintf(`
-					resource "gitlab_topic" "this" {
-						name = "foo-%d"
-					}
-				`, rInt),
-				ExpectError: regexp.MustCompile(`title is a required attribute for GitLab 15.0 and newer. Please specify it in the configuration.`),
-			},
-			{
-				SkipFunc: api.IsGitLabVersionAtLeast(context.TODO(), testutil.TestGitlabClient, "15.0"),
-				Config: fmt.Sprintf(`
-					resource "gitlab_topic" "this" {
-						name = "foo-%d"
-						title = "Foo-%d"
-					}
-				`, rInt, rInt),
-				Check: resource.TestCheckResourceAttr("gitlab_topic.this", "title", fmt.Sprintf("Foo-%d", rInt)),
 			},
 		},
 	})
