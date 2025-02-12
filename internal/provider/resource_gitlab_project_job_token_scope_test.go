@@ -6,10 +6,9 @@ package provider
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"strconv"
 	"testing"
-
-	"reflect"
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -98,12 +97,9 @@ func TestAcc_GitlabProjectJobTokenScope_StateUpgradeV0(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func TestAcc_GitlabProjectJobTokenScope_basic(t *testing.T) {
-	testutil.RunIfAtLeast(t, "16.1")
-
 	// Set up project environment.
 	project := testutil.CreateProject(t)
 	projectIDStr := strconv.Itoa(project.ID)
@@ -201,8 +197,6 @@ func TestAcc_GitlabProjectJobTokenScope_basic(t *testing.T) {
 
 // lintignore: AT002 // specialized import test
 func TestAcc_GitlabProjectJobTokenScope_ImportState(t *testing.T) {
-	testutil.RunIfAtLeast(t, "16.1")
-
 	project := testutil.CreateProject(t)
 	targetProject := testutil.CreateProject(t)
 	targetGroup := testutil.CreateGroups(t, 1)[0]

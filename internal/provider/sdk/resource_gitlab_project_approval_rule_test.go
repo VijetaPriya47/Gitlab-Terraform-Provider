@@ -224,7 +224,6 @@ func TestAccGitLabProjectApprovalRule_AnyApprover(t *testing.T) {
 func TestAccGitLabProjectApprovalRule_ReportType(t *testing.T) {
 	// Set up project, groups, users, and branches to use in the test.
 	testutil.SkipIfCE(t)
-	testutil.RunIfAtLeast(t, "17.2")
 
 	project := testutil.CreateProject(t)
 
@@ -321,7 +320,6 @@ func TestAccGitLabProjectApprovalRule_ReportType(t *testing.T) {
 func TestAccGitLabProjectApprovalRule_ReportTypeMisConfigured(t *testing.T) {
 	// Set up project and branches to use in the test.
 	testutil.SkipIfCE(t)
-	testutil.RunIfAtLeast(t, "17.2")
 
 	project := testutil.CreateProject(t)
 

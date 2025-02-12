@@ -16,8 +16,6 @@ import (
 )
 
 func TestAcc_GitlabProjectJobTokenScopes_basic(t *testing.T) {
-	testutil.RunIfAtLeast(t, "16.1")
-
 	// Set up project environment.
 	project := testutil.CreateProject(t)
 
@@ -166,8 +164,6 @@ func TestAcc_GitlabProjectJobTokenScopes_basic(t *testing.T) {
 }
 
 func TestAcc_GitlabProjectJobTokenScopes_basic_deprecated(t *testing.T) {
-	testutil.RunIfAtLeast(t, "16.1")
-
 	// Set up project environment.
 	project := testutil.CreateProject(t)
 
@@ -371,8 +367,6 @@ func testAcc_GitlabProjectJobTokenScopes_CheckDestroy_deprecated(s *terraform.St
 // Test checks to make sure an error occurs if both project and
 // project_id are configured
 func TestAcc_GitlabProjectJobTokenScopes_conflict(t *testing.T) {
-	testutil.RunIfAtLeast(t, "16.1")
-
 	// Set up project environment.
 	project := testutil.CreateProject(t)
 	linkProject := testutil.CreateProject(t)
@@ -397,8 +391,6 @@ func TestAcc_GitlabProjectJobTokenScopes_conflict(t *testing.T) {
 // Test checks to make sure an error occurs if neither project or
 // project_id are configured
 func TestAcc_GitlabProjectJobTokenScopes_atLeastOneOf(t *testing.T) {
-	testutil.RunIfAtLeast(t, "16.1")
-
 	// Set up project environment.
 	linkProject := testutil.CreateProject(t)
 
@@ -418,8 +410,6 @@ func TestAcc_GitlabProjectJobTokenScopes_atLeastOneOf(t *testing.T) {
 }
 
 func TestAcc_GitlabProjectJobTokenScopes_migrateProjectIdToProject(t *testing.T) {
-	testutil.RunIfAtLeast(t, "16.1")
-
 	// Set up project environment.
 	project := testutil.CreateProject(t)
 

@@ -17,7 +17,6 @@ import (
 
 func TestAccGitlabGroupSamlLink_basic(t *testing.T) {
 	testutil.SkipIfCE(t)
-	testutil.RunIfAtLeast(t, "15.3")
 
 	testGroup := testutil.CreateGroups(t, 1)[0]
 
@@ -63,7 +62,6 @@ func TestAccGitlabGroupSamlLink_customRole(t *testing.T) {
 	t.Skip()
 
 	testutil.SkipIfCE(t)
-	testutil.RunIfAtLeast(t, "16.8")
 
 	testGroup := testutil.CreateGroups(t, 1)[0]
 

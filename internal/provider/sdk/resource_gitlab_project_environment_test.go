@@ -188,8 +188,6 @@ func TestAccGitlabProjectEnvironment_stopBeforeDestroyDisabled(t *testing.T) {
 }
 
 func TestAccGitlabProjectEnvironment_ClusterAgent(t *testing.T) {
-	testutil.RunIfAtLeast(t, "17.5")
-
 	testName := acctest.RandString(10)
 	testProject := testutil.CreateProject(t)
 	testAgents := testutil.CreateClusterAgents(t, testProject.ID, 2)

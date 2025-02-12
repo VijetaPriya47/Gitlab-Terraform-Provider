@@ -189,8 +189,6 @@ func TestAccGitlabProjectHook_basic(t *testing.T) {
 
 // Ensure the "custom_template" attribute works
 func TestAccGitlabProjectHook_customTemplate(t *testing.T) {
-	// Feature only available after 16.10
-	testutil.RunIfAtLeast(t, "16.10")
 	project := testutil.CreateProject(t)
 
 	// Used for testing later

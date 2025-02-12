@@ -17,8 +17,6 @@ import (
 )
 
 func TestAccGitlabClusterAgent_basic(t *testing.T) {
-	testutil.RunIfAtLeast(t, "14.10")
-
 	testProject := testutil.CreateProject(t)
 	var sutClusterAgent gitlab.Agent
 
@@ -50,7 +48,6 @@ func TestAccGitlabClusterAgent_basic(t *testing.T) {
 							return fmt.Errorf("should be equal to %s", expectedValue)
 						}
 						return nil
-
 					}),
 					resource.TestCheckResourceAttrWith("gitlab_cluster_agent.this", "created_by_user_id", func(value string) error {
 						expectedValue := fmt.Sprintf("%d", sutClusterAgent.CreatedByUserID)
@@ -91,7 +88,6 @@ func TestAccGitlabClusterAgent_basic(t *testing.T) {
 							return fmt.Errorf("should be equal to %s", expectedValue)
 						}
 						return nil
-
 					}),
 					resource.TestCheckResourceAttrWith("gitlab_cluster_agent.this", "created_by_user_id", func(value string) error {
 						expectedValue := fmt.Sprintf("%d", sutClusterAgent.CreatedByUserID)

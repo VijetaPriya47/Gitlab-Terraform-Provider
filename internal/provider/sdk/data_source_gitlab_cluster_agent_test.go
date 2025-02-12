@@ -14,8 +14,6 @@ import (
 )
 
 func TestAccDataSourceGitlabClusterAgent_basic(t *testing.T) {
-	testutil.RunIfAtLeast(t, "14.10")
-
 	testProject := testutil.CreateProject(t)
 	testAgent := testutil.CreateClusterAgents(t, testProject.ID, 1)[0]
 
