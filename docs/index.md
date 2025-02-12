@@ -9,8 +9,20 @@ Use the GitLab provider to interact with GitLab resources, like
 users, groups, projects and more. You must configure the provider with
 the proper credentials before you can use it.
 
-The provider uses the [`xanzy/go-gitlab`](https://gitlab.com/gitlab-org/api/client-go) library
+The provider uses the [`client-go`](https://gitlab.com/gitlab-org/api/client-go) library
 to interact with the [GitLab REST API](https://docs.gitlab.com/ee/api/api_resources.html).
+
+We support the following versions:
+
+- Latest 3 patch releases within a major release. For example, if current is 17.8, we support 17.6-17.8. Or if current is 18.1, we support 18.0-18.1.
+- We introduce any breaking changes on major releases only. For example, 17.0 or 18.0.
+- We run tests against the latest 3 patch releases regardless of whether these cross a major release boundary. For example, if current is 17.8, we test 17.6-17.8. Or if current is 18.1, we test 17.11-18.1.
+
+All other versions are best effort support.
+
+-> Note, that the compatibility between a provider release and GitLab itself **cannot** be inferred from the
+release version. New features added to GitLab may not be added to the provider until later versions.
+Equally, features removed or deprecated in GitLab may not be removed or deprecated from the provider until later versions.
 
 Each data source and resource references the appropriate upstream GitLab REST API documentation,
 which may be consumed to better understand the behavior of the API.

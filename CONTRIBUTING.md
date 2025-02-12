@@ -415,8 +415,7 @@ make testacc GITLAB_TOKEN=example123 GITLAB_BASE_URL=https://example.com/api/v4
 
 ## Release Workflow
 
-After the migration of the GitLab Terraform Provider to GitLab,
-[we've decided](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/issues/1331) to use the same release cadence as [GitLab](https://docs.gitlab.com/ee/policy/maintenance.html#versioning).  
+We use the [same release candence](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/issues/1331) as [GitLab](https://docs.gitlab.com/ee/policy/maintenance.html#versioning).
 The specific dates for upcoming releases are documented [here](https://about.gitlab.com/releases/).
 
 Which means that:
@@ -424,12 +423,6 @@ Which means that:
 - Every third Thursday of the month a new minor (`X.Y+1`) release is published.
 - Security and Bug Fix releases (`X.Y.Z+1`) will be publish on demand.
 - Once a year in May a new major (`X+1`) release is published.
-
-Note, that the compatibility between a provider release and GitLab itself **cannot** be inferred from the
-release version. That is, a release `15.7` of the provider might be compatible with `15.4`, `15.5`, `15.6`
-and even future GitLab releases.
-
-This workflow has been introduced with the GitLab %15.7 Milestone in December 2022.
 
 ### Release Scoping
 
