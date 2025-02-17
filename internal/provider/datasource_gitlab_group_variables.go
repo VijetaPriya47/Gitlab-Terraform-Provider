@@ -67,7 +67,7 @@ func (d *gitlabGroupVariablesDataSource) Schema(_ context.Context, _ datasource.
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_group_variables`" + ` data source allows to retrieve all group-level CI/CD variables.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/group_level_variables.html)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/group_level_variables/)`,
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{

@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
@@ -20,7 +20,7 @@ var _ = registerResource("gitlab_deploy_key", func() *schema.Resource {
 
 -> To enable an already existing deploy key for another project use the ` + "`gitlab_deploy_key_enable`" + ` resource.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/deploy_keys.html)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/deploy_keys/)`,
 
 		CreateContext: resourceGitlabDeployKeyCreate,
 		ReadContext:   resourceGitlabDeployKeyRead,

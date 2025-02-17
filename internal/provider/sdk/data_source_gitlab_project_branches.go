@@ -7,14 +7,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 var _ = registerDataSource("gitlab_project_branches", func() *schema.Resource {
 	return &schema.Resource{
 		Description: `The ` + "`gitlab_project_branches`" + ` data source allows details of the branches of a given project to be retrieved.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/branches.html#list-repository-branches)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/branches/#list-repository-branches)`,
 
 		ReadContext: dataSourceGitlabProjectBranchesRead,
 		Schema: map[string]*schema.Schema{

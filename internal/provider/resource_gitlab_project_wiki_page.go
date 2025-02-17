@@ -61,7 +61,7 @@ func (r *gitlabWikiPageResource) Schema(ctx context.Context, req resource.Schema
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_project_wiki_page`" + ` resource allows managing the lifecycle of a project wiki page.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/wikis.html)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/wikis/)`,
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{

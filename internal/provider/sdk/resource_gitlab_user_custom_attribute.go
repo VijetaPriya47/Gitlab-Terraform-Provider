@@ -2,7 +2,7 @@ package sdk
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 var _ = registerResource("gitlab_user_custom_attribute", func() *schema.Resource {
@@ -19,6 +19,6 @@ var _ = registerResource("gitlab_user_custom_attribute", func() *schema.Resource
 		},
 		`The `+"`gitlab_user_custom_attribute`"+` resource allows to manage custom attributes for a user.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/custom_attributes.html)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/custom_attributes/)`,
 	)
 })

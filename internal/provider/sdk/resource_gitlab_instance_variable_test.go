@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
@@ -82,7 +82,7 @@ func TestAccGitlabInstanceVariable_basic(t *testing.T) {
 				),
 			},
 			// Update the instance variable to enable "masked" for a value that does not meet masking requirements, and expect an error with no state change.
-			// ref: https://docs.gitlab.com/ce/ci/variables/README.html#masked-variable-requirements
+			// ref: https://docs.gitlab.com/ce/ci/variables/README/#masked-variable-requirements
 			{
 				Config: fmt.Sprintf(`
 					resource "gitlab_instance_variable" "foo" {
@@ -102,11 +102,11 @@ func TestAccGitlabInstanceVariable_basic(t *testing.T) {
 					}),
 				),
 				ExpectError: regexp.MustCompile(regexp.QuoteMeta(
-					"Invalid value for a masked variable. Check the masked variable requirements: https://docs.gitlab.com/ee/ci/variables/#masked-variable-requirements",
+					"Invalid value for a masked variable. Check the masked variable requirements: https://docs.gitlab.com/ci/variables/#masked-variable-requirements",
 				)),
 			},
 			// Update the instance variable to to enable "masked" and meet masking requirements
-			// ref: https://docs.gitlab.com/ce/ci/variables/README.html#masked-variable-requirements
+			// ref: https://docs.gitlab.com/ce/ci/variables/README/#masked-variable-requirements
 			{
 				Config: fmt.Sprintf(`
 					resource "gitlab_instance_variable" "foo" {

@@ -4,14 +4,14 @@ page_title: "gitlab_cluster_agents Data Source - terraform-provider-gitlab"
 subcategory: ""
 description: |-
   The gitlab_cluster_agents data source allows details of GitLab Agents for Kubernetes in a project.
-  Upstream API: GitLab REST API docs https://docs.gitlab.com/ee/api/cluster_agents.html
+  Upstream API: GitLab REST API docs https://docs.gitlab.com/api/cluster_agents/
 ---
 
 # gitlab_cluster_agents (Data Source)
 
 The `gitlab_cluster_agents` data source allows details of GitLab Agents for Kubernetes in a project.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/cluster_agents.html)
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/cluster_agents/)
 
 ## Example Usage
 

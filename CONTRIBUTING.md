@@ -2,7 +2,7 @@
 
 Thank you for contributing to this provider! :tada: :heart: :trophy:
 
-Generally we accept any change that adds or changes a Terraform resource that is in line with the [GitLab API](https://docs.gitlab.com/ee/api/api_resources.html).
+Generally we accept any change that adds or changes a Terraform resource that is in line with the [GitLab API](https://docs.gitlab.com/api/api_resources/).
 It is always best to [open an issue](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/issues/new) before starting on a change.
 
 ## Getting Started
@@ -34,7 +34,7 @@ These are the most common issues in MRs which we have not automated.
 
 For a smooth review process, please run through this checklist before submitting an MR.
 
-1. Resource attributes match 1:1 the names and structure of the API resource in the [GitLab API documentation](https://docs.gitlab.com/ee/api/api_resources.html).
+1. Resource attributes match 1:1 the names and structure of the API resource in the [GitLab API documentation](https://docs.gitlab.com/api/api_resources/).
 1. [Examples](/examples) are updated with:
    1. A \*.tf file for the resource/s with at least one usage example
    1. A \*.sh file for the resource/s with an import example (if applicable)
@@ -52,7 +52,7 @@ These guidelines are specific callouts for issues that come up occasionally but 
 
 #### Resource ID and Import
 
-Terraform resources have a unique ID (`d.SetId("")`). The ID should be comprised from the URL path variables of the `GET` API for the resource in the [GitLab API documentation](https://docs.gitlab.com/ee/api/api_resources.html), separated by `:`.
+Terraform resources have a unique ID (`d.SetId("")`). The ID should be comprised from the URL path variables of the `GET` API for the resource in the [GitLab API documentation](https://docs.gitlab.com/api/api_resources/), separated by `:`.
 
 For example, a resource for the `GET /projects/:id/environments/:environment_id` API would have the ID `123:456` where `123` is the project ID and `456` is the environment ID.
 
@@ -245,7 +245,7 @@ See instructions on [Setting up devcontainers with WSL2](https://code.visualstud
 
 ### Contributing EE Features
 
-If you are working on a resource or datasource that is only available to Premium or Ultimate tiers, you will need an EE license. Please see the [documentation](https://docs.gitlab.com/ee/development/contributing/#contributing-to-premiumultimate-features-with-an-enterprise-edition-license) for requesting a license.
+If you are working on a resource or datasource that is only available to Premium or Ultimate tiers, you will need an EE license. Please see the [documentation](https://docs.gitlab.com/development/contributing/#contributing-to-premiumultimate-features-with-an-enterprise-edition-license) for requesting a license.
 
 Once you have received a license, create a `Gitlab-license.txt` file containing the license at the root of the repo. 
 
@@ -415,7 +415,7 @@ make testacc GITLAB_TOKEN=example123 GITLAB_BASE_URL=https://example.com/api/v4
 
 ## Release Workflow
 
-We use the [same release candence](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/issues/1331) as [GitLab](https://docs.gitlab.com/ee/policy/maintenance.html#versioning).
+We use the [same release candence](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/issues/1331) as [GitLab](https://docs.gitlab.com/policy/maintenance/#versioning).
 The specific dates for upcoming releases are documented [here](https://about.gitlab.com/releases/).
 
 Which means that:

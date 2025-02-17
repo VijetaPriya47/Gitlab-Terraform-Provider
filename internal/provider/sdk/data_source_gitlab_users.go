@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 var _ = registerDataSource("gitlab_users", func() *schema.Resource {
@@ -21,7 +21,7 @@ var _ = registerDataSource("gitlab_users", func() *schema.Resource {
 
 -> Some available options require administrator privileges.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ce/api/users.html#list-users)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ce/api/users/#list-users)`,
 
 		ReadContext: dataSourceGitlabUsersRead,
 

@@ -25,7 +25,7 @@ resource "gitlab_user_runner" "instance_runner" {
 
 # Create a configuration string you can write to a file file that can be used to start a gitlab-runner on a remote machine
 # This could be used in startup scripts in major cloud providers to automatically create a runner
-# See GitLab Runner Advanced Configuration Options here: https://docs.gitlab.com/runner/configuration/advanced-configuration.html
+# See GitLab Runner Advanced Configuration Options here: https://docs.gitlab.com/runner/configuration/advanced-configuration/
 locals {
   config_toml = <<-EOT
 concurrent = 1

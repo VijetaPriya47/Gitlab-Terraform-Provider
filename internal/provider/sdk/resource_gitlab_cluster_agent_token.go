@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 )
 
@@ -19,7 +19,7 @@ var _ = registerResource("gitlab_cluster_agent_token", func() *schema.Resource {
 
 -> Requires at least maintainer permissions on the project.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/cluster_agents.html#create-an-agent-token)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/cluster_agents/#create-an-agent-token)`,
 
 		CreateContext: resourceGitlabClusterAgentTokenCreate,
 		ReadContext:   resourceGitlabClusterAgentTokenRead,

@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
@@ -39,7 +39,7 @@ var _ = registerResource("gitlab_group", func() *schema.Resource {
 
 -> On GitLab SaaS, you must use the GitLab UI to create groups without a parent group. You cannot use this provider nor the API to do this.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/groups.html)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/groups/)`,
 
 		CreateContext: resourceGitlabGroupCreate,
 		ReadContext:   resourceGitlabGroupRead,
@@ -92,7 +92,7 @@ var _ = registerResource("gitlab_group", func() *schema.Resource {
 				Optional:    true,
 			},
 			"default_branch_protection": {
-				Description:  fmt.Sprintf("See https://docs.gitlab.com/ee/api/groups.html#options-for-default_branch_protection. Valid values are: %s.", utils.RenderIntValueListForDocs(defaultBranchProtectionValues)),
+				Description:  fmt.Sprintf("See https://docs.gitlab.com/api/groups/#options-for-default_branch_protection. Valid values are: %s.", utils.RenderIntValueListForDocs(defaultBranchProtectionValues)),
 				Type:         schema.TypeInt,
 				Optional:     true,
 				Computed:     true,

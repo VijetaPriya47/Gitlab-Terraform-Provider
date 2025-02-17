@@ -6,14 +6,14 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 var _ = registerDataSource("gitlab_project_hook", func() *schema.Resource {
 	return &schema.Resource{
 		Description: `The ` + "`gitlab_project_hook`" + ` data source allows to retrieve details about a hook in a project.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/projects.html#get-project-hook)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/projects/#get-project-hook)`,
 
 		ReadContext: dataSourceGitlabProjectHookRead,
 		Schema:      datasourceSchemaFromResourceSchema(gitlabProjectHookSchema(), []string{"project", "hook_id"}, nil),

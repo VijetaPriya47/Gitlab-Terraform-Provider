@@ -233,7 +233,7 @@ resource "gitlab_project_variable" "foo" {
 				ImportStateVerify: true,
 			},
 			// Try to update with an illegal masked variable.
-			// ref: https://docs.gitlab.com/ce/ci/variables/README.html#masked-variable-requirements
+			// ref: https://docs.gitlab.com/ce/ci/variables/README/#masked-variable-requirements
 			{
 				Config: fmt.Sprintf(`
 resource "gitlab_project_variable" "foo" {
@@ -246,7 +246,7 @@ EOF
 }
 `, testProject.ID),
 				ExpectError: regexp.MustCompile(regexp.QuoteMeta(
-					"Invalid value for a masked variable. Check the masked variable requirements: https://docs.gitlab.com/ee/ci/variables/#masked-variable-requirements",
+					"Invalid value for a masked variable. Check the masked variable requirements: https://docs.gitlab.com/ci/variables/#masked-variable-requirements",
 				)),
 			},
 		},

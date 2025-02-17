@@ -18,7 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
@@ -73,7 +73,7 @@ func (r *gitlabIntegrationCustomIssueTrackerResource) Schema(_ context.Context, 
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_integration_custom_issue_tracker`" + ` resource allows to manage the lifecycle of a project integration with Custom Issue Tracker.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/integrations.html#custom-issue-tracker)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/integrations/#custom-issue-tracker)`,
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
@@ -180,7 +180,7 @@ func (r *gitlabIntegrationCustomIssueTrackerResource) update(ctx context.Context
 	options := &gitlab.SetCustomIssueTrackerServiceOptions{
 		ProjectURL: gitlab.Ptr(data.ProjectURL.ValueString()),
 		IssuesURL:  gitlab.Ptr(data.IssuesURL.ValueString()),
-		// According to [Custom Issue Tracker documentation](https://docs.gitlab.com/ee/user/project/integrations/custom_issue_tracker.html#enable-a-custom-issue-tracker)
+		// According to [Custom Issue Tracker documentation](https://docs.gitlab.com/user/project/integrations/custom_issue_tracker/#enable-a-custom-issue-tracker)
 		// new_issue_url isn't used, but required by API and have to be a valid URL.
 		NewIssueURL: gitlab.Ptr(data.ProjectURL.ValueString()),
 	}

@@ -18,7 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
@@ -101,7 +101,7 @@ func (d *gitlabBranchProtectionResource) getV1Schema() schema.Schema {
 
 ~> The ` + "`allowed_to_push`" + `, ` + "`allowed_to_merge`" + `, ` + "`allowed_to_unprotect`" + `, ` + "`unprotect_access_level`" + ` and ` + "`code_owner_approval_required`" + ` attributes require a GitLab Enterprise instance.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/protected_branches.html)`),
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/protected_branches/)`),
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
@@ -891,7 +891,7 @@ func (d *gitlabBranchProtectionResource) getV0Schema() schema.Schema {
 
 ~> The ` + "`allowed_to_push`" + `, ` + "`allowed_to_merge`" + `, ` + "`allowed_to_unprotect`" + `, ` + "`unprotect_access_level`" + ` and ` + "`code_owner_approval_required`" + ` attributes require a GitLab Enterprise instance.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/protected_branches.html)`),
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/protected_branches/)`),
 
 		Attributes: map[string]schema.Attribute{
 			"branch_protection_id": schema.Int64Attribute{

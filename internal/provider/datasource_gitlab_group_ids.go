@@ -49,7 +49,7 @@ func (d *gitlabGroupIDsDataSource) Schema(_ context.Context, _ datasource.Schema
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_group_ids`" + ` data source identification information for a given group, allowing a user to translate a full path or ID into the GraphQL ID of the group.
 
-**Upstream API**: [GitLab GraphQL API docs](https://docs.gitlab.com/ee/api/graphql/reference/#querygroup)`,
+**Upstream API**: [GitLab GraphQL API docs](https://docs.gitlab.com/api/graphql/reference/#querygroup)`,
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{

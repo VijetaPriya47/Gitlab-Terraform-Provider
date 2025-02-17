@@ -7,7 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 )
 
@@ -15,7 +15,7 @@ var _ = registerDataSource("gitlab_current_user", func() *schema.Resource {
 	return &schema.Resource{
 		Description: `The ` + "`gitlab_current_user`" + ` data source allows details of the current user (determined by ` + "`token`" + ` provider attribute) to be retrieved.
 
-**Upstream API**: [GitLab GraphQL API docs](https://docs.gitlab.com/ee/api/graphql/reference/index.html#querycurrentuser)`,
+**Upstream API**: [GitLab GraphQL API docs](https://docs.gitlab.com/api/graphql/reference/index/#querycurrentuser)`,
 
 		ReadContext: dataSourceGitlabCurrentUserRead,
 		Schema: map[string]*schema.Schema{

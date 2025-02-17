@@ -9,14 +9,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 var _ = registerDataSource("gitlab_cluster_agents", func() *schema.Resource {
 	return &schema.Resource{
 		Description: `The ` + "`gitlab_cluster_agents`" + ` data source allows details of GitLab Agents for Kubernetes in a project.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/cluster_agents.html)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/cluster_agents/)`,
 
 		ReadContext: dataSourceGitlabClusterAgentsRead,
 		Schema: map[string]*schema.Schema{

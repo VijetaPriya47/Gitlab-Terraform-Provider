@@ -6,14 +6,14 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 var _ = registerDataSource("gitlab_project_variable", func() *schema.Resource {
 	return &schema.Resource{
 		Description: `The ` + "`gitlab_project_variable`" + ` data source allows to retrieve details about a project-level CI/CD variable.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/project_level_variables.html)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_level_variables/)`,
 
 		ReadContext: dataSourceGitlabProjectVariableRead,
 		Schema:      datasourceSchemaFromResourceSchema(gitlabProjectVariableGetSchema(), []string{"project", "key"}, []string{"environment_scope"}),

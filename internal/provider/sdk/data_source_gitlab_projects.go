@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mitchellh/hashstructure/v2"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
@@ -18,8 +18,8 @@ import (
 // Schemas
 
 // WARN: go-gitlab may not be up-to-date with Gitlab exposed options
-// https://docs.gitlab.com/ee/api/groups.html#list-a-groups-projects
-// https://docs.gitlab.com/ee/api/projects.html#list-all-projects
+// https://docs.gitlab.com/api/groups/#list-a-groups-projects
+// https://docs.gitlab.com/api/projects/#list-all-projects
 
 // Helper functions
 func flattenProjectPermissions(permissions *gitlab.Permissions) []map[string]interface{} {
@@ -237,7 +237,7 @@ var _ = registerDataSource("gitlab_projects", func() *schema.Resource {
 
 -> The [owner sub-attributes](#nestedobjatt--projects--owner) are only populated if the GitLab token used has an administrator scope.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/projects.html#list-all-projects)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/projects/#list-all-projects)`,
 
 		ReadContext: dataSourceGitlabProjectsRead,
 
@@ -272,7 +272,7 @@ var _ = registerDataSource("gitlab_projects", func() *schema.Resource {
 				Optional:    true,
 			},
 			"order_by": {
-				Description:  fmt.Sprintf("Return projects ordered ordered by: %s. Some values or only available in certain circumstances. See [upstream docs](https://docs.gitlab.com/ee/api/projects.html#list-all-projects) for details.", utils.RenderValueListForDocs(validOrderBy)),
+				Description:  fmt.Sprintf("Return projects ordered ordered by: %s. Some values or only available in certain circumstances. See [upstream docs](https://docs.gitlab.com/api/projects/#list-all-projects) for details.", utils.RenderValueListForDocs(validOrderBy)),
 				Type:         schema.TypeString,
 				Optional:     true,
 				ValidateFunc: validation.StringInSlice(validOrderBy, true),
@@ -340,7 +340,7 @@ var _ = registerDataSource("gitlab_projects", func() *schema.Resource {
 				Optional:    true,
 			},
 			"min_access_level": {
-				Description: "Limit to projects where current user has at least this access level, refer to the [official documentation](https://docs.gitlab.com/ee/api/members.html) for values. Cannot be used with `group_id`.",
+				Description: "Limit to projects where current user has at least this access level, refer to the [official documentation](https://docs.gitlab.com/api/members/) for values. Cannot be used with `group_id`.",
 				Type:        schema.TypeInt,
 				Optional:    true,
 				ValidateFunc: validation.IntInSlice([]int{

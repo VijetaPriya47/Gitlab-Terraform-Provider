@@ -1,7 +1,7 @@
 package api
 
 import (
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 // NOTE:
@@ -17,7 +17,7 @@ import (
 // your fingers crossed it's correct :)
 
 // see the source of truth for `AccessLevelNameToValue` and `AccessLevelValueToName`
-// here: https://docs.gitlab.com/ee/api/members.html#valid-access-levels
+// here: https://docs.gitlab.com/api/members/#valid-access-levels
 var ValidGroupAccessLevelNames = []string{
 	"no one",
 	"minimal",
@@ -37,7 +37,7 @@ var ValidProjectAccessLevelNames = []string{
 	"owner",
 }
 
-// NOTE(TF): the documentation here https://docs.gitlab.com/ee/api/protected_branches.html
+// NOTE(TF): the documentation here https://docs.gitlab.com/api/protected_branches/
 //
 //	mentions an `60 => Admin access` level, but it actually seems to not exist.
 //	Ignoring here that I've every read about this ...
@@ -106,8 +106,8 @@ func AccessControlLevelValueToName(input string) gitlab.AccessControlValue {
 }
 
 // Valid scopes for project and group access tokens
-// See: https://docs.gitlab.com/ee/user/project/settings/project_access_tokens.html#scopes-for-a-project-access-token
-// See: https://docs.gitlab.com/ee/user/group/settings/group_access_tokens.html#scopes-for-a-group-access-token
+// See: https://docs.gitlab.com/user/project/settings/project_access_tokens/#scopes-for-a-project-access-token
+// See: https://docs.gitlab.com/user/group/settings/group_access_tokens/#scopes-for-a-group-access-token
 var ValidAccessTokenScopes = []string{
 	"api",
 	"read_api",
@@ -124,7 +124,7 @@ var ValidAccessTokenScopes = []string{
 }
 
 // Valid scopes for personal access tokens
-// See: https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html#personal-access-token-scopes
+// See: https://docs.gitlab.com/user/profile/personal_access_tokens/#personal-access-token-scopes
 var ValidPersonalAccessTokenScopes = []string{
 	"api",
 	"read_user",

@@ -4,14 +4,14 @@ page_title: "gitlab_project_hook Resource - terraform-provider-gitlab"
 subcategory: ""
 description: |-
   The gitlab_project_hook resource allows to manage the lifecycle of a project hook.
-  Upstream API: GitLab REST API docs https://docs.gitlab.com/ee/api/projects.html#hooks
+  Upstream API: GitLab REST API docs https://docs.gitlab.com/api/projects/#hooks
 ---
 
 # gitlab_project_hook (Resource)
 
 The `gitlab_project_hook` resource allows to manage the lifecycle of a project hook.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/projects.html#hooks)
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/projects/#hooks)
 
 ## Example Usage
 

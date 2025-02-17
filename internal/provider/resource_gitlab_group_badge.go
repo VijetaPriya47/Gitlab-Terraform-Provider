@@ -55,7 +55,7 @@ func (r *gitlabGroupBadgeResource) Schema(ctx context.Context, req resource.Sche
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_group_badge`" + ` resource allows to manage the lifecycle of group badges.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/user/project/badges.html#group-badges)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/user/project/badges/#group-badges)`,
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{

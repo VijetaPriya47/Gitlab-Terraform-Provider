@@ -4,14 +4,14 @@ page_title: "gitlab_integration_jira Resource - terraform-provider-gitlab"
 subcategory: ""
 description: |-
   The gitlab_integration_jira resource allows to manage the lifecycle of a project integration with Jira.
-  Upstream API: GitLab REST API docs https://docs.gitlab.com/ee/api/integrations.html#jira
+  Upstream API: GitLab REST API docs https://docs.gitlab.com/api/integrations/#jira
 ---
 
 # gitlab_integration_jira (Resource)
 
 The `gitlab_integration_jira` resource allows to manage the lifecycle of a project integration with Jira.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/integrations.html#jira)
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/integrations/#jira)
 
 ## Example Usage
 

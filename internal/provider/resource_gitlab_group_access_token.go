@@ -79,13 +79,13 @@ func (r *gitlabGroupAccessTokenResource) Schema(ctx context.Context, req resourc
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_group_access_token`" + ` resource allows to manage the lifecycle of a group access token.
 
-~> Observability scopes are in beta and may not work on all instances. See more details in [the documentation](https://docs.gitlab.com/ee/operations/tracing.html)
+~> Observability scopes are in beta and may not work on all instances. See more details in [the documentation](https://docs.gitlab.com/operations/tracing/)
 
 ~> Use ` + "`rotation_configuration`" + ` to automatically rotate tokens instead of using ` + "`timestamp()`" + ` as timestamp will cause changes with every plan. ` + "`terraform apply`" + ` must still be run to rotate the token.
 
-~> Due to [Automatic reuse detection](https://docs.gitlab.com/ee/api/group_access_tokens.html#automatic-reuse-detection) it's possible that a new Group Access Token will immediately be revoked. Check if an old process using the old token is running if this happens.
+~> Due to [Automatic reuse detection](https://docs.gitlab.com/api/group_access_tokens/#automatic-reuse-detection) it's possible that a new Group Access Token will immediately be revoked. Check if an old process using the old token is running if this happens.
 
-**Upstream API**: [GitLab REST API](https://docs.gitlab.com/ee/api/group_access_tokens.html)`,
+**Upstream API**: [GitLab REST API](https://docs.gitlab.com/api/group_access_tokens/)`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "The ID of the group access token.",

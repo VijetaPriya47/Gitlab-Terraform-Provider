@@ -6,9 +6,9 @@ description: |-
   The gitlab_member_role resource allows to manage the lifecycle of a custom member role.
   Custom roles allow an organization to create user roles with the precise privileges and permissions required for that organization’s needs.
   -> This resource requires an Ultimate license.
-  -> Most custom roles are considered billable users that use a seat. Custom roles billing and seat usage https://docs.gitlab.com/ee/user/custom_roles.html#billing-and-seat-usage
+  -> Most custom roles are considered billable users that use a seat. Custom roles billing and seat usage https://docs.gitlab.com/user/custom_roles/#billing-and-seat-usage
   -> There can be only 10 custom roles on your instance or namespace. See issue 450929 https://gitlab.com/gitlab-org/gitlab/-/issues/450929 for more details.
-  Upstream API: GitLab GraphQL API docs https://docs.gitlab.com/ee/api/graphql/reference/#mutationmemberrolecreate
+  Upstream API: GitLab GraphQL API docs https://docs.gitlab.com/api/graphql/reference/#mutationmemberrolecreate
 ---
 
 # gitlab_member_role (Resource)
@@ -19,11 +19,11 @@ Custom roles allow an organization to create user roles with the precise privile
 
 -> This resource requires an Ultimate license.
 
--> Most custom roles are considered billable users that use a seat. [Custom roles billing and seat usage](https://docs.gitlab.com/ee/user/custom_roles.html#billing-and-seat-usage)
+-> Most custom roles are considered billable users that use a seat. [Custom roles billing and seat usage](https://docs.gitlab.com/user/custom_roles/#billing-and-seat-usage)
 
 -> There can be only 10 custom roles on your instance or namespace. See [issue 450929](https://gitlab.com/gitlab-org/gitlab/-/issues/450929) for more details.
 
-**Upstream API**: [GitLab GraphQL API docs](https://docs.gitlab.com/ee/api/graphql/reference/#mutationmemberrolecreate)
+**Upstream API**: [GitLab GraphQL API docs](https://docs.gitlab.com/api/graphql/reference/#mutationmemberrolecreate)
 
 ## Example Usage
 

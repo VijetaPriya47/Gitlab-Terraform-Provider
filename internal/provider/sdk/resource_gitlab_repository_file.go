@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
@@ -49,7 +49,7 @@ var _ = registerResource("gitlab_repository_file", func() *schema.Resource {
    execution time for some configurations. In addition, retries are performed in case a refresh is required because another application
    changed the repository at the same time.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/repository_files.html)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/repository_files/)`,
 
 		CreateContext: resourceGitlabRepositoryFileCreate,
 		ReadContext:   resourceGitlabRepositoryFileRead,
@@ -64,7 +64,7 @@ var _ = registerResource("gitlab_repository_file", func() *schema.Resource {
 			Delete: schema.DefaultTimeout(1 * time.Minute),
 		},
 
-		// the schema matches https://docs.gitlab.com/ee/api/repository_files.html#create-new-file-in-repository
+		// the schema matches https://docs.gitlab.com/api/repository_files/#create-new-file-in-repository
 		// However, we don't support the `encoding` parameter as it seems to be broken.
 		// Only a value of `base64` is supported, all others, including the documented default `text`, lead to
 		// a `400 {error: encoding does not have a valid value}` error.

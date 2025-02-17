@@ -4,14 +4,14 @@ page_title: "gitlab_repository_file Data Source - terraform-provider-gitlab"
 subcategory: ""
 description: |-
   The gitlab_repository_file data source allows details of a file in a repository to be retrieved.
-  Upstream API: GitLab REST API docs https://docs.gitlab.com/ee/api/repository_files.html
+  Upstream API: GitLab REST API docs https://docs.gitlab.com/api/repository_files/
 ---
 
 # gitlab_repository_file (Data Source)
 
 The `gitlab_repository_file` data source allows details of a file in a repository to be retrieved.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/repository_files.html)
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/repository_files/)
 
 ## Example Usage
 

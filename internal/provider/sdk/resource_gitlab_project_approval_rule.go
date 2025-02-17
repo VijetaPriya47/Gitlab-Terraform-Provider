@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
@@ -35,7 +35,7 @@ var _ = registerResource("gitlab_project_approval_rule", func() *schema.Resource
 ~> Since a project is limited to one "any_approver" rule, attempting to add two "any_approver" rules to the same project in terraform will result in 
    terraform identifying changes with every "plan" operation, and may result in an error during the "apply" operation.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/merge_request_approvals.html#project-level-mr-approvals)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/merge_request_approvals/#project-level-mr-approvals)`,
 
 		CreateContext: resourceGitlabProjectApprovalRuleCreate,
 		ReadContext:   resourceGitlabProjectApprovalRuleRead,

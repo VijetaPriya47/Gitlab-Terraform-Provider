@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
@@ -19,7 +19,7 @@ var _ = registerResource("gitlab_project_issue_board", func() *schema.Resource {
 
 ~> **NOTE:** If the board lists are changed all lists will be recreated.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/boards.html)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/boards/)`,
 
 		CreateContext: resourceGitlabProjectIssueBoardCreate,
 		ReadContext:   resourceGitlabProjectIssueBoardRead,

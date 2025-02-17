@@ -11,7 +11,7 @@ description: |-
   !> This resource does not implement any destroy logic, it's a no-op at this point.
   It's also not possible to revert to the previous settings.
   -> Requires at administrative privileges on GitLab.
-  Upstream API: GitLab REST API docs https://docs.gitlab.com/ee/api/settings.html
+  Upstream API: GitLab REST API docs https://docs.gitlab.com/api/settings/
 ---
 
 # gitlab_application_settings (Resource)
@@ -29,7 +29,7 @@ The `gitlab_application_settings` resource allows to manage the GitLab applicati
 
 -> Requires at administrative privileges on GitLab.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/settings.html)
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/settings/)
 
 ## Example Usage
 

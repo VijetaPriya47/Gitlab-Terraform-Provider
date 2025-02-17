@@ -18,7 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
@@ -88,7 +88,7 @@ func (r *gitlabGroupProtectedEnvironmentResource) Schema(ctx context.Context, re
    In order to use a group_id in the ` + "`deploy_access_levels`" + ` configuration,
    the group_id must be a sub-group under the given group.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/group_protected_environments.html)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/group_protected_environments/)`,
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{

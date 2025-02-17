@@ -40,6 +40,6 @@ API documentation:
 
 <!-- 🚧 Please tick the boxes which apply: -->
 
-- [ ] [GitLab REST API resources](https://docs.gitlab.com/ee/api/api_resources.html) available (*read* for data sources, *CRUD* for resources)
+- [ ] [GitLab REST API resources](https://docs.gitlab.com/api/api_resources/) available (*read* for data sources, *CRUD* for resources)
 - [ ] [client-go](https://gitlab.com/gitlab-org/api/client-go) supports the related GitLab API already
 - [ ] I'd like to contribute it myself

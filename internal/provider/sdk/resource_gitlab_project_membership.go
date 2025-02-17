@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
@@ -21,7 +21,7 @@ var _ = registerResource("gitlab_project_membership", func() *schema.Resource {
 
 -> If a project should grant membership to an entire group use the ` + "`gitlab_project_share_group`" + ` resource instead.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/members.html)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/members/)`,
 
 		CreateContext: resourceGitlabProjectMembershipCreate,
 		ReadContext:   resourceGitlabProjectMembershipRead,

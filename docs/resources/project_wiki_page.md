@@ -4,14 +4,14 @@ page_title: "gitlab_project_wiki_page Resource - terraform-provider-gitlab"
 subcategory: ""
 description: |-
   The gitlab_project_wiki_page resource allows managing the lifecycle of a project wiki page.
-  Upstream API: GitLab REST API docs https://docs.gitlab.com/ee/api/wikis.html
+  Upstream API: GitLab REST API docs https://docs.gitlab.com/api/wikis/
 ---
 
 # gitlab_project_wiki_page (Resource)
 
 The `gitlab_project_wiki_page` resource allows managing the lifecycle of a project wiki page.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/wikis.html)
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/wikis/)
 
 ## Example Usage
 

@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
 
@@ -51,7 +51,7 @@ func (d *gitlabGroupServiceAccountDataSource) Schema(_ context.Context, _ dataso
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_group_service_account`" + ` data source retrieves information about a gitlab service account for a group.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/group_service_accounts.html#list-service-account-users)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/group_service_accounts/#list-service-account-users)`,
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{

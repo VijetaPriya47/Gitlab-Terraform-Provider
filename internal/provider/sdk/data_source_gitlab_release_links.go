@@ -7,7 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
@@ -17,7 +17,7 @@ var _ = registerDataSource("gitlab_release_links", func() *schema.Resource {
 	return &schema.Resource{
 		Description: `The ` + "`gitlab_release_links`" + ` data source allows get details of release links.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/releases/links.html)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/releases/links/)`,
 
 		ReadContext: dataSourceGitlabReleaseLinksRead,
 		Schema: map[string]*schema.Schema{

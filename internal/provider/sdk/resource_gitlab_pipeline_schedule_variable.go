@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
@@ -19,7 +19,7 @@ var _ = registerResource("gitlab_pipeline_schedule_variable", func() *schema.Res
 	return &schema.Resource{
 		Description: `The ` + "`" + `gitlab_pipeline_schedule_variable` + "`" + ` resource allows to manage the lifecycle of a variable for a pipeline schedule.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/pipeline_schedules.html#pipeline-schedule-variables)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/pipeline_schedules/#pipeline-schedule-variables)`,
 
 		CreateContext: resourceGitlabPipelineScheduleVariableCreate,
 		ReadContext:   resourceGitlabPipelineScheduleVariableRead,

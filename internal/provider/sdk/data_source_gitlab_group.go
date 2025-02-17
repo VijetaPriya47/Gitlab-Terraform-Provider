@@ -3,10 +3,11 @@ package sdk
 import (
 	"context"
 	"fmt"
+
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
@@ -15,7 +16,7 @@ var _ = registerDataSource("gitlab_group", func() *schema.Resource {
 	return &schema.Resource{
 		Description: `The ` + "`gitlab_group`" + ` data source allows details of a group to be retrieved by its id or full path.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/groups.html#details-of-a-group)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/groups/#details-of-a-group)`,
 
 		ReadContext: dataSourceGitlabGroupRead,
 		Schema: map[string]*schema.Schema{

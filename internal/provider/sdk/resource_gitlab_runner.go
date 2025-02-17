@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
 
@@ -23,7 +23,7 @@ The runner will be registered at a group level if the token used is from a group
 ~ > Using this resource will register a runner using the deprecated ` + "`registration_token`" + ` flow. To use the new ` + "`authentication_token`" + ` flow instead,
 use the ` + "`gitlab_user_runner`" + ` resource!
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/runners.html#register-a-new-runner)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/runners/#register-a-new-runner)`,
 
 		DeprecationMessage: `This resource has been deprecated in favor of the ` + "`gitlab_user_runner`" + ` resource. Please use that resource, and the new registration flow, instead.`,
 		CreateContext:      resourceGitLabRunnerCreate,

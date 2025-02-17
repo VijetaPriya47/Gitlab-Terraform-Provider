@@ -5,7 +5,7 @@ subcategory: ""
 description: |-
   The gitlab_service_jira resource allows to manage the lifecycle of a project integration with Jira.
   ~> This resource is deprecated. use gitlab_integration_jirainstead!
-  Upstream API: GitLab REST API docs https://docs.gitlab.com/ee/api/integrations.html#jira
+  Upstream API: GitLab REST API docs https://docs.gitlab.com/api/integrations/#jira
 ---
 
 # gitlab_service_jira (Resource)
@@ -14,7 +14,7 @@ The `gitlab_service_jira` resource allows to manage the lifecycle of a project i
 
 ~> This resource is deprecated. use `gitlab_integration_jira`instead!
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/integrations.html#jira)
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/integrations/#jira)
 
 ## Example Usage
 

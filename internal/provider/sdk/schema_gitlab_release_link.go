@@ -6,7 +6,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
 
@@ -15,7 +15,7 @@ func gitlabReleaseLinkGetSchema() map[string]*schema.Schema {
 
 	return map[string]*schema.Schema{
 		"project": {
-			Description: "The ID or [URL-encoded path of the project](https://docs.gitlab.com/ee/api/index.html#namespaced-path-encoding).",
+			Description: "The ID or [URL-encoded path of the project](https://docs.gitlab.com/api/index/#namespaced-path-encoding).",
 			Type:        schema.TypeString,
 			ForceNew:    true,
 			Required:    true,
@@ -36,7 +36,7 @@ func gitlabReleaseLinkGetSchema() map[string]*schema.Schema {
 			Required:    true,
 		},
 		"filepath": {
-			Description: "Relative path for a [Direct Asset link](https://docs.gitlab.com/ee/user/project/releases/index.html#permanent-links-to-release-assets).",
+			Description: "Relative path for a [Direct Asset link](https://docs.gitlab.com/user/project/releases/index/#permanent-links-to-release-assets).",
 			Type:        schema.TypeString,
 			Optional:    true,
 		},
@@ -53,7 +53,7 @@ func gitlabReleaseLinkGetSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"direct_asset_url": {
-			Description: "Full path for a [Direct Asset link](https://docs.gitlab.com/ee/user/project/releases/index.html#permanent-links-to-release-assets).",
+			Description: "Full path for a [Direct Asset link](https://docs.gitlab.com/user/project/releases/index/#permanent-links-to-release-assets).",
 			Type:        schema.TypeString,
 			Computed:    true,
 		},

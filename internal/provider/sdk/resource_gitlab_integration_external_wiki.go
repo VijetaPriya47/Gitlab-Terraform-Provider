@@ -9,14 +9,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 )
 
 var _ = registerResource("gitlab_integration_external_wiki", func() *schema.Resource {
 	return resourceGitlabIntegrationEmailsOnPushResource(`The ` + "`gitlab_integration_external_wiki`" + ` resource allows to manage the lifecycle of a project integration with External Wiki Service.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/integrations.html#external-wiki)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/integrations/#external-wiki)`,
 	)
 })
 
@@ -25,7 +25,7 @@ var _ = registerResource("gitlab_service_external_wiki", func() *schema.Resource
 
 ~> This resource is deprecated. use ` + "`gitlab_integration_external_wiki`" + `instead!
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/integrations.html#external-wiki)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/integrations/#external-wiki)`,
 	)
 	resource.DeprecationMessage = `This resource is deprecated. use ` + "`gitlab_integration_external_wiki`" + `instead!`
 	return resource

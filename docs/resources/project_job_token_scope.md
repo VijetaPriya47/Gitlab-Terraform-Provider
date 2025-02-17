@@ -6,7 +6,7 @@ description: |-
   The gitlab_project_job_token_scope resource allows to manage the CI/CD Job Token scope in a project.
   Any projects added to the CI/CD Job Token scope outside of TF will be untouched by the resource.
   ~> Conflicts with the use of gitlab_project_job_token_scopes when used on the same project. Use one or the other to ensure the desired state.
-  Upstream API: GitLab REST API docs https://docs.gitlab.com/ee/api/project_job_token_scopes.html
+  Upstream API: GitLab REST API docs https://docs.gitlab.com/api/project_job_token_scopes/
 ---
 
 # gitlab_project_job_token_scope (Resource)
@@ -16,7 +16,7 @@ Any projects added to the CI/CD Job Token scope outside of TF will be untouched 
 
 ~> Conflicts with the use of `gitlab_project_job_token_scopes` when used on the same project. Use one or the other to ensure the desired state.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/project_job_token_scopes.html)
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_job_token_scopes/)
 
 ## Example Usage
 

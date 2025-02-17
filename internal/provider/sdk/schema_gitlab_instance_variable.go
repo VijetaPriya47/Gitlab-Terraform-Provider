@@ -43,7 +43,7 @@ func gitlabInstanceVariableGetSchema() map[string]*schema.Schema {
 			Default:     false,
 		},
 		"masked": {
-			Description: "If set to `true`, the value of the variable will be hidden in job logs. The value must meet the [masking requirements](https://docs.gitlab.com/ee/ci/variables/#masked-variables). Defaults to `false`.",
+			Description: "If set to `true`, the value of the variable will be hidden in job logs. The value must meet the [masking requirements](https://docs.gitlab.com/ci/variables/#masked-variables). Defaults to `false`.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Default:     false,

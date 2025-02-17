@@ -8,14 +8,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mitchellh/hashstructure/v2"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 var _ = registerDataSource("gitlab_project_tags", func() *schema.Resource {
 	return &schema.Resource{
 		Description: `The ` + "`gitlab_project_tags`" + ` data source allows details of project tags to be retrieved by some search criteria.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/tags.html#list-project-repository-tags)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/tags/#list-project-repository-tags)`,
 
 		ReadContext: dataSourceGitlabProjectTagsRead,
 		Schema: map[string]*schema.Schema{

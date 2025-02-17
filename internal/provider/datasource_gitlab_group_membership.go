@@ -68,7 +68,7 @@ func (d *gitlabGroupMembershipDataSource) Schema(_ context.Context, _ datasource
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_group_membership`" + ` data source allows to list and filter all members of a group specified by either its id or full path.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/members.html#list-all-members-of-a-group-or-project)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/members/#list-all-members-of-a-group-or-project)`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "The ID of the group membership. In the format of `<group-id:access-level>`.",

@@ -11,7 +11,7 @@ registry_nginx['ssl_certificate_key'] = "/etc/gitlab/ssl/gitlab-registry.key"
 gitlab_rails['initial_shared_runners_registration_token'] = "ACCTEST1234567890123_RUNNER_REG_TOKEN"
 
 # The new licenses issued are for the new Customer Portal.
-# see https://docs.gitlab.com/omnibus/development/setup.html#use-customers-portal-staging-in-gitlab
+# see https://docs.gitlab.com/omnibus/development/setup/#use-customers-portal-staging-in-gitlab
 gitlab_rails['env'] = {
   "GITLAB_LICENSE_MODE" => "test",
   "CUSTOMER_PORTAL_URL" => "https://customers.staging.gitlab.com"
@@ -27,7 +27,7 @@ gitlab_rails['env'].merge!({
 })
 
 # Enable SAML authentication for GitLab (required for SAML group links).
-# see https://docs.gitlab.com/ee/integration/saml.html
+# see https://docs.gitlab.com/integration/saml/
 gitlab_rails['omniauth_allow_single_sign_on'] = ['saml']
 gitlab_rails['omniauth_block_auto_created_users'] = false
 gitlab_rails['omniauth_providers'] = [

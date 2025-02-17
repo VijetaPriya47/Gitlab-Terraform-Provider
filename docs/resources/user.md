@@ -6,7 +6,7 @@ description: |-
   The gitlab_user resource allows to manage the lifecycle of a user.
   -> the provider needs to be configured with admin-level access for this resource to work.
   -> You must specify either password or reset_password.
-  Upstream API: GitLab REST API docs https://docs.gitlab.com/ee/api/users.html
+  Upstream API: GitLab REST API docs https://docs.gitlab.com/api/users/
 ---
 
 # gitlab_user (Resource)
@@ -17,7 +17,7 @@ The `gitlab_user` resource allows to manage the lifecycle of a user.
 
 -> You must specify either password or reset_password.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/users.html)
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/users/)
 
 ## Example Usage
 

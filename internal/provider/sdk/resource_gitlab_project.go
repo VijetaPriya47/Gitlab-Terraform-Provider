@@ -393,7 +393,7 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 	},
 	"use_custom_template": {
 		Description: `Use either custom instance or group (with group_with_project_templates_id) project template (enterprise edition).
-		~> When using a custom template, [Group Tokens won't work](https://docs.gitlab.com/15.7/ee/user/project/settings/import_export_troubleshooting.html#import-using-the-rest-api-fails-when-using-a-group-access-token). You must use a real user's Personal Access Token.`,
+		~> When using a custom template, [Group Tokens won't work](https://docs.gitlab.com/15.7/ee/user/project/settings/import_export_troubleshooting/#import-using-the-rest-api-fails-when-using-a-group-access-token). You must use a real user's Personal Access Token.`,
 		Type:     schema.TypeBool,
 		Optional: true,
 	},
@@ -850,7 +850,7 @@ In the ` + "`gitlab_project`" + ` resource, define a ` + "`local-exec`" + ` prov
 the ` + "`/projects/:id/protected_branches/:name`" + ` API via curl to delete the branch protection on the default
 branch using a ` + "`DELETE`" + ` request. Then define the desired branch protection using the ` + "`gitlab_branch_protection`" + ` resource.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ce/api/projects.html)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ce/api/projects/)`,
 
 		CreateContext: resourceGitlabProjectCreate,
 		ReadContext:   resourceGitlabProjectRead,

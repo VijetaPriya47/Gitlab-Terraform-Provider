@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mitchellh/hashstructure/v2"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 var _ = registerDataSource("gitlab_project_milestones", func() *schema.Resource {
@@ -18,7 +18,7 @@ var _ = registerDataSource("gitlab_project_milestones", func() *schema.Resource 
 	return &schema.Resource{
 		Description: `The ` + "`gitlab_project_milestones`" + ` data source allows get details of a project milestones.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/milestones.html)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/milestones/)`,
 
 		ReadContext: dataSourceGitlabProjectMilestonesRead,
 		Schema: map[string]*schema.Schema{

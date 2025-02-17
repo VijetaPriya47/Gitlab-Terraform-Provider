@@ -5,8 +5,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 var (
@@ -41,7 +40,7 @@ func (r *gitlabServiceCustomIssueTrackerResource) Schema(ctx context.Context, re
 
 ~> This resource is deprecated. use ` + "`gitlab_integration_custom_issue_tracker`" + `instead!
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/integrations.html#custom-issue-tracker)`
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/integrations/#custom-issue-tracker)`
 }
 
 /////////////////

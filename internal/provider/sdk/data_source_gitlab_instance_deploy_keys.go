@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 var _ = registerDataSource("gitlab_instance_deploy_keys", func() *schema.Resource {
@@ -17,7 +17,7 @@ var _ = registerDataSource("gitlab_instance_deploy_keys", func() *schema.Resourc
 
 -> This data source requires administration privileges.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/deploy_keys.html#list-all-deploy-keys)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/deploy_keys/#list-all-deploy-keys)`,
 
 		ReadContext: dataSourceGitlabInstanceDeployKeysRead,
 		Schema: map[string]*schema.Schema{

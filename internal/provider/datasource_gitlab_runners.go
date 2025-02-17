@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -65,7 +65,7 @@ func (d *gitlabRunnersDataSource) Schema(_ context.Context, _ datasource.SchemaR
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_runners`" + ` data source retrieves information about all gitlab runners.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/runners.html#list-all-runners)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/runners/#list-all-runners)`,
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{

@@ -34,7 +34,7 @@ var (
 	gitlabVariableTypeValues   = []string{"env_var", "file"}
 	stringToVariableTypelookup = map[string]gitlab.VariableTypeValue{"env_var": gitlab.EnvVariableType, "file": gitlab.FileVariableType}
 	regexpGitlabVariableName   = regexp.MustCompile(`^[a-zA-Z0-9_]+$`)
-	invalidMaskedValueSummary  = "Invalid value for a masked variable. Check the masked variable requirements: https://docs.gitlab.com/ee/ci/variables/#mask-a-cicd-variable"
+	invalidMaskedValueSummary  = "Invalid value for a masked variable. Check the masked variable requirements: https://docs.gitlab.com/ci/variables/#mask-a-cicd-variable"
 )
 
 func init() {
@@ -74,7 +74,7 @@ func (r *gitlabGroupVariableResource) Schema(_ context.Context, _ resource.Schem
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_group_variable`" + ` resource allows creating a GitLab group level variables.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/group_level_variables.html)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/group_level_variables/)`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:            true,
@@ -111,12 +111,12 @@ func (r *gitlabGroupVariableResource) Schema(_ context.Context, _ resource.Schem
 				Computed:            true,
 			},
 			"masked": schema.BoolAttribute{
-				MarkdownDescription: "If set to `true`, the value of the variable will be masked in job logs. The value must meet the [masking requirements](https://docs.gitlab.com/ee/ci/variables/#mask-a-cicd-variable).",
+				MarkdownDescription: "If set to `true`, the value of the variable will be masked in job logs. The value must meet the [masking requirements](https://docs.gitlab.com/ci/variables/#mask-a-cicd-variable).",
 				Optional:            true,
 				Computed:            true,
 			},
 			"hidden": schema.BoolAttribute{
-				MarkdownDescription: "If set to `true`, the value of the variable will be hidden in the CI/CD User Interface. The value must meet the [hidden requirements](https://docs.gitlab.com/ee/ci/variables/#hide-a-cicd-variable).",
+				MarkdownDescription: "If set to `true`, the value of the variable will be hidden in the CI/CD User Interface. The value must meet the [hidden requirements](https://docs.gitlab.com/ci/variables/#hide-a-cicd-variable).",
 				PlanModifiers:       []planmodifier.Bool{boolplanmodifier.RequiresReplace()},
 				Optional:            true,
 				Computed:            true,

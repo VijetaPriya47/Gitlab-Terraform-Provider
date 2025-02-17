@@ -50,7 +50,7 @@ func New(version string) func() *schema.Provider {
 				"token": {
 					Type:        schema.TypeString,
 					Optional:    true,
-					Description: "The OAuth2 Token, Project, Group, Personal Access Token or CI Job Token used to connect to GitLab. The OAuth method is used in this provider for authentication (using Bearer authorization token). See https://docs.gitlab.com/ee/api/#authentication for details. It may be sourced from the `GITLAB_TOKEN` environment variable.",
+					Description: "The OAuth2 Token, Project, Group, Personal Access Token or CI Job Token used to connect to GitLab. The OAuth method is used in this provider for authentication (using Bearer authorization token). See https://docs.gitlab.com/api/#authentication for details. It may be sourced from the `GITLAB_TOKEN` environment variable.",
 					Sensitive:   true,
 				},
 				"base_url": {

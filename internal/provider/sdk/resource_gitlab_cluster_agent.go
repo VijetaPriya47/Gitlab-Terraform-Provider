@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
@@ -19,12 +19,12 @@ var _ = registerResource("gitlab_cluster_agent", func() *schema.Resource {
 
 -> Note that this resource only registers the agent, but doesn't configure it.
    The configuration needs to be manually added as described in
-   [the docs](https://docs.gitlab.com/ee/user/clusters/agent/install/index.html#create-an-agent-configuration-file).
+   [the docs](https://docs.gitlab.com/user/clusters/agent/install/index/#create-an-agent-configuration-file).
    However, a ` + "`gitlab_repository_file`" + ` resource may be used to achieve that.
 
 -> Requires at least maintainer permissions on the project.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/cluster_agents.html)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/cluster_agents/)`,
 
 		CreateContext: resourceGitlabClusterAgentCreate,
 		ReadContext:   resourceGitlabClusterAgentRead,

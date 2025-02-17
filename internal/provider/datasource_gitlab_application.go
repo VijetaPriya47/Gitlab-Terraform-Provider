@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -51,7 +51,7 @@ func (d *gitlabApplicationDataSource) Schema(_ context.Context, _ datasource.Sch
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_application`" + ` data source retrieves information about a gitlab application.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/applications.html)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/applications/)`,
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{

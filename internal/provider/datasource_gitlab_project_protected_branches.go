@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 )
@@ -61,7 +61,7 @@ func (d *gitLabProjectProtectedBranchesDataSource) Schema(_ context.Context, _ d
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_project_protected_branches`" + ` data source allows details of the protected branches of a given project.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/protected_branches.html#list-protected-branches)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/protected_branches/#list-protected-branches)`,
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.Int64Attribute{

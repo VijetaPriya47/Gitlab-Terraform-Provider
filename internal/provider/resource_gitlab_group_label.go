@@ -51,7 +51,7 @@ func (r *gitlabGroupLabelResource) Schema(ctx context.Context, req resource.Sche
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_group_label`" + ` resource allows to manage the lifecycle of labels within a group.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/group_labels.html)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/group_labels/)`,
 		Version: 2,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{

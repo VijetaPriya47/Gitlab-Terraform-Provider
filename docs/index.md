@@ -10,7 +10,7 @@ users, groups, projects and more. You must configure the provider with
 the proper credentials before you can use it.
 
 The provider uses the [`client-go`](https://gitlab.com/gitlab-org/api/client-go) library
-to interact with the [GitLab REST API](https://docs.gitlab.com/ee/api/api_resources.html).
+to interact with the [GitLab REST API](https://docs.gitlab.com/api/api_resources/).
 
 We support the following versions:
 
@@ -96,4 +96,4 @@ resource "gitlab_project" "sample_group_project" {
 - `headers` (Map of String) A map of headers to append to all API request to the GitLab instance.
 - `insecure` (Boolean) When set to true this disables SSL verification of the connection to the GitLab instance.
 - `retries` (Number) The number of retries to execute when receiving a 429 Rate Limit error. Each retry will exponentially back off.
-- `token` (String, Sensitive) The OAuth2 Token, Project, Group, Personal Access Token or CI Job Token used to connect to GitLab. The OAuth method is used in this provider for authentication (using Bearer authorization token). See https://docs.gitlab.com/ee/api/#authentication for details. It may be sourced from the `GITLAB_TOKEN` environment variable.
+- `token` (String, Sensitive) The OAuth2 Token, Project, Group, Personal Access Token or CI Job Token used to connect to GitLab. The OAuth method is used in this provider for authentication (using Bearer authorization token). See https://docs.gitlab.com/api/#authentication for details. It may be sourced from the `GITLAB_TOKEN` environment variable.

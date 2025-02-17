@@ -9,7 +9,7 @@ description: |-
   Therefore, this resource queues every call to the repository files API no matter of the project, which may slow down the terraform
   execution time for some configurations. In addition, retries are performed in case a refresh is required because another application
   changed the repository at the same time.
-  Upstream API: GitLab REST API docs https://docs.gitlab.com/ee/api/repository_files.html
+  Upstream API: GitLab REST API docs https://docs.gitlab.com/api/repository_files/
 ---
 
 # gitlab_repository_file (Resource)
@@ -23,7 +23,7 @@ The `gitlab_repository_file` resource allows to manage the lifecycle of a file w
    execution time for some configurations. In addition, retries are performed in case a refresh is required because another application
    changed the repository at the same time.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/repository_files.html)
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/repository_files/)
 
 ## Example Usage
 

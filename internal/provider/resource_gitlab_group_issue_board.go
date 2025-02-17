@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
@@ -62,7 +62,7 @@ func (r *gitlabGroupIssueBoardResource) Schema(ctx context.Context, req resource
 
 ~> Multiple issue boards on one group requires a GitLab Premium or above License.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/group_boards.html)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/group_boards/)`,
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{

@@ -7,7 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -54,7 +54,7 @@ func (d *gitlabMetadataDataSource) Schema(_ context.Context, _ datasource.Schema
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_metadata`" + ` data source retrieves the metadata of the GitLab instance.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/metadata.html)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/metadata/)`,
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{

@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
 
@@ -86,7 +86,7 @@ func (d *gitlabPipelineScheduleDataSource) Schema(_ context.Context, _ datasourc
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_pipeline_schedule`" + ` data source retrieves information about a gitlab pipeline schedule for a project.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/pipeline_schedules.html)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/pipeline_schedules/)`,
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
