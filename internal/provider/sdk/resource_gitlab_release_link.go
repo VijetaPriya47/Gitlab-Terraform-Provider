@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 )
 
@@ -17,7 +17,7 @@ var _ = registerResource("gitlab_release_link", func() *schema.Resource {
 	return &schema.Resource{
 		Description: `The ` + "`gitlab_release_link`" + ` resource allows to manage the lifecycle of a release link.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/releases/links.html)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/releases/links/)`,
 
 		CreateContext: resourceGitlabReleaseLinkCreate,
 		ReadContext:   resourceGitlabReleaseLinkRead,

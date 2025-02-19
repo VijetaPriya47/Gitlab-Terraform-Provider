@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 )
 
@@ -20,7 +20,7 @@ var _ = registerResource("gitlab_instance_cluster", func() *schema.Resource {
 
 ~> This is deprecated GitLab feature since 14.5
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/instance_clusters.html)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/instance_clusters/)`,
 
 		CreateContext: resourceGitlabInstanceClusterCreate,
 		ReadContext:   resourceGitlabInstanceClusterRead,

@@ -163,7 +163,7 @@ func TestAccGitlabGroupVariable_basic(t *testing.T) {
 				),
 			},
 			// Update the group variable to enable "masked" for a value that does not meet masking requirements, and expect an error with no state change.
-			// ref: https://docs.gitlab.com/ce/ci/variables/README.html#masked-variable-requirements
+			// ref: https://docs.gitlab.com/ce/ci/variables/README/#masked-variable-requirements
 			{
 				Config: fmt.Sprintf(`
 					resource "gitlab_group" "foo" {
@@ -191,11 +191,11 @@ EOF
 					}),
 				),
 				ExpectError: regexp.MustCompile(regexp.QuoteMeta(
-					"Invalid value for a masked variable. Check the masked variable requirements: https://docs.gitlab.com/ee/ci/variables/#mask-a-cicd-variable",
+					"Invalid value for a masked variable. Check the masked variable requirements: https://docs.gitlab.com/ci/variables/#mask-a-cicd-variable",
 				)),
 			},
 			// Update the group variable to to enable "masked" and meet masking requirements
-			// ref: https://docs.gitlab.com/ce/ci/variables/README.html#masked-variable-requirements
+			// ref: https://docs.gitlab.com/ce/ci/variables/README/#masked-variable-requirements
 			{
 				Config: fmt.Sprintf(`
 					resource "gitlab_group" "foo" {

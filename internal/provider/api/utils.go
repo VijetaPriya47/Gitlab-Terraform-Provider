@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 // Checks if the error represents a 404 response
@@ -46,7 +46,7 @@ func Is403(err error) bool {
 //
 // e.g. 'gid://gitlab/User/1' -> 1 or 'gid://gitlab/Project/42' -> 42
 //
-// see https://docs.gitlab.com/ee/development/api_graphql_styleguide.html#global-ids
+// see https://docs.gitlab.com/development/api_graphql_styleguide/#global-ids
 func ExtractIIDFromGlobalID(globalID string) (int, error) {
 	// If the globalID is empty, just return 0. This can happen in some pre-refresh areas,
 	// causing some tests to be flakey

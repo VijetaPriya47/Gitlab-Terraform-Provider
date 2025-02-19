@@ -5,14 +5,14 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 var _ = registerDataSource("gitlab_instance_variable", func() *schema.Resource {
 	return &schema.Resource{
 		Description: `The ` + "`gitlab_instance_variable`" + ` data source allows to retrieve details about an instance-level CI/CD variable.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/instance_level_ci_variables.html)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/instance_level_ci_variables/)`,
 
 		ReadContext: dataSourceGitlabInstanceVariableRead,
 		Schema:      datasourceSchemaFromResourceSchema(gitlabInstanceVariableGetSchema(), []string{"key"}, nil),

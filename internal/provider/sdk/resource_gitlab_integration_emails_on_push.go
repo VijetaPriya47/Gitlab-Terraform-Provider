@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
@@ -18,7 +18,7 @@ var _ = registerResource("gitlab_integration_emails_on_push", func() *schema.Res
 	return resourceGitLabIntegrationEmailOnPushResource(
 		`The ` + "`gitlab_integration_emails_on_push`" + ` resource allows to manage the lifecycle of a project integration with Emails on Push Service.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/integrations.html#emails-on-push)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/integrations/#emails-on-push)`,
 	)
 })
 
@@ -29,7 +29,7 @@ var _ = registerResource("gitlab_service_emails_on_push", func() *schema.Resourc
 
 ~> This resource is deprecated. Please use ` + "`gitlab_integration_emails_on_push`" + ` instead!
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/integrations.html#emails-on-push)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/integrations/#emails-on-push)`,
 	)
 	resource.DeprecationMessage = `This resource is deprecated. Please use ` + "`gitlab_integration_emails_on_push`" + ` instead!`
 	return resource

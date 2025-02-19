@@ -58,7 +58,7 @@ func (d *gitLabComplianceFrameworkDataSource) Schema(_ context.Context, _ dataso
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_compliance_framework`" + ` data source allows details of a compliance framework to be retrieved by its name and the namespace it belongs to.
 
-**Upstream API**: [GitLab GraphQL API docs](https://docs.gitlab.com/ee/api/graphql/reference/#querynamespace)`,
+**Upstream API**: [GitLab GraphQL API docs](https://docs.gitlab.com/api/graphql/reference/#querynamespace)`,
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{

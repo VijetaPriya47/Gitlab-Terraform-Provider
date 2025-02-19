@@ -7,14 +7,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mitchellh/hashstructure/v2"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 var _ = registerDataSource("gitlab_repository_tree", func() *schema.Resource {
 	return &schema.Resource{
 		Description: `The ` + "`gitlab_repository_tree`" + ` data source allows details of directories and files in a repository to be retrieved.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/repositories.html#list-repository-tree)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/repositories/#list-repository-tree)`,
 
 		ReadContext: dataSourceGitlabRepositoryTreeRead,
 		Schema: map[string]*schema.Schema{

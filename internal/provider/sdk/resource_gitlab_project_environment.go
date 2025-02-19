@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
@@ -28,7 +28,7 @@ var _ = registerResource("gitlab_project_environment", func() *schema.Resource {
 An environment is required to be in a stopped state before a deletetion of the environment can occur.
 Set the ` + "`stop_before_destroy`" + ` flag to attempt to automatically stop the environment before deletion.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/environments.html)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/environments/)`,
 
 		CreateContext: resourceGitlabProjectEnvironmentCreate,
 		ReadContext:   resourceGitlabProjectEnvironmentRead,

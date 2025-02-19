@@ -57,7 +57,7 @@ func (d *gitlabGroupVariableDataSource) Schema(_ context.Context, _ datasource.S
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_group_variable`" + ` data source allows to retrieve details about a group-level CI/CD variable.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/group_level_variables.html)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/group_level_variables/)`,
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
@@ -90,7 +90,7 @@ func (d *gitlabGroupVariableDataSource) Schema(_ context.Context, _ datasource.S
 				Computed:            true,
 			},
 			"masked": schema.BoolAttribute{
-				MarkdownDescription: "If set to `true`, the value of the variable will be hidden in job logs. The value must meet the [masking requirements](https://docs.gitlab.com/ee/ci/variables/#masked-variables).",
+				MarkdownDescription: "If set to `true`, the value of the variable will be hidden in job logs. The value must meet the [masking requirements](https://docs.gitlab.com/ci/variables/#masked-variables).",
 				Computed:            true,
 			},
 			"environment_scope": schema.StringAttribute{

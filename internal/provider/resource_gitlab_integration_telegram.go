@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
@@ -82,7 +82,7 @@ func (r *gitlabIntegrationTelegramResource) Schema(_ context.Context, _ resource
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_integration_telegram`" + ` resource allows to manage the lifecycle of a project integration with Telegram.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/integrations.html#telegram)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/integrations/#telegram)`,
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{

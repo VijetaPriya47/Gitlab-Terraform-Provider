@@ -19,7 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces
@@ -65,7 +65,7 @@ Any project not within the defined set in this attribute will be removed, which 
 
 ~> Conflicts with the use of ` + "`gitlab_project_job_token_scope`" + ` when used on the same project. Use one or the other to ensure the desired state.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/project_job_token_scopes.html)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_job_token_scopes/)`,
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{

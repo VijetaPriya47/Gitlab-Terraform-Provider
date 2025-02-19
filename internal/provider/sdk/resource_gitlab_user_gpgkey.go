@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
@@ -21,7 +21,7 @@ var _ = registerResource("gitlab_user_gpgkey", func() *schema.Resource {
 		
 -> Managing GPG keys for arbitrary users requires admin privileges.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/users.html#get-a-specific-gpg-key)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/users/#get-a-specific-gpg-key)`,
 
 		CreateContext: resourceGitlabUserGPGKeyCreate,
 		ReadContext:   resourceGitlabUserGPGKeyRead,

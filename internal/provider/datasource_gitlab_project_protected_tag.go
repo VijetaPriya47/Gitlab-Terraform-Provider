@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 )
@@ -61,7 +61,7 @@ func (d *gitLabProjectProtectedTagDataSource) Schema(_ context.Context, _ dataso
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_project_protected_tag`" + ` data source allows details of a protected tag to be retrieved by its name and the project it belongs to.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/protected_tags.html#get-a-single-protected-tag-or-wildcard-protected-tag)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/protected_tags/#get-a-single-protected-tag-or-wildcard-protected-tag)`,
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{

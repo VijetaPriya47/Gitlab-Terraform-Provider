@@ -4,14 +4,14 @@ page_title: "gitlab_group_variable Resource - terraform-provider-gitlab"
 subcategory: ""
 description: |-
   The gitlab_group_variable resource allows creating a GitLab group level variables.
-  Upstream API: GitLab REST API docs https://docs.gitlab.com/ee/api/group_level_variables.html
+  Upstream API: GitLab REST API docs https://docs.gitlab.com/api/group_level_variables/
 ---
 
 # gitlab_group_variable (Resource)
 
 The `gitlab_group_variable` resource allows creating a GitLab group level variables.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/group_level_variables.html)
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/group_level_variables/)
 
 ## Example Usage
 
@@ -49,8 +49,8 @@ resource "gitlab_group_variable" "example" {
 
 - `description` (String) The description of the variable.
 - `environment_scope` (String) The environment scope of the variable. Defaults to all environment (`*`). Note that in Community Editions of Gitlab, values other than `*` will cause inconsistent plans.
-- `hidden` (Boolean) If set to `true`, the value of the variable will be hidden in the CI/CD User Interface. The value must meet the [hidden requirements](https://docs.gitlab.com/ee/ci/variables/#hide-a-cicd-variable).
-- `masked` (Boolean) If set to `true`, the value of the variable will be masked in job logs. The value must meet the [masking requirements](https://docs.gitlab.com/ee/ci/variables/#mask-a-cicd-variable).
+- `hidden` (Boolean) If set to `true`, the value of the variable will be hidden in the CI/CD User Interface. The value must meet the [hidden requirements](https://docs.gitlab.com/ci/variables/#hide-a-cicd-variable).
+- `masked` (Boolean) If set to `true`, the value of the variable will be masked in job logs. The value must meet the [masking requirements](https://docs.gitlab.com/ci/variables/#mask-a-cicd-variable).
 - `protected` (Boolean) If set to `true`, the variable will be passed only to pipelines running on protected branches and tags.
 - `raw` (Boolean) Whether the variable is treated as a raw string. When true, variables in the value are not expanded.
 - `variable_type` (String) The type of a variable. Valid values are: `env_var`, `file`.

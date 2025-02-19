@@ -53,7 +53,7 @@ func (r *gitlabProjectComplianceFrameworkResource) Schema(ctx context.Context, r
 
 -> This resource requires a GitLab Enterprise instance with a Premium license to set the compliance framework on a project.
 
-**Upstream API**: [GitLab GraphQL API docs](https://docs.gitlab.com/ee/api/graphql/reference/#mutationprojectsetcomplianceframework)`,
+**Upstream API**: [GitLab GraphQL API docs](https://docs.gitlab.com/api/graphql/reference/#mutationprojectsetcomplianceframework)`,
 
 		DeprecationMessage: `This resource is deprecated as it has been replaced by a resource that supports assigning multiple compliance frameworks to a project.
 

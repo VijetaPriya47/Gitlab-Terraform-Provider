@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
@@ -30,7 +30,7 @@ var _ = registerResource("gitlab_user", func() *schema.Resource {
 
 -> You must specify either password or reset_password.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/users.html)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/users/)`,
 
 		CreateContext: resourceGitlabUserCreate,
 		ReadContext:   resourceGitlabUserRead,

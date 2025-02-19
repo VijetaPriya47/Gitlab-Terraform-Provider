@@ -4,14 +4,14 @@ page_title: "gitlab_metadata Data Source - terraform-provider-gitlab"
 subcategory: ""
 description: |-
   The gitlab_metadata data source retrieves the metadata of the GitLab instance.
-  Upstream API: GitLab REST API docs https://docs.gitlab.com/ee/api/metadata.html
+  Upstream API: GitLab REST API docs https://docs.gitlab.com/api/metadata/
 ---
 
 # gitlab_metadata (Data Source)
 
 The `gitlab_metadata` data source retrieves the metadata of the GitLab instance.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/metadata.html)
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/metadata/)
 
 ## Example Usage
 

@@ -9,7 +9,7 @@ description: |-
   -> Warning By default, the provider sets the keep_divergent_refs argument to True.
   If you manually set keep_divergent_refs to False, GitLab mirroring removes branches in the target that aren't in the source.
   This action can result in unexpected branch deletions.
-  Upstream API: GitLab REST API docs https://docs.gitlab.com/ee/api/remote_mirrors.html
+  Upstream API: GitLab REST API docs https://docs.gitlab.com/api/remote_mirrors/
 ---
 
 # gitlab_project_mirror (Resource)
@@ -23,7 +23,7 @@ import_url, mirror, and mirror_trigger_builds properties on the gitlab_project r
    If you manually set `keep_divergent_refs` to `False`, GitLab mirroring removes branches in the target that aren't in the source.
    This action can result in unexpected branch deletions.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/remote_mirrors.html)
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/remote_mirrors/)
 
 ## Example Usage
 

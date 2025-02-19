@@ -19,7 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
@@ -72,9 +72,9 @@ func (d *gitlabUserRunnerResource) Schema(_ context.Context, _ resource.SchemaRe
 	var validAccessLevels = []string{"not_protected", "ref_protected"}
 
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `The ` + "`gitlab_user_runner`" + ` resource allows creating a GitLab runner using the new [GitLab Runner Registration Flow](https://docs.gitlab.com/ee/ci/runners/new_creation_workflow.html).
+		MarkdownDescription: `The ` + "`gitlab_user_runner`" + ` resource allows creating a GitLab runner using the new [GitLab Runner Registration Flow](https://docs.gitlab.com/ci/runners/new_creation_workflow/).
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/users.html#create-a-runner)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/users/#create-a-runner)`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:            true,

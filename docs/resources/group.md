@@ -5,7 +5,7 @@ subcategory: ""
 description: |-
   The gitlab_group resource allows to manage the lifecycle of a group.
   -> On GitLab SaaS, you must use the GitLab UI to create groups without a parent group. You cannot use this provider nor the API to do this.
-  Upstream API: GitLab REST API docs https://docs.gitlab.com/ee/api/groups.html
+  Upstream API: GitLab REST API docs https://docs.gitlab.com/api/groups/
 ---
 
 # gitlab_group (Resource)
@@ -14,7 +14,7 @@ The `gitlab_group` resource allows to manage the lifecycle of a group.
 
 -> On GitLab SaaS, you must use the GitLab UI to create groups without a parent group. You cannot use this provider nor the API to do this.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/groups.html)
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/groups/)
 
 ## Example Usage
 
@@ -98,7 +98,7 @@ resource "gitlab_group" "example-five" {
 - `avatar` (String) A local path to the avatar image to upload. **Note**: not available for imported resources.
 - `avatar_hash` (String) The hash of the avatar image. Use `filesha256("path/to/avatar.png")` whenever possible. **Note**: this is used to trigger an update of the avatar. If it's not given, but an avatar is given, the avatar will be updated each time.
 - `default_branch` (String) Initial default branch name.
-- `default_branch_protection` (Number, Deprecated) See https://docs.gitlab.com/ee/api/groups.html#options-for-default_branch_protection. Valid values are: `0`, `1`, `2`, `3`, `4`.
+- `default_branch_protection` (Number, Deprecated) See https://docs.gitlab.com/api/groups/#options-for-default_branch_protection. Valid values are: `0`, `1`, `2`, `3`, `4`.
 - `default_branch_protection_defaults` (Block List, Max: 1) The default branch protection defaults (see [below for nested schema](#nestedblock--default_branch_protection_defaults))
 - `description` (String) The group's description.
 - `emails_enabled` (Boolean) Enable email notifications.

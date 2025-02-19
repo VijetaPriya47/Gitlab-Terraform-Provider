@@ -49,7 +49,7 @@ func (d *gitlabProjectIDsDataSource) Schema(_ context.Context, _ datasource.Sche
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_project_ids`" + ` data source identification information for a given project, allowing a user to translate a full path or ID into the GraphQL ID of the project.
 
-**Upstream API**: [GitLab GraphQL API docs](https://docs.gitlab.com/ee/api/graphql/reference/#queryproject)`,
+**Upstream API**: [GitLab GraphQL API docs](https://docs.gitlab.com/api/graphql/reference/#queryproject)`,
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{

@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 var _ = registerDataSource("gitlab_user", func() *schema.Resource {
@@ -19,7 +19,7 @@ var _ = registerDataSource("gitlab_user", func() *schema.Resource {
 
 ~> When using the ` + "`email`" + ` attribute, an exact match is not guaranteed. The most related match will be returned. The most related match will prioritize an exact match if one is available.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/users.html#single-user)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/users/#single-user)`,
 
 		ReadContext: dataSourceGitlabUserRead,
 		Schema: map[string]*schema.Schema{

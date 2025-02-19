@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
@@ -18,7 +18,7 @@ var _ = registerResource("gitlab_project_badge", func() *schema.Resource {
 	return &schema.Resource{
 		Description: `The ` + "`gitlab_project_badge`" + ` resource allows to manage the lifecycle of project badges.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/user/project/badges.html#project-badges)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/user/project/badges/#project-badges)`,
 
 		CreateContext: resourceGitlabProjectBadgeCreate,
 		ReadContext:   resourceGitlabProjectBadgeRead,

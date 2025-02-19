@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
 
@@ -59,7 +59,7 @@ func (r *gitlabIntegrationJenkinsResource) Schema(_ context.Context, _ resource.
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_integration_jenkins`" + ` resource allows to manage the lifecycle of a project integration with Jenkins.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/integrations.html#jenkins)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/integrations/#jenkins)`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:            true,

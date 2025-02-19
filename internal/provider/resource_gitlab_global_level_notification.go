@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
 
@@ -73,7 +73,7 @@ func (d *gitlabGlobalLevelNotificationsResource) Schema(_ context.Context, _ res
 		Version: 1,
 		MarkdownDescription: `The ` + "`" + `gitlab_global_level_notifications` + "`" + ` resource allows to manage global notifications.
 		
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/notification_settings.html#group--project-level-notification-settings)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/notification_settings/#group--project-level-notification-settings)`,
 
 		// Schema is external because we'll need to re-implement the state migration function.
 		Attributes: map[string]schema.Attribute{

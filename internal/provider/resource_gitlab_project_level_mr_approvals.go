@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 )
 
@@ -279,7 +279,7 @@ func (d *gitlabProjectLevelMrApprovalsResource) getV1Schema() schema.Schema {
 
 -> This resource requires a GitLab Enterprise instance.
 		
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/merge_request_approvals.html#merge-request-level-mr-approvals)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/merge_request_approvals/#merge-request-level-mr-approvals)`,
 
 		// Schema is external because we'll need to re-implement the state migration function.
 		Attributes: map[string]schema.Attribute{
@@ -351,7 +351,7 @@ func (d *gitlabProjectLevelMrApprovalsResource) getV0Schema() schema.Schema {
 
 -> This resource requires a GitLab Enterprise instance.
 				
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/merge_request_approvals.html#merge-request-level-mr-approvals)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/merge_request_approvals/#merge-request-level-mr-approvals)`,
 
 		// Schema is external because we'll need to re-implement the state migration function.
 		Attributes: map[string]schema.Attribute{

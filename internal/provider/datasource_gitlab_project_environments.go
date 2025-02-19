@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
 
@@ -72,7 +72,7 @@ func (d *gitLabProjectEnvironmentsDataSource) Schema(_ context.Context, _ dataso
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_project_environments`" + ` data source retrieves information about all environments of the given project.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/environments.html#list-environments)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/environments/#list-environments)`,
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
@@ -115,7 +115,7 @@ func (d *gitLabProjectEnvironmentsDataSource) Schema(_ context.Context, _ dataso
 							MarkdownDescription: "The name of the environment.",
 							Computed:            true,
 						},
-						// see https://docs.gitlab.com/ee/ci/variables/predefined_variables.html, CI_ENVIRONMENT_SLUG. API also truncates and adds a randum suffix.
+						// see https://docs.gitlab.com/ci/variables/predefined_variables/, CI_ENVIRONMENT_SLUG. API also truncates and adds a randum suffix.
 						"slug": schema.StringAttribute{
 							MarkdownDescription: "The simplified version of the environment name, suitable for inclusion in DNS, URLs, Kubernetes labels, and so on. The slug is truncated to 24 characters. A random suffix is automatically added to uppercase environment names.",
 							Computed:            true,

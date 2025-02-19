@@ -6,14 +6,14 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 var _ = registerDataSource("gitlab_group_hook", func() *schema.Resource {
 	return &schema.Resource{
 		Description: `The ` + "`gitlab_group_hook`" + ` data source allows to retrieve details about a hook in a group.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/groups.html#get-group-hook)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/groups/#get-group-hook)`,
 
 		ReadContext: dataSourceGitlabGroupHookRead,
 		Schema:      datasourceSchemaFromResourceSchema(gitlabGroupHookSchema(), []string{"group", "hook_id"}, nil),

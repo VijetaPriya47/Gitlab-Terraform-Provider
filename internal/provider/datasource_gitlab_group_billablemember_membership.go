@@ -3,6 +3,8 @@ package provider
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -10,9 +12,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
-	"time"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -69,7 +70,7 @@ func (d *gitlabGroupBillableMemberMembershipsDataSource) Schema(_ context.Contex
 ~> When using the ` + "`email`" + ` attribute, an exact match is not guaranteed. The most related match will be returned. Starting with GitLab 16.6,
 the most related match will prioritize an exact match if one is available.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/members.html#list-memberships-for-a-billable-member-of-a-group)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/members/#list-memberships-for-a-billable-member-of-a-group)`,
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
@@ -116,7 +117,7 @@ the most related match will prioritize an exact match if one is available.
 							Computed:            true,
 						},
 						"access_level": schema.StringAttribute{
-							MarkdownDescription: "Access-level of the member. For details see: https://docs.gitlab.com/ee/api/access_requests.html#valid-access-levels",
+							MarkdownDescription: "Access-level of the member. For details see: https://docs.gitlab.com/api/access_requests/#valid-access-levels",
 							Computed:            true,
 						},
 					},

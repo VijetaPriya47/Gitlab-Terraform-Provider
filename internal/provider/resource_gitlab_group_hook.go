@@ -290,7 +290,7 @@ func (d *gitlabGroupHookResource) getSchema() schema.Schema {
 		Version: 0,
 		MarkdownDescription: `The ` + "`" + `gitlab_group_hook` + "`" + ` resource allows to manage the lifecycle of a group hook.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/groups.html#hooks)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/groups/#hooks)`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: `The id of the group hook. In the format of "group:hook_id"`,

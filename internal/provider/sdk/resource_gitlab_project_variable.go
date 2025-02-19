@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 )
 
@@ -18,7 +18,7 @@ var _ = registerResource("gitlab_project_variable", func() *schema.Resource {
 
 ~> **Important:** If your GitLab version is older than 13.4, you may see nondeterministic behavior when updating or deleting gitlab_project_variable resources with non-unique keys, for example if there is another variable with the same key and different environment scope. See [this GitLab issue](https://gitlab.com/gitlab-org/gitlab/-/issues/9912).
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/project_level_variables.html)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_level_variables/)`,
 
 		CreateContext: resourceGitlabProjectVariableCreate,
 		ReadContext:   resourceGitlabProjectVariableRead,

@@ -39,7 +39,7 @@ resource "gitlab_runner" "my_runner" {
 
 # This creates a configuration for a local "shell" runner, but can be changed to generate whatever is needed.
 # Place this configuration file on a server at `/etc/gitlab-runner/config.toml`, then run `gitlab-runner start`.
-# See https://docs.gitlab.com/runner/configuration/advanced-configuration.html for more information.
+# See https://docs.gitlab.com/runner/configuration/advanced-configuration/ for more information.
 resource "local_file" "config" {
   filename = "${path.module}/config.toml"
   content  = <<CONTENT

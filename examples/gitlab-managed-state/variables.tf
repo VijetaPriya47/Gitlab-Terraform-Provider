@@ -6,7 +6,7 @@ variable "gitlab_token" {
 
 variable "group_members" {
   description = <<EOF
-All members of the group and its [access level](https://docs.gitlab.com/ee/user/permissions.html#project-members-permissions).
+All members of the group and its [access level](https://docs.gitlab.com/user/permissions/#project-members-permissions).
 Possible values are: `guest`, `reporter`, `developer`, `maintainer`, `owner`
 EOF
   type        = map(string)

@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
@@ -65,7 +65,7 @@ func (d *gitlabPipelineScheduleResource) getV1Schema() schema.Schema {
 	return schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_pipeline_schedule` " + `resource allows to manage the lifecycle of a scheduled pipeline.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/pipeline_schedules.html)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/pipeline_schedules/)`,
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{

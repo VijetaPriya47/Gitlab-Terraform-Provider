@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
@@ -17,7 +17,7 @@ var _ = registerResource("gitlab_branch", func() *schema.Resource {
 	return &schema.Resource{
 		Description: `The ` + "`gitlab_branch`" + ` resource allows to manage the lifecycle of a repository branch.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/branches.html)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/branches/)`,
 
 		CreateContext: resourceGitlabBranchCreate,
 		ReadContext:   resourceGitlabBranchRead,

@@ -4,14 +4,14 @@ page_title: "gitlab_group_label Resource - terraform-provider-gitlab"
 subcategory: ""
 description: |-
   The gitlab_group_label resource allows to manage the lifecycle of labels within a group.
-  Upstream API: GitLab REST API docs https://docs.gitlab.com/ee/api/group_labels.html
+  Upstream API: GitLab REST API docs https://docs.gitlab.com/api/group_labels/
 ---
 
 # gitlab_group_label (Resource)
 
 The `gitlab_group_label` resource allows to manage the lifecycle of labels within a group.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/group_labels.html)
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/group_labels/)
 
 ## Example Usage
 

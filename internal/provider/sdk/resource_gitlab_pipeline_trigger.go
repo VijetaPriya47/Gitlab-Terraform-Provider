@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
@@ -17,7 +17,7 @@ var _ = registerResource("gitlab_pipeline_trigger", func() *schema.Resource {
 	return &schema.Resource{
 		Description: `The ` + "`" + `gitlab_pipeline_trigger` + "`" + ` resource allows to manage the lifecycle of a pipeline trigger.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/pipeline_triggers.html)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/pipeline_triggers/)`,
 
 		CreateContext: resourceGitlabPipelineTriggerCreate,
 		ReadContext:   resourceGitlabPipelineTriggerRead,

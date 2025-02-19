@@ -7,7 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
@@ -16,7 +16,7 @@ var _ = registerResource("gitlab_project_tag", func() *schema.Resource {
 	return &schema.Resource{
 		Description: `The ` + "`gitlab_project_tag`" + ` resource allows to manage the lifecycle of a tag in a project.
 
-**Upstream API**: [GitLab API docs](https://docs.gitlab.com/ee/api/tags.html)`,
+**Upstream API**: [GitLab API docs](https://docs.gitlab.com/api/tags/)`,
 
 		CreateContext: resourceGitlabProjectTagCreate,
 		ReadContext:   resourceGitlabProjectTagRead,

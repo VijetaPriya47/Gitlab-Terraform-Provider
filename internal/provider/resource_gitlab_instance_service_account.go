@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces
@@ -55,7 +55,7 @@ func (r *gitlabInstanceServiceAccountResource) Schema(ctx context.Context, _ res
 
 ~> In order for a user to create a user account, they must have admin privileges at the instance level. This makes this feature unavailable on ` + "`gitlab.com`" + `
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/user_service_accounts.html)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/user_service_accounts/)`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:            true,

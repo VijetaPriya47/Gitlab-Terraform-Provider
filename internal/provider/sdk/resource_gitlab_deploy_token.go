@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 )
 
@@ -19,7 +19,7 @@ var _ = registerResource("gitlab_deploy_token", func() *schema.Resource {
 	return &schema.Resource{
 		Description: `The ` + "`gitlab_deploy_token`" + ` resource allows to manage the lifecycle of group and project deploy tokens.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/deploy_tokens.html)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/deploy_tokens/)`,
 
 		CreateContext: resourceGitlabDeployTokenCreate,
 		ReadContext:   resourceGitlabDeployTokenRead,

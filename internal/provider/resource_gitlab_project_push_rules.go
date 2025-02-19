@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 )
 
@@ -74,7 +74,7 @@ func (r *gitlabProjectPushRulesResource) Schema(ctx context.Context, req resourc
 
 -> This resource requires a GitLab Enterprise instance with a Premium license to set the push rules on a project.
 
-**Upstream API**: [GitLab API docs](https://docs.gitlab.com/ee/api/projects.html#push-rules)`,
+**Upstream API**: [GitLab API docs](https://docs.gitlab.com/api/projects/#push-rules)`,
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{

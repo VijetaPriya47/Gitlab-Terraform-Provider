@@ -7,7 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 )
 
@@ -16,7 +16,7 @@ var _ = registerResource("gitlab_integration_github", func() *schema.Resource {
 
 -> This resource requires a GitLab Enterprise instance.
 	
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/integrations.html#github)`)
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/integrations/#github)`)
 })
 
 var _ = registerResource("gitlab_service_github", func() *schema.Resource {
@@ -26,7 +26,7 @@ var _ = registerResource("gitlab_service_github", func() *schema.Resource {
 
 ~> This resource is deprecated. use ` + "`gitlab_integration_github`" + `instead!
 	
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/integrations.html#github)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/integrations/#github)`,
 	)
 	resource.DeprecationMessage = `This resource is deprecated. use ` + "`gitlab_integration_github`" + `instead!`
 	return resource

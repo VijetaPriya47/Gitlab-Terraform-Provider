@@ -19,7 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
 
@@ -69,7 +69,7 @@ func (r *gitlabApplicationResource) Schema(ctx context.Context, req resource.Sch
 ~> In order to use a user for a user to create an application, they must have admin privileges at the instance level.
 To create an OIDC application, a scope of "openid".
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/applications.html)`),
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/applications/)`),
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{

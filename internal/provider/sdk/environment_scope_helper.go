@@ -5,13 +5,13 @@ import (
 	"net/url"
 
 	"github.com/hashicorp/go-retryablehttp"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 // withEnvironmentScopeFilter adds the environment scope filter query parameter to the URL.
 // This function is supposed to be used as `gitlab.RequestOptionFunc` parameter.
 // The parameter is documented in the upstream GitLab API docs:
-// https://docs.gitlab.com/ee/api/project_level_variables.html#the-filter-parameter
+// https://docs.gitlab.com/api/project_level_variables/#the-filter-parameter
 func withEnvironmentScopeFilter(ctx context.Context, environmentScope string) gitlab.RequestOptionFunc {
 	return func(req *retryablehttp.Request) error {
 		*req = *req.WithContext(ctx)

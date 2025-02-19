@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -81,7 +81,7 @@ func (d *gitlabGroupProvisionedUsersDataSource) Schema(_ context.Context, _ data
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_group_provisioned_users`" + ` data source allows details of the provisioned users of a given group.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/groups.html#list-provisioned-users)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/groups/#list-provisioned-users)`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "The ID or URL-encoded path of the group.",

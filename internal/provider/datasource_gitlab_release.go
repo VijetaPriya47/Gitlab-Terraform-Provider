@@ -75,7 +75,7 @@ func (d *gitlabReleaseDataSource) Schema(_ context.Context, _ datasource.SchemaR
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_release`" + ` data source retrieves information about a gitlab release for a project.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/releases/)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/releases/)`,
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{

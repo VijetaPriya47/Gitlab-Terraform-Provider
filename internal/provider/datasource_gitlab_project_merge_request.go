@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 func init() {
@@ -84,7 +84,7 @@ func (d *gitlabProjectMergeRequestDataSource) Schema(_ context.Context, _ dataso
 The ` + "`gitlab_project_merge_request`" + ` data source retrieves
 information about a single merge request related to a specific project.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/merge_requests.html#get-single-mr)
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/merge_requests/#get-single-mr)
 		`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.Int32Attribute{

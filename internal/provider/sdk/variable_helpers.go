@@ -18,7 +18,7 @@ func augmentVariableClientError(ctx context.Context, d *schema.ResourceData, err
 	// so we return a custom error message in this case.
 	if d.Get("masked").(bool) && isInvalidValueError(err) {
 		tflog.Error(ctx, fmt.Sprintf("[ERROR] %v", err))
-		return diag.Errorf("Invalid value for a masked variable. Check the masked variable requirements: https://docs.gitlab.com/ee/ci/variables/#masked-variable-requirements")
+		return diag.Errorf("Invalid value for a masked variable. Check the masked variable requirements: https://docs.gitlab.com/ci/variables/#masked-variable-requirements")
 	}
 
 	if err != nil {

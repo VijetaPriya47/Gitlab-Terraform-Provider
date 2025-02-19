@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -56,7 +56,7 @@ func (d *gitLabProjectProtectedTagsDataSource) Schema(_ context.Context, _ datas
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_project_protected_tags`" + ` data source allows details of the protected tags of a given project.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/protected_tags.html#list-protected-tags)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/protected_tags/#list-protected-tags)`,
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{

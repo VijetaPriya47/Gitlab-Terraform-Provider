@@ -4,7 +4,7 @@
 
 ### Gitlab access token
 
-First create an access token, with the `api` scope and save that in a secure place (you won't be able to see it again). See the [documentation](https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html) for further information.
+First create an access token, with the `api` scope and save that in a secure place (you won't be able to see it again). See the [documentation](https://docs.gitlab.com/user/profile/personal_access_tokens/) for further information.
 The simplest way to provide the token is in a variable file:
 
 ```shell
@@ -58,5 +58,5 @@ $ terraform destroy
 
 ## References
 
-1. [GitLab managed Terraform State](https://docs.gitlab.com/ee/user/infrastructure/terraform_state.html)
-2. [Infrastructure as code with Terraform and GitLab](https://docs.gitlab.com/ee/user/infrastructure/index.html)
+1. [GitLab managed Terraform State](https://docs.gitlab.com/user/infrastructure/terraform_state/)
+2. [Infrastructure as code with Terraform and GitLab](https://docs.gitlab.com/user/infrastructure/index/)

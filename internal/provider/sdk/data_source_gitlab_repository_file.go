@@ -7,14 +7,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 var _ = registerDataSource("gitlab_repository_file", func() *schema.Resource {
 	return &schema.Resource{
 		Description: `The ` + "`gitlab_repository_file`" + ` data source allows details of a file in a repository to be retrieved.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/repository_files.html)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/repository_files/)`,
 
 		ReadContext: dataSourceGitlabRepositoryFileRead,
 		Schema: datasourceSchemaFromResourceSchema(constructSchema(gitlabRepositoryFileGetSchema(), map[string]*schema.Schema{

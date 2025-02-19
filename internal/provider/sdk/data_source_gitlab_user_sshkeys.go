@@ -8,14 +8,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 var _ = registerDataSource("gitlab_user_sshkeys", func() *schema.Resource {
 	return &schema.Resource{
 		Description: `The ` + "`gitlab_user_sshkeys`" + ` data source allows a list of SSH keys to be retrieved by either the user ID or username.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/users.html#list-ssh-keys-for-user)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/users/#list-ssh-keys-for-user)`,
 
 		ReadContext: dataSourceGitlabUserKeysRead,
 		Schema: map[string]*schema.Schema{
