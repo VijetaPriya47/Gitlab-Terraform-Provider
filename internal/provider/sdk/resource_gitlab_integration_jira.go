@@ -139,6 +139,7 @@ func resourceGitlabIntegrationJiraSchema(description string) *schema.Resource {
 				Description: "Enable comments inside Jira issues on each GitLab event (commit / merge request)",
 				Type:        schema.TypeBool,
 				Optional:    true,
+				Computed:    true,
 			},
 			"issues_enabled": {
 				Description: "Enable viewing Jira issues in GitLab.",

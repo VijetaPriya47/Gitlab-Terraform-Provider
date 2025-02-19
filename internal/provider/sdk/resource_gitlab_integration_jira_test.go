@@ -35,7 +35,6 @@ func TestAcc_GitlabIntegrationJira_basic(t *testing.T) {
 				  password = "mypass"
 				  commit_events = true
 				  merge_requests_events    = false
-				  comment_on_event_enabled = false
 				  jira_issue_transition_automatic = true
 				}
 				`, project.ID),
@@ -46,7 +45,6 @@ func TestAcc_GitlabIntegrationJira_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(jiraResourceName, "password", "mypass"),
 					resource.TestCheckResourceAttr(jiraResourceName, "commit_events", "true"),
 					resource.TestCheckResourceAttr(jiraResourceName, "merge_requests_events", "false"),
-					resource.TestCheckResourceAttr(jiraResourceName, "comment_on_event_enabled", "false"),
 					resource.TestCheckResourceAttr(jiraResourceName, "use_inherited_settings", "false"),
 					resource.TestCheckResourceAttr(jiraResourceName, "jira_issue_transition_automatic", "true"),
 				),
@@ -59,6 +57,7 @@ func TestAcc_GitlabIntegrationJira_basic(t *testing.T) {
 				ImportStateVerifyIgnore: []string{
 					"password",
 					"jira_issue_transition_automatic",
+					"comment_on_event_enabled", // ignored due to a bug in GitLab 17.9
 				},
 			},
 			// Update the jira service
@@ -73,7 +72,6 @@ func TestAcc_GitlabIntegrationJira_basic(t *testing.T) {
 				  jira_issue_transition_id = "3"
 				  commit_events = false
 				  merge_requests_events    = true
-				  comment_on_event_enabled = true
 				  jira_issue_regex = "TEST-[0-9]+"
 				  issues_enabled = true
 				}
@@ -88,7 +86,6 @@ func TestAcc_GitlabIntegrationJira_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(jiraResourceName, "jira_issue_transition_id", "3"),
 					resource.TestCheckResourceAttr(jiraResourceName, "commit_events", "false"),
 					resource.TestCheckResourceAttr(jiraResourceName, "merge_requests_events", "true"),
-					resource.TestCheckResourceAttr(jiraResourceName, "comment_on_event_enabled", "true"),
 					resource.TestCheckResourceAttr(jiraResourceName, "use_inherited_settings", "false"),
 					resource.TestCheckResourceAttr(jiraResourceName, "jira_issue_regex", "TEST-[0-9]+"),
 					resource.TestCheckResourceAttr(jiraResourceName, "issues_enabled", "true"),
@@ -102,6 +99,7 @@ func TestAcc_GitlabIntegrationJira_basic(t *testing.T) {
 				ImportStateVerifyIgnore: []string{
 					"password",
 					"jira_issue_transition_automatic",
+					"comment_on_event_enabled", // ignored due to a bug in GitLab 17.9
 				},
 			},
 			// Update the jira service to get back to previous settings
@@ -114,7 +112,6 @@ func TestAcc_GitlabIntegrationJira_basic(t *testing.T) {
 				  password = "mypass"
 				  commit_events = true
 				  merge_requests_events    = false
-				  comment_on_event_enabled = false
 				  jira_issue_transition_automatic = true
 				}
 				`, project.ID),
@@ -126,7 +123,6 @@ func TestAcc_GitlabIntegrationJira_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(jiraResourceName, "password", "mypass"),
 					resource.TestCheckResourceAttr(jiraResourceName, "commit_events", "true"),
 					resource.TestCheckResourceAttr(jiraResourceName, "merge_requests_events", "false"),
-					resource.TestCheckResourceAttr(jiraResourceName, "comment_on_event_enabled", "false"),
 					resource.TestCheckResourceAttr(jiraResourceName, "use_inherited_settings", "false"),
 					resource.TestCheckResourceAttr(jiraResourceName, "jira_issue_regex", ""),
 					resource.TestCheckResourceAttr(jiraResourceName, "issues_enabled", "false"),
@@ -141,6 +137,7 @@ func TestAcc_GitlabIntegrationJira_basic(t *testing.T) {
 				ImportStateVerifyIgnore: []string{
 					"password",
 					"jira_issue_transition_automatic",
+					"comment_on_event_enabled", // ignored due to a bug in GitLab 17.9
 				},
 			},
 		},
@@ -167,7 +164,6 @@ func TestAcc_GitlabIntegrationJira_projectKey(t *testing.T) {
 					  project_key = "TEST"
 					  commit_events = true
 					  merge_requests_events    = false
-					  comment_on_event_enabled = false
 					}`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabIntegrationJiraExists(jiraResourceName, &jiraService),
@@ -180,6 +176,7 @@ func TestAcc_GitlabIntegrationJira_projectKey(t *testing.T) {
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{
 					"password",
+					"comment_on_event_enabled", // ignored due to a bug in GitLab 17.9
 				},
 			},
 		},
@@ -207,7 +204,6 @@ func TestAcc_GitlabIntegrationJira_authType_basicAuth(t *testing.T) {
 				  password = "mypass"
 				  commit_events = true
 				  merge_requests_events    = false
-				  comment_on_event_enabled = false
 				}
 				`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
@@ -218,7 +214,6 @@ func TestAcc_GitlabIntegrationJira_authType_basicAuth(t *testing.T) {
 					resource.TestCheckResourceAttr(jiraResourceName, "password", "mypass"),
 					resource.TestCheckResourceAttr(jiraResourceName, "commit_events", "true"),
 					resource.TestCheckResourceAttr(jiraResourceName, "merge_requests_events", "false"),
-					resource.TestCheckResourceAttr(jiraResourceName, "comment_on_event_enabled", "false"),
 				),
 			},
 			// Verify Import
@@ -228,6 +223,7 @@ func TestAcc_GitlabIntegrationJira_authType_basicAuth(t *testing.T) {
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{
 					"password",
+					"comment_on_event_enabled", // ignored due to a bug in GitLab 17.9
 				},
 			},
 		},
@@ -250,9 +246,9 @@ func TestAcc_GitlabIntegrationJira_authType_tokenAuth(t *testing.T) {
 				resource "gitlab_service_jira" "jira" {
 				  project  = "%d"
 				  url      = "https://test.com"
-					jira_auth_type = 1
+				  jira_auth_type = 1
 				  password = "mypass"
-          use_inherited_settings = false
+                  use_inherited_settings = false
 				}
 				`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
@@ -270,6 +266,7 @@ func TestAcc_GitlabIntegrationJira_authType_tokenAuth(t *testing.T) {
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{
 					"password",
+					"comment_on_event_enabled", // ignored due to a bug in GitLab 17.9
 				},
 			},
 		},
@@ -296,7 +293,6 @@ func TestAcc_GitlabIntegrationJira_backwardsCompatibility(t *testing.T) {
 				  password = "mypass"
 				  commit_events = true
 				  merge_requests_events    = false
-				  comment_on_event_enabled = false
 				}
 				`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
@@ -306,7 +302,6 @@ func TestAcc_GitlabIntegrationJira_backwardsCompatibility(t *testing.T) {
 					resource.TestCheckResourceAttr(jiraResourceName, "password", "mypass"),
 					resource.TestCheckResourceAttr(jiraResourceName, "commit_events", "true"),
 					resource.TestCheckResourceAttr(jiraResourceName, "merge_requests_events", "false"),
-					resource.TestCheckResourceAttr(jiraResourceName, "comment_on_event_enabled", "false"),
 				),
 			},
 			// Verify Import
@@ -316,6 +311,7 @@ func TestAcc_GitlabIntegrationJira_backwardsCompatibility(t *testing.T) {
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{
 					"password",
+					"comment_on_event_enabled", // ignored due to a bug in GitLab 17.9
 				},
 			},
 		},
