@@ -5,61 +5,39 @@ package sdk
 
 import (
 	"fmt"
+	"strconv"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
 func TestAccDataSourceGitlabProjectVariable_basic(t *testing.T) {
 	testProject := testutil.CreateProject(t)
+	testProjectVariable := testutil.CreateProjectVariable(t, testProject.ID)
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
-					resource "gitlab_project_variable" "this" {
-						project           = %d
-						key               = "any_key"
-					        value             = "any-value"
-						environment_scope = "*"
-					}
-
 					data "gitlab_project_variable" "this" {
-						project           = gitlab_project_variable.this.project
-						key               = gitlab_project_variable.this.key
-						environment_scope = gitlab_project_variable.this.environment_scope
+						project           = %d
+						key               = "%s"
+						environment_scope = "%s"
 					}
-					`, testProject.ID,
+					`, testProject.ID, testProjectVariable.Key, testProjectVariable.EnvironmentScope,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					testAccDataSourceGitlabProjectVariable("gitlab_project_variable.this", "data.gitlab_project_variable.this"),
+					resource.TestCheckResourceAttr("data.gitlab_project_variable.this", "key", testProjectVariable.Key),
+					resource.TestCheckResourceAttr("data.gitlab_project_variable.this", "value", testProjectVariable.Value),
+					resource.TestCheckResourceAttr("data.gitlab_project_variable.this", "environment_scope", testProjectVariable.EnvironmentScope),
+					resource.TestCheckResourceAttr("data.gitlab_project_variable.this", "protected", strconv.FormatBool(testProjectVariable.Protected)),
+					resource.TestCheckResourceAttr("data.gitlab_project_variable.this", "masked", strconv.FormatBool(testProjectVariable.Masked)),
+					resource.TestCheckResourceAttr("data.gitlab_project_variable.this", "variable_type", string(testProjectVariable.VariableType)),
 				),
 			},
 		},
 	})
-}
-
-func testAccDataSourceGitlabProjectVariable(src, n string) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-
-		resource := s.RootModule().Resources[src]
-		resourceAttributes := resource.Primary.Attributes
-
-		datasource := s.RootModule().Resources[n]
-		datasourceAttributes := datasource.Primary.Attributes
-
-		testAttributes := attributeNamesFromSchema(gitlabProjectVariableGetSchema())
-
-		for _, attribute := range testAttributes {
-			if datasourceAttributes[attribute] != resourceAttributes[attribute] {
-				return fmt.Errorf("Expected variable's attribute `%s` to be: %s, but got: `%s`", attribute, resourceAttributes[attribute], datasourceAttributes[attribute])
-			}
-		}
-
-		return nil
-	}
 }

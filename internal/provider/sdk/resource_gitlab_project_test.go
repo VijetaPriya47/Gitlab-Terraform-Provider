@@ -1650,17 +1650,10 @@ func TestAccGitlabProject_transfer(t *testing.T) {
 				  # with no billing
 				  visibility_level = "public"
 				}
-				
-				resource "gitlab_project_variable" "foo" {
-				  project = "${gitlab_project.foo.id}"
-				
-				  key = "FOO"
-				  value = "${gitlab_project.foo.path_with_namespace}"
-				}
 				`, rInt, rInt, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectExists("gitlab_project.foo", &received),
-					resource.TestCheckResourceAttrPtr("gitlab_project_variable.foo", "value", &pathBeforeTransfer),
+					resource.TestCheckResourceAttr("gitlab_project.foo", "path_with_namespace", pathBeforeTransfer),
 				),
 			},
 			// Create a second group and set the transfer the project to this group
@@ -1687,18 +1680,11 @@ func TestAccGitlabProject_transfer(t *testing.T) {
 				  # with no billing
 				  visibility_level = "public"
 				}
-				
-				resource "gitlab_project_variable" "foo" {
-				  project = "${gitlab_project.foo.id}"
-				
-				  key = "FOO"
-				  value = "${gitlab_project.foo.path_with_namespace}"
-				}
 				`, rInt, rInt, rInt, rInt, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectExists("gitlab_project.foo", &received),
 					testAccCheckAggregateGitlabProject(&transferred, &received),
-					resource.TestCheckResourceAttrPtr("gitlab_project_variable.foo", "value", &pathAfterTransfer),
+					resource.TestCheckResourceAttr("gitlab_project.foo", "path_with_namespace", pathAfterTransfer),
 				),
 			},
 		},
