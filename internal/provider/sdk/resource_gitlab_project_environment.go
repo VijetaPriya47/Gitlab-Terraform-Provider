@@ -20,13 +20,15 @@ import (
 
 var _ = registerResource("gitlab_project_environment", func() *schema.Resource {
 	allowedEnvironmentTiers := []string{"production", "staging", "testing", "development", "other"}
+	allowedEnvironmentAutoStopSettings := []string{"always", "with_action"}
 
 	return &schema.Resource{
 		Description: `The ` + "`gitlab_project_environment`" + ` resource allows to manage the lifecycle of an environment in a project.
 
 -> During a terraform destroy this resource by default will not attempt to stop the environment first.
-An environment is required to be in a stopped state before a deletetion of the environment can occur.
-Set the ` + "`stop_before_destroy`" + ` flag to attempt to automatically stop the environment before deletion.
+An environment is required to be in a stopped state before a deletion of the environment can occur.
+Set the ` + "`stop_before_destroy`" + ` flag to attempt to automatically stop the environment before deletion. If the 
+environment's ` + "`auto_stop_setting` " + `is set to ` + "`with_action`" + `, the environment will be force-stopped. 
 
 **Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/environments/)`,
 
@@ -51,6 +53,12 @@ Set the ` + "`stop_before_destroy`" + ` flag to attempt to automatically stop th
 				ForceNew:     true,
 				Required:     true,
 				ValidateFunc: validation.StringIsNotEmpty,
+			},
+			"description": {
+				Description: "The description of the environment.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
 			},
 			"external_url": {
 				Description:  "Place to link to for this environment.",
@@ -103,10 +111,22 @@ Set the ` + "`stop_before_destroy`" + ` flag to attempt to automatically stop th
 				Computed:    true,
 			},
 			"stop_before_destroy": {
-				Description: "Determines whether the environment is attempted to be stopped before the environment is deleted.",
+				Description: "Determines whether the environment is attempted to be stopped before the environment is deleted. If `auto_stop_setting` is set to `with_action`, this will perform a force stop.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
+			},
+			"auto_stop_at": {
+				Description: "The ISO8601 date/time that this environment will be automatically stopped at in UTC.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"auto_stop_setting": {
+				Description:      fmt.Sprintf("The auto stop setting for the environment. Allowed values are %s. If this is set to `with_action` and `stop_before_destroy` is `true`, the environment will be force-stopped.", utils.RenderValueListForDocs(allowedEnvironmentAutoStopSettings)),
+				Type:             schema.TypeString,
+				Optional:         true,
+				Computed:         true,
+				ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(allowedEnvironmentAutoStopSettings, false)),
 			},
 		},
 	}
@@ -116,6 +136,9 @@ func resourceGitlabProjectEnvironmentCreate(ctx context.Context, d *schema.Resou
 	name := d.Get("name").(string)
 	options := gitlab.CreateEnvironmentOptions{
 		Name: &name,
+	}
+	if description, ok := d.GetOk("description"); ok {
+		options.Description = gitlab.Ptr(description.(string))
 	}
 	if externalURL, ok := d.GetOk("external_url"); ok {
 		options.ExternalURL = gitlab.Ptr(externalURL.(string))
@@ -131,6 +154,9 @@ func resourceGitlabProjectEnvironmentCreate(ctx context.Context, d *schema.Resou
 	}
 	if fluxResourcePath, ok := d.GetOk("flux_resource_path"); ok {
 		options.FluxResourcePath = gitlab.Ptr(fluxResourcePath.(string))
+	}
+	if autoStopSetting, ok := d.GetOk("auto_stop_setting"); ok {
+		options.AutoStopSetting = gitlab.Ptr(autoStopSetting.(string))
 	}
 
 	project := d.Get("project").(string)
@@ -176,6 +202,7 @@ func resourceGitlabProjectEnvironmentRead(ctx context.Context, d *schema.Resourc
 
 	d.Set("project", project)
 	d.Set("name", environment.Name)
+	d.Set("description", environment.Description)
 	d.Set("state", environment.State)
 	d.Set("external_url", environment.ExternalURL)
 	d.Set("tier", environment.Tier)
@@ -186,9 +213,13 @@ func resourceGitlabProjectEnvironmentRead(ctx context.Context, d *schema.Resourc
 	}
 	d.Set("kubernetes_namespace", environment.KubernetesNamespace)
 	d.Set("flux_resource_path", environment.FluxResourcePath)
+	d.Set("auto_stop_setting", environment.AutoStopSetting)
 	d.Set("created_at", environment.CreatedAt.Format(time.RFC3339))
 	if environment.UpdatedAt != nil {
 		d.Set("updated_at", environment.UpdatedAt.Format(time.RFC3339))
+	}
+	if environment.AutoStopAt != nil {
+		d.Set("auto_stop_at", environment.AutoStopAt.Format(time.RFC3339))
 	}
 
 	return nil
@@ -206,6 +237,9 @@ func resourceGitlabProjectEnvironmentUpdate(ctx context.Context, d *schema.Resou
 		Name: gitlab.Ptr(d.Get("name").(string)),
 	}
 
+	if d.HasChange("description") {
+		options.Description = gitlab.Ptr(d.Get("description").(string))
+	}
 	if d.HasChange("external_url") {
 		options.ExternalURL = gitlab.Ptr(d.Get("external_url").(string))
 	}
@@ -220,6 +254,9 @@ func resourceGitlabProjectEnvironmentUpdate(ctx context.Context, d *schema.Resou
 	}
 	if d.HasChange("flux_resource_path") {
 		options.FluxResourcePath = gitlab.Ptr(d.Get("flux_resource_path").(string))
+	}
+	if d.HasChange("auto_stop_setting") {
+		options.AutoStopSetting = gitlab.Ptr(d.Get("auto_stop_setting").(string))
 	}
 
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Project %s update gitlab environment %d", project, environmentID))
@@ -269,15 +306,18 @@ func updateNullableClusterAgentID(ctx context.Context, client *gitlab.Client, pi
 	return nil
 }
 
-func resourceGitlabProjectEnvironmentStop(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectEnvironmentStop(ctx context.Context, d *schema.ResourceData, meta interface{}, force bool) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project, environmentID, err := resourceGitlabProjectEnvironmentParseID(ctx, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
+	opts := &gitlab.StopEnvironmentOptions{
+		Force: gitlab.Ptr(force),
+	}
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Stopping environment %d for Project %s", environmentID, project))
-	if _, _, err = client.Environments.StopEnvironment(project, environmentID, nil, gitlab.WithContext(ctx)); err != nil {
+	if _, _, err = client.Environments.StopEnvironment(project, environmentID, opts, gitlab.WithContext(ctx)); err != nil {
 		return diag.Errorf("error while stopping gitlab environment %d for project %s: %v", environmentID, project, err)
 	}
 
@@ -314,8 +354,15 @@ func resourceGitlabProjectEnvironmentDelete(ctx context.Context, d *schema.Resou
 
 	stopBeforeDestroy := d.Get("stop_before_destroy").(bool)
 	if stopBeforeDestroy {
+		// To stop an environment with an on_stop action, we need to force stop.
+		// https://docs.gitlab.com/ee/ci/environments/#stop-an-environment-without-running-the-on_stop-action
+		forceStop := false
+		if v, ok := d.GetOk("auto_stop_setting"); ok && v.(string) == "with_action" {
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Force-stopping environment %d for Project %s with on_stop action", environmentID, project))
+			forceStop = true
+		}
 		// resourceGitlabProjectEnvironmentStop waits for the environment to actually be stopped
-		if err := resourceGitlabProjectEnvironmentStop(ctx, d, meta); err != nil {
+		if err := resourceGitlabProjectEnvironmentStop(ctx, d, meta, forceStop); err != nil {
 			return err
 		}
 	}
