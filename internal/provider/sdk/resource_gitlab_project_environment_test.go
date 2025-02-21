@@ -41,8 +41,9 @@ func TestAccGitlabProjectEnvironment_basic(t *testing.T) {
 			{
 				Config: fmt.Sprintf(`
 					resource "gitlab_project_environment" "this" {
-						project = %d
-						name    = "ProjectEnvironment-%d"
+						project     = %d
+						name        = "ProjectEnvironment-%d"
+						description = "A test project"	
 					
 						stop_before_destroy = true
 					}
@@ -50,9 +51,10 @@ func TestAccGitlabProjectEnvironment_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectEnvironmentExists("gitlab_project_environment.this", &env1),
 					testAccCheckGitlabProjectEnvironmentAttributes(&env1, &testAccGitlabProjectEnvironmentExpectedAttributes{
-						Name:  fmt.Sprintf("ProjectEnvironment-%d", rInt),
-						State: "available",
-						Tier:  "other",
+						Name:        fmt.Sprintf("ProjectEnvironment-%d", rInt),
+						State:       "available",
+						Tier:        "other",
+						Description: "A test project",
 					}),
 					resource.TestCheckResourceAttrWith("gitlab_project_environment.this", "created_at", func(value string) error {
 						expectedValue := env1.CreatedAt.Format(time.RFC3339)
@@ -78,6 +80,7 @@ func TestAccGitlabProjectEnvironment_basic(t *testing.T) {
 						name         = "ProjectEnvironment-%d"
 						external_url = "https://example.com"
 						tier         = "production"
+						description  = "A different description"
 					}
 				`, testProject.ID, rInt),
 				Check: resource.ComposeTestCheckFunc(
@@ -87,6 +90,7 @@ func TestAccGitlabProjectEnvironment_basic(t *testing.T) {
 						State:       "available",
 						ExternalURL: "https://example.com",
 						Tier:        "production",
+						Description: "A different description",
 					}),
 					resource.TestCheckResourceAttrWith("gitlab_project_environment.this", "created_at", func(value string) error {
 						expectedValue := env2.CreatedAt.Format(time.RFC3339)
@@ -115,8 +119,9 @@ func TestAccGitlabProjectEnvironment_basic(t *testing.T) {
 			{
 				Config: fmt.Sprintf(`
 					resource "gitlab_project_environment" "this" {
-						project = %d
-						name    = "ProjectEnvironment-%d"
+						project     = %d
+						name        = "ProjectEnvironment-%d"
+						description = "A test project"
 					
 						stop_before_destroy = true
 					}
@@ -124,9 +129,10 @@ func TestAccGitlabProjectEnvironment_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectEnvironmentExists("gitlab_project_environment.this", &env1),
 					testAccCheckGitlabProjectEnvironmentAttributes(&env1, &testAccGitlabProjectEnvironmentExpectedAttributes{
-						Name:  fmt.Sprintf("ProjectEnvironment-%d", rInt),
-						State: "available",
-						Tier:  "production",
+						Name:        fmt.Sprintf("ProjectEnvironment-%d", rInt),
+						State:       "available",
+						Tier:        "production",
+						Description: "A test project",
 					}),
 				),
 			},
@@ -302,6 +308,54 @@ func TestAccGitlabProjectEnvironment_ClusterAgent(t *testing.T) {
 	})
 }
 
+func TestAccGitlabProjectEnvironment_AutoStopSetting(t *testing.T) {
+	testutil.RunIfAtLeast(t, "17.8")
+
+	testName := acctest.RandString(10)
+	testProject := testutil.CreateProject(t)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabProjectEnvironmentDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_environment" "auto_stop" {
+						project              = %d
+						name                 = "%s"
+						auto_stop_setting    = "always"
+
+						stop_before_destroy = true
+					}
+				`, testProject.ID, testName),
+			},
+			{
+				ResourceName:            "gitlab_project_environment.auto_stop",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"stop_before_destroy"},
+			},
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_environment" "auto_stop" {
+						project              = %d
+						name                 = "%s"
+						auto_stop_setting    = "with_action"
+
+						stop_before_destroy = true
+					}
+				`, testProject.ID, testName),
+			},
+			{
+				ResourceName:            "gitlab_project_environment.auto_stop",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"stop_before_destroy"},
+			},
+		},
+	})
+}
+
 func testAccCheckGitlabProjectEnvironmentExists(n string, env *gitlab.Environment) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
@@ -333,12 +387,17 @@ type testAccGitlabProjectEnvironmentExpectedAttributes struct {
 	ExternalURL string
 	State       string
 	Tier        string
+	Description string
 }
 
 func testAccCheckGitlabProjectEnvironmentAttributes(env *gitlab.Environment, want *testAccGitlabProjectEnvironmentExpectedAttributes) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if env.Name != want.Name {
 			return fmt.Errorf("got name %q; want %q", env.Name, want.Name)
+		}
+
+		if env.Description != want.Description {
+			return fmt.Errorf("got description %q; want %q", env.Description, want.Description)
 		}
 
 		if env.ExternalURL != want.ExternalURL {

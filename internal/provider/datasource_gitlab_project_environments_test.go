@@ -224,3 +224,36 @@ func TestAccDataProjectEnvironment_clusterAgent(t *testing.T) {
 		},
 	})
 }
+
+func TestAccDataProjectEnvironment_autoStopSetting(t *testing.T) {
+	testutil.RunIfAtLeast(t, "17.8")
+
+	project := testutil.CreateProject(t)
+	optsCreateEnvironmentOptions := gitlab.CreateEnvironmentOptions{
+		Name:            gitlab.Ptr(acctest.RandString(10)),
+		Description:     gitlab.Ptr("Very best environment"),
+		ExternalURL:     gitlab.Ptr("example.com/env"),
+		Tier:            gitlab.Ptr("other"),
+		AutoStopSetting: gitlab.Ptr("always"),
+	}
+	environment := testutil.CreateProjectEnvironment(t, project.ID, &optsCreateEnvironmentOptions)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(
+					`
+					data "gitlab_project_environments" "this" {
+					  project = "%d"
+					  name = "%s"
+					}
+					`,
+					project.ID,
+					environment.Name,
+				),
+				Check: resource.TestCheckResourceAttr("data.gitlab_project_environments.this", "environments.0.auto_stop_setting", "always"),
+			},
+		},
+	})
+}

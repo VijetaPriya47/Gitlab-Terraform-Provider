@@ -57,6 +57,8 @@ type gitlabEnvironment struct {
 	ClusterAgentID      types.Int64  `tfsdk:"cluster_agent_id"`
 	KubernetesNamespace types.String `tfsdk:"kubernetes_namespace"`
 	FluxResourcePath    types.String `tfsdk:"flux_resource_path"`
+	AutoStopAt          types.String `tfsdk:"auto_stop_at"`
+	AutoStopSetting     types.String `tfsdk:"auto_stop_setting"`
 }
 
 // Metadata returns the data source type name.
@@ -156,6 +158,14 @@ func (d *gitLabProjectEnvironmentsDataSource) Schema(_ context.Context, _ dataso
 							MarkdownDescription: "The Flux resource path to associate with this environment.",
 							Computed:            true,
 						},
+						"auto_stop_at": schema.StringAttribute{
+							MarkdownDescription: "Timestamp of when the environment is scheduled to stop, RFC3339 format.",
+							Computed:            true,
+						},
+						"auto_stop_setting": schema.StringAttribute{
+							MarkdownDescription: "The auto stop setting for the environment.",
+							Computed:            true,
+						},
 					},
 				},
 			},
@@ -225,9 +235,13 @@ func (d *gitLabProjectEnvironmentsDataSource) Read(ctx context.Context, req data
 			UpdatedAt:           types.StringValue(environment.UpdatedAt.Format(time.RFC3339)),
 			KubernetesNamespace: types.StringValue(environment.KubernetesNamespace),
 			FluxResourcePath:    types.StringValue(environment.FluxResourcePath),
+			AutoStopSetting:     types.StringValue(environment.AutoStopSetting),
 		}
 		if environment.ClusterAgent != nil {
 			e.ClusterAgentID = types.Int64Value(int64(environment.ClusterAgent.ID))
+		}
+		if environment.AutoStopAt != nil {
+			e.AutoStopAt = types.StringValue(environment.AutoStopAt.Format(time.RFC3339))
 		}
 		config.Environments = append(config.Environments, e)
 	}
