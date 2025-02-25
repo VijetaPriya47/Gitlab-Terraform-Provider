@@ -3,13 +3,13 @@
 page_title: "gitlab_group_share_group Resource - terraform-provider-gitlab"
 subcategory: ""
 description: |-
-  The gitlab_group_share_group resource allows to manage the lifecycle of group shared with another group.
+  The gitlab_group_share_group resource allows managing the lifecycle of a group shared with another group.
   Upstream API: GitLab REST API docs https://docs.gitlab.com/api/groups/#share-groups-with-groups
 ---
 
 # gitlab_group_share_group (Resource)
 
-The `gitlab_group_share_group` resource allows to manage the lifecycle of group shared with another group.
+The `gitlab_group_share_group` resource allows managing the lifecycle of a group shared with another group.
 
 **Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/groups/#share-groups-with-groups)
 
@@ -39,7 +39,7 @@ resource "gitlab_group_share_group" "test" {
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `id` (String) The ID of this resource. In the format of <group-id:share-group-id>.
 
 ## Import
 
