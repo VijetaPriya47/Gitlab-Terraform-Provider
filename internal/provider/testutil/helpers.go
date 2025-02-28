@@ -15,7 +15,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/onsi/gomega"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
@@ -1258,4 +1258,24 @@ func CreateRunnerWithOptions(t *testing.T, opts *gitlab.CreateUserRunnerOptions)
 		}
 	})
 	return runner
+}
+
+func CreateGroupAccessToken(t *testing.T, groupID int) *gitlab.GroupAccessToken {
+	groupAccessToken, _, err := TestGitlabClient.GroupAccessTokens.CreateGroupAccessToken(groupID, &gitlab.CreateGroupAccessTokenOptions{
+		Name:        gitlab.Ptr(fmt.Sprintf("acctest-%d", acctest.RandInt())),
+		Scopes:      gitlab.Ptr([]string{"read_api", "read_repository"}),
+		AccessLevel: gitlab.Ptr(gitlab.DeveloperPermissions),
+		ExpiresAt:   gitlab.Ptr(gitlab.ISOTime(time.Now().AddDate(0, 0, 7))),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() {
+		if _, err := TestGitlabClient.GroupAccessTokens.RevokeGroupAccessToken(groupID, groupAccessToken.ID); err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	return groupAccessToken
 }
