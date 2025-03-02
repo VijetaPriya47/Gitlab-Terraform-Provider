@@ -1204,7 +1204,7 @@ func CreateGroupServiceAccountsWithPrefix(t *testing.T, n int, groupID, prefix s
 
 		serviceAccountID := serviceAccounts[i].ID // Needed for closure.
 		t.Cleanup(func() {
-			if _, err := TestGitlabClient.Groups.DeleteServiceAccount(groupID, serviceAccountID); err != nil {
+			if _, err := TestGitlabClient.Groups.DeleteServiceAccount(groupID, serviceAccountID, nil); err != nil {
 				t.Fatalf("could not cleanup test service account: %v", err)
 			}
 		})

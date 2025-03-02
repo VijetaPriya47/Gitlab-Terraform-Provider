@@ -363,8 +363,12 @@ func (r *gitlabGroupVariableResource) Delete(ctx context.Context, req resource.D
 	_, err := r.client.GroupVariables.RemoveVariable(
 		group,
 		key,
+		&gitlab.RemoveGroupVariableOptions{
+			Filter: &gitlab.VariableFilter{
+				EnvironmentScope: environmentScope,
+			},
+		},
 		gitlab.WithContext(ctx),
-		utils.WithEnvironmentScopeFilter(ctx, environmentScope),
 	)
 	if err != nil {
 		if notOk, err := utils.AugmentVariableClientError(ctx, true, err); notOk {

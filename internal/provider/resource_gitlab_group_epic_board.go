@@ -260,9 +260,6 @@ func (r *gitlabGroupEpicBoardResource) Update(ctx context.Context, req resource.
 
 	boardName := data.Name.ValueString()
 
-	groupEpicBoard := &gitlab.GroupEpicBoard{}
-	groupEpicBoard.Name = boardName
-
 	labels := make([]string, len(data.Lists))
 	for i, v := range data.Lists {
 		labels[i] = fmt.Sprintf("gid://gitlab/GroupLabel/%s", v.LabelId.String())
@@ -301,7 +298,7 @@ func (r *gitlabGroupEpicBoardResource) Update(ctx context.Context, req resource.
 		return
 	}
 	if len(response.Errors) > 0 {
-		var allerr = fmt.Sprintf("From update response %v\n", response)
+		allerr := fmt.Sprintf("From update response %v\n", response)
 		for i, err := range response.Errors {
 			allerr += fmt.Sprintf("Error %d Code: %s\n", i, err)
 		}
@@ -318,6 +315,7 @@ func (r *gitlabGroupEpicBoardResource) Update(ctx context.Context, req resource.
 		return
 	}
 
+	var groupEpicBoard *gitlab.GroupEpicBoard
 	groupEpicBoard, _, err = r.client.GroupEpicBoards.GetGroupEpicBoard(groupID, EpicBoardId, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
@@ -417,7 +415,6 @@ func (r *gitlabGroupEpicBoardResource) Configure(ctx context.Context, req resour
 }
 
 func (r *gitlabGroupEpicBoardResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-
 	var data *gitlabGroupEpicBoardResourceModel
 
 	// Read Terraform plan data into the model
@@ -482,7 +479,7 @@ func (r *gitlabGroupEpicBoardResource) Create(ctx context.Context, req resource.
 		return
 	}
 	if len(response.Errors) > 0 {
-		var allerr = fmt.Sprintf("From create response %v\n", response)
+		allerr := fmt.Sprintf("From create response %v\n", response)
 		for i, err := range response.Errors {
 			allerr += fmt.Sprintf("Error %d Code: %s\n", i, err)
 		}
