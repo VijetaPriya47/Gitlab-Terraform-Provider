@@ -7,7 +7,7 @@ require (
 	github.com/golangci/golangci-lint v1.64.6
 	github.com/hashicorp/terraform-plugin-docs v0.21.0
 	golang.org/x/tools v0.30.0
-	mvdan.cc/sh/v3 v3.10.0
+	mvdan.cc/sh/v3 v3.11.0
 )
 
 require (
