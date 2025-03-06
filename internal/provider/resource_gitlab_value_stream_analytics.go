@@ -108,7 +108,7 @@ func (r *gitlabValueStreamAnalyticsResource) Schema(ctx context.Context, req res
 					stringvalidator.ConflictsWith(path.MatchRoot("group_full_path")),
 				},
 			},
-			"stages": schema.SetNestedAttribute{
+			"stages": schema.ListNestedAttribute{
 				MarkdownDescription: "Stages of the value stream",
 				Required:            true,
 				NestedObject: schema.NestedAttributeObject{

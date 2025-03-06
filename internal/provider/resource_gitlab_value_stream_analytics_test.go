@@ -547,6 +547,99 @@ func TestAcc_GitlabValueStreamAnalytics_StandingUpdate(t *testing.T) {
 	})
 }
 
+func TestAcc_GitlabValueStreamAnalytics_OrderRetention(t *testing.T) {
+	testutil.SkipIfCE(t)
+
+	testGroup := testutil.CreateGroups(t, 1)[0]
+	testLabels := testutil.CreateGroupLabels(t, testGroup.ID, 2)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAcc_GitlabGroupValueStreamAnalytics_CheckDestroy,
+		Steps: []resource.TestStep{
+			// Create Value Stream with 2 custom stages
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_value_stream_analytics" "foo" {
+						name = "test"
+						group_full_path = "%s"
+						stages = [
+							{
+								name = "First Stage"
+								custom = true
+								hidden = false
+								start_event_identifier = "ISSUE_CREATED"
+								end_event_identifier = "ISSUE_CLOSED"
+							},
+							{
+								name = "Second Stage"
+								custom = true
+								hidden = false
+								start_event_identifier = "ISSUE_LABEL_ADDED"
+								start_event_label_id = "gid://gitlab/GroupLabel/%d"
+								end_event_identifier = "ISSUE_LABEL_REMOVED"
+								end_event_label_id = "gid://gitlab/GroupLabel/%d"
+							}
+						]
+					}
+				`, testGroup.FullPath, testLabels[0].ID, testLabels[0].ID),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("gitlab_value_stream_analytics.foo", "id"),
+					resource.TestCheckResourceAttr("gitlab_value_stream_analytics.foo", "name", "test"),
+					resource.TestCheckResourceAttr("gitlab_value_stream_analytics.foo", "group_full_path", testGroup.FullPath),
+					resource.TestCheckResourceAttr("gitlab_value_stream_analytics.foo", "stages.#", "2"),
+					resource.TestCheckResourceAttr("gitlab_value_stream_analytics.foo", "stages.0.name", "First Stage"),
+					resource.TestCheckResourceAttr("gitlab_value_stream_analytics.foo", "stages.1.name", "Second Stage"),
+				),
+			},
+			{
+				ResourceName:      "gitlab_value_stream_analytics.foo",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_value_stream_analytics" "foo" {
+						name = "test"
+						group_full_path = "%s"
+						stages = [
+							{
+								name = "Second Stage"
+								custom = true
+								hidden = false
+								start_event_identifier = "ISSUE_CREATED"
+								end_event_identifier = "ISSUE_CLOSED"
+							},
+							{
+								name = "First Stage"
+								custom = true
+								hidden = false
+								start_event_identifier = "ISSUE_LABEL_ADDED"
+								start_event_label_id = "gid://gitlab/GroupLabel/%d"
+								end_event_identifier = "ISSUE_LABEL_REMOVED"
+								end_event_label_id = "gid://gitlab/GroupLabel/%d"
+							}
+						]
+					}
+				`, testGroup.FullPath, testLabels[0].ID, testLabels[0].ID),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("gitlab_value_stream_analytics.foo", "id"),
+					resource.TestCheckResourceAttr("gitlab_value_stream_analytics.foo", "name", "test"),
+					resource.TestCheckResourceAttr("gitlab_value_stream_analytics.foo", "group_full_path", testGroup.FullPath),
+					resource.TestCheckResourceAttr("gitlab_value_stream_analytics.foo", "stages.#", "2"),
+					resource.TestCheckResourceAttr("gitlab_value_stream_analytics.foo", "stages.0.name", "Second Stage"),
+					resource.TestCheckResourceAttr("gitlab_value_stream_analytics.foo", "stages.1.name", "First Stage"),
+				),
+			},
+			{
+				ResourceName:      "gitlab_value_stream_analytics.foo",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 func testAcc_GitlabProjectValueStreamAnalytics_CheckDestroy(s *terraform.State) error {
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type == "gitlab_value_stream_analytics" {
