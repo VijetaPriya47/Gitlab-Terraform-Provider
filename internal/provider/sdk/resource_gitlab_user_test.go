@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
@@ -65,6 +65,7 @@ func TestAccGitlabUser_basic(t *testing.T) {
 				ImportStateVerifyIgnore: []string{
 					"password",
 					"skip_confirmation",
+					"force_random_password",
 				},
 			},
 			// Create a user with blocked state
@@ -104,6 +105,7 @@ func TestAccGitlabUser_basic(t *testing.T) {
 				ImportStateVerifyIgnore: []string{
 					"password",
 					"skip_confirmation",
+					"force_random_password",
 				},
 			},
 			// Update the user to change the name, email, projects_limit and more
@@ -144,6 +146,7 @@ func TestAccGitlabUser_basic(t *testing.T) {
 				ImportStateVerifyIgnore: []string{
 					"password",
 					"skip_confirmation",
+					"force_random_password",
 				},
 			},
 			// Update the user to change the state to blocked
@@ -185,6 +188,7 @@ func TestAccGitlabUser_basic(t *testing.T) {
 				ImportStateVerifyIgnore: []string{
 					"password",
 					"skip_confirmation",
+					"force_random_password",
 				},
 			},
 			// Update the user to put the name back
@@ -223,6 +227,7 @@ func TestAccGitlabUser_basic(t *testing.T) {
 				ImportStateVerifyIgnore: []string{
 					"password",
 					"skip_confirmation",
+					"force_random_password",
 				},
 			},
 			// Update the user to disable skip confirmation
@@ -262,6 +267,7 @@ func TestAccGitlabUser_basic(t *testing.T) {
 				ImportStateVerifyIgnore: []string{
 					"password",
 					"skip_confirmation",
+					"force_random_password",
 				},
 			},
 			// Update the user to initial config
@@ -300,6 +306,7 @@ func TestAccGitlabUser_basic(t *testing.T) {
 				ImportStateVerifyIgnore: []string{
 					"password",
 					"skip_confirmation",
+					"force_random_password",
 				},
 			},
 			// Deactivate the user
@@ -521,6 +528,7 @@ func TestAccGitlabUser_user_skip_confirmation(t *testing.T) {
 				ImportStateVerifyIgnore: []string{
 					"password",
 					"skip_confirmation",
+					"force_random_password",
 				},
 			},
 			{
@@ -577,7 +585,7 @@ func TestAccGitlabUser_password_reset(t *testing.T) {
 				  email            = "listest%d@ssss.com"
 				}
 				  `, rInt, rInt, rInt),
-				ExpectError: regexp.MustCompile("At least one of either password or reset_password must be defined"),
+				ExpectError: regexp.MustCompile(`At least one of "password", "reset_password", or "force_random_password" must be set`),
 			},
 			// Create a user without a password
 			{
@@ -599,6 +607,7 @@ func TestAccGitlabUser_password_reset(t *testing.T) {
 					"password",
 					"reset_password",
 					"skip_confirmation",
+					"force_random_password",
 				},
 			},
 		},
@@ -652,6 +661,73 @@ func TestAccGitlabUser_external_provider(t *testing.T) {
 				}
 				  `, rInt, rInt, rInt, rInt),
 				Check: testAccCheckGitlabUserExists("gitlab_user.foo", &user),
+			},
+		},
+	})
+}
+
+func TestAccGitlabUser_validation(t *testing.T) {
+	var user gitlab.User
+	rInt := acctest.RandInt()
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabUserDestroy,
+		Steps: []resource.TestStep{
+			// Create a user with both password and force_random_password, which conflict
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_user" "foo" {
+				  name                  = "foo %d"
+				  username              = "listest%d"
+				  email                 = "listest%d@ssss.com"
+				  password              = "meowkitten"
+				  force_random_password = true
+				}
+				  `, rInt, rInt, rInt),
+				Check:       testAccCheckGitlabUserExists("gitlab_user.foo", &user),
+				ExpectError: regexp.MustCompile(`"password": conflicts with force_random_password`),
+			},
+		},
+	})
+}
+
+func TestAccGitlabUser_forceRandomPassword(t *testing.T) {
+	var user gitlab.User
+	rInt := acctest.RandInt()
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabUserDestroy,
+		Steps: []resource.TestStep{
+			// Create a user with just force_random_password
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_user" "foo" {
+					name                  = "foo %d"
+					username              = "listtest%d"
+					email                 = "listtest%d@ssss.com"
+					force_random_password = true
+					extern_uid            = "%d"
+					external_provider     = "google"
+				}
+				`, rInt, rInt, rInt, rInt),
+				Check: testAccCheckGitlabUserExists("gitlab_user.foo", &user),
+			},
+			// re-run the same config with just a plan to ensure `ForceNew` doesn't cause a destroy
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_user" "foo" {
+					name                  = "foo %d"
+					username              = "listtest%d"
+					email                 = "listtest%d@ssss.com"
+					force_random_password = true
+					extern_uid            = "%d"
+					external_provider     = "google"
+				}
+				`, rInt, rInt, rInt, rInt),
+				Check:    testAccCheckGitlabUserExists("gitlab_user.foo", &user),
+				PlanOnly: true,
 			},
 		},
 	})
