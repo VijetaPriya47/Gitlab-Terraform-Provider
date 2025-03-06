@@ -43,6 +43,7 @@ type gitlabGroupShareGroupResourceModel struct {
 	ShareGroupID types.Int64  `tfsdk:"share_group_id"`
 	GroupAccess  types.String `tfsdk:"group_access"`
 	ExpiresAt    types.String `tfsdk:"expires_at"`
+	MemberRoleID types.Int64  `tfsdk:"member_role_id"`
 }
 
 func (r *gitlabGroupShareGroupResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -81,6 +82,12 @@ func (r *gitlabGroupShareGroupResource) Schema(ctx context.Context, req resource
 				Optional:            true,
 				PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 			},
+			"member_role_id": schema.Int64Attribute{
+				MarkdownDescription: "The ID of a custom member role. Only available for Ultimate instances.",
+				Optional:            true,
+				Computed:            true,
+				PlanModifiers:       []planmodifier.Int64{int64planmodifier.RequiresReplace()},
+			},
 		},
 	}
 }
@@ -110,16 +117,28 @@ func (r *gitlabGroupShareGroupResource) Create(ctx context.Context, req resource
 	shareGroupID := int(data.ShareGroupID.ValueInt64())
 	groupAccess := api.AccessLevelNameToValue[data.GroupAccess.ValueString()]
 
-	options := &gitlab.ShareWithGroupOptions{
+	options := &gitlab.ShareGroupWithGroupOptions{
 		GroupID:     &shareGroupID,
 		GroupAccess: &groupAccess,
 	}
 
 	if !data.ExpiresAt.IsNull() && !data.ExpiresAt.IsUnknown() {
-		options.ExpiresAt = gitlab.Ptr(data.ExpiresAt.ValueString())
+		expiresAt, err := gitlab.ParseISOTime(data.ExpiresAt.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Error parsing expiry date",
+				fmt.Sprintf("Could not parse expiry date %s: %s", data.ExpiresAt.ValueString(), err),
+			)
+			return
+		}
+		options.ExpiresAt = &expiresAt
 	}
 
-	_, _, err := r.client.GroupMembers.ShareWithGroup(groupID, options, gitlab.WithContext(ctx))
+	if !data.MemberRoleID.IsNull() && !data.MemberRoleID.IsUnknown() {
+		options.MemberRoleID = gitlab.Ptr(int(data.MemberRoleID.ValueInt64()))
+	}
+
+	group, _, err := r.client.Groups.ShareGroupWithGroup(groupID, options, gitlab.WithContext(ctx))
 	if err != nil {
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to create group share: %s", err.Error()))
 		return
@@ -127,12 +146,29 @@ func (r *gitlabGroupShareGroupResource) Create(ctx context.Context, req resource
 
 	shareGroupIDString := strconv.Itoa(shareGroupID)
 	data.ID = types.StringValue(utils.BuildTwoPartID(&groupID, &shareGroupIDString))
-	data.GroupID = types.StringValue(groupID)
-	data.ShareGroupID = types.Int64Value(int64(shareGroupID))
-	data.GroupAccess = types.StringValue(api.AccessLevelValueToName[groupAccess])
-	if !data.ExpiresAt.IsNull() && !data.ExpiresAt.IsUnknown() {
-		data.ExpiresAt = types.String(data.ExpiresAt)
+
+	for _, sharedGroup := range group.SharedWithGroups {
+		if shareGroupID == sharedGroup.GroupID {
+			convertedAccessLevel := gitlab.AccessLevelValue(sharedGroup.GroupAccessLevel)
+			data.GroupID = types.StringValue(groupID)
+			data.ShareGroupID = types.Int64Value(int64(shareGroupID))
+			data.GroupAccess = types.StringValue(api.AccessLevelValueToName[convertedAccessLevel])
+
+			if sharedGroup.ExpiresAt == nil {
+				data.ExpiresAt = types.StringNull()
+			} else {
+				data.ExpiresAt = types.StringValue(sharedGroup.ExpiresAt.String())
+			}
+			if sharedGroup.MemberRoleID == 0 {
+				data.MemberRoleID = types.Int64Null()
+			} else {
+				data.MemberRoleID = types.Int64Value(int64(sharedGroup.MemberRoleID))
+			}
+			resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+			break
+		}
 	}
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -173,6 +209,11 @@ func (r *gitlabGroupShareGroupResource) Read(ctx context.Context, req resource.R
 				data.ExpiresAt = types.StringNull()
 			} else {
 				data.ExpiresAt = types.StringValue(sharedGroup.ExpiresAt.String())
+			}
+			if sharedGroup.MemberRoleID == 0 {
+				data.MemberRoleID = types.Int64Null()
+			} else {
+				data.MemberRoleID = types.Int64Value(int64(sharedGroup.MemberRoleID))
 			}
 			resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 			return
