@@ -350,3 +350,57 @@ func TestAccGitlabGroupMembership_migrateFromSDKToFramework(t *testing.T) {
 		},
 	})
 }
+
+func TestAccGitlabGroupMembership_No404WhenRemovedOutsideTF(t *testing.T) {
+	var groupMember gitlab.GroupMember
+	group := testutil.CreateGroups(t, 1)[0]
+	user := testutil.CreateUsers(t, 1)[0]
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabGroupMembershipDestroy,
+		Steps: []resource.TestStep{
+			// Assign member to the group as a developer
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group_membership" "foo" {
+  				    group_id 		= "%d"
+  				    user_id 		= "%d"
+  				    access_level 	= "developer"
+				}
+				`, group.ID, user.ID),
+				Check: resource.ComposeTestCheckFunc(testAccCheckGitlabGroupMembershipExists("gitlab_group_membership.foo", &groupMember), testAccCheckGitlabGroupMembershipAttributes(&groupMember, &testAccGitlabGroupMembershipExpectedAttributes{
+					accessLevel: "developer",
+				})),
+			},
+			{
+				ResourceName:      "gitlab_group_membership.foo",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Remove the user from the group outside of terraform and verify we don't get a 404
+			{
+				PreConfig: func() {
+					if _, err := testutil.TestGitlabClient.GroupMembers.RemoveGroupMember(group.ID, user.ID, nil, nil); err != nil {
+						t.Errorf("Error removing group member from test group: %s", err)
+					}
+				},
+				Config: fmt.Sprintf(`
+				resource "gitlab_group_membership" "foo" {
+  				    group_id 		= "%d"
+  				    user_id 		= "%d"
+  				    access_level 	= "developer"
+				}
+				`, group.ID, user.ID),
+				Check: resource.ComposeTestCheckFunc(testAccCheckGitlabGroupMembershipExists("gitlab_group_membership.foo", &groupMember), testAccCheckGitlabGroupMembershipAttributes(&groupMember, &testAccGitlabGroupMembershipExpectedAttributes{
+					accessLevel: "developer",
+				})),
+			},
+			{
+				ResourceName:      "gitlab_group_membership.foo",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}

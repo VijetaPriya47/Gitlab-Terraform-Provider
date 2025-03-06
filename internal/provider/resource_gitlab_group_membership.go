@@ -190,7 +190,8 @@ func (d *gitlabGroupMembershipResource) Read(ctx context.Context, req resource.R
 	if err != nil {
 		if api.Is404(err) {
 			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab group membership for %s not found so removing from state", id))
-			data.ID = types.StringNull()
+			resp.State.RemoveResource(ctx)
+			return
 		}
 		resp.Diagnostics.Append(diag.NewErrorDiagnostic("Error reading GitLab group membership", fmt.Sprintf("Error reading GitLab group membership: %v", err)))
 		return
