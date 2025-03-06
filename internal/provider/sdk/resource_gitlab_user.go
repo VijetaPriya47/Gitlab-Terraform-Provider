@@ -52,6 +52,18 @@ var _ = registerResource("gitlab_user", func() *schema.Resource {
 				Optional:    true,
 				Sensitive:   true,
 				ForceNew:    true,
+				ConflictsWith: []string{
+					"force_random_password",
+				},
+			},
+			"force_random_password": {
+				Description: "Set user password to a random value",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				ForceNew:    true,
+				ConflictsWith: []string{
+					"password",
+				},
 			},
 			"email": {
 				Description: "The e-mail address of the user.",
@@ -165,17 +177,21 @@ func resourceGitlabUserSetToState(d *schema.ResourceData, user *gitlab.User) {
 func resourceGitlabUserCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	options := &gitlab.CreateUserOptions{
-		Email:            gitlab.Ptr(d.Get("email").(string)),
-		Password:         gitlab.Ptr(d.Get("password").(string)),
-		Username:         gitlab.Ptr(d.Get("username").(string)),
-		Name:             gitlab.Ptr(d.Get("name").(string)),
-		ProjectsLimit:    gitlab.Ptr(d.Get("projects_limit").(int)),
-		Admin:            gitlab.Ptr(d.Get("is_admin").(bool)),
-		CanCreateGroup:   gitlab.Ptr(d.Get("can_create_group").(bool)),
-		SkipConfirmation: gitlab.Ptr(d.Get("skip_confirmation").(bool)),
-		External:         gitlab.Ptr(d.Get("is_external").(bool)),
-		ResetPassword:    gitlab.Ptr(d.Get("reset_password").(bool)),
-		Note:             gitlab.Ptr(d.Get("note").(string)),
+		Email:               gitlab.Ptr(d.Get("email").(string)),
+		Username:            gitlab.Ptr(d.Get("username").(string)),
+		Name:                gitlab.Ptr(d.Get("name").(string)),
+		ProjectsLimit:       gitlab.Ptr(d.Get("projects_limit").(int)),
+		Admin:               gitlab.Ptr(d.Get("is_admin").(bool)),
+		CanCreateGroup:      gitlab.Ptr(d.Get("can_create_group").(bool)),
+		SkipConfirmation:    gitlab.Ptr(d.Get("skip_confirmation").(bool)),
+		External:            gitlab.Ptr(d.Get("is_external").(bool)),
+		ResetPassword:       gitlab.Ptr(d.Get("reset_password").(bool)),
+		ForceRandomPassword: gitlab.Ptr(d.Get("force_random_password").(bool)),
+		Note:                gitlab.Ptr(d.Get("note").(string)),
+	}
+
+	if len(d.Get("password").(string)) != 0 {
+		options.Password = gitlab.Ptr(d.Get("password").(string))
 	}
 
 	if len(d.Get("extern_uid").(string)) != 0 {
@@ -186,8 +202,11 @@ func resourceGitlabUserCreate(ctx context.Context, d *schema.ResourceData, meta 
 		options.Provider = gitlab.Ptr(d.Get("external_provider").(string))
 	}
 
-	if *options.Password == "" && !*options.ResetPassword {
-		return diag.Errorf("At least one of either password or reset_password must be defined")
+	// Validate the options set
+	if (options.Password == nil || *options.Password == "") &&
+		(options.ResetPassword == nil || !*options.ResetPassword) &&
+		(options.ForceRandomPassword == nil || !*options.ForceRandomPassword) {
+		return diag.Errorf(`At least one of "password", "reset_password", or "force_random_password" must be set`)
 	}
 
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab user %q", *options.Username))
