@@ -10,6 +10,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
@@ -60,6 +61,63 @@ func TestAccGitlabGroupShareGroup_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("gitlab_group_share_group.test", "group_id", fmt.Sprintf("%d", mainGroup.ID)),
 					resource.TestCheckResourceAttr("gitlab_group_share_group.test", "share_group_id", fmt.Sprintf("%d", sharedGroup.ID)),
 					resource.TestCheckResourceAttr("gitlab_group_share_group.test", "group_access", "reporter"),
+				),
+			},
+			// Verify Import
+			{
+				ResourceName:      "gitlab_group_share_group.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccGitlabGroupShareGroup_customRoles(t *testing.T) {
+	// Group level custom roles don't work on self managed, so we can't test them without a SaaS project.
+	// See https://gitlab.com/gitlab-org/gitlab/-/issues/439284 for more details
+	t.Skip()
+
+	testutil.SkipIfCE(t)
+	testutil.RunIfAtLeast(t, "17.9")
+
+	groups := testutil.CreateGroups(t, 2)
+	mainGroup := groups[0]
+	sharedGroup := groups[1]
+
+	// Create a custom role on that group - we don't need to clean this up, since it's bound to the group
+	// which will be deleted when the test finishes.
+	customRole, _, err := testutil.TestGitlabClient.MemberRolesService.CreateMemberRole(mainGroup.ID, &gitlab.CreateMemberRoleOptions{
+		Name:              gitlab.Ptr("test-role"),
+		BaseAccessLevel:   gitlab.Ptr(gitlab.MaintainerPermissions),
+		ReadVulnerability: gitlab.Ptr(true),
+	})
+	if err != nil {
+		t.Fatalf("Failed to create test custom role. Error: %v", err)
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabGroupShareGroupDestroy,
+		Steps: []resource.TestStep{
+			// Share a new group with another group
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_group_share_group" "test" {
+						group_id       = %d
+						share_group_id = %d
+						group_access   = "maintainer"
+						expires_at     = "2099-01-01"
+						member_role_id = %d
+					}
+				`, mainGroup.ID, sharedGroup.ID, customRole.ID),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_group_share_group.test", "id", fmt.Sprintf("%d:%d", mainGroup.ID, sharedGroup.ID)),
+					resource.TestCheckResourceAttr("gitlab_group_share_group.test", "group_id", fmt.Sprintf("%d", mainGroup.ID)),
+					resource.TestCheckResourceAttr("gitlab_group_share_group.test", "share_group_id", fmt.Sprintf("%d", sharedGroup.ID)),
+					resource.TestCheckResourceAttr("gitlab_group_share_group.test", "group_access", "guest"),
+					resource.TestCheckResourceAttr("gitlab_group_share_group.test", "expires_at", "2099-01-01"),
+					resource.TestCheckResourceAttr("gitlab_group_share_group.test", "member_role_id", fmt.Sprintf("%d", customRole.ID)),
 				),
 			},
 			// Verify Import
