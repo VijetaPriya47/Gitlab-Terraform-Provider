@@ -43,6 +43,11 @@ var _ = registerDataSource("gitlab_users", func() *schema.Resource {
 				Default:      "desc",
 				ValidateFunc: validation.StringInSlice([]string{"desc", "asc"}, true),
 			},
+			"username": {
+				Description: "Get a single user with a specific username.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
 			"search": {
 				Description: "Search users by username, name or email.",
 				Type:        schema.TypeString,
@@ -50,6 +55,11 @@ var _ = registerDataSource("gitlab_users", func() *schema.Resource {
 			},
 			"active": {
 				Description: "Filter users that are active.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
+			"external": {
+				Description: "Filters only external users.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 			},
@@ -76,6 +86,21 @@ var _ = registerDataSource("gitlab_users", func() *schema.Resource {
 			"created_after": {
 				Description: "Search for users created after a specific date. (Requires administrator privileges)",
 				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"exclude_external": {
+				Description: "Filters only non external users.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
+			"exclude_internal": {
+				Description: "Filters only non internal users.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
+			"without_project_bots": {
+				Description: "Filters user without project bots.",
+				Type:        schema.TypeBool,
 				Optional:    true,
 			},
 			"users": {
@@ -322,6 +347,12 @@ func expandGitlabUsersOptions(d *schema.ResourceData) (*gitlab.ListUsersOptions,
 		optionsHash.WriteString(sort)
 	}
 	optionsHash.WriteString(",")
+	if data, ok := d.GetOk("username"); ok {
+		username := data.(string)
+		listUsersOptions.Username = &username
+		optionsHash.WriteString(username)
+	}
+	optionsHash.WriteString(",")
 	if data, ok := d.GetOk("search"); ok {
 		search := data.(string)
 		listUsersOptions.Search = &search
@@ -332,6 +363,12 @@ func expandGitlabUsersOptions(d *schema.ResourceData) (*gitlab.ListUsersOptions,
 		active := data.(bool)
 		listUsersOptions.Active = &active
 		optionsHash.WriteString(strconv.FormatBool(active))
+	}
+	optionsHash.WriteString(",")
+	if data, ok := d.GetOk("external"); ok {
+		external := data.(bool)
+		listUsersOptions.External = &external
+		optionsHash.WriteString(strconv.FormatBool(external))
 	}
 	optionsHash.WriteString(",")
 	if data, ok := d.GetOk("blocked"); ok {
@@ -370,6 +407,24 @@ func expandGitlabUsersOptions(d *schema.ResourceData) (*gitlab.ListUsersOptions,
 		}
 		listUsersOptions.CreatedAfter = &date
 		optionsHash.WriteString(createdAfter)
+	}
+	optionsHash.WriteString(",")
+	if data, ok := d.GetOk("exclude_external"); ok {
+		excludeExternal := data.(bool)
+		listUsersOptions.ExcludeExternal = &excludeExternal
+		optionsHash.WriteString(strconv.FormatBool(excludeExternal))
+	}
+	optionsHash.WriteString(",")
+	if data, ok := d.GetOk("exclude_internal"); ok {
+		excludeInternal := data.(bool)
+		listUsersOptions.ExcludeInternal = &excludeInternal
+		optionsHash.WriteString(strconv.FormatBool(excludeInternal))
+	}
+	optionsHash.WriteString(",")
+	if data, ok := d.GetOk("without_project_bots"); ok {
+		withoutProjectBots := data.(bool)
+		listUsersOptions.WithoutProjectBots = &withoutProjectBots
+		optionsHash.WriteString(strconv.FormatBool(withoutProjectBots))
 	}
 
 	id := schema.HashString(optionsHash.String())

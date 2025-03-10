@@ -19,6 +19,7 @@ func TestAccDataSourceGitlabUsers_basic(t *testing.T) {
 	rInt := acctest.RandInt()
 	testutil.CreateUsersWithPrefix(t, 12, fmt.Sprintf("ds-%d-acctest-a", rInt))
 	testUsersGroupB := testutil.CreateUsersWithPrefix(t, 12, fmt.Sprintf("ds-%d-acctest-b", rInt))
+	testUsername := testUsersGroupB[0].Username
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
@@ -49,6 +50,17 @@ func TestAccDataSourceGitlabUsers_basic(t *testing.T) {
 					}
 				`, rInt),
 				Check: resource.TestCheckResourceAttr("data.gitlab_users.test", "users.#", fmt.Sprintf("%d", len(testUsersGroupB))),
+			},
+			{
+				Config: fmt.Sprintf(`
+					data "gitlab_users" "test" {
+						username = "%s"
+					}
+				`, testUsername),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("data.gitlab_users.test", "users.#", "1"),
+					resource.TestCheckResourceAttr("data.gitlab_users.test", "users.0.username", testUsername),
+				),
 			},
 		},
 	})
