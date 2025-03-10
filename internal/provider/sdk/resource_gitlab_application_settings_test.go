@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
@@ -35,7 +35,6 @@ func init() {
 }
 
 func TestAccGitlabApplicationSettings_basic(t *testing.T) {
-
 	// lintignore:AT001
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
@@ -62,7 +61,6 @@ func TestAccGitlabApplicationSettings_basic(t *testing.T) {
 }
 
 func TestAccGitlabApplicationSettings_branchProtectionDefaults(t *testing.T) {
-
 	// lintignore:AT001
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
@@ -87,7 +85,6 @@ func TestAccGitlabApplicationSettings_branchProtectionDefaults(t *testing.T) {
 }
 
 func TestAccGitlabApplicationSettings_testCanCreateGroup(t *testing.T) {
-
 	// lintignore:AT001
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
@@ -112,8 +109,33 @@ func TestAccGitlabApplicationSettings_testCanCreateGroup(t *testing.T) {
 	})
 }
 
-func TestAccGitlabApplicationSettings_testNullGitProtocol(t *testing.T) {
+func TestAccGitlabApplicationSettings_testLockMembershipsToLDAP(t *testing.T) {
+	testutil.SkipIfCE(t)
+	// lintignore:AT001
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+					resource "gitlab_application_settings" "this" {
+						lock_memberships_to_ldap = true
+					}
+				`,
+				Check: resource.TestCheckResourceAttr("gitlab_application_settings.this", "lock_memberships_to_ldap", "true"),
+			},
+			{
+				Config: `
+					resource "gitlab_application_settings" "this" {
+						lock_memberships_to_ldap = false
+					}
+				`,
+				Check: resource.TestCheckResourceAttr("gitlab_application_settings.this", "lock_memberships_to_ldap", "false"),
+			},
+		},
+	})
+}
 
+func TestAccGitlabApplicationSettings_testNullGitProtocol(t *testing.T) {
 	// lintignore:AT001
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
@@ -159,7 +181,6 @@ func TestAccGitlabApplicationSettings_testNullGitProtocol(t *testing.T) {
 }
 
 func TestAccGitlabApplicationSettings_testConflicts(t *testing.T) {
-
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
 		CheckDestroy:             testAccGitlabApplicationSettingsDestroy,
@@ -217,7 +238,6 @@ func TestAccGitlabApplicationSettings_testConflicts(t *testing.T) {
 }
 
 func TestAccGitlabApplicationSettings_testState(t *testing.T) {
-
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
 		CheckDestroy:             testAccGitlabApplicationSettingsDestroy,
@@ -278,7 +298,6 @@ func TestAccGitlabApplicationSettings_elasticSearchSettings(t *testing.T) {
 }
 
 func TestAccGitlabApplicationSettings_testMinimumPasswordLength(t *testing.T) {
-
 	// lintignore:AT001
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,

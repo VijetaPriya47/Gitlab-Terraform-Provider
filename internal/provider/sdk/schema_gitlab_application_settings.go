@@ -1257,6 +1257,13 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 
+		"lock_memberships_to_ldap": {
+			Description: "Set to true to lock all memberships to LDAP. Premium and Ultimate only.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
+
 		"lock_duo_features_enabled": {
 			Description: "Indicates whether the GitLab Duo features enabled setting is enforced for all subgroups. Self-managed, Premium and Ultimate only.",
 			Type:        schema.TypeBool,
@@ -2466,6 +2473,7 @@ func gitlabApplicationSettingsToStateMap(settings *api.Settings) map[string]inte
 	stateMap["jira_connect_public_key_storage_enabled"] = settings.JiraConnectPublicKeyStorageEnabled
 	stateMap["keep_latest_artifact"] = settings.KeepLatestArtifact
 	stateMap["local_markdown_version"] = settings.LocalMarkdownVersion
+	stateMap["lock_memberships_to_ldap"] = settings.LockMembershipsToLDAP
 	stateMap["lock_duo_features_enabled"] = settings.LockDuoFeaturesEnabled
 	stateMap["mailgun_signing_key"] = settings.MailgunSigningKey
 	stateMap["mailgun_events_enabled"] = settings.MailgunEventsEnabled
@@ -3266,6 +3274,10 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 
 	if d.HasChange("local_markdown_version") {
 		options.LocalMarkdownVersion = gitlab.Ptr(d.Get("local_markdown_version").(int))
+	}
+
+	if d.HasChange("lock_memberships_to_ldap") {
+		options.LockMembershipsToLDAP = gitlab.Ptr(d.Get("lock_memberships_to_ldap").(bool))
 	}
 
 	if d.HasChange("mailgun_signing_key") {
