@@ -460,9 +460,16 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 		Optional:    true,
 	},
 	"archive_on_destroy": {
-		Description: "Set to `true` to archive the project instead of deleting on destroy. If set to `true` it will entire omit the `DELETE` operation.",
-		Type:        schema.TypeBool,
-		Optional:    true,
+		Description:   "Set to `true` to archive the project instead of deleting on destroy. If set to `true` it will entire omit the `DELETE` operation.",
+		Type:          schema.TypeBool,
+		Optional:      true,
+		ConflictsWith: []string{"permanently_delete_on_destroy"},
+	},
+	"permanently_delete_on_destroy": {
+		Description:   "Set to `true` to immediately permanently delete the project instead of scheduling a delete for Premium and Ultimate tiers.",
+		Type:          schema.TypeBool,
+		Optional:      true,
+		ConflictsWith: []string{"archive_on_destroy"},
 	},
 	"ci_forward_deployment_enabled": {
 		Description: "When a new deployment job starts, skip older deployment jobs that are still pending.",
@@ -1720,7 +1727,18 @@ func resourceGitlabProjectDelete(ctx context.Context, d *schema.ResourceData, me
 
 	if !d.Get("archive_on_destroy").(bool) {
 		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Delete gitlab project %s", d.Id()))
-		_, err := client.Projects.DeleteProject(d.Id(), nil, gitlab.WithContext(ctx))
+
+		var options gitlab.DeleteProjectOptions
+		if d.Get("permanently_delete_on_destroy").(bool) {
+			options = gitlab.DeleteProjectOptions{
+				PermanentlyRemove: gitlab.Ptr(true),
+			}
+			if v, ok := d.GetOk("path_with_namespace"); ok {
+				options.FullPath = gitlab.Ptr(v.(string))
+			}
+		}
+
+		_, err := client.Projects.DeleteProject(d.Id(), &options, gitlab.WithContext(ctx))
 		if err != nil {
 			return diag.FromErr(err)
 		}

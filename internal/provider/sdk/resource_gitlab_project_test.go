@@ -1101,6 +1101,33 @@ func TestAccGitlabProject_initializeWithoutReadme(t *testing.T) {
 	})
 }
 
+func TestAccGitlabProject_permanentlyDeleteOnDestroy(t *testing.T) {
+	// Permanent deletion is only available in premium and ultimate tiers.
+	testutil.SkipIfCE(t)
+	rInt := acctest.RandInt()
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabProjectDeletedOnDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project" "foo" {
+				  name                          = "foo-%d"
+				  path                          = "foo.%d"
+				  description                   = "Terraform acceptance tests"
+				  permanently_delete_on_destroy = true
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				`, rInt, rInt),
+			},
+		},
+	})
+}
+
 func TestAccGitlabProject_archiveOnDestroy(t *testing.T) {
 	rInt := acctest.RandInt()
 
@@ -3306,6 +3333,25 @@ func testAccCheckGitlabProjectDestroy(s *terraform.State) error {
 				if gotRepo.MarkedForDeletionAt == nil {
 					return fmt.Errorf("Repository still exists")
 				}
+			}
+		}
+		if resp.StatusCode != 404 {
+			return err
+		}
+		return nil
+	}
+	return nil
+}
+
+func testAccCheckGitlabProjectDeletedOnDestroy(s *terraform.State) error {
+	for _, rs := range s.RootModule().Resources {
+		if rs.Type != "gitlab_project" {
+			continue
+		}
+		gotRepo, resp, err := testutil.TestGitlabClient.Projects.GetProject(rs.Primary.ID, nil)
+		if err == nil {
+			if gotRepo != nil && fmt.Sprintf("%d", gotRepo.ID) == rs.Primary.ID {
+				return fmt.Errorf("Repository still exists")
 			}
 		}
 		if resp.StatusCode != 404 {
