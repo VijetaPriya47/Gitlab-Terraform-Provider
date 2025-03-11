@@ -1,6 +1,8 @@
 resource "gitlab_group_hook" "example" {
   group                 = "example/hooked"
   url                   = "https://example.com/hook/example"
+  name                  = "Example"
+  description           = "Example Group Webhook"
   merge_requests_events = true
 }
 
@@ -8,6 +10,8 @@ resource "gitlab_group_hook" "example" {
 resource "gitlab_group_hook" "all_attributes" {
   group                      = 1
   url                        = "http://example.com"
+  name                       = "Example"
+  description                = "Example Group Webhook"
   token                      = "supersecret"
   enable_ssl_verification    = false
   push_events                = true
@@ -24,6 +28,8 @@ resource "gitlab_group_hook" "all_attributes" {
   deployment_events          = true
   releases_events            = true
   subgroup_events            = true
+  feature_flag_events        = true
+  branch_filter_strategy     = "wildcard"
 }
 
 # Using Custom Headers

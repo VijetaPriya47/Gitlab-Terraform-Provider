@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"strconv"
 
@@ -39,11 +40,13 @@ func NewGitLabGroupHookResource() resource.Resource {
 type gitlabGroupHookResourceModel struct {
 	ID types.String `tfsdk:"id"`
 
-	Group   types.String `tfsdk:"group"`
-	GroupID types.Int64  `tfsdk:"group_id"`
-	HookID  types.Int64  `tfsdk:"hook_id"`
-	URL     types.String `tfsdk:"url"`
-	Token   types.String `tfsdk:"token"`
+	Group       types.String `tfsdk:"group"`
+	GroupID     types.Int64  `tfsdk:"group_id"`
+	HookID      types.Int64  `tfsdk:"hook_id"`
+	URL         types.String `tfsdk:"url"`
+	Token       types.String `tfsdk:"token"`
+	Name        types.String `tfsdk:"name"`
+	Description types.String `tfsdk:"description"`
 
 	PushEvents               types.Bool   `tfsdk:"push_events"`
 	PushEventsBranchFilter   types.String `tfsdk:"push_events_branch_filter"`
@@ -59,10 +62,12 @@ type gitlabGroupHookResourceModel struct {
 	DeploymentEvents         types.Bool   `tfsdk:"deployment_events"`
 	ReleasesEvents           types.Bool   `tfsdk:"releases_events"`
 	SubGroupEvents           types.Bool   `tfsdk:"subgroup_events"`
+	FeatureFlagEvents        types.Bool   `tfsdk:"feature_flag_events"`
 
 	EnableSSLVerification types.Bool                     `tfsdk:"enable_ssl_verification"`
 	CustomWebhookTemplate types.String                   `tfsdk:"custom_webhook_template"`
 	CustomHeaders         []*gitlabHookCustomHeaderModel `tfsdk:"custom_headers"`
+	BranchFilterStrategy  types.String                   `tfsdk:"branch_filter_strategy"`
 }
 
 type gitlabHookCustomHeaderModel struct {
@@ -127,6 +132,22 @@ func (r *gitlabGroupHookResource) Create(ctx context.Context, req resource.Creat
 
 	if !data.Token.IsNull() {
 		options.Token = data.Token.ValueStringPointer()
+	}
+
+	if !data.Name.IsNull() {
+		options.Name = data.Name.ValueStringPointer()
+	}
+
+	if !data.Description.IsNull() {
+		options.Description = data.Description.ValueStringPointer()
+	}
+
+	if !data.FeatureFlagEvents.IsNull() {
+		options.FeatureFlagEvents = data.FeatureFlagEvents.ValueBoolPointer()
+	}
+
+	if !data.BranchFilterStrategy.IsNull() {
+		options.BranchFilterStrategy = data.BranchFilterStrategy.ValueStringPointer()
 	}
 
 	if len(data.CustomHeaders) > 0 {
@@ -234,6 +255,22 @@ func (r *gitlabGroupHookResource) Update(ctx context.Context, req resource.Updat
 		options.Token = data.Token.ValueStringPointer()
 	}
 
+	if !data.Name.IsNull() {
+		options.Name = data.Name.ValueStringPointer()
+	}
+
+	if !data.Description.IsNull() {
+		options.Description = data.Description.ValueStringPointer()
+	}
+
+	if !data.FeatureFlagEvents.IsNull() {
+		options.FeatureFlagEvents = data.FeatureFlagEvents.ValueBoolPointer()
+	}
+
+	if !data.BranchFilterStrategy.IsNull() {
+		options.BranchFilterStrategy = data.BranchFilterStrategy.ValueStringPointer()
+	}
+
 	if len(data.CustomHeaders) > 0 {
 		headers := make([]*gitlab.HookCustomHeader, 0, len(data.CustomHeaders))
 		for _, header := range data.CustomHeaders {
@@ -286,14 +323,16 @@ func (r *gitlabGroupHookResource) Delete(ctx context.Context, req resource.Delet
 // Retrieve the attributes for the schema. Separated out from the rest of the schema
 // so that the migration can refer to it more easily
 func (d *gitlabGroupHookResource) getSchema() schema.Schema {
+	allowedBranchFilterStrategies := []string{"wildcard", "regex", "all_branches"}
+
 	return schema.Schema{
 		Version: 0,
 		MarkdownDescription: `The ` + "`" + `gitlab_group_hook` + "`" + ` resource allows to manage the lifecycle of a group hook.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/groups/#hooks)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/group_webhooks/)`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				MarkdownDescription: `The id of the group hook. In the format of "group:hook_id"`,
+				MarkdownDescription: "The id of the group hook. In the format of `group:hook_id`",
 				Computed:            true,
 			},
 			"group": schema.StringAttribute{
@@ -326,6 +365,16 @@ func (d *gitlabGroupHookResource) getSchema() schema.Schema {
 				Optional:            true,
 				Computed:            true,
 				Sensitive:           true,
+			},
+			"name": schema.StringAttribute{
+				MarkdownDescription: "Name of the group webhook.",
+				Optional:            true,
+				Computed:            true,
+			},
+			"description": schema.StringAttribute{
+				MarkdownDescription: "Description of the group webhook.",
+				Optional:            true,
+				Computed:            true,
 			},
 			"push_events": schema.BoolAttribute{
 				Description: "Invoke the hook for push events.",
@@ -410,11 +459,23 @@ func (d *gitlabGroupHookResource) getSchema() schema.Schema {
 				Computed:    true,
 				Default:     booldefault.StaticBool(false),
 			},
+			"feature_flag_events": schema.BoolAttribute{
+				Description: "Invoke the hook for feature flag events.",
+				Optional:    true,
+				Computed:    true,
+				Default:     booldefault.StaticBool(false),
+			},
 			"enable_ssl_verification": schema.BoolAttribute{
 				Description: "Enable SSL verification when invoking the hook.",
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(true),
+			},
+			"branch_filter_strategy": schema.StringAttribute{
+				MarkdownDescription: fmt.Sprintf("Filter push events by branch. Valid values are: %s.", utils.RenderValueListForDocs(allowedBranchFilterStrategies)),
+				Optional:            true,
+				Computed:            true,
+				Validators:          []validator.String{stringvalidator.OneOf(allowedBranchFilterStrategies...)},
 			},
 			"custom_webhook_template": schema.StringAttribute{
 				Description: "Custom webhook template.",
@@ -448,6 +509,8 @@ func (d *gitlabGroupHookResourceModel) modelToStateModel(a *gitlab.GroupHook) {
 	d.URL = types.StringValue(a.URL)
 	d.GroupID = types.Int64Value(int64(a.GroupID))
 	d.HookID = types.Int64Value(int64(a.ID))
+	d.Name = types.StringValue(a.Name)
+	d.Description = types.StringValue(a.Description)
 
 	d.PushEvents = types.BoolValue(a.PushEvents)
 	d.PushEventsBranchFilter = types.StringValue(a.PushEventsBranchFilter)
@@ -466,6 +529,8 @@ func (d *gitlabGroupHookResourceModel) modelToStateModel(a *gitlab.GroupHook) {
 	d.SubGroupEvents = types.BoolValue(a.SubGroupEvents)
 	d.EnableSSLVerification = types.BoolValue(a.EnableSSLVerification)
 	d.CustomWebhookTemplate = types.StringValue(a.CustomWebhookTemplate)
+	d.FeatureFlagEvents = types.BoolValue(a.FeatureFlagEvents)
+	d.BranchFilterStrategy = types.StringValue(a.BranchFilterStrategy)
 
 	if len(a.CustomHeaders) > 0 || len(d.CustomHeaders) > 0 {
 		// create a map of key/value data from state currently, so we don't overwrite
