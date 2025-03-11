@@ -29,9 +29,31 @@ func TestAccGitlabGroupHook_basic(t *testing.T) {
 				Config: fmt.Sprintf(`
 					resource "gitlab_group_hook" "this" {
 						group = "%s"
-						url = "http://example.com"
+						url   = "http://example.com"
 					}
 				`, testGroup.FullPath),
+			},
+			// Verify Import
+			{
+				ResourceName:            "gitlab_group_hook.this",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"token"},
+			},
+			// Update group hook to set name and description
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_group_hook" "this" {
+						group       = "%s"
+						url         = "http://example.com"
+						name        = "example"
+						description = "Example description"
+					}
+				`, testGroup.FullPath),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_group_hook.this", "name", "example"),
+					resource.TestCheckResourceAttr("gitlab_group_hook.this", "description", "Example description"),
+				),
 			},
 			// Verify Import
 			{
@@ -44,8 +66,10 @@ func TestAccGitlabGroupHook_basic(t *testing.T) {
 			{
 				Config: fmt.Sprintf(`
 					resource "gitlab_group_hook" "this" {
-						group = "%s"
-						url = "http://example.com"
+						group       = "%s"
+						url         = "http://example.com"
+						name        = "example"
+						description = "Example description"
 
 						token                      = "supersecret"
 						enable_ssl_verification    = false
@@ -63,6 +87,8 @@ func TestAccGitlabGroupHook_basic(t *testing.T) {
 						deployment_events          = true
 						releases_events            = true
 						subgroup_events            = true
+						feature_flag_events        = true
+						branch_filter_strategy     = "wildcard"
 					}
 				`, testGroup.FullPath),
 			},
@@ -78,7 +104,7 @@ func TestAccGitlabGroupHook_basic(t *testing.T) {
 				Config: fmt.Sprintf(`
 					resource "gitlab_group_hook" "this" {
 						group = "%s"
-						url = "http://example.com"
+						url   = "http://example.com"
 					}
 				`, testGroup.FullPath),
 			},
@@ -93,8 +119,10 @@ func TestAccGitlabGroupHook_basic(t *testing.T) {
 			{
 				Config: fmt.Sprintf(`
 				resource "gitlab_group_hook" "this" {
-					group = "%s"
-					url = "http://example.com"
+					group       = "%s"
+					url         = "http://example.com"
+					name        = "example"
+					description = "Example description"
 
 					token                      = "supersecret"
 					enable_ssl_verification    = false
@@ -112,6 +140,8 @@ func TestAccGitlabGroupHook_basic(t *testing.T) {
 					deployment_events          = true
 					releases_events            = true
 					subgroup_events            = true
+					feature_flag_events        = true
+					branch_filter_strategy     = "wildcard"
 					custom_webhook_template    = "{\"event\":\"{{object_kind}}\"}"
 				}
 				`, testGroup.FullPath),
@@ -260,6 +290,16 @@ func TestAccGitlabGroupHook_validations(t *testing.T) {
 							url = "https://example.com/hook-1234    " // Whitepaces at the end (invalid)
 						}`, group.ID),
 				ExpectError: regexp.MustCompile("The URL may not contain whitespace"),
+			},
+			// Validate the branch filter strategy validator
+			{
+				ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+				Config: fmt.Sprintf(`resource "gitlab_group_hook" "foo" {
+							group = "%d"
+							url = "https://example.com/hook-1234"
+							branch_filter_strategy = "all" // invalid value
+						}`, group.ID),
+				ExpectError: regexp.MustCompile("Attribute branch_filter_strategy value must be one of"),
 			},
 		},
 	})
