@@ -118,6 +118,7 @@ var _ = registerResource("gitlab_user", func() *schema.Resource {
 				Type:         schema.TypeString,
 				Optional:     true,
 				RequiredWith: []string{"external_provider"},
+				Deprecated:   "To be removed in 18.0. Use gitlab_user_identity resource instead. See https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/issues/1295",
 			},
 			"reset_password": {
 				Description: "Boolean, defaults to false. Send user password reset link.",
@@ -148,6 +149,7 @@ var _ = registerResource("gitlab_user", func() *schema.Resource {
 				Type:         schema.TypeString,
 				Optional:     true,
 				RequiredWith: []string{"extern_uid"},
+				Deprecated:   "To be removed in 18.0. Use gitlab_user_identity resource instead. See https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/issues/1295",
 			},
 		},
 	}
