@@ -6,6 +6,8 @@ import (
 	"net/url"
 	"strconv"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/boolvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -13,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
@@ -45,6 +48,7 @@ type gitlabProjectMirrorResourceModel struct {
 	URL                   types.String `tfsdk:"url"`
 	Enabled               types.Bool   `tfsdk:"enabled"`
 	OnlyProtectedBranches types.Bool   `tfsdk:"only_protected_branches"`
+	MirrorBranchRegex     types.String `tfsdk:"mirror_branch_regex"`
 	KeepDivergentRefs     types.Bool   `tfsdk:"keep_divergent_refs"`
 }
 
@@ -123,9 +127,11 @@ func (r *gitlabProjectMirrorResource) Create(ctx context.Context, req resource.C
 	if data.Enabled.IsNull() {
 		data.Enabled = types.BoolValue(true)
 	}
-	if data.OnlyProtectedBranches.IsNull() {
+	if data.OnlyProtectedBranches.IsNull() && data.MirrorBranchRegex.IsNull() {
+		// Set default value to true if mirror_branch_regex is null.
 		data.OnlyProtectedBranches = types.BoolValue(true)
 	}
+
 	if data.KeepDivergentRefs.IsNull() {
 		data.KeepDivergentRefs = types.BoolValue(true)
 	}
@@ -133,10 +139,17 @@ func (r *gitlabProjectMirrorResource) Create(ctx context.Context, req resource.C
 	// Construct the full URL with credentials
 	fullURL := data.URL.ValueString()
 	options := &gitlab.AddProjectMirrorOptions{
-		URL:                   &fullURL,
-		Enabled:               data.Enabled.ValueBoolPointer(),
-		OnlyProtectedBranches: data.OnlyProtectedBranches.ValueBoolPointer(),
-		KeepDivergentRefs:     data.KeepDivergentRefs.ValueBoolPointer(),
+		URL:               &fullURL,
+		Enabled:           data.Enabled.ValueBoolPointer(),
+		KeepDivergentRefs: data.KeepDivergentRefs.ValueBoolPointer(),
+	}
+
+	if !data.OnlyProtectedBranches.IsNull() && !data.OnlyProtectedBranches.IsUnknown() {
+		options.OnlyProtectedBranches = data.OnlyProtectedBranches.ValueBoolPointer()
+	}
+
+	if !data.MirrorBranchRegex.IsNull() && !data.MirrorBranchRegex.IsUnknown() {
+		options.MirrorBranchRegex = data.MirrorBranchRegex.ValueStringPointer()
 	}
 
 	tflog.Debug(ctx, "creating gitlab project mirror for project", map[string]interface{}{
@@ -219,9 +232,16 @@ func (r *gitlabProjectMirrorResource) Update(ctx context.Context, req resource.U
 	}
 
 	options := &gitlab.EditProjectMirrorOptions{
-		Enabled:               data.Enabled.ValueBoolPointer(),
-		OnlyProtectedBranches: data.OnlyProtectedBranches.ValueBoolPointer(),
-		KeepDivergentRefs:     data.KeepDivergentRefs.ValueBoolPointer(),
+		Enabled:           data.Enabled.ValueBoolPointer(),
+		KeepDivergentRefs: data.KeepDivergentRefs.ValueBoolPointer(),
+	}
+
+	if !data.OnlyProtectedBranches.IsNull() && !data.OnlyProtectedBranches.IsUnknown() {
+		options.OnlyProtectedBranches = data.OnlyProtectedBranches.ValueBoolPointer()
+	}
+
+	if !data.MirrorBranchRegex.IsNull() && !data.MirrorBranchRegex.IsUnknown() {
+		options.MirrorBranchRegex = data.MirrorBranchRegex.ValueStringPointer()
 	}
 
 	tflog.Debug(ctx, "updating gitlab project mirror", map[string]interface{}{
@@ -320,7 +340,17 @@ import_url, mirror, and mirror_trigger_builds properties on the gitlab_project r
 				MarkdownDescription: "Determines if only protected branches are mirrored.",
 				Optional:            true,
 				Computed:            true,
-				Default:             booldefault.StaticBool(true),
+				Validators: []validator.Bool{
+					boolvalidator.ConflictsWith(path.MatchRoot("mirror_branch_regex")),
+				},
+			},
+			"mirror_branch_regex": schema.StringAttribute{
+				MarkdownDescription: "Contains a regular expression. Only branches with names matching the regex are mirrored. Requires only_protected_branches to be disabled. Premium and Ultimate only.",
+				Optional:            true,
+				Computed:            true,
+				Validators: []validator.String{
+					stringvalidator.ConflictsWith(path.MatchRoot("only_protected_branches")),
+				},
 			},
 			"keep_divergent_refs": schema.BoolAttribute{
 				MarkdownDescription: "Determines if divergent refs are skipped.",
@@ -346,6 +376,7 @@ func (d *gitlabProjectMirrorResourceModel) modelToStateModel(a *gitlab.ProjectMi
 
 	d.Enabled = types.BoolValue(a.Enabled)
 	d.OnlyProtectedBranches = types.BoolValue(a.OnlyProtectedBranches)
+	d.MirrorBranchRegex = types.StringValue(a.MirrorBranchRegex)
 	d.KeepDivergentRefs = types.BoolValue(a.KeepDivergentRefs)
 }
 
