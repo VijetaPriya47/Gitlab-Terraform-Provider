@@ -31,10 +31,7 @@ func TestAccGitlabProjectMirror_basic(t *testing.T) {
 				Config: fmt.Sprintf(`resource "gitlab_project_mirror" "foo" {
 					project = "%d"
 					url = "https://example.com/mirror-test.git"
-					enabled = true
-					only_protected_branches = true
-					keep_divergent_refs = true
-					}`, project.ID),
+				}`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectMirrorExists("gitlab_project_mirror.foo", &mirror),
 					testAccCheckGitlabProjectMirrorAttributes(&mirror, &testAccGitlabProjectMirrorExpectedAttributes{
@@ -60,7 +57,7 @@ func TestAccGitlabProjectMirror_basic(t *testing.T) {
 					enabled = false
 					only_protected_branches = false
 					keep_divergent_refs = false
-					}`, project.ID),
+				}`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectMirrorExists("gitlab_project_mirror.foo", &mirror),
 					testAccCheckGitlabProjectMirrorAttributes(&mirror, &testAccGitlabProjectMirrorExpectedAttributes{
@@ -133,6 +130,7 @@ type testAccGitlabProjectMirrorExpectedAttributes struct {
 	URL                   string
 	Enabled               bool
 	OnlyProtectedBranches bool
+	MirrorBranchRegex     string
 	KeepDivergentRefs     bool
 }
 
@@ -150,6 +148,10 @@ func testAccCheckGitlabProjectMirrorAttributes(mirror *gitlab.ProjectMirror, wan
 
 		if mirror.OnlyProtectedBranches != want.OnlyProtectedBranches {
 			return fmt.Errorf("got only_protected_branches %t; want %t", mirror.OnlyProtectedBranches, want.OnlyProtectedBranches)
+		}
+
+		if mirror.MirrorBranchRegex != want.MirrorBranchRegex {
+			return fmt.Errorf("got mirror_branch_regex %s; want %s", mirror.MirrorBranchRegex, want.MirrorBranchRegex)
 		}
 
 		if mirror.KeepDivergentRefs != want.KeepDivergentRefs {
@@ -268,6 +270,83 @@ func TestAccGitlabProjectMirror_urlValidations(t *testing.T) {
 					enabled = true
 				}`, project.ID),
 			},
+			{
+				ResourceName:      "gitlab_project_mirror.foo",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccGitlabProjectMirror_branchRegex(t *testing.T) {
+	// Branch regex only available in premium and ultimate
+	testutil.SkipIfCE(t)
+
+	var mirror gitlab.ProjectMirror
+	project := testutil.CreateProject(t)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabProjectMirrorDestroy,
+		Steps: []resource.TestStep{
+			// Check conflicts with only_protected_branches
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_mirror" "foo" {
+						project = "%d"
+						url = "ssh://git@example.com/mirror-test.git"
+						only_protected_branches = true
+						mirror_branch_regex = "release/*"
+					}
+				`, project.ID),
+				ExpectError: regexp.MustCompile("Error: Invalid Attribute Combination"),
+			},
+			// Check only_protected_branches not set when regex used
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_mirror" "foo" {
+						project = "%d"
+						url = "ssh://git@example.com/mirror-test.git"
+						mirror_branch_regex = "release/*"
+					}
+				`, project.ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabProjectMirrorExists("gitlab_project_mirror.foo", &mirror),
+					testAccCheckGitlabProjectMirrorAttributes(&mirror, &testAccGitlabProjectMirrorExpectedAttributes{
+						URL:               "ssh://git@example.com/mirror-test.git",
+						Enabled:           true,
+						MirrorBranchRegex: "release/*",
+						KeepDivergentRefs: true,
+					}),
+				),
+			},
+			// Verify upstream attributes with an import
+			{
+				ResourceName:      "gitlab_project_mirror.foo",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Update regex
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_mirror" "foo" {
+						project = "%d"
+						url = "ssh://git@example.com/mirror-test.git"
+						mirror_branch_regex = "develop/*"
+					}
+				`, project.ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabProjectMirrorExists("gitlab_project_mirror.foo", &mirror),
+					testAccCheckGitlabProjectMirrorAttributes(&mirror, &testAccGitlabProjectMirrorExpectedAttributes{
+						URL:               "ssh://git@example.com/mirror-test.git",
+						Enabled:           true,
+						MirrorBranchRegex: "develop/*",
+						KeepDivergentRefs: true,
+					}),
+				),
+			},
+			// Verify upstream attributes with an import
 			{
 				ResourceName:      "gitlab_project_mirror.foo",
 				ImportState:       true,
