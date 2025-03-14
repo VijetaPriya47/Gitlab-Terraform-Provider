@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
@@ -97,11 +98,11 @@ func TestAccGitlabProjectVariable_basic(t *testing.T) {
 			{
 				Config: fmt.Sprintf(`
 					resource "gitlab_project_variable" "foo" {
-					project = %d
-					key = "my_key"
-					value = "my_value"
-					variable_type = "file"
-					environment_scope = "*"
+						project = %d
+						key = "my_key"
+						value = "my_value"
+						variable_type = "file"
+						environment_scope = "*"
 					}
 					`, testProject.ID),
 				Check: testAccCheckGitlabProjectVariableExists("gitlab_project_variable.foo"),
@@ -110,13 +111,13 @@ func TestAccGitlabProjectVariable_basic(t *testing.T) {
 			{
 				Config: fmt.Sprintf(`
 					resource "gitlab_project_variable" "foo" {
-					project = %d
-					key = "my_key"
-					value = "my_value_2"
-					protected = true
-					masked = true
-					description = %d
-					environment_scope = "*"
+						project = %d
+						key = "my_key"
+						value = "my_value_2"
+						protected = true
+						masked = true
+						description = %d
+						environment_scope = "*"
 					}
 					`, testProject.ID, testProject.ID),
 				Check: testAccCheckGitlabProjectVariableExists("gitlab_project_variable.foo"),
@@ -126,20 +127,49 @@ func TestAccGitlabProjectVariable_basic(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
+			// Update "hidden" which will cerate new
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_variable" "foo" {
+						project = %d
+						key = "my_key"
+						value = "my_value_2"
+						protected = true
+						masked = true
+						hidden = true
+						description = %d
+						environment_scope = "*"
+					}
+					`, testProject.ID, testProject.ID),
+				// Check that an "Replace" is being performed, not a Update
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("gitlab_project_variable.foo", plancheck.ResourceActionReplace),
+					},
+				},
+			},
+			{
+				ResourceName:      "gitlab_project_variable.foo",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"value", // will always be "nil" in the API call.
+				},
+			},
 			// Try to update with an illegal masked variable.
 			// ref: https://docs.gitlab.com/ce/ci/variables/README.html#masked-variable-requirements
 			{
 				Config: fmt.Sprintf(`
 					resource "gitlab_project_variable" "foo" {
-					project = %d
-					key = "my_key"
+						project = %d
+						key = "my_key"
 
-					value = <<EOF
-					i am multiline
-					EOF
+						value = <<EOF
+						i am multiline
+						EOF
 
-					masked = true
-					environment_scope = "*"
+						masked = true
+						environment_scope = "*"
 					}
 					`, testProject.ID),
 				ExpectError: regexp.MustCompile(regexp.QuoteMeta("Invalid value for a masked variable.")),

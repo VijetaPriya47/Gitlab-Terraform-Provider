@@ -6,10 +6,12 @@ import (
 	"log/slog"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/boolvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -22,10 +24,11 @@ import (
 )
 
 var (
-	_ resource.Resource                 = &gitlabProjectVariableResource{}
-	_ resource.ResourceWithConfigure    = &gitlabProjectVariableResource{}
-	_ resource.ResourceWithImportState  = &gitlabProjectVariableResource{}
-	_ resource.ResourceWithUpgradeState = &gitlabProjectVariableResource{}
+	_ resource.Resource                   = &gitlabProjectVariableResource{}
+	_ resource.ResourceWithConfigure      = &gitlabProjectVariableResource{}
+	_ resource.ResourceWithImportState    = &gitlabProjectVariableResource{}
+	_ resource.ResourceWithUpgradeState   = &gitlabProjectVariableResource{}
+	_ resource.ResourceWithValidateConfig = &gitlabProjectVariableResource{}
 )
 
 func init() {
@@ -52,6 +55,7 @@ type gitlabProjectVariableResourceModel struct {
 	VariableType     types.String `tfsdk:"variable_type"`
 	Protected        types.Bool   `tfsdk:"protected"`
 	Masked           types.Bool   `tfsdk:"masked"`
+	Hidden           types.Bool   `tfsdk:"hidden"`
 	EnvironmentScope types.String `tfsdk:"environment_scope"`
 	Raw              types.Bool   `tfsdk:"raw"`
 	Description      types.String `tfsdk:"description"`
@@ -72,6 +76,20 @@ func (r *gitlabProjectVariableResource) Configure(ctx context.Context, req resou
 
 	resourceData := req.ProviderData.(*GitLabResourceData)
 	r.client = resourceData.Client
+}
+
+func (d *gitlabProjectVariableResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	var data gitlabProjectVariableResourceModel
+	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+
+	if !data.Hidden.IsNull() && !data.Hidden.IsUnknown() && data.Hidden.ValueBool() {
+		if data.Masked.IsNull() || data.Masked.IsUnknown() || !data.Masked.ValueBool() {
+			resp.Diagnostics.AddAttributeError(path.Root("hidden"),
+				`Invalid value for a masked variable`,
+				`A variable cannot be hidden without being masked. Please set the masked attribute to true`)
+			return
+		}
+	}
 }
 
 // Create implements resource.Resource.
@@ -111,6 +129,15 @@ func (r *gitlabProjectVariableResource) Create(ctx context.Context, req resource
 	}
 	if !data.Masked.IsNull() && !data.Masked.IsUnknown() {
 		options.Masked = gitlab.Ptr(data.Masked.ValueBool())
+	}
+
+	if !data.Hidden.IsNull() && !data.Hidden.IsUnknown() && data.Hidden.ValueBool() {
+		if data.Masked.IsNull() || data.Masked.IsUnknown() || !data.Masked.ValueBool() {
+			resp.Diagnostics.AddError("Invalid configuration", "A variable cannot be hidden without being masked. Please set the masked attribute to true when setting hidden to true.")
+			return
+		}
+		options.Masked = gitlab.Ptr(false)
+		options.MaskedAndHidden = gitlab.Ptr(data.Hidden.ValueBool())
 	}
 
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab project variable %s/%s", project, key))
@@ -324,13 +351,19 @@ func (m *gitlabProjectVariableResourceModel) projectVariableToStateModel(variabl
 	m.ID = types.StringValue(utils.BuildTwoPartID(&project, &keyScope))
 	m.Project = types.StringValue(project)
 	m.Key = types.StringValue(variable.Key)
-	m.Value = types.StringValue(variable.Value)
 	m.VariableType = types.StringValue(string(variable.VariableType))
 	m.Protected = types.BoolValue(variable.Protected)
 	m.Masked = types.BoolValue(variable.Masked)
+	m.Hidden = types.BoolValue(variable.Hidden)
 	m.EnvironmentScope = types.StringValue(variable.EnvironmentScope)
 	m.Raw = types.BoolValue(variable.Raw)
 	m.Description = types.StringValue(variable.Description)
+
+	if !variable.Hidden {
+		// API response for hidden project variables is always null
+		// this condition allows the value to be maintained in terraform state
+		m.Value = types.StringValue(variable.Value)
+	}
 }
 
 func (r *gitlabProjectVariableResource) getProjectVariableSchema() *schema.Schema {
@@ -377,6 +410,15 @@ func (r *gitlabProjectVariableResource) getProjectVariableSchema() *schema.Schem
 				MarkdownDescription: "If set to `true`, the value of the variable will be masked in job logs. The value must meet the [masking requirements](https://docs.gitlab.com/ee/ci/variables/#mask-a-cicd-variable).",
 				Optional:            true,
 				Computed:            true,
+			},
+			"hidden": schema.BoolAttribute{
+				MarkdownDescription: "If set to `true`, the value of the variable will be hidden in the CI/CD User Interface. The value must meet the [hidden requirements](https://docs.gitlab.com/ci/variables/#hide-a-cicd-variable).",
+				PlanModifiers:       []planmodifier.Bool{boolplanmodifier.RequiresReplace()},
+				Optional:            true,
+				Computed:            true,
+				Validators: []validator.Bool{
+					boolvalidator.AlsoRequires(path.MatchRoot("masked")),
+				},
 			},
 			"environment_scope": schema.StringAttribute{
 				MarkdownDescription: "The environment scope of the variable. Defaults to all environment (`*`). Note that in Community Editions of Gitlab, values other than `*` will cause inconsistent plans.",
