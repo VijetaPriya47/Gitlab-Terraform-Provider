@@ -11,15 +11,17 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
 
 var (
-	_ resource.Resource                = &gitlabGroupLabelResource{}
-	_ resource.ResourceWithConfigure   = &gitlabGroupLabelResource{}
-	_ resource.ResourceWithImportState = &gitlabGroupLabelResource{}
+	_ resource.Resource                 = &gitlabGroupLabelResource{}
+	_ resource.ResourceWithConfigure    = &gitlabGroupLabelResource{}
+	_ resource.ResourceWithImportState  = &gitlabGroupLabelResource{}
+	_ resource.ResourceWithUpgradeState = &gitlabGroupLabelResource{}
 )
 
 func init() {
@@ -48,41 +50,7 @@ func (r *gitlabGroupLabelResource) Metadata(ctx context.Context, req resource.Me
 }
 
 func (r *gitlabGroupLabelResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-	resp.Schema = schema.Schema{
-		MarkdownDescription: `The ` + "`gitlab_group_label`" + ` resource allows to manage the lifecycle of labels within a group.
-
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/group_labels/)`,
-		Version: 2,
-		Attributes: map[string]schema.Attribute{
-			"id": schema.StringAttribute{
-				MarkdownDescription: "The ID of this Terraform resource. In the format of `<group-id>:<label-id>`.",
-				Computed:            true,
-				PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
-			},
-			"label_id": schema.Int64Attribute{
-				MarkdownDescription: "The id of the group label.",
-				Computed:            true,
-			},
-			"group": schema.StringAttribute{
-				MarkdownDescription: "The name or id of the group to add the label to.",
-				Required:            true,
-				PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
-			},
-			"name": schema.StringAttribute{
-				MarkdownDescription: "The name of the label.",
-				Required:            true,
-			},
-			"color": schema.StringAttribute{
-				MarkdownDescription: "The color of the label given in 6-digit hex notation with leading '#' sign (e.g. #FFAABB) or one of the [CSS color names](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#Color_keywords).",
-				Required:            true,
-			},
-			"description": schema.StringAttribute{
-				MarkdownDescription: "The description of the label.",
-				Optional:            true,
-				Computed:            true,
-			},
-		},
-	}
+	resp.Schema = r.getV0Schema()
 }
 
 func (r *gitlabGroupLabelResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -211,6 +179,115 @@ func (r *gitlabGroupLabelResource) Delete(ctx context.Context, req resource.Dele
 	}
 
 	resp.State.RemoveResource(ctx)
+}
+
+// All UpgradeState upgraders in the provider should be registered here, and must upgrade to the current state.
+// That means currently all upgraders much upgrade fully to V2.
+func (r *gitlabGroupLabelResource) UpgradeState(context.Context) map[int64]resource.StateUpgrader {
+	schema := r.getV0Schema()
+
+	// Both v0 and v1 were only ID changes, so they use the same upgrader function. Create that function here.
+	upgraderFunction := func(ctx context.Context, req resource.UpgradeStateRequest, resp *resource.UpgradeStateResponse) {
+		var data gitlabGroupLabelResourceModel
+		resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		err := r.upgradeIdToV2Id(ctx, &data)
+		if err != nil {
+			tflog.Error(ctx, "Failed to upgrade resource ID", map[string]interface{}{
+				"oldId": data.ID.ValueString(),
+				"group": data.Group.ValueString(),
+			})
+			resp.Diagnostics.AddError("Failed to upgrade resource ID", fmt.Sprintf("Unable to upgrade resource ID: %s, %s", data.ID.ValueString(), err.Error()))
+			return
+		}
+
+		resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	}
+
+	return map[int64]resource.StateUpgrader{
+		0: {
+			PriorSchema: &schema,
+			// The only difference between V0 and V1 is the "id" attribute, which sets the ID to "groupId:labelId"
+			StateUpgrader: upgraderFunction,
+		},
+		1: {
+			PriorSchema: &schema,
+			// The only difference between V0 and V2 is the "id" attribute, which sets the ID to "groupId:labelId"
+			StateUpgrader: upgraderFunction,
+		},
+	}
+}
+
+// This function accepts an input state and will upgrde the "id" attribute to the new V2 ID that is <group_id>:<label_id>
+func (r *gitlabGroupLabelResource) upgradeIdToV2Id(ctx context.Context, input *gitlabGroupLabelResourceModel) error {
+
+	// Check if LabelId is in state, and retrieve the value from the API if it isn't.
+	if input.LabelID.IsNull() || input.LabelID.IsUnknown() {
+		tflog.Debug(ctx, "Retrieving label ID from API")
+		label, _, err := r.client.GroupLabels.GetGroupLabel(input.Group.ValueString(), input.ID.ValueString(), gitlab.WithContext(ctx))
+		if err != nil {
+			return err
+		}
+
+		// set the value into state
+		input.LabelID = types.Int64Value(int64(label.ID))
+	}
+
+	// Saving the string to a variable first for readability reasons.
+	stringLabelId := strconv.Itoa(int(input.LabelID.ValueInt64()))
+	newId := utils.BuildTwoPartID(input.Group.ValueStringPointer(), gitlab.Ptr(stringLabelId))
+
+	tflog.Debug(ctx, "Upgrading state to the V2 ID", map[string]interface{}{
+		"oldId": input.ID.ValueString(),
+		"group": input.Group.ValueString(),
+		"newId": newId,
+	})
+
+	input.ID = types.StringValue(newId)
+	return nil
+}
+
+// The V0 (and also V1) schema. This is used in both the Schema function and also the
+// UpgradeState function.
+func (r *gitlabGroupLabelResource) getV0Schema() schema.Schema {
+	return schema.Schema{
+		MarkdownDescription: `The ` + "`gitlab_group_label`" + ` resource allows to manage the lifecycle of labels within a group.
+
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/group_labels/)`,
+		Version: 2,
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				MarkdownDescription: "The ID of this Terraform resource. In the format of `<group-id>:<label-id>`.",
+				Computed:            true,
+				PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+			},
+			"label_id": schema.Int64Attribute{
+				MarkdownDescription: "The id of the group label.",
+				Computed:            true,
+			},
+			"group": schema.StringAttribute{
+				MarkdownDescription: "The name or id of the group to add the label to.",
+				Required:            true,
+				PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
+			},
+			"name": schema.StringAttribute{
+				MarkdownDescription: "The name of the label.",
+				Required:            true,
+			},
+			"color": schema.StringAttribute{
+				MarkdownDescription: "The color of the label given in 6-digit hex notation with leading '#' sign (e.g. #FFAABB) or one of the [CSS color names](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#Color_keywords).",
+				Required:            true,
+			},
+			"description": schema.StringAttribute{
+				MarkdownDescription: "The description of the label.",
+				Optional:            true,
+				Computed:            true,
+			},
+		},
+	}
 }
 
 func (r *gitlabGroupLabelResourceModel) modelToStateModel(l *gitlab.GroupLabel, group string) {
