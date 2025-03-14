@@ -25,9 +25,10 @@ import (
 
 // Ensure provider defined types fully satisfy framework interfaces
 var (
-	_ resource.Resource                = &gitlabGroupVariableResource{}
-	_ resource.ResourceWithConfigure   = &gitlabGroupVariableResource{}
-	_ resource.ResourceWithImportState = &gitlabGroupVariableResource{}
+	_ resource.Resource                   = &gitlabGroupVariableResource{}
+	_ resource.ResourceWithConfigure      = &gitlabGroupVariableResource{}
+	_ resource.ResourceWithImportState    = &gitlabGroupVariableResource{}
+	_ resource.ResourceWithValidateConfig = &gitlabGroupVariableResource{}
 )
 
 var (
