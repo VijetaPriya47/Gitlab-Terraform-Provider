@@ -50,6 +50,7 @@ type gitlabProjectMirrorResourceModel struct {
 	OnlyProtectedBranches types.Bool   `tfsdk:"only_protected_branches"`
 	MirrorBranchRegex     types.String `tfsdk:"mirror_branch_regex"`
 	KeepDivergentRefs     types.Bool   `tfsdk:"keep_divergent_refs"`
+	AuthMethod            types.String `tfsdk:"auth_method"`
 }
 
 // gitlabProjectMirrorResource implements the resource.
@@ -152,6 +153,10 @@ func (r *gitlabProjectMirrorResource) Create(ctx context.Context, req resource.C
 		options.MirrorBranchRegex = data.MirrorBranchRegex.ValueStringPointer()
 	}
 
+	if !data.AuthMethod.IsNull() && !data.AuthMethod.IsUnknown() {
+		options.AuthMethod = data.AuthMethod.ValueStringPointer()
+	}
+
 	tflog.Debug(ctx, "creating gitlab project mirror for project", map[string]interface{}{
 		"project": data.Project,
 	})
@@ -244,6 +249,10 @@ func (r *gitlabProjectMirrorResource) Update(ctx context.Context, req resource.U
 		options.MirrorBranchRegex = data.MirrorBranchRegex.ValueStringPointer()
 	}
 
+	if !data.AuthMethod.IsNull() && !data.AuthMethod.IsUnknown() {
+		options.AuthMethod = data.AuthMethod.ValueStringPointer()
+	}
+
 	tflog.Debug(ctx, "updating gitlab project mirror", map[string]interface{}{
 		"project":  project,
 		"mirrorId": mirrorId,
@@ -290,6 +299,8 @@ func (r *gitlabProjectMirrorResource) Delete(ctx context.Context, req resource.D
 
 // getSchema returns the schema for this resource.
 func (r *gitlabProjectMirrorResource) getSchema() schema.Schema {
+	allowedAuthMethods := []string{"ssh_public_key", "password"}
+
 	return schema.Schema{
 		Version: 0,
 		MarkdownDescription: `The ` + "`" + `gitlab_project_mirror` + "`" + ` resource allows to manage the lifecycle of a project mirror.
@@ -358,6 +369,15 @@ import_url, mirror, and mirror_trigger_builds properties on the gitlab_project r
 				Computed:            true,
 				Default:             booldefault.StaticBool(true),
 			},
+			"auth_method": schema.StringAttribute{
+				MarkdownDescription: fmt.Sprintf("Determines the mirror authentication method. Valid values are: %s.", utils.RenderValueListForDocs(allowedAuthMethods)),
+				Optional:            true,
+				Computed:            true,
+				Validators:          []validator.String{stringvalidator.OneOf(allowedAuthMethods...)},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
 		},
 	}
 }
@@ -378,6 +398,7 @@ func (d *gitlabProjectMirrorResourceModel) modelToStateModel(a *gitlab.ProjectMi
 	d.OnlyProtectedBranches = types.BoolValue(a.OnlyProtectedBranches)
 	d.MirrorBranchRegex = types.StringValue(a.MirrorBranchRegex)
 	d.KeepDivergentRefs = types.BoolValue(a.KeepDivergentRefs)
+	d.AuthMethod = types.StringValue(a.AuthMethod)
 }
 
 // ResourceGitlabProjectMirrorParseId parses the resource ID into project and mirror ID components.

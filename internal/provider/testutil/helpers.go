@@ -240,6 +240,20 @@ func CreateProjectWithDefaultPushRules(t *testing.T, namespaceID int) *gitlab.Pr
 	return project
 }
 
+// CreateProjectMirror is a test helper for creating a project mirror.
+// It assumes the project will be destroyed at the end of the test and will not cleanup created mirrors.
+func CreateProjectMirrorWithOptions(t *testing.T, project *gitlab.Project, opts *gitlab.AddProjectMirrorOptions) *gitlab.ProjectMirror {
+	t.Helper()
+
+	var err error
+	projectMirror, _, err := TestGitlabClient.ProjectMirrors.AddProjectMirror(project.ID, opts)
+	if err != nil {
+		t.Fatalf("could not create project mirror: %v", err)
+	}
+
+	return projectMirror
+}
+
 // CreateTopic is a test helper for creating a topic.
 func CreateTopic(t *testing.T) *gitlab.Topic {
 	t.Helper()
