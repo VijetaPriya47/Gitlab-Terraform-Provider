@@ -39,6 +39,7 @@ func TestAccGitlabProjectMirror_basic(t *testing.T) {
 						Enabled:               true,
 						OnlyProtectedBranches: true,
 						KeepDivergentRefs:     true,
+						AuthMethod:            "password",
 					}),
 				),
 			},
@@ -65,6 +66,7 @@ func TestAccGitlabProjectMirror_basic(t *testing.T) {
 						Enabled:               false,
 						OnlyProtectedBranches: false,
 						KeepDivergentRefs:     false,
+						AuthMethod:            "password",
 					}),
 				),
 			},
@@ -132,6 +134,7 @@ type testAccGitlabProjectMirrorExpectedAttributes struct {
 	OnlyProtectedBranches bool
 	MirrorBranchRegex     string
 	KeepDivergentRefs     bool
+	AuthMethod            string
 }
 
 func testAccCheckGitlabProjectMirrorAttributes(mirror *gitlab.ProjectMirror, want *testAccGitlabProjectMirrorExpectedAttributes) resource.TestCheckFunc {
@@ -156,6 +159,10 @@ func testAccCheckGitlabProjectMirrorAttributes(mirror *gitlab.ProjectMirror, wan
 
 		if mirror.KeepDivergentRefs != want.KeepDivergentRefs {
 			return fmt.Errorf("got keep_divergent_refs %t; want %t", mirror.KeepDivergentRefs, want.KeepDivergentRefs)
+		}
+
+		if mirror.AuthMethod != want.AuthMethod {
+			return fmt.Errorf("got auth_method %s; want %s", mirror.AuthMethod, want.AuthMethod)
 		}
 
 		return nil
@@ -217,11 +224,12 @@ func TestAccGitlabProjectMirror_ssh(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`resource "gitlab_project_mirror" "foo" {
-					project = "%d"
-					url = "ssh://git@example.com/mirror-test.git"
-					enabled = true
+					project                 = "%d"
+					url                     = "ssh://git@example.com/mirror-test.git"
+					enabled                 = true
 					only_protected_branches = true
-					keep_divergent_refs = true
+					keep_divergent_refs     = true
+					auth_method             = "ssh_public_key"
 				}`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectMirrorExists("gitlab_project_mirror.foo", &mirror),
@@ -230,8 +238,73 @@ func TestAccGitlabProjectMirror_ssh(t *testing.T) {
 						Enabled:               true,
 						OnlyProtectedBranches: true,
 						KeepDivergentRefs:     true,
+						AuthMethod:            "ssh_public_key",
 					}),
 				),
+			},
+		},
+	})
+}
+
+func TestAccGitlabProjectMirror_AuthMethod(t *testing.T) {
+	var mirror gitlab.ProjectMirror
+	project := testutil.CreateProject(t)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabProjectMirrorDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`resource "gitlab_project_mirror" "foo" {
+					project                 = "%d"
+					url                     = "ssh://git@example.com/mirror-test.git"
+					enabled                 = true
+					only_protected_branches = true
+					keep_divergent_refs     = true
+					auth_method             = "ssh_public_key"
+				}`, project.ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabProjectMirrorExists("gitlab_project_mirror.foo", &mirror),
+					testAccCheckGitlabProjectMirrorAttributes(&mirror, &testAccGitlabProjectMirrorExpectedAttributes{
+						URL:                   "ssh://git@example.com/mirror-test.git",
+						Enabled:               true,
+						OnlyProtectedBranches: true,
+						KeepDivergentRefs:     true,
+						AuthMethod:            "ssh_public_key",
+					}),
+				),
+			},
+			// Verify upstream attributes with an import
+			{
+				ResourceName:      "gitlab_project_mirror.foo",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			{
+				Config: fmt.Sprintf(`resource "gitlab_project_mirror" "bar" {
+					project                 = "%d"
+					url                     = "https://git:*****@example.com/mirror-test.git"
+					enabled                 = true
+					only_protected_branches = true
+					keep_divergent_refs     = true
+					auth_method             = "password"
+				}`, project.ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabProjectMirrorExists("gitlab_project_mirror.bar", &mirror),
+					testAccCheckGitlabProjectMirrorAttributes(&mirror, &testAccGitlabProjectMirrorExpectedAttributes{
+						URL:                   "https://git:*****@example.com/mirror-test.git",
+						Enabled:               true,
+						OnlyProtectedBranches: true,
+						KeepDivergentRefs:     true,
+						AuthMethod:            "password",
+					}),
+				),
+			},
+			// Verify upstream attributes with an import
+			{
+				ResourceName:      "gitlab_project_mirror.bar",
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 	})
@@ -279,6 +352,26 @@ func TestAccGitlabProjectMirror_urlValidations(t *testing.T) {
 	})
 }
 
+func TestAccGitlabProjectMirror_AuthMethodValidation(t *testing.T) {
+	project := testutil.CreateProject(t)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabProjectMirrorDestroy,
+		Steps: []resource.TestStep{
+			{
+				// Invalid auth method
+				Config: fmt.Sprintf(`resource "gitlab_project_mirror" "foo" {
+					project     = "%d"
+					url         = "https://example.com/test.git"
+					auth_method = "basic"
+				}`, project.ID),
+				ExpectError: regexp.MustCompile("Attribute auth_method value must be one of"),
+			},
+		},
+	})
+}
+
 func TestAccGitlabProjectMirror_branchRegex(t *testing.T) {
 	// Branch regex only available in premium and ultimate
 	testutil.SkipIfCE(t)
@@ -294,10 +387,10 @@ func TestAccGitlabProjectMirror_branchRegex(t *testing.T) {
 			{
 				Config: fmt.Sprintf(`
 					resource "gitlab_project_mirror" "foo" {
-						project = "%d"
-						url = "ssh://git@example.com/mirror-test.git"
+						project                 = "%d"
+						url                     = "ssh://git@example.com/mirror-test.git"
 						only_protected_branches = true
-						mirror_branch_regex = "release/*"
+						mirror_branch_regex     = "release/*"
 					}
 				`, project.ID),
 				ExpectError: regexp.MustCompile("Error: Invalid Attribute Combination"),
@@ -306,8 +399,8 @@ func TestAccGitlabProjectMirror_branchRegex(t *testing.T) {
 			{
 				Config: fmt.Sprintf(`
 					resource "gitlab_project_mirror" "foo" {
-						project = "%d"
-						url = "ssh://git@example.com/mirror-test.git"
+						project             = "%d"
+						url                 = "ssh://git@example.com/mirror-test.git"
 						mirror_branch_regex = "release/*"
 					}
 				`, project.ID),
@@ -318,6 +411,7 @@ func TestAccGitlabProjectMirror_branchRegex(t *testing.T) {
 						Enabled:           true,
 						MirrorBranchRegex: "release/*",
 						KeepDivergentRefs: true,
+						AuthMethod:        "password",
 					}),
 				),
 			},
@@ -331,8 +425,8 @@ func TestAccGitlabProjectMirror_branchRegex(t *testing.T) {
 			{
 				Config: fmt.Sprintf(`
 					resource "gitlab_project_mirror" "foo" {
-						project = "%d"
-						url = "ssh://git@example.com/mirror-test.git"
+						project             = "%d"
+						url                 = "ssh://git@example.com/mirror-test.git"
 						mirror_branch_regex = "develop/*"
 					}
 				`, project.ID),
@@ -343,6 +437,7 @@ func TestAccGitlabProjectMirror_branchRegex(t *testing.T) {
 						Enabled:           true,
 						MirrorBranchRegex: "develop/*",
 						KeepDivergentRefs: true,
+						AuthMethod:        "password",
 					}),
 				),
 			},
