@@ -480,8 +480,8 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Create(ctx context.Contex
 	token, _, err := r.client.Groups.CreateServiceAccountPersonalAccessToken(data.Group.ValueString(), int(data.UserID.ValueInt64()), options, gitlab.WithContext(ctx))
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error creating GitLab ProjectAccessToken",
-			fmt.Sprintf("Could not create GitLab ProjectAccessToken, unexpected error: %v", err),
+			"Error creating GitLab GroupServiceAccountAccessToken",
+			fmt.Sprintf("Could not create GitLab GroupServiceAccountAccessToken, unexpected error: %v", err),
 		)
 		return
 	}
