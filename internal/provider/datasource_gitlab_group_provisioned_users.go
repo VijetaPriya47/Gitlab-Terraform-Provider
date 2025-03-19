@@ -286,19 +286,14 @@ func (d *gitlabGroupProvisionedUsersDataSource) Read(ctx context.Context, req da
 	provisionedUsersModel := make([]gitlabGroupProvisionedUsersObjectDataSourceModel, len(provisionedUsers))
 
 	for i, provisionedUser := range provisionedUsers {
-		createdAt := ""
-		if provisionedUser.CreatedAt != nil {
-			createdAt = provisionedUser.CreatedAt.Format(time.RFC3339)
-		}
-
-		pu := gitlabGroupProvisionedUsersObjectDataSourceModel{
+		provisionedUsersModel[i] = gitlabGroupProvisionedUsersObjectDataSourceModel{
 			Id:               types.StringValue(fmt.Sprintf("%d", provisionedUser.ID)),
 			Name:             types.StringValue(provisionedUser.Name),
 			Username:         types.StringValue(provisionedUser.Username),
 			State:            types.StringValue(provisionedUser.State),
 			AvatarUrl:        types.StringValue(provisionedUser.AvatarURL),
 			WebUrl:           types.StringValue(provisionedUser.WebURL),
-			CreatedAt:        types.StringValue(createdAt),
+			CreatedAt:        types.StringValue(formatProvisionedUserDate(provisionedUser.CreatedAt)),
 			Bio:              types.StringValue(provisionedUser.Bio),
 			Location:         types.StringValue(provisionedUser.Location),
 			PublicEmail:      types.StringValue(provisionedUser.PublicEmail),
@@ -309,17 +304,23 @@ func (d *gitlabGroupProvisionedUsersDataSource) Read(ctx context.Context, req da
 			Organization:     types.StringValue(provisionedUser.Organization),
 			JobTitle:         types.StringValue(provisionedUser.JobTitle),
 			Email:            types.StringValue(provisionedUser.Email),
-			LastSignInAt:     types.StringValue(provisionedUser.LastSignInAt.Format(time.RFC3339)),
+			LastSignInAt:     types.StringValue(formatProvisionedUserDate(provisionedUser.LastSignInAt)),
 			TwoFactorEnabled: types.BoolValue(provisionedUser.TwoFactorEnabled),
 			External:         types.BoolValue(provisionedUser.External),
 			PrivateProfile:   types.BoolValue(provisionedUser.PrivateProfile),
 		}
-
-		provisionedUsersModel[i] = pu
 	}
 
 	state.Users = provisionedUsersModel
 
 	diags := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
+}
+
+func formatProvisionedUserDate(userDate *time.Time) string {
+	if userDate == nil {
+		return ""
+	}
+
+	return userDate.Format(time.RFC3339)
 }
