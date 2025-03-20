@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -329,7 +330,26 @@ func resourceGitlabProjectEnvironmentStop(ctx context.Context, d *schema.Resourc
 		MinTimeout: 3 * time.Second,
 		Delay:      5 * time.Second,
 		Refresh: func() (interface{}, string, error) {
+
 			env, resp, err := client.Environments.StopEnvironment(project, environmentID, nil, gitlab.WithContext(ctx))
+
+			// If we get a `400` http status code with "failed to change the status", get the current status to determine
+			// if the record is already stopped, and exit the state change loop if it has
+			if resp.StatusCode == http.StatusBadRequest {
+				// Get the current environment status
+				currentEnv, _, getErr := client.Environments.GetEnvironment(project, environmentID, gitlab.WithContext(ctx))
+				if getErr != nil {
+					tflog.Warn(ctx, "Error retrieving status of environment for project", map[string]interface{}{
+						"project":     project,
+						"environment": environmentID,
+					})
+					return resp, "unknown", getErr
+				}
+				if currentEnv.State == "stopped" {
+					return currentEnv, "stopped", nil
+				}
+			}
+
 			// ignore the error here, as we'll be doing this until we succeed or timeout
 			if err != nil {
 				return resp, "unknown", err

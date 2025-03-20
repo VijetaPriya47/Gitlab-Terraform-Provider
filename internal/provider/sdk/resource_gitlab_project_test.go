@@ -92,7 +92,6 @@ func TestAccGitlabProject_basic(t *testing.T) {
 					squash_option = "default_off"
 					pages_access_level = "public"
 					allow_merge_on_skipped_pipeline = false
-					restrict_user_defined_variables = false
 					ci_config_path = ".gitlab-ci.yml@mynamespace/myproject"
 					resolve_outdated_diff_discussions = true
 					analytics_access_level = "enabled"
@@ -147,7 +146,6 @@ func TestAccGitlabProject_basic(t *testing.T) {
 				  only_allow_merge_if_all_discussions_are_resolved = true
 				  squash_option = "default_on"
 				  allow_merge_on_skipped_pipeline = true
-				  restrict_user_defined_variables = false
 				  request_access_enabled = false
 				  issues_enabled = false
 				  merge_requests_enabled = false
@@ -279,7 +277,6 @@ func TestAccGitlabProject_basic(t *testing.T) {
 					squash_option = "default_off"
 					pages_access_level = "public"
 					allow_merge_on_skipped_pipeline = false
-					restrict_user_defined_variables = false
 					ci_config_path = ".gitlab-ci.yml@mynamespace/myproject"
 					resolve_outdated_diff_discussions = true
 					analytics_access_level = "enabled"
@@ -344,7 +341,6 @@ func TestAccGitlabProject_basic(t *testing.T) {
 					squash_option = "default_off"
 					pages_access_level = "public"
 					allow_merge_on_skipped_pipeline = false
-					restrict_user_defined_variables = false
 					ci_config_path = ".gitlab-ci.yml@mynamespace/myproject"
 					resolve_outdated_diff_discussions = true
 					analytics_access_level = "enabled"
@@ -664,7 +660,6 @@ func TestAccGitlabProject_basic(t *testing.T) {
 					squash_option = "default_off"
 					pages_access_level = "public"
 					allow_merge_on_skipped_pipeline = false
-					restrict_user_defined_variables = false
 					ci_config_path = ".gitlab-ci.yml@mynamespace/myproject"
 					resolve_outdated_diff_discussions = true
 					analytics_access_level = "enabled"
@@ -928,7 +923,6 @@ func TestAccGitlabProject_PushRules(t *testing.T) {
 					squash_option = "default_off"
 					pages_access_level = "public"
 					allow_merge_on_skipped_pipeline = false
-					restrict_user_defined_variables = false
 					ci_config_path = ".gitlab-ci.yml@mynamespace/myproject"
 					resolve_outdated_diff_discussions = true
 					analytics_access_level = "enabled"
@@ -1472,7 +1466,6 @@ func TestAccGitlabProject_import(t *testing.T) {
 					squash_option = "default_off"
 					pages_access_level = "public"
 					allow_merge_on_skipped_pipeline = false
-					restrict_user_defined_variables = false
 					ci_config_path = ".gitlab-ci.yml@mynamespace/myproject"
 					resolve_outdated_diff_discussions = true
 					analytics_access_level = "enabled"
@@ -1530,7 +1523,6 @@ func TestAccGitlabProject_import(t *testing.T) {
 					squash_option = "default_off"
 					pages_access_level = "public"
 					allow_merge_on_skipped_pipeline = false
-					restrict_user_defined_variables = false
 					ci_config_path = ".gitlab-ci.yml@mynamespace/myproject"
 					resolve_outdated_diff_discussions = true
 					analytics_access_level = "enabled"
@@ -2017,6 +2009,7 @@ resource "gitlab_project" "foo" {
 }
 
 func TestAccGitlabProject_restirctUserDefinedVariables(t *testing.T) {
+	t.Skip() // `restrict_user_defined_variables` is broken for GitLab 17.10.0
 	rInt := acctest.RandInt()
 
 	resource.ParallelTest(t, resource.TestCase{
