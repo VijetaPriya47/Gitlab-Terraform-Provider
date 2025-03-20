@@ -149,6 +149,7 @@ func (r *gitlabIntegrationJenkinsResource) Read(ctx context.Context, req resourc
 	jenkins, _, err := r.client.Services.GetJenkinsCIService(projectID)
 	if err != nil {
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to read gitlab jenkins integration: %s", err.Error()))
+		return
 	}
 	data.modelToStateModel(jenkins, projectID)
 
@@ -177,7 +178,6 @@ func (r *gitlabIntegrationJenkinsResource) Delete(ctx context.Context, req resou
 		)
 		return
 	}
-
 }
 
 func (r *gitlabIntegrationJenkinsResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {

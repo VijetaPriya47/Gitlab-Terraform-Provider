@@ -196,6 +196,7 @@ func (r *gitlabInstanceServiceAccountResource) Delete(ctx context.Context, req r
 			"GitLab API Error occurred",
 			fmt.Sprintf("Unable to delete service account: %s", err.Error()),
 		)
+		return
 	}
 
 	tick_rate := 10 * time.Second

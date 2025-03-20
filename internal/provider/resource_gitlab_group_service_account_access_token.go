@@ -353,7 +353,6 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) ModifyPlan(ctx context.Co
 // Validate that the expiration date is valid. This runs during `ModifyPlan` instead of in a `ValidateConfig` because the GitLab client hasn't been
 // initialized during `ValidateConfig`. It will still fail during plan time because that's when `ModifyPlan` runs.
 func validatePlanConfig(ctx context.Context, client *gitlab.Client, data *gitlabGroupServiceAccountAccessTokenResourceModel, resp *resource.ModifyPlanResponse) {
-
 	// If expiration_days isn't set, we don't need to check the version, so return early.
 	if data.RotationConfiguration == nil || data.RotationConfiguration.ExpirationDays.IsUnknown() || data.RotationConfiguration.ExpirationDays.IsNull() {
 		return
@@ -548,6 +547,7 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Update(ctx context.Contex
 			"Error rotating GitLab GroupServiceAccountAccessToken",
 			fmt.Sprintf("Could not rotate GitLab GroupServiceAccountAccessToken, unexpected error: %v", err),
 		)
+		return
 	}
 
 	r.groupServiceAccountAccessTokenToStateModel(planData, token, planData.Group.ValueString())
@@ -651,7 +651,6 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Delete(ctx context.Contex
 // value should be set into the `expiry_date` field for the options.
 // Returns a gitlab.ISOTime object of what should be set into the `expiry_date` field.
 func (r *gitlabGroupServiceAccountAccessTokenResource) determineExpiryDate(data *gitlabGroupServiceAccountAccessTokenResourceModel) (*gitlab.ISOTime, error) {
-
 	// If `expires_at` is set, then attempt to parse the time, and return the isoTime value if it
 	// successfully parses
 	if !data.ExpiresAt.IsNull() && !data.ExpiresAt.IsUnknown() && data.RotationConfiguration == nil {

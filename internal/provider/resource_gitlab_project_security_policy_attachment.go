@@ -54,7 +54,6 @@ func (r *gitlabProjectSecurityPolicyAttachmentResource) Metadata(ctx context.Con
 }
 
 func (r *gitlabProjectSecurityPolicyAttachmentResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_project_security_policy_attachment`" + ` resource allows to attach a security policy project to a project.
 
@@ -145,6 +144,7 @@ func (d *gitlabProjectSecurityPolicyAttachmentResource) Read(ctx context.Context
 	project, policyProject, err := utils.ParseTwoPartID(data.Id.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to parse IDs", err.Error())
+		return
 	}
 	data.Project = types.StringValue(project)
 	data.PolicyProject = types.StringValue(policyProject)
@@ -153,6 +153,7 @@ func (d *gitlabProjectSecurityPolicyAttachmentResource) Read(ctx context.Context
 	projectIds, err := d.parseGraphQLIds(ctx, data)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to parse GraphQL IDs", err.Error())
+		return
 	}
 
 	// Read the policy project
@@ -194,6 +195,7 @@ func (d *gitlabProjectSecurityPolicyAttachmentResource) Read(ctx context.Context
 		_, err := d.parseGraphQLIds(ctx, data)
 		if err != nil {
 			resp.Diagnostics.AddError("Failed to parse GraphQL ID of the policy project", err.Error())
+			return
 		}
 	}
 
@@ -221,7 +223,6 @@ func (d *gitlabProjectSecurityPolicyAttachmentResource) Update(ctx context.Conte
 	// causing a situation where the `apply` is successful, then an immediate `plan` is generated.
 	// The retry will read after update until we get the policy project we expect.
 	err = retry.RetryContext(ctx, 1*time.Minute, func() *retry.RetryError {
-
 		err = d.updatePolicy(ctx, data, projectIds)
 		if err != nil {
 			return retry.NonRetryableError(err)
@@ -258,7 +259,6 @@ func (d *gitlabProjectSecurityPolicyAttachmentResource) Update(ctx context.Conte
 }
 
 func (d *gitlabProjectSecurityPolicyAttachmentResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-
 	var data *gitlabProjectSecurityPolicyAttachmentResourceModel
 
 	// Read Terraform plan data into the model
@@ -320,7 +320,6 @@ func (d *gitlabProjectSecurityPolicyAttachmentResource) readPolicy(ctx context.C
 	}
 	`, ids.ProjectFullPath)
 	_, err := api.SendGraphQLRequest(ctx, d.client, api.GraphQLQuery{Query: query}, &response)
-
 	if err != nil {
 		return nil, fmt.Errorf("generic GraphQL error: %s", err.Error())
 	}

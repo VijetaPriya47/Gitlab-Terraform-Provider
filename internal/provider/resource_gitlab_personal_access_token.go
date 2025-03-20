@@ -197,7 +197,6 @@ func (r *gitlabPersonalAccessTokenResource) Configure(ctx context.Context, req r
 }
 
 func (r *gitlabPersonalAccessTokenResource) personalAccessTokenToStateModel(data *gitlabPersonalAccessTokenResourceModel, token *gitlab.PersonalAccessToken, userId int) diag.Diagnostics {
-
 	data.UserId = types.Int64Value(int64(userId))
 	data.Name = types.StringValue(token.Name)
 	data.Active = types.BoolValue(token.Active)
@@ -238,7 +237,6 @@ func (r *gitlabPersonalAccessTokenResource) ImportState(ctx context.Context, req
 // resource, by checking the date that's set in the `expires_at` field is less than the `rotate_before_days`
 // value.
 func (r *gitlabPersonalAccessTokenResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
-
 	// Retrieve the plan data to start with
 	var planData, stateData *gitlabPersonalAccessTokenResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &planData)...)
@@ -477,6 +475,7 @@ func (r *gitlabPersonalAccessTokenResource) Update(ctx context.Context, req reso
 			"Error parsing expiry date",
 			fmt.Sprintf("Could not parse expiry date %s: %s", data.ExpiresAt.ValueString(), err),
 		)
+		return
 	}
 
 	// update with a personal access token means rotate it
@@ -536,7 +535,6 @@ func (r *gitlabPersonalAccessTokenResource) Delete(ctx context.Context, req reso
 // value should be set into the `expiry_date` field for the options.
 // Returns a gitlab.ISOTime object of what should be set into the `expiry_date` field.
 func (r *gitlabPersonalAccessTokenResource) determineExpiryDate(data *gitlabPersonalAccessTokenResourceModel) (*gitlab.ISOTime, error) {
-
 	// If `expires_at` is set, then attempt to parse the time, and return the isoTime value if it
 	// successfully parses
 	if !data.ExpiresAt.IsNull() && !data.ExpiresAt.IsUnknown() && data.RotationConfiguration == nil {

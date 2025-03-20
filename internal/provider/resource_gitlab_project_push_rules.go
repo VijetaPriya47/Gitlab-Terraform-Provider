@@ -281,6 +281,7 @@ func (r *gitlabProjectPushRulesResource) Create(ctx context.Context, req resourc
 		err := r.update(ctx, data, &resp.Diagnostics)
 		if err != nil {
 			resp.Diagnostics.AddError("Failed to update project push rules", err.Error())
+			return
 		}
 	} else {
 		// add new
@@ -368,6 +369,7 @@ func (r *gitlabProjectPushRulesResource) Update(ctx context.Context, req resourc
 	err := r.update(ctx, data, &resp.Diagnostics)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to update project push rules", err.Error())
+		return
 	}
 
 	// Save updated data into Terraform state
