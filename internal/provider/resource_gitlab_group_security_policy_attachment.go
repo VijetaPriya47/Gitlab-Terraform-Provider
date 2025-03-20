@@ -153,11 +153,13 @@ func (d *gitlabGroupSecurityPolicyAttachmentResource) Read(ctx context.Context, 
 	groupIds, err := d.parseGraphQLIds(ctx, data)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to parse GraphQL IDs", err.Error())
+		return
 	}
 
 	// Read the policy project
-	tflog.Info(ctx, "Waiting up to 1 minutes for reading the policy project to succeed. Sometimes a blank value is returned without this.", map[string]interface{}{
-		"group": group,
+	tflog.Info(ctx, "Reading the security policy project for the group.", map[string]interface{}{
+		"group":          group,
+		"policy_project": policyProject,
 	})
 
 	response, err := d.readPolicy(ctx, groupIds)
@@ -176,6 +178,7 @@ func (d *gitlabGroupSecurityPolicyAttachmentResource) Read(ctx context.Context, 
 			"policy_project": policyProject,
 		})
 		resp.State.RemoveResource(ctx)
+		return
 	}
 	// Get the policy project ID, which is the final digit in the GraphQL ID of the response
 	if response.Data.Group.SecurityPolicyProject != nil && response.Data.Group.SecurityPolicyProject.ID != "" {
@@ -193,6 +196,7 @@ func (d *gitlabGroupSecurityPolicyAttachmentResource) Read(ctx context.Context, 
 		_, err := d.parseGraphQLIds(ctx, data)
 		if err != nil {
 			resp.Diagnostics.AddError("Failed to parse GraphQL ID of the policy project", err.Error())
+			return
 		}
 	}
 
