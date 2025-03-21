@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -17,7 +18,7 @@ func Is404(err error) bool {
 	// If the error is a typed response
 	if errResponse, ok := err.(*gitlab.ErrorResponse); ok &&
 		errResponse.Response != nil &&
-		errResponse.Response.StatusCode == 404 {
+		errResponse.Response.StatusCode == http.StatusNotFound {
 		return true
 	}
 

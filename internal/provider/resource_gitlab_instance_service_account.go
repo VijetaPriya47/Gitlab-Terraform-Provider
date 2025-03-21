@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
+	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces
@@ -196,32 +197,46 @@ func (r *gitlabInstanceServiceAccountResource) Delete(ctx context.Context, req r
 			"GitLab API Error occurred",
 			fmt.Sprintf("Unable to delete service account: %s", err.Error()),
 		)
+		return
 	}
 
-	tick_rate := 10 * time.Second
-	delete_ticker := time.NewTicker(tick_rate)
+	// Create a context with timeout for deletion confirmation
 	timeout, diags := data.Timeouts.Delete(ctx, 10*time.Minute)
 	resp.Diagnostics.Append(diags...)
-	tries := int(timeout / tick_rate)
-
-	for i := 0; i < tries; i++ {
-		_, gitlab_resp, err := r.client.Users.GetUser(serviceAccountIDInt, gitlab.GetUsersOptions{}, gitlab.WithContext(ctx))
-		if gitlab_resp != nil && gitlab_resp.StatusCode == 404 {
-			return
-		}
-		if err != nil {
-			resp.Diagnostics.AddWarning(
-				"GitLab API Error occurred",
-				fmt.Sprintf("Unable to query service account: %s", err.Error()),
-			)
-		}
-		<-delete_ticker.C
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	resp.Diagnostics.AddError(
-		"Gitlab API Error occured",
-		fmt.Sprintf("Deletion context exceeded: %s", err.Error()),
-	)
+	deleteCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	// Poll every 10 seconds until the service account is confirmed deleted
+	ticker := time.NewTicker(10 * time.Second)
+	defer ticker.Stop()
+
+	done := deleteCtx.Done()
+	for {
+		select {
+		case <-done:
+			resp.Diagnostics.AddError(
+				"GitLab API Error occurred",
+				"Timed out waiting for service account deletion to complete",
+			)
+			return
+		case <-ticker.C:
+			_, _, err := r.client.Users.GetUser(serviceAccountIDInt, gitlab.GetUsersOptions{}, gitlab.WithContext(ctx))
+
+			// If we get a 404, the service account has been deleted
+			if api.Is404(err) {
+				return
+			}
+
+			// Log any errors but continue polling
+			if err != nil {
+				tflog.Warn(ctx, fmt.Sprintf("Error checking service account deletion status: %s", err.Error()))
+			}
+		}
+	}
 }
 
 // ImportState imports the resource into the Terraform state.
