@@ -7,158 +7,64 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
 func TestAccDataSourceGitlabUser_basic(t *testing.T) {
-	rString := acctest.RandString(5)
-	password := acctest.RandString(16)
+	users := testutil.CreateUsers(t, 2)
+	user1 := users[0]
+	user2 := users[1]
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
 		Steps: []resource.TestStep{
-			// Get user using its email
+			// Get user by email
 			{
-				Config: fmt.Sprintf(`
-				resource "gitlab_user" "foo" {
-				  name     = "foo%s"
-				  username = "listest%s"
-				  password = "%s"
-				  email    = "listest%s@ssss.com"
-				  is_admin = false
-				}
-				
-				resource "gitlab_user" "foo2" {
-				  name     = "foo2%s"
-				  username = "listest2%s"
-				  password = "%s"
-				  email    = "listest2%s@ssss.com"
-				}
-				
+				Config: fmt.Sprintf(`				
 				data "gitlab_user" "foo" {
-				  email = "${gitlab_user.foo.email}"
+				  email = "%s"
 				}
-				`, rString, rString, password, rString, rString, rString, password, rString),
+				`, user1.Email),
 				Check: resource.ComposeTestCheckFunc(
-					testAccDataSourceGitlabUser("gitlab_user.foo", "data.gitlab_user.foo"),
+					resource.TestCheckResourceAttr("data.gitlab_user.foo", "username", user1.Username),
+					resource.TestCheckResourceAttr("data.gitlab_user.foo", "email", user1.Email),
+					resource.TestCheckResourceAttr("data.gitlab_user.foo", "name", user1.Name),
+					resource.TestCheckResourceAttr("data.gitlab_user.foo", "is_admin", fmt.Sprintf("%t", user1.IsAdmin)),
+					resource.TestCheckResourceAttr("data.gitlab_user.foo", "can_create_group", fmt.Sprintf("%t", user1.CanCreateGroup)),
+					resource.TestCheckResourceAttr("data.gitlab_user.foo", "projects_limit", fmt.Sprintf("%d", user1.ProjectsLimit)),
 				),
 			},
-			// Get user using its ID
+			// Get user by ID
 			{
 				Config: fmt.Sprintf(`
-				resource "gitlab_user" "foo" {
-				  name     = "foo%s"
-				  username = "listest%s"
-				  password = "%s"
-				  email    = "listest%s@ssss.com"
-				  is_admin = false
-				}
-				
-				resource "gitlab_user" "foo2" {
-				  name     = "foo2%s"
-				  username = "listest2%s"
-				  password = "%s"
-				  email    = "listest2%s@ssss.com"
-				}
-				
 				data "gitlab_user" "foo2" {
-				  user_id = "${gitlab_user.foo2.id}"
+				  user_id = "%d"
 				}
-				`, rString, rString, password, rString, rString, rString, password, rString),
+				`, user2.ID),
 				Check: resource.ComposeTestCheckFunc(
-					testAccDataSourceGitlabUser("gitlab_user.foo2", "data.gitlab_user.foo2"),
+					resource.TestCheckResourceAttr("data.gitlab_user.foo2", "username", user2.Username),
+					resource.TestCheckResourceAttr("data.gitlab_user.foo2", "email", user2.Email),
+					resource.TestCheckResourceAttr("data.gitlab_user.foo2", "name", user2.Name),
+					resource.TestCheckResourceAttr("data.gitlab_user.foo2", "is_admin", fmt.Sprintf("%t", user2.IsAdmin)),
+					resource.TestCheckResourceAttr("data.gitlab_user.foo2", "can_create_group", fmt.Sprintf("%t", user2.CanCreateGroup)),
+					resource.TestCheckResourceAttr("data.gitlab_user.foo2", "projects_limit", fmt.Sprintf("%d", user2.ProjectsLimit)),
 				),
 			},
-			// Get user using its username
+			// Get user by username
 			{
-				Config: fmt.Sprintf(`
-				resource "gitlab_user" "foo" {
-				  name     = "foo%s"
-				  username = "listest%s"
-				  password = "%s"
-				  email    = "listest%s@ssss.com"
-				  is_admin = false
-				}
-				
-				resource "gitlab_user" "foo2" {
-				  name     = "foo2%s"
-				  username = "listest2%s"
-				  password = "%s"
-				  email    = "listest2%s@ssss.com"
-				}
-				
+				Config: fmt.Sprintf(`				
 				data "gitlab_user" "foo" {
-				  username = "${gitlab_user.foo.username}"
+				  username = "%s"
 				}
-				`, rString, rString, password, rString, rString, rString, password, rString),
+				`, user1.Username),
 				Check: resource.ComposeTestCheckFunc(
-					testAccDataSourceGitlabUser("gitlab_user.foo", "data.gitlab_user.foo"),
-				),
-			},
-		},
-	})
-}
-
-func testAccDataSourceGitlabUser(src, n string) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		user := s.RootModule().Resources[src]
-		userResource := user.Primary.Attributes
-
-		search := s.RootModule().Resources[n]
-		searchResource := search.Primary.Attributes
-
-		testAttributes := []string{
-			"username",
-			"email",
-			"name",
-			"is_admin",
-			"can_create_group",
-			"projects_limit",
-		}
-
-		for _, attribute := range testAttributes {
-			if searchResource[attribute] != userResource[attribute] {
-				return fmt.Errorf("Expected user's parameter `%s` to be: %s, but got: `%s`", attribute, userResource[attribute], searchResource[attribute])
-			}
-		}
-
-		return nil
-	}
-}
-
-func TestAccDataSourceGitlabUser_ExactEmail(t *testing.T) {
-	rString := acctest.RandString(5)
-	password := acctest.RandString(16)
-
-	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
-		Steps: []resource.TestStep{
-			// Get user using its email
-			{
-				Config: fmt.Sprintf(`
-				resource "gitlab_user" "foo" {
-				  name     = "foo%s"
-				  username = "listest%s"
-				  password = "%s"
-				  email    = "listest@ssss.com"
-				  is_admin = false
-				}
-				
-				resource "gitlab_user" "foo2" {
-				  name     = "foo2%s"
-				  username = "listest2%s"
-				  password = "%s"
-				  email    = "%slistest@ssss.com"
-				}
-				
-				data "gitlab_user" "foo" {
-				  email = "${gitlab_user.foo.email}"
-				}
-				`, rString, rString, password, rString, rString, password, rString),
-				Check: resource.ComposeTestCheckFunc(
-					testAccDataSourceGitlabUser("gitlab_user.foo", "data.gitlab_user.foo"),
+					resource.TestCheckResourceAttr("data.gitlab_user.foo", "username", user1.Username),
+					resource.TestCheckResourceAttr("data.gitlab_user.foo", "email", user1.Email),
+					resource.TestCheckResourceAttr("data.gitlab_user.foo", "name", user1.Name),
+					resource.TestCheckResourceAttr("data.gitlab_user.foo", "is_admin", fmt.Sprintf("%t", user1.IsAdmin)),
+					resource.TestCheckResourceAttr("data.gitlab_user.foo", "can_create_group", fmt.Sprintf("%t", user1.CanCreateGroup)),
+					resource.TestCheckResourceAttr("data.gitlab_user.foo", "projects_limit", fmt.Sprintf("%d", user1.ProjectsLimit)),
 				),
 			},
 		},
