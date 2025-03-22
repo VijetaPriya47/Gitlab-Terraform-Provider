@@ -10,7 +10,8 @@ linters-settings:
       description: "Terraform Provider Lint Tool"
       original-url: https://github.com/bflad/tfproviderlint
   errcheck:
-    exclude: errcheck_excludes.txt
+    exclude-functions:
+      - (*github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema.ResourceData).Set
 
 linters:
   enable:
