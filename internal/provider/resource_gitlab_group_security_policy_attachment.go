@@ -54,7 +54,6 @@ func (r *gitlabGroupSecurityPolicyAttachmentResource) Metadata(ctx context.Conte
 }
 
 func (r *gitlabGroupSecurityPolicyAttachmentResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_group_security_policy_attachment`" + ` resource allows to attach a security policy project to a group.
 
@@ -145,6 +144,7 @@ func (d *gitlabGroupSecurityPolicyAttachmentResource) Read(ctx context.Context, 
 	group, policyProject, err := utils.ParseTwoPartID(data.Id.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to parse IDs", err.Error())
+		return
 	}
 	data.Group = types.StringValue(group)
 	data.PolicyProject = types.StringValue(policyProject)
@@ -321,7 +321,6 @@ func (d *gitlabGroupSecurityPolicyAttachmentResource) readPolicy(ctx context.Con
 	}
 	`, ids.GroupFullPath)
 	_, err := api.SendGraphQLRequest(ctx, d.client, api.GraphQLQuery{Query: query}, &response)
-
 	if err != nil {
 		return nil, fmt.Errorf("generic GraphQL error: %s", err.Error())
 	}
@@ -336,7 +335,6 @@ func (d *gitlabGroupSecurityPolicyAttachmentResource) readPolicy(ctx context.Con
 
 // Update the security policy associated to the group
 func (d *gitlabGroupSecurityPolicyAttachmentResource) updatePolicy(ctx context.Context, data *gitlabGroupSecurityPolicyAttachmentResourceModel, ids *api.GroupIdentifiers) error {
-
 	// Update the policy project - This uses the same mutation as assigning a project to a project, but passes in the group path instead.
 	query := fmt.Sprintf(`
 		mutation {

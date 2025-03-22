@@ -219,7 +219,6 @@ func (r *gitlabProjectAccessTokenResource) Configure(ctx context.Context, req re
 }
 
 func (r *gitlabProjectAccessTokenResource) projectAccessTokenToStateModel(data *gitlabProjectAccessTokenResourceModel, token *gitlab.ProjectAccessToken, project string) diag.Diagnostics {
-
 	data.Project = types.StringValue(project)
 	data.Name = types.StringValue(token.Name)
 	data.ExpiresAt = types.StringValue(token.ExpiresAt.String())
@@ -253,7 +252,6 @@ func (r *gitlabProjectAccessTokenResource) ImportState(ctx context.Context, req 
 // resource, by checking the date that's set in the `expires_at` field is less than the `rotate_before_days`
 // value.
 func (r *gitlabProjectAccessTokenResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
-
 	// Retrieve the plan data to start with
 	var planData, stateData *gitlabProjectAccessTokenResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &planData)...)
@@ -489,6 +487,7 @@ func (r *gitlabProjectAccessTokenResource) Update(ctx context.Context, req resou
 			"Error parsing expiry date",
 			fmt.Sprintf("Could not parse expiry date %s: %s", data.ExpiresAt.ValueString(), err),
 		)
+		return
 	}
 
 	// update with a project access token means rotate it
@@ -563,7 +562,6 @@ func (r *gitlabProjectAccessTokenResource) Delete(ctx context.Context, req resou
 
 		return retry.RetryableError(errors.New("project access token was not deleted"))
 	})
-
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error deleting project access token",
@@ -576,7 +574,6 @@ func (r *gitlabProjectAccessTokenResource) Delete(ctx context.Context, req resou
 // value should be set into the `expiry_date` field for the options.
 // Returns a gitlab.ISOTime object of what should be set into the `expiry_date` field.
 func (r *gitlabProjectAccessTokenResource) determineExpiryDate(data *gitlabProjectAccessTokenResourceModel) (*gitlab.ISOTime, error) {
-
 	// If `expires_at` is set, then attempt to parse the time, and return the isoTime value if it
 	// successfully parses
 	if !data.ExpiresAt.IsNull() && !data.ExpiresAt.IsUnknown() && data.RotationConfiguration == nil {

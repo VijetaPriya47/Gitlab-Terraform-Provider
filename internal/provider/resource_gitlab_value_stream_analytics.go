@@ -66,12 +66,14 @@ func (d *gitlabValueStreamAnalyticsResource) Metadata(_ context.Context, req res
 }
 
 func (r *gitlabValueStreamAnalyticsResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-	allowedEventLabels := []string{"CODE_STAGE_START", "ISSUE_CLOSED", "ISSUE_CREATED", "ISSUE_DEPLOYED_TO_PRODUCTION",
+	allowedEventLabels := []string{
+		"CODE_STAGE_START", "ISSUE_CLOSED", "ISSUE_CREATED", "ISSUE_DEPLOYED_TO_PRODUCTION",
 		"ISSUE_FIRST_ADDED_TO_BOARD", "ISSUE_FIRST_ADDED_TO_ITERATION", "ISSUE_FIRST_ASSIGNED_AT", "ISSUE_FIRST_ASSOCIATED_WITH_MILESTONE",
 		"ISSUE_FIRST_MENTIONED_IN_COMMIT", "ISSUE_LABEL_ADDED", "ISSUE_LABEL_REMOVED", "ISSUE_LAST_EDITED", "ISSUE_STAGE_END", "MERGE_REQUEST_CLOSED",
 		"MERGE_REQUEST_CREATED", "MERGE_REQUEST_FIRST_ASSIGNED_AT", "MERGE_REQUEST_FIRST_COMMIT_AT", "MERGE_REQUEST_FIRST_DEPLOYED_TO_PRODUCTION",
 		"MERGE_REQUEST_LABEL_ADDED", "MERGE_REQUEST_LABEL_REMOVED", "MERGE_REQUEST_LAST_BUILD_FINISHED", "MERGE_REQUEST_LAST_BUILD_STARTED",
-		"MERGE_REQUEST_LAST_EDITED", "MERGE_REQUEST_MERGED", "MERGE_REQUEST_REVIEWER_FIRST_ASSIGNED", "MERGE_REQUEST_PLAN_STAGE_START"}
+		"MERGE_REQUEST_LAST_EDITED", "MERGE_REQUEST_MERGED", "MERGE_REQUEST_REVIEWER_FIRST_ASSIGNED", "MERGE_REQUEST_PLAN_STAGE_START",
+	}
 
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_value_stream_analytics`" + ` resource allows to manage the lifecycle of value stream analytics.
@@ -184,7 +186,6 @@ func (r *gitlabValueStreamAnalyticsResource) Configure(ctx context.Context, req 
 
 // Use the `ModifyPlan` to validate conditions not configurable within the schema.
 func (r *gitlabValueStreamAnalyticsResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
-
 	// Retrieve the plan data to start with
 	var planData *gitlabValueStreamAnalyticsResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &planData)...)
@@ -470,6 +471,7 @@ func (r *gitlabValueStreamAnalyticsResource) Delete(ctx context.Context, req res
 	_, _, id, err := utils.ParseThreePartID(data.Id.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Error occured while parsing ID", fmt.Sprintf("Unable to parse ID: %s", err.Error()))
+		return
 	}
 
 	query := api.GraphQLQuery{

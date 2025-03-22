@@ -312,6 +312,7 @@ func (r *gitlabComplianceFrameworkResource) Update(ctx context.Context, req reso
 	err := r.update(ctx, data, &resp.Diagnostics)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to update compliance framework", err.Error())
+		return
 	}
 
 	// Save updated data into Terraform state
@@ -346,6 +347,7 @@ func (r *gitlabComplianceFrameworkResource) Delete(ctx context.Context, req reso
 		err := r.update(ctx, data, &resp.Diagnostics)
 		if err != nil {
 			resp.Diagnostics.AddError("Failed to update compliance framework during delete", err.Error())
+			return
 		}
 	}
 
