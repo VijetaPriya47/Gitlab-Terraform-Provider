@@ -9,17 +9,17 @@ import (
 	"golang.org/x/tools/go/analysis"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/tools/passes"
-	"gitlab.com/gitlab-org/terraform-provider-gitlab/tools/passes/gogitlab"
+	clientgo "gitlab.com/gitlab-org/terraform-provider-gitlab/tools/passes/clientgo"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/tools/passes/usage"
 )
 
 var Output io.Writer = io.Discard
 
 var Analyzer = &analysis.Analyzer{
-	Doc:        "Estimate the unused pieces of the go-gitlab package",
+	Doc:        "Estimate the unused pieces of the client-go package",
 	Name:       "apiunused",
 	ResultType: reflect.TypeOf((*Result)(nil)),
-	Requires:   []*analysis.Analyzer{gogitlab.Analyzer, usage.Analyzer},
+	Requires:   []*analysis.Analyzer{clientgo.Analyzer, usage.Analyzer},
 	Run:        run,
 }
 
@@ -35,32 +35,32 @@ type Unused struct {
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
-	goGitLab := pass.ResultOf[gogitlab.Analyzer].(*gogitlab.Result)
+	clientGo := pass.ResultOf[clientgo.Analyzer].(*clientgo.Result)
 	usage := pass.ResultOf[usage.Analyzer].(*usage.Result)
 
 	result := &Result{
 		UnusedByFile: make(map[string]Unused),
 	}
 
-	processUnused(result, goGitLab.TypeToFilenames, usage.Types,
+	processUnused(result, clientGo.TypeToFilenames, usage.Types,
 		func(item Unused, name string) Unused {
 			item.Types = append(item.Types, name)
 			return item
 		})
 
-	processUnused(result, goGitLab.FuncToFilenames, usage.Funcs,
+	processUnused(result, clientGo.FuncToFilenames, usage.Funcs,
 		func(item Unused, name string) Unused {
 			item.Funcs = append(item.Funcs, name)
 			return item
 		})
 
-	processUnused(result, goGitLab.MethodToFilenames, usage.Methods,
+	processUnused(result, clientGo.MethodToFilenames, usage.Methods,
 		func(item Unused, name string) Unused {
 			item.Methods = append(item.Methods, name)
 			return item
 		})
 
-	processUnused(result, goGitLab.FieldToFilenames, usage.Fields,
+	processUnused(result, clientGo.FieldToFilenames, usage.Fields,
 		func(item Unused, name string) Unused {
 			item.Fields = append(item.Fields, name)
 			return item
@@ -73,7 +73,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	return result, nil
 }
 
-func processUnused(result *Result, nameToFilenames gogitlab.MultiMap, seen usage.Set, mutFn func(Unused, string) Unused) {
+func processUnused(result *Result, nameToFilenames clientgo.MultiMap, seen usage.Set, mutFn func(Unused, string) Unused) {
 	for name, filenames := range nameToFilenames {
 		if !seen[name] {
 			for _, filename := range filenames {

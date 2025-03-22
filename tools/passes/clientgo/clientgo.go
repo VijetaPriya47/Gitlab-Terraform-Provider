@@ -1,4 +1,4 @@
-package gogitlab
+package clientgo
 
 import (
 	"fmt"
@@ -12,14 +12,14 @@ import (
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/tools/passes"
 )
 
-const goGitLabPackagePath = "gitlab.com/gitlab-org/api/client-go"
+const clientGoPackagePath = "gitlab.com/gitlab-org/api/client-go"
 
 var Analyzer = &analysis.Analyzer{
-	Doc:        "Intermediate analyzer for extracting summary data from the go-gitlab package",
-	Name:       "gogitlab",
+	Doc:        "Intermediate analyzer for extracting summary data from the client-go package",
+	Name:       "clientgo",
 	ResultType: reflect.TypeOf((*Result)(nil)),
 	// Using Facts causes the analyzer to visit dependencies;
-	// otherwise it would not analyze the go-gitlab package.
+	// otherwise it would not analyze the client-go package.
 	FactTypes: []analysis.Fact{
 		(*typeFact)(nil),
 		(*funcFact)(nil),
@@ -39,7 +39,7 @@ type Result struct {
 type MultiMap map[string][]string
 
 func run(pass *analysis.Pass) (interface{}, error) {
-	if pass.Pkg.Path() == goGitLabPackagePath && !passes.IsTestPackage(pass) {
+	if pass.Pkg.Path() == clientGoPackagePath && !passes.IsTestPackage(pass) {
 		exportTypeFacts(pass)
 		exportFuncFacts(pass)
 		exportMethodFacts(pass)

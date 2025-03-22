@@ -414,7 +414,7 @@ type Settings struct {
 	DefaultBranchProtectionDefaults DefaultBranchProtectionDefaultsStruct `json:"default_branch_protection_defaults"`
 }
 
-// There is no go-gitlab struct for this setup, only a struct for the create/update options, which isn't quite
+// There is no client-go struct for this setup, only a struct for the create/update options, which isn't quite
 // what's needed. Instead, this matches the structure for the group options, defined in groups:line 49
 type DefaultBranchProtectionDefaultsStruct struct {
 	AllowedToPush           []*gitlab.GroupAccessLevel `json:"allowed_to_push"`

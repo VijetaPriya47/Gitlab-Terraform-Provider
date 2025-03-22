@@ -65,7 +65,7 @@ type gitlabProjectLevelNotificationsModel struct {
 	// it to "true" is coming back "false" on the API. Instead of debugging this
 	// I think it's better to deliver value early and push without support.
 	// It can be added later if users request it!
-	//NewEpic                   types.Bool   `tfsdk:"new_epic"`
+	// NewEpic                   types.Bool   `tfsdk:"new_epic"`
 }
 
 // Metadata returns the resource name
@@ -357,7 +357,6 @@ func (d *gitlabProjectLevelNotificationsResource) ValidateConfig(ctx context.Con
 			`"level" must be set to "custom" to set individual notification levels`,
 			`"level" must be set to "custom" to set individual notification levels`)
 	}
-
 }
 
 func (d *gitlabProjectLevelNotificationsModel) projectNotificationModelToState(project string, notifications *gitlab.NotificationSettings) {
@@ -387,7 +386,7 @@ func (d *gitlabProjectLevelNotificationsModel) projectNotificationModelToState(p
 		d.SuccessPipeline = types.BoolValue(notifications.Events.SuccessPipeline)
 		d.MovedProject = types.BoolValue(notifications.Events.MovedProject)
 		d.MergeWhenPipelineSucceeds = types.BoolValue(notifications.Events.MergeWhenPipelineSucceeds)
-		//d.NewEpic = types.BoolValue(notifications.Events.NewEpic)
+		// d.NewEpic = types.BoolValue(notifications.Events.NewEpic)
 	} else {
 		d.NewNote = types.BoolNull()
 		d.NewIssue = types.BoolNull()
@@ -406,14 +405,13 @@ func (d *gitlabProjectLevelNotificationsModel) projectNotificationModelToState(p
 		d.SuccessPipeline = types.BoolNull()
 		d.MovedProject = types.BoolNull()
 		d.MergeWhenPipelineSucceeds = types.BoolNull()
-		//d.NewEpic = types.BoolNull()
+		// d.NewEpic = types.BoolNull()
 	}
 }
 
 // Both update and create essentially do the same thing; there is no resource to create in GitLab,
 // we just update the project notification settings either way.
 func (d *gitlabProjectLevelNotificationsResource) updateProjectNotifications(ctx context.Context, data gitlabProjectLevelNotificationsModel) (*gitlab.NotificationSettings, error) {
-
 	opts := &gitlab.NotificationSettingsOptions{}
 	if !data.Level.IsNull() {
 		val := notificationLevelTypes[data.Level.ValueString()]
@@ -486,7 +484,7 @@ func (d *gitlabProjectLevelNotificationsResource) updateProjectNotifications(ctx
 	return settings, nil
 }
 
-// List of valid notification levels. These are needed for go-gitlab, and they don't currently seem to be exported, so there's
+// List of valid notification levels. These are needed for client-go, and they don't currently seem to be exported, so there's
 // no easy way to translate from the string value to the numeric that's needed for the `settings` struct.
 const (
 	DisabledNotificationLevel gitlab.NotificationLevelValue = iota

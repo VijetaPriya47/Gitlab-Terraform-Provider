@@ -94,7 +94,7 @@ func resourceGitlabApplicationSettingsDelete(ctx context.Context, d *schema.Reso
 	return nil
 }
 
-// Overrides the `omitempty` on the go-gitlab struct and sets the `enabled_git_access_protocol` to nil
+// Overrides the `omitempty` on the client-go struct and sets the `enabled_git_access_protocol` to nil
 func updateNilGitAccessSetting(client *gitlab.Client) error {
 	// Empty struct required for the method call.
 	options := &gitlab.UpdateSettingsOptions{}

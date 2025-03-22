@@ -39,7 +39,7 @@ func gitlabProjectIssueGetSchema() map[string]*schema.Schema {
 			Type:        schema.TypeInt,
 			Computed:    true,
 		},
-		// NOTE: not supported yet in go-gitlab (v0.55.0)
+		// NOTE: not supported yet in client-go (v0.55.0)
 		// "assignee_id": {
 		// 	Description: "The ID of the user to assign the issue to. Only appears on GitLab Free.",
 		// 	Type:        schema.TypeInt,
@@ -87,7 +87,7 @@ func gitlabProjectIssueGetSchema() map[string]*schema.Schema {
 		"epic_id": {
 			Description: "ID of the epic to add the issue to. Valid values are greater than or equal to 0.",
 			Type:        schema.TypeInt,
-			// NOTE: not yet supported to be set in go-gitlab.
+			// NOTE: not yet supported to be set in client-go.
 			Computed: true,
 			// ValidateDiagFunc: validation.ToDiagFunc(validation.IntAtLeast(0)),
 		},

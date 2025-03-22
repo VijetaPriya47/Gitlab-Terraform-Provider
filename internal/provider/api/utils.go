@@ -22,7 +22,7 @@ func Is404(err error) bool {
 		return true
 	}
 
-	// This can also come back as a string 404 from go-gitlab
+	// This can also come back as a string 404 from client-go
 	if err != nil && err.Error() == "404 Not Found" {
 		return true
 	}
