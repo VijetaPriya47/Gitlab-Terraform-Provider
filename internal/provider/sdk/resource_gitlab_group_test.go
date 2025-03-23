@@ -4,7 +4,6 @@
 package sdk
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"reflect"
@@ -15,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
@@ -199,7 +198,6 @@ func TestAccGitlabGroup_basic(t *testing.T) {
 			},
 			// Update the group to use new 'owner' value in `project_creation_level`
 			{
-				SkipFunc: api.IsGitLabVersionLessThan(context.Background(), testutil.TestGitlabClient, "17.7"),
 				Config: fmt.Sprintf(`
 				resource "gitlab_group" "foo" {
 				  name = "bar-name-%d"
@@ -1616,7 +1614,7 @@ func TestAccGitlabGroup_SetDefaultFalseBooleansOnCreate(t *testing.T) {
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
-		CheckDestroy:             testAccCheckGitlabProjectDestroy,
+		CheckDestroy:             testAccCheckGitlabGroupDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
