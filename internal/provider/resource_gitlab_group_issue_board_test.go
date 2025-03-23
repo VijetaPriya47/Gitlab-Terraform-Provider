@@ -22,11 +22,6 @@ func TestAccGitlabGroupIssueBoard_basic(t *testing.T) {
 	testGroup := testutil.CreateGroups(t, 1)[0]
 	testMilestone := testutil.AddGroupMilestones(t, testGroup, 1)[0]
 	testLabels := testutil.CreateGroupLabels(t, testGroup.ID, 2)
-	//testUser := testutil.CreateUsers(t, 1)[0]
-
-	// NOTE: there is no way to delete the last issue board, see
-	// https://gitlab.com/gitlab-org/gitlab/-/issues/367395
-	testutil.CreateGroupIssueBoard(t, testGroup.ID)
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
@@ -74,11 +69,6 @@ func TestAccGitlabGroupIssueBoard_AllOnCreateEE(t *testing.T) {
 	testutil.SkipIfCE(t)
 
 	testGroup := testutil.CreateGroups(t, 1)[0]
-	// testUsers := testutil.CreateUsers(t, 2)
-
-	// NOTE: there is no way to delete the last issue board, see
-	// https://gitlab.com/gitlab-org/gitlab/-/issues/367395
-	testutil.CreateGroupIssueBoard(t, testGroup.ID)
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
@@ -123,12 +113,6 @@ func TestAccGitlabGroupIssueBoard_Lists(t *testing.T) {
 
 	testGroup := testutil.CreateGroups(t, 1)[0]
 	testLabels := testutil.CreateGroupLabels(t, testGroup.ID, 4)
-	// testUsers := testutil.CreateUsers(t, 2)
-	// testutil.AddGroupMembers(t, testGroup.ID, testUsers)
-
-	// NOTE: there is no way to delete the last issue board, see
-	// https://gitlab.com/gitlab-org/gitlab/-/issues/367395
-	testutil.CreateGroupIssueBoard(t, testGroup.ID)
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
@@ -241,10 +225,6 @@ func TestAccGitlabGroupIssueBoard_LabelPositions(t *testing.T) {
 
 	testGroup := testutil.CreateGroups(t, 1)[0]
 	testLabels := testutil.CreateGroupLabels(t, testGroup.ID, 4)
-
-	// NOTE: there is no way to delete the last issue board, see
-	// https://gitlab.com/gitlab-org/gitlab/-/issues/367395
-	testutil.CreateGroupIssueBoard(t, testGroup.ID)
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,

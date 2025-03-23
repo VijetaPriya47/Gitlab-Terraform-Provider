@@ -20,10 +20,6 @@ func TestAccGitlabProjectIssueBoard_basic(t *testing.T) {
 	testLabels := testutil.CreateProjectLabels(t, testProject.ID, 2)
 	testUser := testutil.CreateUsers(t, 1)[0]
 
-	// NOTE: there is no way to delete the last issue board, see
-	// https://gitlab.com/gitlab-org/gitlab/-/issues/367395
-	testutil.CreateProjectIssueBoard(t, testProject.ID)
-
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
 		CheckDestroy:             testAccCheckGitlabProjectIssueBoardDestroy,
@@ -75,10 +71,6 @@ func TestAccGitlabProjectIssueBoard_AllOnCreateEE(t *testing.T) {
 	testMilestones := testutil.AddProjectMilestones(t, testProject, 2)
 	testLabels := testutil.CreateProjectLabels(t, testProject.ID, 4)
 	testUsers := testutil.CreateUsers(t, 2)
-
-	// NOTE: there is no way to delete the last issue board, see
-	// https://gitlab.com/gitlab-org/gitlab/-/issues/367395
-	testutil.CreateProjectIssueBoard(t, testProject.ID)
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
@@ -147,10 +139,6 @@ func TestAccGitlabProjectIssueBoard_Lists(t *testing.T) {
 	testLabels := testutil.CreateProjectLabels(t, testProject.ID, 4)
 	testUsers := testutil.CreateUsers(t, 2)
 	testutil.AddProjectMembers(t, testProject.ID, testUsers)
-
-	// NOTE: there is no way to delete the last issue board, see
-	// https://gitlab.com/gitlab-org/gitlab/-/issues/367395
-	testutil.CreateProjectIssueBoard(t, testProject.ID)
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
