@@ -11,17 +11,17 @@ import (
 	"golang.org/x/tools/go/analysis"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/tools/passes"
-	"gitlab.com/gitlab-org/terraform-provider-gitlab/tools/passes/gogitlab"
+	clientgo "gitlab.com/gitlab-org/terraform-provider-gitlab/tools/passes/clientgo"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/tools/passes/usage"
 )
 
 var Output io.Writer = io.Discard
 
 var Analyzer = &analysis.Analyzer{
-	Doc:        "Estimate usage of the go-gitlab package",
+	Doc:        "Estimate usage of the client-go package",
 	Name:       "apicovered",
 	ResultType: reflect.TypeOf((*Result)(nil)),
-	Requires:   []*analysis.Analyzer{gogitlab.Analyzer, usage.Analyzer},
+	Requires:   []*analysis.Analyzer{clientgo.Analyzer, usage.Analyzer},
 	Run:        run,
 }
 
@@ -35,17 +35,17 @@ type Fraction struct {
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
-	goGitLab := pass.ResultOf[gogitlab.Analyzer].(*gogitlab.Result)
+	clientGo := pass.ResultOf[clientgo.Analyzer].(*clientgo.Result)
 	usage := pass.ResultOf[usage.Analyzer].(*usage.Result)
 
 	result := &Result{
 		CoverageByFile: make(map[string]Fraction),
 	}
 
-	process(result, goGitLab.TypeToFilenames, usage.Types)
-	process(result, goGitLab.FuncToFilenames, usage.Funcs)
-	process(result, goGitLab.MethodToFilenames, usage.Methods)
-	process(result, goGitLab.FieldToFilenames, usage.Fields)
+	process(result, clientGo.TypeToFilenames, usage.Types)
+	process(result, clientGo.FuncToFilenames, usage.Funcs)
+	process(result, clientGo.MethodToFilenames, usage.Methods)
+	process(result, clientGo.FieldToFilenames, usage.Fields)
 
 	if !passes.IsTestPackage(pass) {
 		writeOutput(result)
@@ -54,7 +54,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	return result, nil
 }
 
-func process(result *Result, nameToFilenames gogitlab.MultiMap, seen usage.Set) {
+func process(result *Result, nameToFilenames clientgo.MultiMap, seen usage.Set) {
 	for _, filenames := range nameToFilenames {
 		for _, filename := range filenames {
 			coverage := result.CoverageByFile[filename]

@@ -15,7 +15,7 @@ func SendGraphQLRequest(ctx context.Context, client *gitlab.Client, query GraphQ
 	if err != nil {
 		return nil, err
 	}
-	// Overwrite the path of the existing request, as otherwise the go-gitlab client appends /api/v4 instead.
+	// Overwrite the path of the existing request, as otherwise client-go appends /api/v4 instead.
 	request.URL.Path = "/api/graphql"
 	resp, err := client.Do(request, response)
 	if err != nil {

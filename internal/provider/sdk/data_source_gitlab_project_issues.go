@@ -76,7 +76,7 @@ var _ = registerDataSource("gitlab_project_issues", func() *schema.Resource {
 				MaxItems:    1,
 				Optional:    true,
 			},
-			// NOTE: not yet supported in go-gitlab.
+			// NOTE: not yet supported in client-go.
 			// "author_username": {},
 			"confidential": {
 				Description: "Filter confidential or public issues.",
@@ -104,7 +104,7 @@ var _ = registerDataSource("gitlab_project_issues", func() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
-			// NOTE: not yet supported in go-gitlab.
+			// NOTE: not yet supported in client-go.
 			// "epic_id": {}
 			"iids": {
 				Description: "Return only the issues having the given iid",
@@ -118,7 +118,7 @@ var _ = registerDataSource("gitlab_project_issues", func() *schema.Resource {
 				Optional:         true,
 				ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(validIssueTypes, false)),
 			},
-			// NOTE: not yet supported in go-gitlab.
+			// NOTE: not yet supported in client-go.
 			// iteration_id: {},
 			// iteration_title: {},
 			"labels": {

@@ -27,6 +27,7 @@ var ValidGroupAccessLevelNames = []string{
 	"maintainer",
 	"owner",
 }
+
 var ValidProjectAccessLevelNames = []string{
 	"no one",
 	"minimal",
@@ -91,7 +92,7 @@ var AccessLevelValueToName = map[gitlab.AccessLevelValue]string{
 
 // This function is required because the CIRestrict setting using an
 // AccessControlLevel instead of an AccessLevelName, so it can't use the
-// constants within go-gitlab
+// constants within client-go
 func AccessControlLevelValueToName(input string) gitlab.AccessControlValue {
 	var developer gitlab.AccessControlValue = "developer"
 	var maintainer gitlab.AccessControlValue = "maintainer"

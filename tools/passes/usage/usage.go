@@ -8,7 +8,7 @@ import (
 )
 
 var Analyzer = &analysis.Analyzer{
-	Doc:        "Estimate usage of the go-gitlab package",
+	Doc:        "Estimate usage of the client-go package",
 	Name:       "apiCoverage",
 	ResultType: reflect.TypeOf((*Result)(nil)),
 	Run:        run,

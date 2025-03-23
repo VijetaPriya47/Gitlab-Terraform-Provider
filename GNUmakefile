@@ -59,7 +59,7 @@ lint-custom: ## Run custom checks and validations that do not fit into an existi
 apicovered: tool-apicovered ## Run an analysis tool to estimate the GitLab API coverage.
 	@$(GOBIN)/apicovered ./gitlab
 
-apiunused: tool-apiunused ## Run an analysis tool to output unused parts of the go-gitlab package.
+apiunused: tool-apiunused ## Run an analysis tool to output unused parts of the client-go package.
 	@$(GOBIN)/apiunused ./gitlab
 
 SERVICE ?= gitlab-ce
