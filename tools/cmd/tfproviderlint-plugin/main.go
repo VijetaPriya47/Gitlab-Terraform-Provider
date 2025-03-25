@@ -18,7 +18,7 @@ var excludes = []string{
 
 type analyzerPlugin struct{}
 
-func (*analyzerPlugin) GetAnalyzers() []*analysis.Analyzer {
+func New(conf any) ([]*analysis.Analyzer, error) {
 	excludesSet := make(map[string]struct{}, len(excludes))
 
 	for _, exclude := range excludes {
@@ -33,7 +33,7 @@ func (*analyzerPlugin) GetAnalyzers() []*analysis.Analyzer {
 		}
 	}
 
-	return analyzers
+	return analyzers, nil
 }
 
 var AnalyzerPlugin analyzerPlugin
