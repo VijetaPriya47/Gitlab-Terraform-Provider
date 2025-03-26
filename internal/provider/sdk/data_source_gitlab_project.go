@@ -314,6 +314,11 @@ var _ = registerDataSource("gitlab_project", func() *schema.Resource {
 				Optional:    true,
 				Computed:    true,
 			},
+			"ci_delete_pipelines_in_seconds": {
+				Description: "Pipelines older than the configured time are deleted.",
+				Type:        schema.TypeInt,
+				Computed:    true,
+			},
 			"ci_config_path": {
 				Description: "CI config file path for the project.",
 				Type:        schema.TypeString,
@@ -624,6 +629,7 @@ func dataSourceGitlabProjectRead(ctx context.Context, d *schema.ResourceData, me
 	d.Set("merge_commit_template", found.MergeCommitTemplate)
 	d.Set("allow_pipeline_trigger_approve_deployment", found.AllowPipelineTriggerApproveDeployment)
 	d.Set("ci_default_git_depth", found.CIDefaultGitDepth)
+	d.Set("ci_delete_pipelines_in_seconds", found.CIDeletePipelinesInSeconds)
 	d.Set("ci_config_path", found.CIConfigPath)
 	d.Set("ci_separated_caches", found.CISeperateCache)
 	d.Set("ci_restrict_pipeline_cancellation_role", found.CIRestrictPipelineCancellationRole)

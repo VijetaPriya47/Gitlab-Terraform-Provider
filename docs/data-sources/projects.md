@@ -96,6 +96,7 @@ Read-Only:
 - `builds_access_level` (String)
 - `ci_config_path` (String)
 - `ci_default_git_depth` (Number)
+- `ci_delete_pipelines_in_seconds` (Number)
 - `ci_forward_deployment_enabled` (Boolean)
 - `ci_pipeline_variables_minimum_override_role` (String)
 - `ci_restrict_pipeline_cancellation_role` (String)

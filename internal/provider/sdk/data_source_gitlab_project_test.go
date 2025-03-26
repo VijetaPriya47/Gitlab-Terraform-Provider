@@ -6,6 +6,7 @@ package sdk
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
@@ -183,7 +184,7 @@ func TestAccDataGitlabProject_CIRestrictPipeline(t *testing.T) {
 	// Requires EE
 	testutil.SkipIfCE(t)
 
-	// Create a new project using testutil, and update it's pipelines cancellation
+	// Create a new project using testutil, and update its pipelines cancellation
 	// to "developer"
 	client := testutil.TestGitlabClient
 	project := testutil.CreateProject(t)
@@ -219,7 +220,7 @@ func TestAccDataGitlabProject_CIRestrictPipeline(t *testing.T) {
 // override role value using testUtil, then uses a terraform
 // `gitlab_project` datasource to read and validate that it matches
 func TestAccDataGitlabProject_CIPipelineVariablesMinimumOverrideRole(t *testing.T) {
-	// Create a new project using testutil, and update it's pipelines cancellation
+	// Create a new project using testutil, and update its pipelines cancellation
 	// to "developer"
 	client := testutil.TestGitlabClient
 	project := testutil.CreateProject(t)
@@ -245,6 +246,43 @@ func TestAccDataGitlabProject_CIPipelineVariablesMinimumOverrideRole(t *testing.
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("data.gitlab_project.this", "ci_pipeline_variables_minimum_override_role", "no_one_allowed"),
+				),
+			},
+		},
+	})
+}
+
+// Create a test that populates the ci_delete_pipelines_in_seconds value using testUtil,
+// then uses a terraform `gitlab_project` datasource to read and validate that it matches
+func TestAccDataGitlabProject_CIDeletePipelinesInSeconds(t *testing.T) {
+	// Create a new project using testutil, and update its automatic pipeline cleanup setting
+	// to 1 month
+	client := testutil.TestGitlabClient
+	project := testutil.CreateProject(t)
+
+	ciDeletePipelinesInSeconds1Month := 30 * 24 * 60 * 60
+
+	_, _, err := client.Projects.EditProject(project.ID, &gitlab.EditProjectOptions{
+		CIDeletePipelinesInSeconds: &ciDeletePipelinesInSeconds1Month,
+	})
+	if err != nil {
+		t.Fatalf("Error updating project: %v", err)
+	}
+
+	// Create the terraform test
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(
+					`
+					 data "gitlab_project" "this" {
+						id = %d
+					 }
+					`, project.ID,
+				),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("data.gitlab_project.this", "ci_delete_pipelines_in_seconds", strconv.Itoa(ciDeletePipelinesInSeconds1Month)),
 				),
 			},
 		},

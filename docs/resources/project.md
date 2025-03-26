@@ -153,6 +153,7 @@ resource "gitlab_project" "import_private" {
 - `builds_access_level` (String) Set the builds access level. Valid values are `disabled`, `private`, `enabled`.
 - `ci_config_path` (String) Custom Path to CI config file.
 - `ci_default_git_depth` (Number) Default number of revisions for shallow cloning.
+- `ci_delete_pipelines_in_seconds` (Number) Pipelines older than the configured time are deleted.
 - `ci_forward_deployment_enabled` (Boolean) When a new deployment job starts, skip older deployment jobs that are still pending.
 - `ci_pipeline_variables_minimum_override_role` (String) The minimum role required to set variables when running pipelines and jobs. Introduced in GitLab 17.1. Valid values are `developer`, `maintainer`, `owner`, `no_one_allowed`
 - `ci_restrict_pipeline_cancellation_role` (String) The role required to cancel a pipeline or job. Premium and Ultimate only. Valid values are `developer`, `maintainer`, `no one`
