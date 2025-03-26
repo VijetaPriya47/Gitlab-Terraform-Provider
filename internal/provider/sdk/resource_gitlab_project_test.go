@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -3264,6 +3265,78 @@ func TestAccGitlabProject_RequireJiraIssue(t *testing.T) {
 				ResourceName:      "gitlab_project.test",
 				ImportState:       true,
 				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+// tests to ensure that ci_delete_pipelines_in_seconds functions as expected
+func TestAccGitlabProject_CIDeletePipelinesInSeconds(t *testing.T) {
+	var received gitlab.Project
+	rInt := acctest.RandInt()
+
+	ciDeletePipelinesInSeconds1Month := 30 * 24 * 60 * 60
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabProjectDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project" "this" {
+						name             = "testname-%d"
+						visibility_level = "private"
+						default_branch   = "main"
+
+						ci_delete_pipelines_in_seconds = %d
+					}`, rInt, ciDeletePipelinesInSeconds1Month),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabProjectExists("gitlab_project.this", &received),
+					resource.TestCheckResourceAttr("gitlab_project.this", "ci_delete_pipelines_in_seconds", strconv.Itoa(ciDeletePipelinesInSeconds1Month)),
+				),
+			},
+			// make sure empty value doesn't change it
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project" "this" {
+						name             = "testname-%d"
+						visibility_level = "private"
+						default_branch   = "main"
+					}`, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabProjectExists("gitlab_project.this", &received),
+					resource.TestCheckResourceAttr("gitlab_project.this", "ci_delete_pipelines_in_seconds", strconv.Itoa(ciDeletePipelinesInSeconds1Month)),
+				),
+			},
+			// make sure null value doesn't change it
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project" "this" {
+						name             = "testname-%d"
+						visibility_level = "private"
+						default_branch   = "main"
+
+						ci_delete_pipelines_in_seconds = null
+					}`, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabProjectExists("gitlab_project.this", &received),
+					resource.TestCheckResourceAttr("gitlab_project.this", "ci_delete_pipelines_in_seconds", strconv.Itoa(ciDeletePipelinesInSeconds1Month)),
+				),
+			},
+			// Disable ci_delete_pipelines_in_seconds using 0
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project" "this" {
+						name             = "testname-%d"
+						visibility_level = "private"
+						default_branch   = "main"
+
+						ci_delete_pipelines_in_seconds = 0
+					}`, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabProjectExists("gitlab_project.this", &received),
+					resource.TestCheckResourceAttr("gitlab_project.this", "ci_delete_pipelines_in_seconds", "0"),
+				),
 			},
 		},
 	})

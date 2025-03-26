@@ -199,6 +199,7 @@ func flattenProjects(projects []*gitlab.Project) (values []map[string]interface{
 			"squash_commit_template":                           project.SquashCommitTemplate,
 			"merge_commit_template":                            project.MergeCommitTemplate,
 			"ci_default_git_depth":                             project.CIDefaultGitDepth,
+			"ci_delete_pipelines_in_seconds":                   project.CIDeletePipelinesInSeconds,
 			"releases_access_level":                            string(project.ReleasesAccessLevel),
 			"environments_access_level":                        string(project.EnvironmentsAccessLevel),
 			"feature_flags_access_level":                       string(project.FeatureFlagsAccessLevel),
@@ -833,6 +834,11 @@ var _ = registerDataSource("gitlab_projects", func() *schema.Resource {
 							Elem: &schema.Schema{
 								Type: schema.TypeString,
 							},
+						},
+						"ci_delete_pipelines_in_seconds": {
+							Description: "Pipelines older than the configured time are deleted.",
+							Type:        schema.TypeInt,
+							Computed:    true,
 						},
 						"ci_config_path": {
 							Description: "CI config file path for the project.",

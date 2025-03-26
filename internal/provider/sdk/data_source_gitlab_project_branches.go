@@ -36,7 +36,7 @@ var _ = registerDataSource("gitlab_project_branches", func() *schema.Resource {
 							Computed:    true,
 						},
 						"merged": {
-							Description: "Bool, true if the branch has been merged into it's parent.",
+							Description: "Bool, true if the branch has been merged into its parent.",
 							Type:        schema.TypeBool,
 							Computed:    true,
 						},

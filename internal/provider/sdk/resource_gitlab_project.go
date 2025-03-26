@@ -2,11 +2,13 @@ package sdk
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"strconv"
 	"time"
 
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
@@ -14,9 +16,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
-	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
+	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
 
 var (
@@ -704,6 +706,12 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 		Optional:    true,
 		Computed:    true,
 	},
+	"ci_delete_pipelines_in_seconds": {
+		Description: "Pipelines older than the configured time are deleted.",
+		Type:        schema.TypeInt,
+		Optional:    true,
+		Computed:    true,
+	},
 	"forked_from_project_id": {
 		Description:   "The id of the project to fork. During create the project is forked and during an update the fork relation is changed.",
 		Type:          schema.TypeInt,
@@ -1001,6 +1009,7 @@ func resourceGitlabProjectSetToState(ctx context.Context, client *gitlab.Client,
 	d.Set("build_coverage_regex", project.BuildCoverageRegex)
 
 	d.Set("ci_default_git_depth", project.CIDefaultGitDepth)
+	d.Set("ci_delete_pipelines_in_seconds", project.CIDeletePipelinesInSeconds)
 	d.Set("avatar_url", project.AvatarURL)
 
 	if project.ForkedFromProject != nil {
@@ -1570,6 +1579,18 @@ func resourceGitlabProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 
 	if d.HasChange("ci_default_git_depth") {
 		options.CIDefaultGitDepth = gitlab.Ptr(d.Get("ci_default_git_depth").(int))
+	}
+
+	if d.HasChange("ci_delete_pipelines_in_seconds") {
+		if v, ok := d.GetOk("ci_delete_pipelines_in_seconds"); !ok || v == nil {
+			err := updateNilCIDeletePipelinesInSecondsSetting(client, d.Id())
+			if err != nil {
+				return diag.FromErr(err)
+			}
+			options.CIDeletePipelinesInSeconds = nil
+		} else {
+			options.CIDeletePipelinesInSeconds = gitlab.Ptr(d.Get("ci_delete_pipelines_in_seconds").(int))
+		}
 	}
 
 	if d.HasChange("ci_separated_caches") {
@@ -2524,6 +2545,10 @@ func updatePostCreateEditOptions(ctx context.Context, editProjectOptions *gitlab
 		editProjectOptions.CIDefaultGitDepth = gitlab.Ptr(v.(int))
 	}
 
+	if v, ok := d.GetOk("ci_delete_pipelines_in_seconds"); ok {
+		editProjectOptions.CIDeletePipelinesInSeconds = gitlab.Ptr(v.(int))
+	}
+
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 	if v, ok := d.GetOkExists("ci_forward_deployment_enabled"); ok {
@@ -2964,4 +2989,33 @@ type updateSecretDetectionGraphQLResponse struct {
 			} `json:"errors"`
 		} `json:"setPreReceiveSecretDetection"`
 	} `json:"data"`
+}
+
+// Overrides the `omitempty` on the go-gitlab struct and sets the `ci_delete_pipelines_in_seconds` to nil
+func updateNilCIDeletePipelinesInSecondsSetting(client *gitlab.Client, pid interface{}) error {
+	// Empty struct required for the method call.
+	options := &gitlab.EditProjectOptions{}
+
+	// Call with an overwritten http body.
+	_, _, err := client.Projects.EditProject(pid, options, func(request *retryablehttp.Request) error {
+		optionsStruct := struct {
+			CIDeletePipelinesInSeconds *int `url:"ci_delete_pipelines_in_seconds" json:"ci_delete_pipelines_in_seconds"`
+		}{
+			CIDeletePipelinesInSeconds: nil,
+		}
+
+		body, err := json.Marshal(optionsStruct)
+		if err != nil {
+			return err
+		}
+
+		err = request.SetBody(body)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return err
 }
