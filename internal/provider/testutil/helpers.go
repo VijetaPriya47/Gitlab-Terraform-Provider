@@ -1293,3 +1293,19 @@ func CreateGroupAccessToken(t *testing.T, groupID int) *gitlab.GroupAccessToken 
 
 	return groupAccessToken
 }
+
+func CreateCustomInstanceRole(t *testing.T, input *gitlab.CreateMemberRoleOptions) *gitlab.MemberRole {
+	role, _, err := TestGitlabClient.MemberRolesService.CreateInstanceMemberRole(input)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() {
+		_, err = TestGitlabClient.MemberRolesService.DeleteInstanceMemberRole(role.ID)
+		if err != nil {
+			t.Fatalf("Failed to destroy custom role: %v", err)
+		}
+	})
+
+	return role
+}
