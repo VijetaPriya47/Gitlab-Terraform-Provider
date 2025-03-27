@@ -4,11 +4,11 @@
 package provider
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
@@ -17,6 +17,7 @@ import (
 )
 
 func TestAccGitlabGroupMembership_basic(t *testing.T) {
+
 	var groupMember gitlab.GroupMember
 	group := testutil.CreateGroups(t, 1)[0]
 	user := testutil.CreateUsers(t, 1)[0]
@@ -148,35 +149,24 @@ func TestAccGitlabGroupMembership_useCustomRole(t *testing.T) {
 	// custom roles only available to EE ultimate
 	testutil.SkipIfCE(t)
 
-	// Group level custom roles don't work on self managed, so we can't test them without a SaaS project.
-	// See https://gitlab.com/gitlab-org/gitlab/-/issues/439284 for more details
-	t.Skip()
-
 	// create a user
 	user := testutil.CreateUsers(t, 1)[0]
 	// create a group to give them a membership to
 	group := testutil.CreateGroups(t, 1)[0]
 
-	// Create a custom role on that group - we don't need to clean this up, since it's bound to the group
-	// which will be deleted when the test finishes.
-	roleOne, _, errOne := testutil.TestGitlabClient.MemberRolesService.CreateMemberRole(group.ID, &gitlab.CreateMemberRoleOptions{
-		Name:              gitlab.Ptr("test-role"),
+	// Create an instance role (since group roles don't work on self-hosted anymore)
+	rInt := acctest.RandInt()
+	roleOne := testutil.CreateCustomInstanceRole(t, &gitlab.CreateMemberRoleOptions{
+		Name:              gitlab.Ptr(fmt.Sprintf("test-role-%d", rInt)),
 		BaseAccessLevel:   gitlab.Ptr(gitlab.MaintainerPermissions),
 		ReadVulnerability: gitlab.Ptr(true),
 	})
 
-	// Create a second custom role on that group (for testing update)
-	roleTwo, _, errTwo := testutil.TestGitlabClient.MemberRolesService.CreateMemberRole(group.ID, &gitlab.CreateMemberRoleOptions{
-		Name:              gitlab.Ptr("test-role-update"),
+	roleTwo := testutil.CreateCustomInstanceRole(t, &gitlab.CreateMemberRoleOptions{
+		Name:              gitlab.Ptr(fmt.Sprintf("test-role-two-%d", rInt)),
 		BaseAccessLevel:   gitlab.Ptr(gitlab.MaintainerPermissions),
 		ReadVulnerability: gitlab.Ptr(true),
 	})
-
-	// If either of our role creations fail, short-circuit the test
-	err := errors.Join(errOne, errTwo)
-	if err != nil {
-		t.Fatalf("Failed to create one of the two testing roles. Error: %v", err)
-	}
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,

@@ -89,11 +89,15 @@ func (r *gitlabGroupMembershipResource) Schema(ctc context.Context, req resource
 			},
 			"member_role_id": schema.Int64Attribute{
 				MarkdownDescription: "The ID of a custom member role. Only available for Ultimate instances.",
+				PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
 				Optional:            true,
+				Computed:            true,
 			},
 			"expires_at": schema.StringAttribute{
 				MarkdownDescription: "Expiration date for the group membership. Format: `YYYY-MM-DD`",
+				PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 				Optional:            true,
+				Computed:            true,
 			},
 			"skip_subresources_on_destroy": schema.BoolAttribute{
 				MarkdownDescription: "Whether the deletion of direct memberships of the removed member in subgroups and projects should be skipped. Only used during a destroy.",
@@ -146,7 +150,7 @@ func (d *gitlabGroupMembershipResource) Create(ctx context.Context, req resource
 		ExpiresAt:   &expiresAt,
 	}
 
-	if !data.MemberRoleID.IsNull() {
+	if !data.MemberRoleID.IsNull() && !data.MemberRoleID.IsUnknown() {
 		options.MemberRoleID = gitlab.Ptr(int(data.MemberRoleID.ValueInt64()))
 	}
 
@@ -217,7 +221,7 @@ func (d *gitlabGroupMembershipResource) Update(ctx context.Context, req resource
 		ExpiresAt:   &expiresAt,
 	}
 
-	if !data.MemberRoleID.IsNull() {
+	if !data.MemberRoleID.IsNull() && !data.MemberRoleID.IsUnknown() {
 		options.MemberRoleID = gitlab.Ptr(int(data.MemberRoleID.ValueInt64()))
 	}
 
@@ -280,10 +284,14 @@ func (data *gitlabGroupMembershipResourceModel) groupMembershipToStateModel(grou
 
 	if groupMember.MemberRole != nil {
 		data.MemberRoleID = types.Int64Value(int64(groupMember.MemberRole.ID))
+	} else {
+		data.MemberRoleID = types.Int64Null()
 	}
 
 	if groupMember.ExpiresAt != nil {
 		data.ExpiresAt = types.StringValue(groupMember.ExpiresAt.String())
+	} else {
+		data.ExpiresAt = types.StringNull()
 	}
 
 	if data.SkipSubresourcesOnDestroy.IsNull() {
