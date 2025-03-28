@@ -1209,6 +1209,13 @@ func TestAccGitlabProject_setSinglePushRuleToDefault(t *testing.T) {
 }
 
 func TestAccGitlabProject_groupWithoutDefaultBranchProtection(t *testing.T) {
+	group := testutil.CreateGroups(t, 1)[0]
+	no_protection := 0
+	_, _, err := testutil.TestGitlabClient.Groups.UpdateGroup(group.ID, &gitlab.UpdateGroupOptions{DefaultBranchProtection: &no_protection})
+	if err != nil {
+		t.Fatalf("error setting test group default branch protection: %v", err)
+	}
+
 	var project gitlab.Project
 	rInt := acctest.RandInt()
 
@@ -1218,54 +1225,33 @@ func TestAccGitlabProject_groupWithoutDefaultBranchProtection(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
-				resource "gitlab_group" "foo" {
-				  name = "foogroup-%d"
-				  path = "foogroup-%d"
-				  default_branch_protection = 0
-				  visibility_level = "public"
-				}
-				
 				resource "gitlab_project" "foo" {
 				  name = "foo-%d"
 				  description = "Terraform acceptance tests"
-				  namespace_id = "${gitlab_group.foo.id}"
+				  namespace_id = "%d"
 				}
-				`, rInt, rInt, rInt),
+				`, rInt, group.ID),
 				Check: testAccCheckGitlabProjectExists("gitlab_project.foo", &project),
 			},
 			{
 				Config: fmt.Sprintf(`
-				resource "gitlab_group" "foo" {
-				  name = "foogroup-%d"
-				  path = "foogroup-%d"
-				  default_branch_protection = 0
-				  visibility_level = "public"
-				}
-				
 				resource "gitlab_project" "foo" {
 				  name = "foo-%d"
 				  description = "Terraform acceptance tests"
-				  namespace_id = "${gitlab_group.foo.id}"
+				  namespace_id = "%d"
 				}
-				`, rInt, rInt, rInt),
+				`, rInt, group.ID),
 				Destroy: true,
 			},
 			{
 				Config: fmt.Sprintf(`
-				resource "gitlab_group" "foo" {
-				  name = "foogroup2-%d"
-				  path = "foogroup2-%d"
-				  default_branch_protection = 0
-				  visibility_level = "public"
-				}
-				
 				resource "gitlab_project" "foo" {
-				  name = "foo-%d"
+				  name = "foo2-%d"
 				  description = "Terraform acceptance tests"
-				  namespace_id = "${gitlab_group.foo.id}"
+				  namespace_id = "%d"
 				  initialize_with_readme = true
 				}
-				`, rInt, rInt, rInt),
+				`, rInt, group.ID),
 				Check: testAccCheckGitlabProjectExists("gitlab_project.foo", &project),
 			},
 		},
@@ -1578,6 +1564,7 @@ func TestAccGitlabProject_import(t *testing.T) {
 
 // lintignore: AT002 // specialized import test
 func TestAccGitlabProject_nestedImport(t *testing.T) {
+	group := testutil.CreateGroups(t, 1)[0]
 	rInt := acctest.RandInt()
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
@@ -1585,22 +1572,16 @@ func TestAccGitlabProject_nestedImport(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
-				resource "gitlab_group" "foo" {
-				  name             = "foogroup-%d"
-				  path             = "foogroup-%d"
-				  visibility_level = "public"
-				}
-				
 				resource "gitlab_project" "foo" {
 				  name         = "foo-%d"
 				  description  = "Terraform acceptance tests"
-				  namespace_id = "${gitlab_group.foo.id}"
+				  namespace_id = "%d"
 				
 				  # So that acceptance tests can be run in a gitlab organization
 				  # with no billing
 				  visibility_level = "public"
 				}
-				`, rInt, rInt, rInt),
+				`, rInt, group.ID),
 			},
 			{
 				ResourceName:      "gitlab_project.foo",
@@ -1612,11 +1593,14 @@ func TestAccGitlabProject_nestedImport(t *testing.T) {
 }
 
 func TestAccGitlabProject_transfer(t *testing.T) {
+	groups := testutil.CreateGroups(t, 2)
+	group1 := groups[0]
+	group2 := groups[1]
 	var transferred, received gitlab.Project
 	rInt := acctest.RandInt()
 
 	transferred = gitlab.Project{
-		Namespace:                        &gitlab.ProjectNamespace{Name: fmt.Sprintf("foo2group-%d", rInt)},
+		Namespace:                        &gitlab.ProjectNamespace{Name: group2.Name},
 		Name:                             fmt.Sprintf("foo-%d", rInt),
 		Path:                             fmt.Sprintf("foo-%d", rInt),
 		Description:                      "Terraform acceptance tests",
@@ -1645,8 +1629,8 @@ func TestAccGitlabProject_transfer(t *testing.T) {
 		KeepLatestArtifact:              true,
 	}
 
-	pathBeforeTransfer := fmt.Sprintf("foogroup-%d/foo-%d", rInt, rInt)
-	pathAfterTransfer := fmt.Sprintf("foo2group-%d/foo-%d", rInt, rInt)
+	pathBeforeTransfer := fmt.Sprintf("%s/foo-%d", group1.Path, rInt)
+	pathAfterTransfer := fmt.Sprintf("%s/foo-%d", group2.Path, rInt)
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
@@ -1655,22 +1639,16 @@ func TestAccGitlabProject_transfer(t *testing.T) {
 			// Create a project in a group
 			{
 				Config: fmt.Sprintf(`
-				resource "gitlab_group" "foo" {
-				  name = "foogroup-%d"
-				  path = "foogroup-%d"
-				  visibility_level = "public"
-				}
-				
 				resource "gitlab_project" "foo" {
 				  name = "foo-%d"
 				  description = "Terraform acceptance tests"
-				  namespace_id = "${gitlab_group.foo.id}"
+				  namespace_id = "%d"
 				
 				  # So that acceptance tests can be run in a gitlab organization
 				  # with no billing
 				  visibility_level = "public"
 				}
-				`, rInt, rInt, rInt),
+				`, rInt, group1.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectExists("gitlab_project.foo", &received),
 					resource.TestCheckResourceAttr("gitlab_project.foo", "path_with_namespace", pathBeforeTransfer),
@@ -1679,28 +1657,16 @@ func TestAccGitlabProject_transfer(t *testing.T) {
 			// Create a second group and set the transfer the project to this group
 			{
 				Config: fmt.Sprintf(`
-				resource "gitlab_group" "foo" {
-				  name = "foogroup-%d"
-				  path = "foogroup-%d"
-				  visibility_level = "public"
-				}
-				
-				resource "gitlab_group" "foo2" {
-				  name = "foo2group-%d"
-				  path = "foo2group-%d"
-				  visibility_level = "public"
-				}
-				
 				resource "gitlab_project" "foo" {
 				  name = "foo-%d"
 				  description = "Terraform acceptance tests"
-				  namespace_id = "${gitlab_group.foo2.id}"
+				  namespace_id = "%d"
 				
 				  # So that acceptance tests can be run in a gitlab organization
 				  # with no billing
 				  visibility_level = "public"
 				}
-				`, rInt, rInt, rInt, rInt, rInt),
+				`, rInt, group2.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabProjectExists("gitlab_project.foo", &received),
 					testAccCheckAggregateGitlabProject(&transferred, &received),

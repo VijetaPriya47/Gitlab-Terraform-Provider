@@ -5,66 +5,49 @@ package sdk
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
 
+	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
 func TestAccGitlabGroupCustomAttribute_basic(t *testing.T) {
-	var group gitlab.Group
-	var customAttribute gitlab.CustomAttribute
-	rInt := acctest.RandInt()
+	group := testutil.CreateGroups(t, 1)[0]
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
-		CheckDestroy:             testAccCheckGitlabGroupDestroy,
+		CheckDestroy:             testAccCheckGitlabGroupCustomAttributesDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
-resource "gitlab_group" "group" {
-  	name = "foo-name-%d"
-    path = "foo-path-%d"
-}
-
 resource "gitlab_group_custom_attribute" "attr" {
-	group = gitlab_group.group.id
+	group = %d
 	key   = "foo"
 	value = "bar"
-}`, rInt, rInt),
+}`, group.ID),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabGroupExists("gitlab_group.group", &group),
-					testAccCheckGitlabGroupCustomAttributeExists("gitlab_group_custom_attribute.attr", &customAttribute),
-					testAccCheckGitlabGroupCustomAttributes(&customAttribute, &testAccGitlabGroupExpectedCustomAttributes{
-						Key:   "foo",
-						Value: "bar",
-					}),
+					resource.TestCheckResourceAttr("gitlab_group_custom_attribute.attr", "group", strconv.Itoa(group.ID)),
+					resource.TestCheckResourceAttr("gitlab_group_custom_attribute.attr", "key", "foo"),
+					resource.TestCheckResourceAttr("gitlab_group_custom_attribute.attr", "value", "bar"),
 				),
 			},
 			// Update the custom attribute
 			{
 				Config: fmt.Sprintf(`
-resource "gitlab_group" "group" {
-	name = "foo-name-%d"
-	path = "foo-path-%d"
-}
-
 resource "gitlab_group_custom_attribute" "attr" {
-	group = gitlab_group.group.id
+	group = %d
 	key   = "foo"
 	value = "updated"
-}`, rInt, rInt),
+}`, group.ID),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabGroupExists("gitlab_group.group", &group),
-					testAccCheckGitlabGroupCustomAttributeExists("gitlab_group_custom_attribute.attr", &customAttribute),
-					testAccCheckGitlabGroupCustomAttributes(&customAttribute, &testAccGitlabGroupExpectedCustomAttributes{
-						Key:   "foo",
-						Value: "updated",
-					}),
+					resource.TestCheckResourceAttr("gitlab_group_custom_attribute.attr", "group", strconv.Itoa(group.ID)),
+					resource.TestCheckResourceAttr("gitlab_group_custom_attribute.attr", "key", "foo"),
+					resource.TestCheckResourceAttr("gitlab_group_custom_attribute.attr", "value", "updated"),
 				),
 			},
 			{
@@ -76,42 +59,32 @@ resource "gitlab_group_custom_attribute" "attr" {
 	})
 }
 
-func testAccCheckGitlabGroupCustomAttributeExists(n string, customAttribute *gitlab.CustomAttribute) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[n]
-		if !ok {
-			return fmt.Errorf("Not Found: %s", n)
+func testAccCheckGitlabGroupCustomAttributesDestroy(s *terraform.State) error {
+	for _, rs := range s.RootModule().Resources {
+		if rs.Type != "gitlab_group_custom_attribute" {
+			continue
 		}
 
-		id, key, err := parseId(rs.Primary.ID)
+		parts := strings.SplitN(rs.Primary.ID, ":", 2)
+		if len(parts) != 2 {
+			return fmt.Errorf("unexpected ID format (%q). Expected group-id:key", rs.Primary.ID)
+		}
+
+		groupID, err := strconv.Atoi(parts[0])
 		if err != nil {
+			return fmt.Errorf("Unable to parse group id (%q) into an integer", rs.Primary.ID)
+		}
+
+		attribute, _, err := testutil.TestGitlabClient.CustomAttribute.GetCustomGroupAttribute(groupID, parts[1])
+		if err == nil && attribute != nil {
+			return fmt.Errorf("Group custom attribute still exists")
+		}
+
+		if !api.Is404(err) {
 			return err
-		}
-
-		gotCustomAttribute, _, err := testutil.TestGitlabClient.CustomAttribute.GetCustomGroupAttribute(id, key)
-		if err != nil {
-			return err
-		}
-		*customAttribute = *gotCustomAttribute
-		return nil
-	}
-}
-
-type testAccGitlabGroupExpectedCustomAttributes struct {
-	Key   string
-	Value string
-}
-
-func testAccCheckGitlabGroupCustomAttributes(got *gitlab.CustomAttribute, want *testAccGitlabGroupExpectedCustomAttributes) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		if got.Key != want.Key {
-			return fmt.Errorf("got key %q; want %q", got.Key, want.Key)
-		}
-
-		if got.Value != want.Value {
-			return fmt.Errorf("got value %q; want %q", got.Value, want.Value)
 		}
 
 		return nil
 	}
+	return nil
 }

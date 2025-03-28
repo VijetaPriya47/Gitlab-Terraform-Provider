@@ -7,18 +7,16 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
 func TestAccGitlabUserCustomAttribute_basic(t *testing.T) {
-	var user gitlab.User
+	user := testutil.CreateUsers(t, 1)[0]
 	var customAttribute gitlab.CustomAttribute
-	rInt := acctest.RandInt()
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
@@ -26,20 +24,12 @@ func TestAccGitlabUserCustomAttribute_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
-resource "gitlab_user" "user" {
-  name        = "foo%d"
-  username    = "foo%d"
-  password    = "SvNwfHhbvPmHZr%d"
-  email       = "foo@email.com"
-}
-
 resource "gitlab_user_custom_attribute" "attr" {
-	user  = gitlab_user.user.id
+	user  = %d
 	key   = "foo"
 	value = "bar"
-}`, rInt, rInt, rInt),
+}`, user.ID),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabUserExists("gitlab_user.user", &user),
 					testAccCheckGitlabUserCustomAttributeExists("gitlab_user_custom_attribute.attr", &customAttribute),
 					testAccCheckGitlabUserCustomAttributes(&customAttribute, &testAccGitlabUserExpectedCustomAttributes{
 						Key:   "foo",
@@ -47,23 +37,20 @@ resource "gitlab_user_custom_attribute" "attr" {
 					}),
 				),
 			},
+			{
+				ResourceName:      "gitlab_user_custom_attribute.attr",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
 			// Update the custom attribute
 			{
 				Config: fmt.Sprintf(`
-resource "gitlab_user" "user" {
-  name        = "foo%d"
-  username    = "foo%d"
-  password    = "SvNwfHhbvPmHZr%d"
-  email       = "foo@email.com"
-}
-
 resource "gitlab_user_custom_attribute" "attr" {
-	user  = gitlab_user.user.id
+	user  = %d
 	key   = "foo"
 	value = "updated"
-}`, rInt, rInt, rInt),
+}`, user.ID),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabUserExists("gitlab_user.user", &user),
 					testAccCheckGitlabUserCustomAttributeExists("gitlab_user_custom_attribute.attr", &customAttribute),
 					testAccCheckGitlabUserCustomAttributes(&customAttribute, &testAccGitlabUserExpectedCustomAttributes{
 						Key:   "foo",

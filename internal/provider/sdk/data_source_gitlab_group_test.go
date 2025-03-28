@@ -7,79 +7,61 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
 func TestAccDataSourceGitlabGroup_basic(t *testing.T) {
-	rString := acctest.RandString(5)
-
-	groups := testutil.CreateGroups(t, 2)
+	groups := testutil.CreateGroups(t, 3)
+	subgroup := testutil.CreateSubGroups(t, groups[2], 1)[0]
 	withShare := testutil.GroupShareGroup(t, groups[0].ID, &groups[1].ID)
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
 		Steps: []resource.TestStep{
 			// Get group using its ID
 			{
 				Config: fmt.Sprintf(`
-				resource "gitlab_group" "foo" {
-				  name = "foo-name-%[1]s"
-				  path = "foo-path-%[1]s"
-				
-				  # So that acceptance tests can be run in a gitlab organization
-				  # with no billing
-				  visibility_level = "public"
-				}
-				
-				resource "gitlab_group" "sub_foo" {
-				  name      = "sub-foo-name-%[1]s"
-				  path      = "sub-foo-path-%[1]s"
-				  parent_id = "${gitlab_group.foo.id}"
-				
-				  # So that acceptance tests can be run in a gitlab organization
-				  # with no billing
-				  visibility_level = "public"
-				}
-				
 				data "gitlab_group" "foo" {
-				  group_id = "${gitlab_group.foo.id}"
+				  group_id = "%d"
 				}
-				`, rString),
+				`, groups[2].ID),
 				Check: resource.ComposeTestCheckFunc(
-					testAccDataSourceGitlabGroup("gitlab_group.foo", "data.gitlab_group.foo"),
+					resource.TestCheckResourceAttr("data.gitlab_group.foo", "id", fmt.Sprintf("%d", groups[2].ID)),
+					resource.TestCheckResourceAttr("data.gitlab_group.foo", "full_path", groups[2].FullPath),
+					resource.TestCheckResourceAttr("data.gitlab_group.foo", "name", groups[2].Name),
+					resource.TestCheckResourceAttr("data.gitlab_group.foo", "full_name", groups[2].FullName),
+					resource.TestCheckResourceAttr("data.gitlab_group.foo", "web_url", groups[2].WebURL),
+					resource.TestCheckResourceAttr("data.gitlab_group.foo", "path", groups[2].Path),
+					resource.TestCheckResourceAttr("data.gitlab_group.foo", "default_branch", groups[2].DefaultBranch),
+					resource.TestCheckResourceAttr("data.gitlab_group.foo", "description", groups[2].Description),
+					resource.TestCheckResourceAttr("data.gitlab_group.foo", "lfs_enabled", fmt.Sprintf("%t", groups[2].LFSEnabled)),
+					resource.TestCheckResourceAttr("data.gitlab_group.foo", "request_access_enabled", fmt.Sprintf("%t", groups[2].RequestAccessEnabled)),
+					resource.TestCheckResourceAttr("data.gitlab_group.foo", "parent_id", fmt.Sprintf("%d", groups[2].ParentID)),
+					resource.TestCheckResourceAttr("data.gitlab_group.foo", "prevent_forking_outside_group", fmt.Sprintf("%t", groups[2].PreventForkingOutsideGroup)),
 				),
 			},
 			// Get group using its full path
 			{
 				Config: fmt.Sprintf(`
-				resource "gitlab_group" "foo" {
-				  name = "foo-name-%[1]s"
-				  path = "foo-path-%[1]s"
-				
-				  # So that acceptance tests can be run in a gitlab organization
-				  # with no billing
-				  visibility_level = "public"
-				}
-				
-				resource "gitlab_group" "sub_foo" {
-				  name      = "sub-foo-name-%[1]s"
-				  path      = "sub-foo-path-%[1]s"
-				  parent_id = "${gitlab_group.foo.id}"
-				
-				  # So that acceptance tests can be run in a gitlab organization
-				  # with no billing
-				  visibility_level = "public"
-				}
 				data "gitlab_group" "sub_foo" {
-				  full_path = "${gitlab_group.foo.path}/${gitlab_group.sub_foo.path}"
+				  full_path = "%s"
 				}
-				  `, rString),
+				  `, subgroup.FullPath),
 				Check: resource.ComposeTestCheckFunc(
-					testAccDataSourceGitlabGroup("gitlab_group.sub_foo", "data.gitlab_group.sub_foo"),
+					resource.TestCheckResourceAttr("data.gitlab_group.sub_foo", "id", fmt.Sprintf("%d", subgroup.ID)),
+					resource.TestCheckResourceAttr("data.gitlab_group.sub_foo", "full_path", subgroup.FullPath),
+					resource.TestCheckResourceAttr("data.gitlab_group.sub_foo", "name", subgroup.Name),
+					resource.TestCheckResourceAttr("data.gitlab_group.sub_foo", "full_name", subgroup.FullName),
+					resource.TestCheckResourceAttr("data.gitlab_group.sub_foo", "web_url", subgroup.WebURL),
+					resource.TestCheckResourceAttr("data.gitlab_group.sub_foo", "path", subgroup.Path),
+					resource.TestCheckResourceAttr("data.gitlab_group.sub_foo", "default_branch", subgroup.DefaultBranch),
+					resource.TestCheckResourceAttr("data.gitlab_group.sub_foo", "description", subgroup.Description),
+					resource.TestCheckResourceAttr("data.gitlab_group.sub_foo", "lfs_enabled", fmt.Sprintf("%t", subgroup.LFSEnabled)),
+					resource.TestCheckResourceAttr("data.gitlab_group.sub_foo", "request_access_enabled", fmt.Sprintf("%t", subgroup.RequestAccessEnabled)),
+					resource.TestCheckResourceAttr("data.gitlab_group.sub_foo", "parent_id", fmt.Sprintf("%d", subgroup.ParentID)),
+					resource.TestCheckResourceAttr("data.gitlab_group.sub_foo", "prevent_forking_outside_group", fmt.Sprintf("%t", subgroup.PreventForkingOutsideGroup)),
 				),
 			},
 			// Group shared with another group
@@ -91,63 +73,13 @@ func TestAccDataSourceGitlabGroup_basic(t *testing.T) {
 					`, groups[0].ID,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(
-						"data.gitlab_group.this",
-						"shared_with_groups.#",
-						"1"),
-					resource.TestCheckResourceAttr(
-						"data.gitlab_group.this",
-						"shared_with_groups.0.group_id",
-						fmt.Sprintf("%d", withShare.SharedWithGroups[0].GroupID)),
-					resource.TestCheckResourceAttr(
-						"data.gitlab_group.this",
-						"shared_with_groups.0.expires_at",
-						withShare.SharedWithGroups[0].ExpiresAt.String()),
-					resource.TestCheckResourceAttr(
-						"data.gitlab_group.this",
-						"shared_with_groups.0.group_full_path",
-						withShare.SharedWithGroups[0].GroupFullPath),
-					resource.TestCheckResourceAttr(
-						"data.gitlab_group.this",
-						"shared_with_groups.0.group_access_level",
-						fmt.Sprintf("%d", withShare.SharedWithGroups[0].GroupAccessLevel)),
+					resource.TestCheckResourceAttr("data.gitlab_group.this", "shared_with_groups.#", "1"),
+					resource.TestCheckResourceAttr("data.gitlab_group.this", "shared_with_groups.0.group_id", fmt.Sprintf("%d", withShare.SharedWithGroups[0].GroupID)),
+					resource.TestCheckResourceAttr("data.gitlab_group.this", "shared_with_groups.0.expires_at", withShare.SharedWithGroups[0].ExpiresAt.String()),
+					resource.TestCheckResourceAttr("data.gitlab_group.this", "shared_with_groups.0.group_full_path", withShare.SharedWithGroups[0].GroupFullPath),
+					resource.TestCheckResourceAttr("data.gitlab_group.this", "shared_with_groups.0.group_access_level", fmt.Sprintf("%d", withShare.SharedWithGroups[0].GroupAccessLevel)),
 				),
 			},
 		},
 	})
-}
-
-func testAccDataSourceGitlabGroup(src, n string) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		group := s.RootModule().Resources[src]
-		groupResource := group.Primary.Attributes
-
-		search := s.RootModule().Resources[n]
-		searchResource := search.Primary.Attributes
-
-		testAttributes := []string{
-			"id",
-			"full_path",
-			"name",
-			"full_name",
-			"web_url",
-			"path",
-			"default_branch",
-			"description",
-			"lfs_enabled",
-			"request_access_enabled",
-			"visibility_level",
-			"parent_id",
-			"default_branch_protection",
-			"prevent_forking_outside_group",
-			"shared_runners_setting",
-		}
-		for _, attribute := range testAttributes {
-			if searchResource[attribute] != groupResource[attribute] {
-				return fmt.Errorf("expected group's parameter `%s` to be: %s, but got: `%s`", attribute, groupResource[attribute], searchResource[attribute])
-			}
-		}
-
-		return nil
-	}
 }
