@@ -10,7 +10,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
@@ -49,7 +48,8 @@ func TestResourceGitlabProjectShareGroupStateUpgradeV0(t *testing.T) {
 }
 
 func TestAccGitlabProjectShareGroup_basic(t *testing.T) {
-	randName := acctest.RandomWithPrefix("acctest")
+	group := testutil.CreateGroups(t, 1)[0]
+	project := testutil.CreateProject(t)
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
@@ -58,65 +58,29 @@ func TestAccGitlabProjectShareGroup_basic(t *testing.T) {
 			// Share a new project with a new group.
 			{
 				Config: fmt.Sprintf(`
-					resource "gitlab_project" "test" {
-						name = "%[1]s"
-						
-						# So that acceptance tests can be run in a gitlab organization with no billing.
-						visibility_level = "public"
-					}
-					
-					resource "gitlab_group" "test" {
-						name = "%[1]s"
-						path = "%[1]s"
-					}
-					
 					resource "gitlab_project_share_group" "test" {
-						project      = gitlab_project.test.id
-						group_id     = gitlab_group.test.id
-						group_access = "%[2]s"
+						project      = "%d"
+						group_id     = "%d"
+						group_access = "guest"
 					}
-				`, randName, "guest"),
-				Check: testAccCheckGitlabProjectSharedWithGroup("root/"+randName, randName, gitlab.GuestPermissions),
+				`, project.ID, group.ID),
+				Check: testAccCheckGitlabProjectSharedWithGroup(project.ID, group.ID, gitlab.GuestPermissions),
 			},
 			// Update the access level.
 			{
 				Config: fmt.Sprintf(`
-					resource "gitlab_project" "test" {
-						name = "%[1]s"
-						
-						# So that acceptance tests can be run in a gitlab organization with no billing.
-						visibility_level = "public"
-					}
-					
-					resource "gitlab_group" "test" {
-						name = "%[1]s"
-						path = "%[1]s"
-					}
-					
 					resource "gitlab_project_share_group" "test" {
-						project      = gitlab_project.test.id
-						group_id     = gitlab_group.test.id
-						group_access = "%[2]s"
+						project      = "%d"
+						group_id     = "%d"
+						group_access = "reporter"
 					}
-				`, randName, "reporter"),
-				Check: testAccCheckGitlabProjectSharedWithGroup("root/"+randName, randName, gitlab.ReporterPermissions),
+				`, project.ID, group.ID),
+				Check: testAccCheckGitlabProjectSharedWithGroup(project.ID, group.ID, gitlab.ReporterPermissions),
 			},
 			// Delete the gitlab_project_share_group resource.
 			{
-				Config: fmt.Sprintf(`
-					resource "gitlab_project" "test" {
-						name = "%[1]s"
-						
-						# So that acceptance tests can be run in a gitlab organization with no billing.
-						visibility_level = "public"
-					}
-					
-					resource "gitlab_group" "test" {
-						name = "%[1]s"
-						path = "%[1]s"
-					}
-				`, randName),
-				Check: testAccCheckGitlabProjectIsNotShared("root/" + randName),
+				Config: ` `, // Space is required
+				Check:  testAccCheckGitlabProjectIsNotShared(project.ID),
 			},
 		},
 	})
@@ -169,14 +133,14 @@ func TestAccGitlabProjectShareGroup_modifiedOutsideTerraform(t *testing.T) {
 	})
 }
 
-func testAccCheckGitlabProjectSharedWithGroup(projectName, groupName string, accessLevel gitlab.AccessLevelValue) resource.TestCheckFunc {
+func testAccCheckGitlabProjectSharedWithGroup(projectID int, groupID int, accessLevel gitlab.AccessLevelValue) resource.TestCheckFunc {
 	return func(_ *terraform.State) error {
-		project, _, err := testutil.TestGitlabClient.Projects.GetProject(projectName, nil)
+		project, _, err := testutil.TestGitlabClient.Projects.GetProject(projectID, nil)
 		if err != nil {
 			return err
 		}
 
-		group, _, err := testutil.TestGitlabClient.Groups.GetGroup(groupName, nil)
+		group, _, err := testutil.TestGitlabClient.Groups.GetGroup(groupID, nil)
 		if err != nil {
 			return err
 		}
@@ -194,9 +158,9 @@ func testAccCheckGitlabProjectSharedWithGroup(projectName, groupName string, acc
 	}
 }
 
-func testAccCheckGitlabProjectIsNotShared(projectName string) resource.TestCheckFunc {
+func testAccCheckGitlabProjectIsNotShared(projectID int) resource.TestCheckFunc {
 	return func(_ *terraform.State) error {
-		project, _, err := testutil.TestGitlabClient.Projects.GetProject(projectName, nil)
+		project, _, err := testutil.TestGitlabClient.Projects.GetProject(projectID, nil)
 		if err != nil {
 			return err
 		}

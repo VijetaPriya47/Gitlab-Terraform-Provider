@@ -5,64 +5,49 @@ package sdk
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
 
+	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
 func TestAccGitlabProjectCustomAttribute_basic(t *testing.T) {
-	var project gitlab.Project
-	var customAttribute gitlab.CustomAttribute
-	rInt := acctest.RandInt()
+	project := testutil.CreateProject(t)
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
-		CheckDestroy:             testAccCheckGitlabProjectDestroy,
+		CheckDestroy:             testAccCheckGitlabProjectCustomAttributeDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
-resource "gitlab_project" "project" {
-	name = "foo-%d"
-}
-
 resource "gitlab_project_custom_attribute" "attr" {
-	project = gitlab_project.project.id
+	project = "%d"
 	key     = "foo"
 	value   = "bar"
-}`, rInt),
+}`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabProjectExists("gitlab_project.project", &project),
-					testAccCheckGitlabProjectCustomAttributeExists("gitlab_project_custom_attribute.attr", &customAttribute),
-					testAccCheckGitlabProjectCustomAttributes(&customAttribute, &testAccGitlabProjectExpectedCustomAttributes{
-						Key:   "foo",
-						Value: "bar",
-					}),
+					resource.TestCheckResourceAttr("gitlab_project_custom_attribute.attr", "project", fmt.Sprintf("%d", project.ID)),
+					resource.TestCheckResourceAttr("gitlab_project_custom_attribute.attr", "key", "foo"),
+					resource.TestCheckResourceAttr("gitlab_project_custom_attribute.attr", "value", "bar"),
 				),
 			},
 			// Update the custom attribute
 			{
 				Config: fmt.Sprintf(`
-resource "gitlab_project" "project" {
-	name = "foo-%d"
-}
-
 resource "gitlab_project_custom_attribute" "attr" {
-	project = gitlab_project.project.id
+	project = "%d"
 	key     = "foo"
 	value   = "updated"
-}`, rInt),
+}`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabProjectExists("gitlab_project.project", &project),
-					testAccCheckGitlabProjectCustomAttributeExists("gitlab_project_custom_attribute.attr", &customAttribute),
-					testAccCheckGitlabProjectCustomAttributes(&customAttribute, &testAccGitlabProjectExpectedCustomAttributes{
-						Key:   "foo",
-						Value: "updated",
-					}),
+					resource.TestCheckResourceAttr("gitlab_project_custom_attribute.attr", "project", fmt.Sprintf("%d", project.ID)),
+					resource.TestCheckResourceAttr("gitlab_project_custom_attribute.attr", "key", "foo"),
+					resource.TestCheckResourceAttr("gitlab_project_custom_attribute.attr", "value", "updated"),
 				),
 			},
 			{
@@ -74,42 +59,32 @@ resource "gitlab_project_custom_attribute" "attr" {
 	})
 }
 
-func testAccCheckGitlabProjectCustomAttributeExists(n string, customAttribute *gitlab.CustomAttribute) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[n]
-		if !ok {
-			return fmt.Errorf("Not Found: %s", n)
+func testAccCheckGitlabProjectCustomAttributeDestroy(s *terraform.State) error {
+	for _, rs := range s.RootModule().Resources {
+		if rs.Type != "gitlab_project_custom_attribute" {
+			continue
 		}
 
-		id, key, err := parseId(rs.Primary.ID)
+		parts := strings.SplitN(rs.Primary.ID, ":", 2)
+		if len(parts) != 2 {
+			return fmt.Errorf("unexpected ID format (%q). Expected project-id:key", rs.Primary.ID)
+		}
+
+		projectID, err := strconv.Atoi(parts[0])
 		if err != nil {
+			return fmt.Errorf("Unable to parse project id (%q) into an integer", rs.Primary.ID)
+		}
+
+		attribute, _, err := testutil.TestGitlabClient.CustomAttribute.GetCustomProjectAttribute(projectID, parts[1])
+		if err == nil && attribute != nil {
+			return fmt.Errorf("Project custom attribute still exists")
+		}
+
+		if !api.Is404(err) {
 			return err
-		}
-
-		gotCustomAttribute, _, err := testutil.TestGitlabClient.CustomAttribute.GetCustomProjectAttribute(id, key)
-		if err != nil {
-			return err
-		}
-		*customAttribute = *gotCustomAttribute
-		return nil
-	}
-}
-
-type testAccGitlabProjectExpectedCustomAttributes struct {
-	Key   string
-	Value string
-}
-
-func testAccCheckGitlabProjectCustomAttributes(got *gitlab.CustomAttribute, want *testAccGitlabProjectExpectedCustomAttributes) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		if got.Key != want.Key {
-			return fmt.Errorf("got key %q; want %q", got.Key, want.Key)
-		}
-
-		if got.Value != want.Value {
-			return fmt.Errorf("got value %q; want %q", got.Value, want.Value)
 		}
 
 		return nil
 	}
+	return nil
 }

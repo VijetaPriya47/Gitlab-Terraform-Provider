@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
@@ -19,8 +18,9 @@ import (
 )
 
 func TestAccGitlabProjectMembership_basic(t *testing.T) {
+	project := testutil.CreateProject(t)
+	user := testutil.CreateUsers(t, 1)[0]
 	var membership gitlab.ProjectMember
-	rInt := acctest.RandInt()
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
@@ -30,24 +30,11 @@ func TestAccGitlabProjectMembership_basic(t *testing.T) {
 			{
 				Config: fmt.Sprintf(`
 					resource "gitlab_project_membership" "foo" {
-						project      = "${gitlab_project.foo.id}"
-						user_id      = "${gitlab_user.test.id}"
+						project      = "%d"
+						user_id      = %d
 						access_level = "developer"
 					}
-					
-					resource "gitlab_project" "foo" {
-						name             = "foo%d"
-						description      = "Terraform acceptance tests"
-						visibility_level = "public"
-					}
-					
-					resource "gitlab_user" "test" {
-						name     = "foo%d"
-						username = "listest%d"
-						password = "BWgdRictHtkXfK-%d"
-						email    = "listest%d@ssss.com"
-					}
-				`, rInt, rInt, rInt, rInt, rInt),
+				`, project.ID, user.ID),
 				Check: resource.ComposeTestCheckFunc(testAccCheckGitlabProjectMembershipExists("gitlab_project_membership.foo", &membership), testAccCheckGitlabProjectMembershipAttributes(&membership, &testAccGitlabProjectMembershipExpectedAttributes{
 					access_level: "developer",
 				})),
@@ -57,25 +44,12 @@ func TestAccGitlabProjectMembership_basic(t *testing.T) {
 			{
 				Config: fmt.Sprintf(`
 					resource "gitlab_project_membership" "foo" {
-						project      = "${gitlab_project.foo.id}"
-						user_id      = "${gitlab_user.test.id}"
+						project      = "%d"
+						user_id      = %d
 						expires_at   = "2099-01-01"
 						access_level = "guest"
 					}
-					
-					resource "gitlab_project" "foo" {
-						name             = "foo%d"
-						description      = "Terraform acceptance tests"
-						visibility_level = "public"
-					}
-					
-					resource "gitlab_user" "test" {
-						name     = "foo%d"
-						username = "listest%d"
-						password = "BWgdRictHtkXfK-%d"
-						email    = "listest%d@ssss.com"
-					}
-				`, rInt, rInt, rInt, rInt, rInt),
+				`, project.ID, user.ID),
 				Check: resource.ComposeTestCheckFunc(testAccCheckGitlabProjectMembershipExists("gitlab_project_membership.foo", &membership), testAccCheckGitlabProjectMembershipAttributes(&membership, &testAccGitlabProjectMembershipExpectedAttributes{
 					access_level: "guest",
 					expiresAt:    "2099-01-01",
@@ -86,24 +60,11 @@ func TestAccGitlabProjectMembership_basic(t *testing.T) {
 			{
 				Config: fmt.Sprintf(`
 					resource "gitlab_project_membership" "foo" {
-						project      = "${gitlab_project.foo.id}"
-						user_id      = "${gitlab_user.test.id}"
+						project      = "%d"
+						user_id      = %d
 						access_level = "developer"
 					}
-					
-					resource "gitlab_project" "foo" {
-						name             = "foo%d"
-						description      = "Terraform acceptance tests"
-						visibility_level = "public"
-					}
-					
-					resource "gitlab_user" "test" {
-						name     = "foo%d"
-						username = "listest%d"
-						password = "BWgdRictHtkXfK-%d"
-						email    = "listest%d@ssss.com"
-					}
-				`, rInt, rInt, rInt, rInt, rInt),
+				`, project.ID, user.ID),
 				Check: resource.ComposeTestCheckFunc(testAccCheckGitlabProjectMembershipExists("gitlab_project_membership.foo", &membership), testAccCheckGitlabProjectMembershipAttributes(&membership, &testAccGitlabProjectMembershipExpectedAttributes{
 					access_level: "developer",
 				})),
@@ -256,18 +217,21 @@ func testAccCheckGitlabProjectMembershipDestroy(s *terraform.State) error {
 		userID := rs.Primary.Attributes["user_id"]
 
 		// GetProjectMember needs int type for userID
-		userIDI, err := strconv.Atoi(userID) // nolint // TODO: Resolve this golangci-lint issue: ineffectual assignment to err (ineffassign)
+		userIDI, err := strconv.Atoi(userID)
+		if err != nil {
+			return err
+		}
 		gotMembership, _, err := testutil.TestGitlabClient.ProjectMembers.GetProjectMember(projectID, userIDI)
 		if err != nil {
+			if api.Is404(err) {
+				return nil
+			}
 			if gotMembership != nil && fmt.Sprintf("%d", gotMembership.AccessLevel) == rs.Primary.Attributes["access_level"] {
 				return fmt.Errorf("Project still has member.")
 			}
-			return nil
-		}
-
-		if !api.Is404(err) {
 			return err
 		}
+
 		return nil
 	}
 	return nil
