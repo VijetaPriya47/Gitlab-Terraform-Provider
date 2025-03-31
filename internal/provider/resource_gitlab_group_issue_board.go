@@ -413,38 +413,55 @@ func (r *gitlabGroupIssueBoardResource) Create(ctx context.Context, req resource
 
 	issueBoard, _, err := r.client.GroupIssueBoards.CreateGroupIssueBoard(groupID, options, gitlab.WithContext(ctx))
 	if err != nil {
-		// persist API response in state model
-		data.Id = types.StringValue(fmt.Sprintf("%s:%d", groupID, issueBoard.ID))
-		r.groupIssueBoardToStateModel(ctx, groupID, issueBoard, data)
-		// Save updated data into Terraform state
-		resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
-
 		if api.Is404(err) {
 			resp.Diagnostics.AddError(
 				"GitLab Feature not available",
 				fmt.Sprintf("The group issue board feature is not available on this group. Make sure it's part of an enterprise plan. Error: %s", err.Error()),
 			)
-			return
 		}
+
+		// If we get here and we have a hydrated issue board, save the board to state.
+		// something... really weird happened.
+		if issueBoard != nil {
+			tflog.Warn(ctx, "Creating Group Issue Board encountered an error, but still returned a hydrated issue board. Aborting.", map[string]interface{}{
+				"group": groupID,
+				"board": issueBoard.Name,
+			})
+			// persist API response in state model
+			data.Id = types.StringValue(fmt.Sprintf("%s:%d", groupID, issueBoard.ID))
+			r.groupIssueBoardToStateModel(ctx, groupID, issueBoard, data)
+
+			// Save updated data into Terraform state
+			resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+		}
+
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to create issue board: %s", err.Error()))
 		return
 	}
 
 	issueBoard, _, err = r.client.GroupIssueBoards.UpdateIssueBoard(groupID, issueBoard.ID, optionsUpdate, gitlab.WithContext(ctx))
 	if err != nil {
-		// persist API response in state model
-		data.Id = types.StringValue(fmt.Sprintf("%s:%d", groupID, issueBoard.ID))
-		r.groupIssueBoardToStateModel(ctx, groupID, issueBoard, data)
-		// Save updated data into Terraform state
-		resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
-
 		if api.Is404(err) {
 			resp.Diagnostics.AddError(
 				"GitLab Feature not available",
 				fmt.Sprintf("The group issue board feature is not available on this group. Make sure it's part of an enterprise plan. Error: %s", err.Error()),
 			)
-			return
 		}
+
+		// If we get here and we have a hydrated issue board, save the board to state before we error.
+		if issueBoard != nil {
+			tflog.Warn(ctx, "Creating Group Issue Board encountered an error, but still returned a hydrated issue board. Aborting.", map[string]interface{}{
+				"group": groupID,
+				"board": issueBoard.Name,
+			})
+			// persist API response in state model
+			data.Id = types.StringValue(fmt.Sprintf("%s:%d", groupID, issueBoard.ID))
+			r.groupIssueBoardToStateModel(ctx, groupID, issueBoard, data)
+
+			// Save updated data into Terraform state
+			resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+		}
+
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to create issue board: %s", err.Error()))
 		return
 	}
