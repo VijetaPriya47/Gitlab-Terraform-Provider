@@ -82,7 +82,7 @@ func (r *gitlabIntegrationTelegramResource) Schema(_ context.Context, _ resource
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_integration_telegram`" + ` resource allows to manage the lifecycle of a project integration with Telegram.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/integrations/#telegram)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#telegram)`,
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{

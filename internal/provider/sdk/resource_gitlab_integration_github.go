@@ -16,7 +16,7 @@ var _ = registerResource("gitlab_integration_github", func() *schema.Resource {
 
 -> This resource requires a GitLab Enterprise instance.
 	
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/integrations/#github)`)
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#github)`)
 })
 
 var _ = registerResource("gitlab_service_github", func() *schema.Resource {
@@ -26,7 +26,7 @@ var _ = registerResource("gitlab_service_github", func() *schema.Resource {
 
 ~> This resource is deprecated. use ` + "`gitlab_integration_github`" + `instead!
 	
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/integrations/#github)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#github)`,
 	)
 	resource.DeprecationMessage = `This resource is deprecated. use ` + "`gitlab_integration_github`" + `instead!`
 	return resource

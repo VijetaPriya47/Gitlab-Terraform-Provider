@@ -14,7 +14,7 @@ import (
 var _ = registerResource("gitlab_integration_microsoft_teams", func() *schema.Resource {
 	return resourceGitlabIntegrationMicrosoftTeamsSchema(`The ` + "`gitlab_integration_microsoft_teams`" + ` resource allows to manage the lifecycle of a project integration with Microsoft Teams.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/integrations/#microsoft-teams)`)
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#microsoft-teams-notifications)`)
 })
 
 var _ = registerResource("gitlab_service_microsoft_teams", func() *schema.Resource {
@@ -22,7 +22,7 @@ var _ = registerResource("gitlab_service_microsoft_teams", func() *schema.Resour
 
 ~> This resource is deprecated. use ` + "`gitlab_integration_microsoft_teams`" + `instead!
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/integrations/#microsoft-teams)`)
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#microsoft-teams-notifications)`)
 	schema.DeprecationMessage = `This resource is deprecated. use ` + "`gitlab_integration_microsoft_teams`" + `instead!`
 	return schema
 })
