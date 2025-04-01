@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 
@@ -75,6 +75,10 @@ func TestAccGitlabPipelineSchedule_takeOwnershipWithChanges(t *testing.T) {
 	project := testutil.CreateProject(t)
 	user := testutil.CreateUsers(t, 1)[0]
 	testutil.AddProjectMembersWithAccessLevel(t, project.ID, []*gitlab.User{user}, gitlab.MaintainerPermissions)
+
+	// Wait some time to ensure that membership changes have propogated in the background processes.
+	//nolint // R018 this is part of testing code, not the provider itself.
+	time.Sleep(30 * time.Second)
 	userPAT := testutil.CreatePersonalAccessToken(t, user)
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -139,11 +143,11 @@ func TestAccGitlabPipelineSchedule_takeOwnershipWithoutChanges(t *testing.T) {
 	project := testutil.CreateProject(t)
 	user := testutil.CreateUsers(t, 1)[0]
 	testutil.AddProjectMembersWithAccessLevel(t, project.ID, []*gitlab.User{user}, gitlab.MaintainerPermissions)
-	userPAT := testutil.CreatePersonalAccessToken(t, user)
 
 	// Wait some time to ensure that membership changes have propogated in the background processes.
 	//nolint // R018 this is part of testing code, not the provider itself.
-	time.Sleep(20 * time.Second)
+	time.Sleep(30 * time.Second)
+	userPAT := testutil.CreatePersonalAccessToken(t, user)
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
