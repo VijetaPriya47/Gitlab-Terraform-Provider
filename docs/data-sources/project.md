@@ -33,6 +33,7 @@ data "gitlab_project" "example" {
 ### Optional
 
 - `ci_default_git_depth` (Number) Default number of revisions for shallow cloning.
+- `ci_id_token_sub_claim_components` (List of String) Fields included in the sub claim of the ID Token. Accepts an array starting with project_path. The array might also include ref_type and ref. Defaults to ["project_path", "ref_type", "ref"]. Introduced in GitLab 17.10.
 - `id` (String) The integer that uniquely identifies the project within the gitlab install.
 - `path_with_namespace` (String) The path of the repository with namespace.
 - `public_builds` (Boolean) If true, jobs can be viewed by non-project members.

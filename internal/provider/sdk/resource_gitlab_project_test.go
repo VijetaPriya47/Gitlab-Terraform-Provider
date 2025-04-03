@@ -3236,6 +3236,76 @@ func TestAccGitlabProject_RequireJiraIssue(t *testing.T) {
 	})
 }
 
+func TestAccGitlabProject_CIIdTokenSubClaimComponents(t *testing.T) {
+	testutil.RunIfAtLeast(t, "17.10")
+	projectName := acctest.RandomWithPrefix("acctest")
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabProjectDestroy,
+		Steps: []resource.TestStep{
+			// Create a project with prevent_merge_without_jira_issue enabled
+			{
+				Config: fmt.Sprintf(`resource "gitlab_project" "test" {
+					name =  "%s"
+
+					ci_id_token_sub_claim_components = ["project_path", "ref_type"]
+
+				}`, projectName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project.test", "ci_id_token_sub_claim_components.0", "project_path"),
+					resource.TestCheckResourceAttr("gitlab_project.test", "ci_id_token_sub_claim_components.1", "ref_type"),
+					resource.TestCheckResourceAttr("gitlab_project.test", "ci_id_token_sub_claim_components.#", "2"),
+				),
+			},
+			// Verify import
+			{
+				ResourceName:      "gitlab_project.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// add ref
+			{
+				Config: fmt.Sprintf(`resource "gitlab_project" "test" {
+					name =  "%s"
+
+					ci_id_token_sub_claim_components = ["project_path", "ref_type", "ref"]
+
+				}`, projectName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project.test", "ci_id_token_sub_claim_components.2", "ref"),
+					resource.TestCheckResourceAttr("gitlab_project.test", "ci_id_token_sub_claim_components.#", "3"),
+				),
+			},
+			// Verify import
+			{
+				ResourceName:      "gitlab_project.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// remove ref and ref_type
+			{
+				Config: fmt.Sprintf(`resource "gitlab_project" "test" {
+					name =  "%s"
+
+					ci_id_token_sub_claim_components = ["project_path"]
+
+				}`, projectName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project.test", "ci_id_token_sub_claim_components.0", "project_path"),
+					resource.TestCheckResourceAttr("gitlab_project.test", "ci_id_token_sub_claim_components.#", "1"),
+				),
+			},
+			// Verify import
+			{
+				ResourceName:      "gitlab_project.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 // tests to ensure that ci_delete_pipelines_in_seconds functions as expected
 func TestAccGitlabProject_CIDeletePipelinesInSeconds(t *testing.T) {
 	var received gitlab.Project

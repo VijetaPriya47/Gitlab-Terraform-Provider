@@ -329,6 +329,13 @@ var _ = registerDataSource("gitlab_project", func() *schema.Resource {
 				Type:        schema.TypeBool,
 				Computed:    true,
 			},
+			"ci_id_token_sub_claim_components": {
+				Description: `Fields included in the sub claim of the ID Token. Accepts an array starting with project_path. The array might also include ref_type and ref. Defaults to ["project_path", "ref_type", "ref"]. Introduced in GitLab 17.10.`,
+				Type:        schema.TypeList,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Optional:    true,
+				Computed:    true,
+			},
 			"ci_restrict_pipeline_cancellation_role": {
 				Description: fmt.Sprintf("The role required to cancel a pipeline or job. Premium and Ultimate only. Valid values are %s", utils.RenderValueListForDocs(api.ValidCIRestrictPipelineCancellationRoleValues)),
 				Type:        schema.TypeString,
@@ -632,6 +639,9 @@ func dataSourceGitlabProjectRead(ctx context.Context, d *schema.ResourceData, me
 	d.Set("ci_delete_pipelines_in_seconds", found.CIDeletePipelinesInSeconds)
 	d.Set("ci_config_path", found.CIConfigPath)
 	d.Set("ci_separated_caches", found.CISeperateCache)
+	if err := d.Set("ci_id_token_sub_claim_components", found.CIIdTokenSubClaimComponents); err != nil {
+		return diag.Errorf("error setting ci_id_token_sub_claim_components: %v", err)
+	}
 	d.Set("ci_restrict_pipeline_cancellation_role", found.CIRestrictPipelineCancellationRole)
 	d.Set("ci_pipeline_variables_minimum_override_role", found.CIPipelineVariablesMinimumOverrideRole)
 	d.Set("keep_latest_artifact", found.KeepLatestArtifact)

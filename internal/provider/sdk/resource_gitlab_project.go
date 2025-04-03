@@ -498,6 +498,13 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 		Computed:     true,
 		ValidateFunc: validation.StringInSlice(api.ValidCIPipelineVariablesMinimumOverrideRoleValues, true),
 	},
+	"ci_id_token_sub_claim_components": {
+		Description: `Fields included in the sub claim of the ID Token. Accepts an array starting with project_path. The array might also include ref_type and ref. Defaults to ["project_path", "ref_type", "ref"]. Introduced in GitLab 17.10.`,
+		Type:        schema.TypeList,
+		Elem:        &schema.Schema{Type: schema.TypeString},
+		Optional:    true,
+		Computed:    true,
+	},
 	"keep_latest_artifact": {
 		Description: "Disable or enable the ability to keep the latest artifact for this project.",
 		Type:        schema.TypeBool,
@@ -956,6 +963,9 @@ func resourceGitlabProjectSetToState(ctx context.Context, client *gitlab.Client,
 	d.Set("issues_template", project.IssuesTemplate)
 	d.Set("merge_requests_template", project.MergeRequestsTemplate)
 	d.Set("ci_config_path", project.CIConfigPath)
+	if err := d.Set("ci_id_token_sub_claim_components", project.CIIdTokenSubClaimComponents); err != nil {
+		return fmt.Errorf("error setting ci_id_token_sub_claim_components: %v", err)
+	}
 	d.Set("ci_forward_deployment_enabled", project.CIForwardDeploymentEnabled)
 	d.Set("ci_separated_caches", project.CISeperateCache)
 	d.Set("ci_restrict_pipeline_cancellation_role", project.CIRestrictPipelineCancellationRole)
@@ -1442,6 +1452,11 @@ func resourceGitlabProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 
 	if d.HasChange("ci_config_path") {
 		options.CIConfigPath = gitlab.Ptr(d.Get("ci_config_path").(string))
+	}
+
+	if d.HasChange("ci_id_token_sub_claim_components") {
+		options.CIIdTokenSubClaimComponents = stringListToStringSlice(d.Get("ci_id_token_sub_claim_components").([]interface{}))
+
 	}
 
 	if d.HasChange("ci_forward_deployment_enabled") {
@@ -2543,6 +2558,11 @@ func updatePostCreateEditOptions(ctx context.Context, editProjectOptions *gitlab
 
 	if v, ok := d.GetOk("ci_default_git_depth"); ok {
 		editProjectOptions.CIDefaultGitDepth = gitlab.Ptr(v.(int))
+	}
+
+	if v, ok := d.GetOk("ci_id_token_sub_claim_components"); ok {
+		editProjectOptions.CIIdTokenSubClaimComponents = stringListToStringSlice(v.([]interface{}))
+
 	}
 
 	if v, ok := d.GetOk("ci_delete_pipelines_in_seconds"); ok {
