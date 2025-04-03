@@ -109,6 +109,7 @@ func TestAccGitlabProjectAccessToken_basic(t *testing.T) {
 				resource "gitlab_project_access_token" "foo" {
 					project = %d
 					name    = "foo"
+					description = "foo bar happy token"
 					scopes  = [
 						"api",
 						"read_api",

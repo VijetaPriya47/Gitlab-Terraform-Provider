@@ -107,6 +107,7 @@ func TestAccGitlabGroupAccessToken_basic(t *testing.T) {
 				Config: fmt.Sprintf(`
 				resource "gitlab_group_access_token" "this" {
 				  name = "my new group token"
+				  description = "foo bar happy token"
 				  group = %d
 				  expires_at = "%s"
 				  access_level = "maintainer"
@@ -122,6 +123,16 @@ func TestAccGitlabGroupAccessToken_basic(t *testing.T) {
 						accessLevel: gitlab.AccessLevelValue(gitlab.MaintainerPermissions),
 					}),
 				),
+			},
+			// Verify import
+			{
+				ResourceName:      "gitlab_group_access_token.this",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					// the token is only known during creating. We explicitly mention this limitation in the docs.
+					"token",
+				},
 			},
 			// Update the Group Access Token Access Level to Owner
 			{
@@ -143,6 +154,16 @@ func TestAccGitlabGroupAccessToken_basic(t *testing.T) {
 						accessLevel: gitlab.AccessLevelValue(gitlab.OwnerPermissions),
 					}),
 				),
+			},
+			// Verify import
+			{
+				ResourceName:      "gitlab_group_access_token.this",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					// the token is only known during creating. We explicitly mention this limitation in the docs.
+					"token",
+				},
 			},
 			// Add a CICD variable with Group Access Token value
 			{
@@ -166,6 +187,16 @@ func TestAccGitlabGroupAccessToken_basic(t *testing.T) {
 						accessLevel: gitlab.AccessLevelValue(gitlab.MaintainerPermissions),
 					}),
 				),
+			},
+			// Verify import
+			{
+				ResourceName:      "gitlab_group_access_token.this",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					// the token is only known during creating. We explicitly mention this limitation in the docs.
+					"token",
+				},
 			},
 			//Restore Group Access Token initial parameters
 			{

@@ -54,6 +54,7 @@ type gitlabProjectAccessTokenResourceModel struct {
 	ID          types.String `tfsdk:"id"`
 	Project     types.String `tfsdk:"project"`
 	Name        types.String `tfsdk:"name"`
+	Description types.String `tfsdk:"description"`
 	Token       types.String `tfsdk:"token"`
 	UserId      types.Int64  `tfsdk:"user_id"`
 	AccessLevel types.String `tfsdk:"access_level"`
@@ -112,6 +113,15 @@ func (r *gitlabProjectAccessTokenResource) Schema(ctx context.Context, req resou
 					stringplanmodifier.RequiresReplace(),
 				},
 				Required: true,
+			},
+			"description": schema.StringAttribute{
+				MarkdownDescription: "The description of the project access token.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+					stringplanmodifier.RequiresReplace(),
+				},
+				Optional: true,
+				Computed: true,
 			},
 			"scopes": schema.SetAttribute{
 				MarkdownDescription: fmt.Sprintf("The scopes of the project access token. valid values are: %s", utils.RenderValueListForDocs(api.ValidAccessTokenScopes)),
@@ -221,6 +231,7 @@ func (r *gitlabProjectAccessTokenResource) Configure(ctx context.Context, req re
 func (r *gitlabProjectAccessTokenResource) projectAccessTokenToStateModel(data *gitlabProjectAccessTokenResourceModel, token *gitlab.ProjectAccessToken, project string) diag.Diagnostics {
 	data.Project = types.StringValue(project)
 	data.Name = types.StringValue(token.Name)
+	data.Description = types.StringValue(token.Description)
 	data.ExpiresAt = types.StringValue(token.ExpiresAt.String())
 	data.CreatedAt = types.StringValue(token.CreatedAt.String())
 	data.Active = types.BoolValue(token.Active)
@@ -425,6 +436,9 @@ func (r *gitlabProjectAccessTokenResource) Create(ctx context.Context, req resou
 	}
 
 	// Optional attributes
+	if !data.Description.IsNull() && !data.Description.IsUnknown() {
+		options.Description = data.Description.ValueStringPointer()
+	}
 
 	// Access level
 	if !data.AccessLevel.IsNull() && !data.AccessLevel.IsUnknown() {
