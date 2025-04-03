@@ -253,6 +253,45 @@ func TestAccDataGitlabProjects_CIRestrictPipeline(t *testing.T) {
 	})
 }
 
+// Create a test that populates the CI Restrict Pipeline value using testUtil,
+// then uses a terraform `gitlab_projects` datasource to read and validate that it matches
+func TestAccDataGitlabProjects_CIIdTokenSubClaimComponents(t *testing.T) {
+	testutil.RunIfAtLeast(t, "17.10")
+	// Create a new project using testutil, and update it's pipelines cancellation
+	// to "developer"
+	client := testutil.TestGitlabClient
+	group := testutil.CreateGroups(t, 1)[0]
+	project := testutil.CreateProjectWithNamespace(t, group.ID)
+	_, _, err := client.Projects.EditProject(project.ID, &gitlab.EditProjectOptions{
+		CIIdTokenSubClaimComponents: &[]string{"project_path", "ref_type"},
+	})
+	if err != nil {
+		t.Fatalf("Error updating project: %v", err)
+	}
+
+	// Create the terraform test
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(
+					`
+					 data "gitlab_projects" "this" {
+						group_id = %d
+					 }
+					`, group.ID,
+				),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testAccDataSourceGitlabProjectsContainsProjects("data.gitlab_projects.this", project),
+					resource.TestCheckResourceAttr("data.gitlab_projects.this", "projects.0.ci_id_token_sub_claim_components.0", "project_path"),
+					resource.TestCheckResourceAttr("data.gitlab_projects.this", "projects.0.ci_id_token_sub_claim_components.1", "ref_type"),
+					resource.TestCheckResourceAttr("data.gitlab_projects.this", "projects.0.ci_id_token_sub_claim_components.#", "2"),
+				),
+			},
+		},
+	})
+}
+
 // Create a test that populates the CI pipeline variables minimum
 // override role value using testUtil, then uses a terraform
 // `gitlab_projects` datasource to read and validate that it matches

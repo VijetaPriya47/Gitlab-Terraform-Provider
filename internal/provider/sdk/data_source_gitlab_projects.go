@@ -172,6 +172,7 @@ func flattenProjects(projects []*gitlab.Project) (values []map[string]interface{
 			"packages_enabled":                                 project.PackagesEnabled,
 			"build_coverage_regex":                             project.BuildCoverageRegex,
 			"ci_forward_deployment_enabled":                    project.CIForwardDeploymentEnabled,
+			"ci_id_token_sub_claim_components":                 project.CIIdTokenSubClaimComponents,
 			"merge_pipelines_enabled":                          project.MergePipelinesEnabled,
 			"merge_trains_enabled":                             project.MergeTrainsEnabled,
 			"analytics_access_level":                           string(project.AnalyticsAccessLevel),
@@ -869,6 +870,13 @@ var _ = registerDataSource("gitlab_projects", func() *schema.Resource {
 						"ci_forward_deployment_enabled": {
 							Description: "When a new deployment job starts, skip older deployment jobs that are still pending.",
 							Type:        schema.TypeBool,
+							Computed:    true,
+						},
+						"ci_id_token_sub_claim_components": {
+							Description: `Fields included in the sub claim of the ID Token. Accepts an array starting with project_path. The array might also include ref_type and ref. Defaults to ["project_path", "ref_type", "ref"]. Introduced in GitLab 17.10.`,
+							Type:        schema.TypeList,
+							Elem:        &schema.Schema{Type: schema.TypeString},
+							Optional:    true,
 							Computed:    true,
 						},
 						"merge_pipelines_enabled": {
