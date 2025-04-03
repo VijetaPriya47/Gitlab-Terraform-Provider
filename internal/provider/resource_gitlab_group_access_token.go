@@ -54,6 +54,7 @@ type gitlabGroupAccessTokenResourceModel struct {
 	ID          types.String `tfsdk:"id"`
 	Group       types.String `tfsdk:"group"`
 	Name        types.String `tfsdk:"name"`
+	Description types.String `tfsdk:"description"`
 	Token       types.String `tfsdk:"token"`
 	UserId      types.Int64  `tfsdk:"user_id"`
 	AccessLevel types.String `tfsdk:"access_level"`
@@ -106,6 +107,15 @@ func (r *gitlabGroupAccessTokenResource) Schema(ctx context.Context, req resourc
 					stringplanmodifier.RequiresReplace(),
 				},
 				Required: true,
+			},
+			"description": schema.StringAttribute{
+				MarkdownDescription: "The description of the group access token.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+					stringplanmodifier.RequiresReplace(),
+				},
+				Computed: true,
+				Optional: true,
 			},
 			"scopes": schema.SetAttribute{
 				MarkdownDescription: fmt.Sprintf("The scopes of the group access token. Valid values are: %s", utils.RenderValueListForDocs(api.ValidAccessTokenScopes)),
@@ -216,6 +226,7 @@ func (r *gitlabGroupAccessTokenResource) groupAccessTokenToStateModel(data *gitl
 
 	data.Group = types.StringValue(group)
 	data.Name = types.StringValue(token.Name)
+	data.Description = types.StringValue(token.Description)
 	data.ExpiresAt = types.StringValue(token.ExpiresAt.String())
 	data.CreatedAt = types.StringValue(token.CreatedAt.String())
 	data.Active = types.BoolValue(token.Active)
@@ -421,6 +432,9 @@ func (r *gitlabGroupAccessTokenResource) Create(ctx context.Context, req resourc
 	}
 
 	// Optional attributes
+	if !data.Description.IsNull() && !data.Description.IsUnknown() {
+		options.Description = data.Description.ValueStringPointer()
+	}
 
 	// Access level
 	if !data.AccessLevel.IsNull() && !data.AccessLevel.IsUnknown() {

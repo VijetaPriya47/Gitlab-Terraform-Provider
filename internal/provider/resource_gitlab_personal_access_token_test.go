@@ -81,6 +81,7 @@ func TestAccGitlabPersonalAccessToken_basic(t *testing.T) {
 					user_id = %d
 					name    = "foo"
 					scopes  = ["api"]
+					description = "hunt by meowing loudly"
 
 					expires_at = "%s"
 				}

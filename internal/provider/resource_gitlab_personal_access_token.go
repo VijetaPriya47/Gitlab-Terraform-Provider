@@ -49,10 +49,11 @@ type gitlabPersonalAccessTokenResource struct {
 
 // The base Resource implementation struct
 type gitlabPersonalAccessTokenResourceModel struct {
-	ID     types.String `tfsdk:"id"`
-	Name   types.String `tfsdk:"name"`
-	Token  types.String `tfsdk:"token"`
-	UserId types.Int64  `tfsdk:"user_id"`
+	ID          types.String `tfsdk:"id"`
+	Name        types.String `tfsdk:"name"`
+	Description types.String `tfsdk:"description"`
+	Token       types.String `tfsdk:"token"`
+	UserId      types.Int64  `tfsdk:"user_id"`
 
 	// []string, or a set of types.String behind the scenes.
 	Scopes []types.String `tfsdk:"scopes"`
@@ -106,6 +107,15 @@ func (r *gitlabPersonalAccessTokenResource) Schema(ctx context.Context, req reso
 					stringplanmodifier.RequiresReplace(),
 				},
 				Required: true,
+			},
+			"description": schema.StringAttribute{
+				MarkdownDescription: "The description of the personal access token.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+					stringplanmodifier.RequiresReplace(),
+				},
+				Optional: true,
+				Computed: true,
 			},
 			"scopes": schema.SetAttribute{
 				MarkdownDescription: fmt.Sprintf("The scopes of the personal access token. valid values are: %s", utils.RenderValueListForDocs(api.ValidPersonalAccessTokenScopes)),
@@ -199,6 +209,7 @@ func (r *gitlabPersonalAccessTokenResource) Configure(ctx context.Context, req r
 func (r *gitlabPersonalAccessTokenResource) personalAccessTokenToStateModel(data *gitlabPersonalAccessTokenResourceModel, token *gitlab.PersonalAccessToken, userId int) diag.Diagnostics {
 	data.UserId = types.Int64Value(int64(userId))
 	data.Name = types.StringValue(token.Name)
+	data.Description = types.StringValue(token.Description)
 	data.Active = types.BoolValue(token.Active)
 	data.Revoked = types.BoolValue(token.Revoked)
 
@@ -420,6 +431,9 @@ func (r *gitlabPersonalAccessTokenResource) Create(ctx context.Context, req reso
 	}
 
 	// Optional attributes
+	if !data.Description.IsNull() && !data.Description.IsUnknown() {
+		options.Description = data.Description.ValueStringPointer()
+	}
 
 	// // Get the valid expiry date from the `expires_at`
 	expiryDate, err := r.determineExpiryDate(data)
