@@ -233,6 +233,7 @@ var _ = registerResource("gitlab_group", func() *schema.Resource {
 				Description: "Users cannot be added to projects in this group.",
 				Type:        schema.TypeBool,
 				Optional:    true,
+				Computed:    true,
 			},
 			"extra_shared_runners_minutes_limit": {
 				Description: "Can be set by administrators only. Additional CI/CD minutes for this group.",

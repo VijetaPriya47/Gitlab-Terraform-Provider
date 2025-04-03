@@ -1520,7 +1520,7 @@ func TestAccGitlabGroup_EE(t *testing.T) {
 						name = "%[1]s"
 						path = "%[1]s"
 
-						membership_lock                    = true
+						membership_lock                    = false
 						extra_shared_runners_minutes_limit = 21
 						shared_runners_minutes_limit       = 42
 					}
@@ -1539,12 +1539,35 @@ func TestAccGitlabGroup_EE(t *testing.T) {
 						name = "%[1]s"
 						path = "%[1]s"
 
-						membership_lock                    = false
+						membership_lock                    = true
 						extra_shared_runners_minutes_limit = 0
 						shared_runners_minutes_limit       = 0
 						wiki_access_level                  = "disabled"
 					}
 				`, testGroupName),
+			},
+			// Verify import
+			{
+				ResourceName:            "gitlab_group.this",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"permanently_remove_on_delete"},
+			},
+			// Remove membership lock and ensure it's still set properly in state
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_group" "this" {
+						name = "%[1]s"
+						path = "%[1]s"
+
+						extra_shared_runners_minutes_limit = 0
+						shared_runners_minutes_limit       = 0
+						wiki_access_level                  = "disabled"
+					}
+				`, testGroupName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_group.this", "membership_lock", "true"),
+				),
 			},
 			// Verify import
 			{
