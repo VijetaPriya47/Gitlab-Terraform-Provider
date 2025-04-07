@@ -193,9 +193,8 @@ func (r *gitlabProjectVariableResource) Read(ctx context.Context, req resource.R
 	)
 	if err != nil {
 		if api.Is404(err) {
-			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab group variable not found %s/%s", project, key))
-			data.ID = types.StringValue("")
-			resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab project variable not found %s/%s, removing from state", project, key))
+			resp.State.RemoveResource(ctx)
 			return
 		}
 		if notOk, err := utils.AugmentVariableClientError(ctx, true, err); notOk {

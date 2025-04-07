@@ -285,6 +285,61 @@ func TestAccGitlabProjectVariable_scoped(t *testing.T) {
 	})
 }
 
+func TestAccGitlabProjectVariable_deletedOutsideTerraform(t *testing.T) {
+	testProject := testutil.CreateProject(t)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccGitlabProjectVariableCheckAllVariablesDestroyed(testProject),
+		Steps: []resource.TestStep{
+			// Step 1: Create a project variable.
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_variable" "foo" {
+						project = "%s"
+						key = "my_key"
+						value = "my_value"
+						environment_scope = "*"
+					}
+				`, testProject.PathWithNamespace),
+				Check: testAccCheckGitlabProjectVariableExists("gitlab_project_variable.foo"),
+			},
+			// Step 2: Delete the variable outside of Terraform and refresh the state.
+			{
+				PreConfig: func() {
+					_, err := testutil.TestGitlabClient.ProjectVariables.RemoveVariable(
+						testProject.ID,
+						"my_key",
+						&gitlab.RemoveProjectVariableOptions{Filter: &gitlab.VariableFilter{EnvironmentScope: "*"}},
+					)
+					if err != nil {
+						t.Fatalf("failed to delete project variable outside of Terraform: %v", err)
+					}
+				},
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_variable" "foo" {
+						project = "%s"
+						key = "my_key"
+						value = "my_value"
+						environment_scope = "*"
+					}
+				`, testProject.PathWithNamespace),
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: true,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					func(state *terraform.State) error {
+						// Ensure the resource is removed from the state.
+						if _, exists := state.RootModule().Resources["gitlab_project_variable.foo"]; exists {
+							return fmt.Errorf("resource 'gitlab_project_variable.foo' still exists in Terraform state after being deleted outside of Terraform")
+						}
+						return nil
+					},
+				),
+			},
+		},
+	})
+}
+
 func testAccCheckGitlabProjectVariableExists(name string) resource.TestCheckFunc {
 	var (
 		key              string

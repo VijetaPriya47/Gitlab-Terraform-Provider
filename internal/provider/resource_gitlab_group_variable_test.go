@@ -596,6 +596,63 @@ func TestAccGitlabGroupVariable_scope(t *testing.T) {
 	})
 }
 
+func TestAccGitlabGroupVariable_deletedOutsideTerraform(t *testing.T) {
+	group := testutil.CreateGroups(t, 1)[0]
+	var groupVariable gitlab.GroupVariable
+	rString := acctest.RandString(5)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabGroupVariableDestroy,
+		Steps: []resource.TestStep{
+			// Step 1: Create a Group variable.
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_group_variable" "foo" {
+						group = "%d"
+						key = "key_%s"
+						value = "value-%s"
+						environment_scope = "*"
+					}
+				`, group.ID, rString, rString),
+				Check: testAccCheckGitlabGroupVariableExists("gitlab_group_variable.foo", &groupVariable),
+			},
+			// Step 2: Delete the variable outside of Terraform and refresh the state.
+			{
+				PreConfig: func() {
+					_, err := testutil.TestGitlabClient.GroupVariables.RemoveVariable(
+						group.ID,
+						fmt.Sprintf("key_%s", rString),
+						&gitlab.RemoveGroupVariableOptions{Filter: &gitlab.VariableFilter{EnvironmentScope: "*"}},
+					)
+					if err != nil {
+						t.Fatalf("failed to delete group variable outside of Terraform: %v", err)
+					}
+				},
+				Config: fmt.Sprintf(`
+					resource "gitlab_group_variable" "foo" {
+						group = "%d"
+						key = "key_%s"
+						value = "value-%s"
+						environment_scope = "*"
+					}
+				`, group.ID, rString, rString),
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: true,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					func(state *terraform.State) error {
+						// Ensure the resource is removed from the state.
+						if _, exists := state.RootModule().Resources["gitlab_group_variable.foo"]; exists {
+							return fmt.Errorf("resource 'gitlab_group_variable.foo' still exists in Terraform state after being deleted outside of Terraform")
+						}
+						return nil
+					},
+				),
+			},
+		},
+	})
+}
+
 func testAccCheckGitlabGroupVariableExists(n string, groupVariable *gitlab.GroupVariable) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]

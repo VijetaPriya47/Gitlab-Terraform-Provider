@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"regexp"
 	"strings"
 
@@ -271,9 +272,8 @@ func (r *gitlabGroupVariableResource) Read(ctx context.Context, req resource.Rea
 	)
 	if err != nil {
 		if api.Is404(err) {
-			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab group variable not found %s/%s", group, key))
-			data.ID = types.StringValue("")
-			resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab group variable not found %s/%s, removing from state", group, key))
+			resp.State.RemoveResource(ctx)
 			return
 		}
 		if notOk, err := utils.AugmentVariableClientError(ctx, true, err); notOk {
@@ -372,6 +372,11 @@ func (r *gitlabGroupVariableResource) Delete(ctx context.Context, req resource.D
 		gitlab.WithContext(ctx),
 	)
 	if err != nil {
+		if api.Is404(err) {
+			slog.Debug("The variable was not found, assuming deleted. If the access token doesn't have permissions to view the resource, re-importing will be required to delete the resource.")
+			return
+		}
+
 		if notOk, err := utils.AugmentVariableClientError(ctx, true, err); notOk {
 			resp.Diagnostics.AddError(invalidMaskedValueSummary, err.Error())
 			return
