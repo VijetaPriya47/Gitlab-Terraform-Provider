@@ -7,53 +7,32 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
 func TestAccDataSourceGitlabInstanceVariable_basic(t *testing.T) {
-	rInt := acctest.RandInt()
+	variable := testutil.CreateInstanceVariable(t)
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
-					resource "gitlab_instance_variable" "this" {
-						key               = "any_key_%d"
-					    value             = "any-value"
-					}
-
 					data "gitlab_instance_variable" "this" {
-						key               = gitlab_instance_variable.this.key
+						key = "%s"
 					}
-				`, rInt),
+				`, variable.Key),
 				Check: resource.ComposeTestCheckFunc(
-					testAccDataSourceGitlabInstanceVariable("gitlab_instance_variable.this", "data.gitlab_instance_variable.this"),
+					resource.TestCheckResourceAttr("data.gitlab_instance_variable.this", "key", variable.Key),
+					resource.TestCheckResourceAttr("data.gitlab_instance_variable.this", "value", variable.Value),
+					resource.TestCheckResourceAttr("data.gitlab_instance_variable.this", "description", variable.Description),
+					resource.TestCheckResourceAttr("data.gitlab_instance_variable.this", "variable_type", string(variable.VariableType)),
+					resource.TestCheckResourceAttr("data.gitlab_instance_variable.this", "protected", fmt.Sprintf("%t", variable.Protected)),
+					resource.TestCheckResourceAttr("data.gitlab_instance_variable.this", "masked", fmt.Sprintf("%t", variable.Masked)),
+					resource.TestCheckResourceAttr("data.gitlab_instance_variable.this", "raw", fmt.Sprintf("%t", variable.Raw)),
 				),
 			},
 		},
 	})
-}
-
-func testAccDataSourceGitlabInstanceVariable(src, n string) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-
-		resource := s.RootModule().Resources[src]
-		resourceAttributes := resource.Primary.Attributes
-
-		datasource := s.RootModule().Resources[n]
-		datasourceAttributes := datasource.Primary.Attributes
-
-		testAttributes := attributeNamesFromSchema(gitlabInstanceVariableGetSchema())
-
-		for _, attribute := range testAttributes {
-			if datasourceAttributes[attribute] != resourceAttributes[attribute] {
-				return fmt.Errorf("Expected variable's attribute `%s` to be: %s, but got: `%s`", attribute, resourceAttributes[attribute], datasourceAttributes[attribute])
-			}
-		}
-
-		return nil
-	}
 }

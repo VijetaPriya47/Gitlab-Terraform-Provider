@@ -989,7 +989,7 @@ func CreateInstanceVariable(t *testing.T) *gitlab.InstanceVariable {
 	}
 
 	t.Cleanup(func() {
-		if _, err := TestGitlabClient.InstanceVariables.RemoveVariable(variable.Key, nil); err != nil {
+		if _, err := TestGitlabClient.InstanceVariables.RemoveVariable(variable.Key); err != nil {
 			t.Fatal(err)
 		}
 	})
