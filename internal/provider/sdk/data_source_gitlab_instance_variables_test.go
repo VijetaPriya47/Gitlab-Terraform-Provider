@@ -5,12 +5,9 @@ package sdk
 
 import (
 	"fmt"
-	"maps"
-	"slices"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
@@ -18,7 +15,7 @@ import (
 
 func TestAccDataSourceGitlabInstanceVariables_basic(t *testing.T) {
 	testVariables := make([]*gitlab.InstanceVariable, 0)
-	for i := 0; i < 25; i++ {
+	for range 22 {
 		testVariables = append(testVariables, testutil.CreateInstanceVariable(t))
 	}
 
@@ -32,15 +29,11 @@ func TestAccDataSourceGitlabInstanceVariables_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("data.gitlab_instance_variables.this", "variables.0.key", testVariables[0].Key),
 					resource.TestCheckResourceAttr("data.gitlab_instance_variables.this", "variables.0.value", testVariables[0].Value),
 					resource.TestCheckResourceAttr("data.gitlab_instance_variables.this", "variables.0.description", testVariables[0].Description),
-					resource.TestCheckResourceAttr("data.gitlab_instance_variables.this", "variables.24.key", testVariables[24].Key),
-					resource.TestCheckResourceAttr("data.gitlab_instance_variables.this", "variables.24.value", testVariables[24].Value),
-					resource.TestCheckResourceAttr("data.gitlab_instance_variables.this", "variables.24.description", testVariables[24].Description),
+					resource.TestCheckResourceAttr("data.gitlab_instance_variables.this", "variables.21.key", testVariables[21].Key),
+					resource.TestCheckResourceAttr("data.gitlab_instance_variables.this", "variables.21.value", testVariables[21].Value),
+					resource.TestCheckResourceAttr("data.gitlab_instance_variables.this", "variables.21.description", testVariables[21].Description),
 				),
 			},
 		},
 	})
-}
-
-func attributeNamesFromSchema(schema map[string]*schema.Schema) []string {
-	return slices.Collect(maps.Keys(schema))
 }

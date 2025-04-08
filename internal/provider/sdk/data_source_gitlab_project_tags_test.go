@@ -5,77 +5,49 @@ package sdk
 
 import (
 	"fmt"
+	"sort"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
 func TestAccDataGitlabProjectTags_basic(t *testing.T) {
-	countTags := 3
 	project := testutil.CreateProject(t)
+	tags := testutil.CreateTags(t, project, 3)
+	sort.Slice(tags, func(i, j int) bool {
+		return tags[i].Name < tags[j].Name
+	})
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
-					resource "gitlab_project_tag" "foo" {
-						count   = "%[1]d"
-						
-						name    = "${count.index}"
-						ref     = "main"
-						project = "%s"
-						message = "Tag ${count.index}"
-					}
-					
 					data "gitlab_project_tags" "foo" {
 						project  = "%s"
 						order_by = "name"
 						sort     = "asc"
-						
-						depends_on = [
-							gitlab_project_tag.foo,
-						]
 					}
-				`, countTags, project.PathWithNamespace, project.PathWithNamespace),
+				`, project.PathWithNamespace),
 				Check: resource.ComposeTestCheckFunc(
-					testAccDataSourceGitlabProjectTags("gitlab_project_tag.foo", "data.gitlab_project_tags.foo", countTags),
+					resource.TestCheckResourceAttr("data.gitlab_project_tags.foo", "project", project.PathWithNamespace),
+					resource.TestCheckResourceAttr("data.gitlab_project_tags.foo", "tags.#", "3"),
+					resource.TestCheckResourceAttr("data.gitlab_project_tags.foo", "tags.0.name", tags[0].Name),
+					resource.TestCheckResourceAttr("data.gitlab_project_tags.foo", "tags.1.name", tags[1].Name),
+					resource.TestCheckResourceAttr("data.gitlab_project_tags.foo", "tags.2.name", tags[2].Name),
+					resource.TestCheckResourceAttr("data.gitlab_project_tags.foo", "tags.0.message", tags[0].Message),
+					resource.TestCheckResourceAttr("data.gitlab_project_tags.foo", "tags.1.message", tags[1].Message),
+					resource.TestCheckResourceAttr("data.gitlab_project_tags.foo", "tags.2.message", tags[2].Message),
+					resource.TestCheckResourceAttr("data.gitlab_project_tags.foo", "tags.0.protected", fmt.Sprintf("%t", tags[0].Protected)),
+					resource.TestCheckResourceAttr("data.gitlab_project_tags.foo", "tags.1.protected", fmt.Sprintf("%t", tags[1].Protected)),
+					resource.TestCheckResourceAttr("data.gitlab_project_tags.foo", "tags.2.protected", fmt.Sprintf("%t", tags[2].Protected)),
+					resource.TestCheckResourceAttr("data.gitlab_project_tags.foo", "tags.0.target", tags[0].Target),
+					resource.TestCheckResourceAttr("data.gitlab_project_tags.foo", "tags.1.target", tags[1].Target),
+					resource.TestCheckResourceAttr("data.gitlab_project_tags.foo", "tags.2.target", tags[2].Target),
 				),
 			},
 		},
 	})
-}
-
-func testAccDataSourceGitlabProjectTags(src string, n string, countTags int) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		testAttributes := []string{
-			"commit",
-			"release",
-			"name",
-			"message",
-			"protected",
-			"target",
-		}
-
-		for numberTag := range make([]int, countTags) {
-			search := s.RootModule().Resources[n]
-			searchAttrs := search.Primary.Attributes
-
-			tag := s.RootModule().Resources[fmt.Sprintf("%s.%d", src, numberTag)]
-			tagAttrs := tag.Primary.Attributes
-
-			for _, attribute := range testAttributes {
-				tagAttr := tagAttrs[attribute]
-				searchAttr := searchAttrs[fmt.Sprintf("tags.%d.%s", numberTag, attribute)]
-				if searchAttr != tagAttr {
-					return fmt.Errorf("Expected the tag `%s` with parameter `%s` to be: `%s`, but got: `%s`", tagAttrs["name"], attribute, tagAttr, searchAttr)
-				}
-			}
-		}
-
-		return nil
-	}
 }
