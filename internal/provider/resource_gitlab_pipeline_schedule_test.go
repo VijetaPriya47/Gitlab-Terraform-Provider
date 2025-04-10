@@ -78,7 +78,7 @@ func TestAccGitlabPipelineSchedule_takeOwnershipWithChanges(t *testing.T) {
 
 	// Wait some time to ensure that membership changes have propogated in the background processes.
 	//nolint // R018 this is part of testing code, not the provider itself.
-	time.Sleep(30 * time.Second)
+	time.Sleep(60 * time.Second)
 	userPAT := testutil.CreatePersonalAccessToken(t, user)
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -146,7 +146,7 @@ func TestAccGitlabPipelineSchedule_takeOwnershipWithoutChanges(t *testing.T) {
 
 	// Wait some time to ensure that membership changes have propogated in the background processes.
 	//nolint // R018 this is part of testing code, not the provider itself.
-	time.Sleep(30 * time.Second)
+	time.Sleep(60 * time.Second)
 	userPAT := testutil.CreatePersonalAccessToken(t, user)
 
 	resource.ParallelTest(t, resource.TestCase{
