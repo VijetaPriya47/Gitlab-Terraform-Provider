@@ -36,6 +36,7 @@ func TestAcc_GitlabProjectJobTokenScopes_basic(t *testing.T) {
 				Config: fmt.Sprintf(`
 				resource "gitlab_project_job_token_scopes" "this" {
 					project = %d
+					enabled = true
 					target_project_ids = [
 						%d,
 						%d
@@ -45,6 +46,7 @@ func TestAcc_GitlabProjectJobTokenScopes_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "id", strconv.Itoa(project.ID)),
 					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "project", strconv.Itoa(project.ID)),
 					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "project_id", strconv.Itoa(project.ID)),
+					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "enabled", "true"),
 					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "target_project_ids.#", "2"),
 					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "target_group_ids.#", "0"),
 				),
@@ -158,6 +160,45 @@ func TestAcc_GitlabProjectJobTokenScopes_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "target_project_ids.#", "1"),
 					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "target_group_ids.#", "0"),
 				),
+			},
+		},
+	})
+}
+
+func TestAcc_GitlabProjectJobTokenScopes_destroyRestoresEnabledFlagToTrue(t *testing.T) {
+	// Set up project environment.
+	project := testutil.CreateProject(t)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAcc_GitlabProjectJobTokenScopes_CheckDestroy,
+		Steps: []resource.TestStep{
+			// Create a basic CI/CD job token scope array allowing all projects.
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_job_token_scopes" "this" {
+					project = %d
+					enabled = false
+				}`, project.ID),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "id", strconv.Itoa(project.ID)),
+					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "project", strconv.Itoa(project.ID)),
+					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "project_id", strconv.Itoa(project.ID)),
+					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "enabled", "false"),
+				),
+			},
+			{
+				ResourceName:      "gitlab_project_job_token_scopes.this",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_job_token_scopes" "this" {
+					project = %d
+					enabled = false
+				}`, project.ID),
+				Destroy: true,
 			},
 		},
 	})
@@ -316,18 +357,27 @@ func testAcc_GitlabProjectJobTokenScopes_CheckDestroy(s *terraform.State) error 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type == "gitlab_project_job_token_scopes" {
 			projectID := rs.Primary.Attributes["project"]
-			projects, _, err := testutil.TestGitlabClient.JobTokenScope.GetProjectJobTokenInboundAllowList(projectID, nil, nil)
+
+			settings, _, err := testutil.TestGitlabClient.JobTokenScope.GetProjectJobTokenAccessSettings(projectID)
 			if err != nil {
-				return fmt.Errorf("Failed to fetch CI/CD Job Token Scope: %w", err)
+				return fmt.Errorf("Failed to fetch CI/CD Job Token settings: %w", err)
+			}
+			if !settings.InboundEnabled {
+				return fmt.Errorf("Failed to destroy token scopes. The InboundEnabled flag should be true after destroy.")
+			}
+
+			projects, _, err := testutil.TestGitlabClient.JobTokenScope.GetProjectJobTokenInboundAllowList(projectID, nil)
+			if err != nil {
+				return fmt.Errorf("Failed to fetch CI/CD Job Token project allow list: %w", err)
 			}
 
 			if len(projects) > 1 {
 				return fmt.Errorf("Failed to destroy token scopes. Except the one for the project itself, all tokens should be removed when finished.")
 			}
 
-			groups, _, err := testutil.TestGitlabClient.JobTokenScope.GetJobTokenAllowlistGroups(projectID, nil, nil)
+			groups, _, err := testutil.TestGitlabClient.JobTokenScope.GetJobTokenAllowlistGroups(projectID, nil)
 			if err != nil {
-				return fmt.Errorf("Failed to fetch groups CI/CD Job Token Scope: %w", err)
+				return fmt.Errorf("Failed to fetch groups CI/CD Job Token group allow list: %w", err)
 			}
 			if len(groups) > 0 {
 				return fmt.Errorf("Error destroying token scopes for groups: unexpected group found in token scopes (%v)", groups)

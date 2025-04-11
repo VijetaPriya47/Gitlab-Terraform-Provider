@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
@@ -48,10 +49,19 @@ type gitlabProjectJobTokenScopesResourceModel struct {
 	Id        types.String `tfsdk:"id"`
 	Project   types.String `tfsdk:"project"`
 	ProjectID types.Int64  `tfsdk:"project_id"`
+	Enabled   types.Bool   `tfsdk:"enabled"`
 
 	// types.Set in the schema
 	TargetProjectIDs types.Set `tfsdk:"target_project_ids"`
 	TargetGroupIDs   types.Set `tfsdk:"target_group_ids"`
+}
+
+func (m *gitlabProjectJobTokenScopesResourceModel) getProject() string {
+	if m.Project.ValueString() == "" {
+		return strconv.Itoa(int(m.ProjectID.ValueInt64()))
+	} else {
+		return m.Project.ValueString()
+	}
 }
 
 func (r *gitlabProjectJobTokenScopesResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -61,9 +71,12 @@ func (r *gitlabProjectJobTokenScopesResource) Metadata(ctx context.Context, req 
 func (r *gitlabProjectJobTokenScopesResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_project_job_token_scopes`" + ` resource allows to manage the CI/CD Job Token scopes in a project.
-Any project not within the defined set in this attribute will be removed, which allows this resource to be used as an explicit deny.
+Any project or group not within the defined set of ` + "`target_project_ids` or `target_group_ids`" + `, respectively, will be removed,
+which allows this resource to be used as an explicit deny.
 
 ~> Conflicts with the use of ` + "`gitlab_project_job_token_scope`" + ` when used on the same project. Use one or the other to ensure the desired state.
+
+~> If the ` + "`enabled`" + ` property is false, any project or group will be allowed regardless of the given allowlist attributes.
 
 **Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_job_token_scopes/)`,
 
@@ -90,6 +103,14 @@ Any project not within the defined set in this attribute will be removed, which 
 				Computed:            true,
 				PlanModifiers:       []planmodifier.Int64{int64planmodifier.RequiresReplace()},
 				Validators:          []validator.Int64{int64validator.AtLeast(0), int64validator.ConflictsWith(path.MatchRoot("project"))},
+			},
+			"enabled": schema.BoolAttribute{
+				MarkdownDescription: "Enable the given inbound allowlist. If false, will allow any project or group regardless of the values in `target_project_ids` or `target_group_ids`. Deleting the associated `gitlab_project_job_token_scopes` resource will reset `Enabled` on the group to `true`.",
+				Optional:            true,
+				Computed:            true,
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"target_project_ids": schema.SetAttribute{
 				MarkdownDescription: "A set of project IDs that are in the CI/CD job token inbound allowlist.",
@@ -135,13 +156,7 @@ func (r *gitlabProjectJobTokenScopesResource) Create(ctx context.Context, req re
 		return
 	}
 
-	// local copies of plan arguments
-	var project string
-	if data.Project.ValueString() == "" {
-		project = strconv.Itoa(int(data.ProjectID.ValueInt64()))
-	} else {
-		project = data.Project.ValueString()
-	}
+	project := data.getProject()
 
 	// Since a user may have added scopes to a project before this resource was added, we essentially need to do a
 	// "diff" operation even in the "create" function
@@ -195,13 +210,7 @@ func (r *gitlabProjectJobTokenScopesResource) Update(ctx context.Context, req re
 		return
 	}
 
-	// local copies of plan arguments
-	var project string
-	if data.Project.ValueString() == "" {
-		project = strconv.Itoa(int(data.ProjectID.ValueInt64()))
-	} else {
-		project = data.Project.ValueString()
-	}
+	project := data.getProject()
 
 	// Since a user may have added scoped to a project before this resource was added, we essentially need to do a
 	// "diff" operation even in the "create" function
@@ -213,28 +222,29 @@ func (r *gitlabProjectJobTokenScopesResource) Update(ctx context.Context, req re
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-// Deletes removes the resource.
+// Delete removes the resource.
 func (r *gitlabProjectJobTokenScopesResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var data *gitlabProjectJobTokenScopesResourceModel
 
 	// Read Terraform prior state data into the model
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
+	// default value for new projects, so restore this default state upon deletion
+	data.Enabled = types.BoolValue(true)
+
 	// Set the expected target project Ids to empty
-	projectSet, diag := types.SetValueFrom(ctx, types.Int64Type, []types.Int64{})
-	resp.Diagnostics.Append(diag...)
+	projectSet, diags := types.SetValueFrom(ctx, types.Int64Type, []types.Int64{})
+	resp.Diagnostics.Append(diags...)
 	data.TargetProjectIDs = projectSet
 
-	groupSet, diag := types.SetValueFrom(ctx, types.Int64Type, []types.Int64{})
-	resp.Diagnostics.Append(diag...)
+	groupSet, diags := types.SetValueFrom(ctx, types.Int64Type, []types.Int64{})
+	resp.Diagnostics.Append(diags...)
 	data.TargetGroupIDs = groupSet
 
+	project := data.getProject()
+
 	// Run the set to empty out project Ids
-	if data.Project.ValueString() == "" {
-		r.setProjectCIJobScopes(ctx, strconv.Itoa(int(data.ProjectID.ValueInt64())), data)
-	} else {
-		r.setProjectCIJobScopes(ctx, data.Project.ValueString(), data)
-	}
+	r.setProjectCIJobScopes(ctx, project, data)
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -246,12 +256,35 @@ func (r *gitlabProjectJobTokenScopesResource) ImportState(ctx context.Context, r
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
-// Helper function for this resource that takes in lists of int64 projects and groups IDs, and sets the project
-// CI token scope to exactly match that list. That means it performs the following actions:
+// setProjectCIJobScopes takes in lists of int64 projects and groups IDs from the data model,
+// and sets the project CI token scope to exactly match that list.
+// That means it performs the following actions:
 //   - Adds any scopes not already on the project
 //   - Removes scopes on the project, but not in the list
 //   - Leaves all other scopes alone.
+//
+// Additionally, it sets the enabled flag to the desired value and thus controls if the allowlists apply at all.
 func (r *gitlabProjectJobTokenScopesResource) setProjectCIJobScopes(ctx context.Context, project string, data *gitlabProjectJobTokenScopesResourceModel) diag.Diagnostic {
+	if diags := r.setAllowedTargetProjects(ctx, project, data); diags != nil {
+		return diags
+	}
+
+	if diags := r.setAllowedTargetGroups(ctx, project, data); diags != nil {
+		return diags
+	}
+
+	_, err := r.client.JobTokenScope.PatchProjectJobTokenAccessSettings(project, &gitlab.PatchProjectJobTokenAccessSettingsOptions{Enabled: data.Enabled.ValueBool()})
+	if err != nil {
+		return diag.NewErrorDiagnostic(
+			fmt.Sprintf("GitLab API error occured when setting the jobtoken allowlist enabled flag in project %s", project),
+			err.Error(),
+		)
+	}
+
+	return nil
+}
+
+func (r *gitlabProjectJobTokenScopesResource) setAllowedTargetProjects(ctx context.Context, project string, data *gitlabProjectJobTokenScopesResourceModel) diag.Diagnostic {
 	// Get a list of existing CI project scopes for the project
 	projects, err := r.getProjectCIJobScopes(ctx, project)
 	if err != nil {
@@ -288,7 +321,10 @@ func (r *gitlabProjectJobTokenScopesResource) setProjectCIJobScopes(ctx context.
 			)
 		}
 	}
+	return nil
+}
 
+func (r *gitlabProjectJobTokenScopesResource) setAllowedTargetGroups(ctx context.Context, project string, data *gitlabProjectJobTokenScopesResourceModel) diag.Diagnostic {
 	// Get a list of existing CI groups scopes for the project
 	groups, err := r.getProjectCIJobScopesGroups(ctx, project)
 	if err != nil {
@@ -325,8 +361,6 @@ func (r *gitlabProjectJobTokenScopesResource) setProjectCIJobScopes(ctx context.
 			)
 		}
 	}
-
-	// Everything is successful, return no diagnostic.
 	return nil
 }
 
@@ -342,7 +376,7 @@ func (r *gitlabProjectJobTokenScopesResource) compareAndGenerateActions(desiredI
 			}
 		}
 		if shouldDelete {
-			delete = append(delete, int(cid))
+			delete = append(delete, cid)
 		}
 	}
 
@@ -362,7 +396,7 @@ func (r *gitlabProjectJobTokenScopesResource) compareAndGenerateActions(desiredI
 	return create, delete
 }
 
-// Retrieves a comprehensive list of CI project scope targets
+// getProjectCIJobScopes retrieves a comprehensive list of CI project scope targets
 func (r *gitlabProjectJobTokenScopesResource) getProjectCIJobScopes(ctx context.Context, project string) ([]*gitlab.Project, error) {
 	var projectScopes []*gitlab.Project
 
@@ -401,7 +435,7 @@ func (r *gitlabProjectJobTokenScopesResource) getProjectCIJobScopes(ctx context.
 	return projectScopes, nil
 }
 
-// Retrieves a comprehensive list of CI groups scope targets
+// getProjectCIJobScopesGroups retrieves a comprehensive list of CI groups scope targets
 func (r *gitlabProjectJobTokenScopesResource) getProjectCIJobScopesGroups(ctx context.Context, projectID string) ([]*gitlab.Group, error) {
 	var groupsScopes []*gitlab.Group
 
@@ -432,6 +466,12 @@ func (r *gitlabProjectJobTokenScopesResource) getProjectCIJobScopesGroups(ctx co
 
 // Retrieves a comprehensive list of CI project scope targets
 func (r *gitlabProjectJobTokenScopesResource) readIntoState(ctx context.Context, project string, data *gitlabProjectJobTokenScopesResourceModel) diag.Diagnostic {
+	settings, _, err := r.client.JobTokenScope.GetProjectJobTokenAccessSettings(project)
+	if err != nil {
+		return diag.NewErrorDiagnostic("Error reading project job token access settings", err.Error())
+	}
+	data.Enabled = types.BoolValue(settings.InboundEnabled)
+
 	// re-read the project IDs from the API to set to state since we don't get them back in one request
 	projects, err := r.getProjectCIJobScopes(ctx, project)
 	if err != nil {
