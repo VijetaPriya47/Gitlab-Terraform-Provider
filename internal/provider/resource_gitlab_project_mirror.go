@@ -245,7 +245,7 @@ func (r *gitlabProjectMirrorResource) Update(ctx context.Context, req resource.U
 		options.OnlyProtectedBranches = data.OnlyProtectedBranches.ValueBoolPointer()
 	}
 
-	if !data.MirrorBranchRegex.IsNull() && !data.MirrorBranchRegex.IsUnknown() {
+	if !data.MirrorBranchRegex.IsNull() && !data.MirrorBranchRegex.IsUnknown() && data.MirrorBranchRegex.ValueString() != "" {
 		options.MirrorBranchRegex = data.MirrorBranchRegex.ValueStringPointer()
 	}
 
@@ -361,6 +361,9 @@ import_url, mirror, and mirror_trigger_builds properties on the gitlab_project r
 				Computed:            true,
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(path.MatchRoot("only_protected_branches")),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"keep_divergent_refs": schema.BoolAttribute{

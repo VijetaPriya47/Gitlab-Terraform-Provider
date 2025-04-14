@@ -139,10 +139,8 @@ type testAccGitlabProjectMirrorExpectedAttributes struct {
 
 func testAccCheckGitlabProjectMirrorAttributes(mirror *gitlab.ProjectMirror, want *testAccGitlabProjectMirrorExpectedAttributes) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		if want.URL != "" {
-			if mirror.URL != want.URL {
-				return fmt.Errorf("got url %q; want %q", mirror.URL, want.URL)
-			}
+		if want.URL != "" && mirror.URL != want.URL {
+			return fmt.Errorf("got url %q; want %q", mirror.URL, want.URL)
 		}
 
 		if mirror.Enabled != want.Enabled {
@@ -161,7 +159,7 @@ func testAccCheckGitlabProjectMirrorAttributes(mirror *gitlab.ProjectMirror, wan
 			return fmt.Errorf("got keep_divergent_refs %t; want %t", mirror.KeepDivergentRefs, want.KeepDivergentRefs)
 		}
 
-		if mirror.AuthMethod != want.AuthMethod {
+		if want.AuthMethod != "" && mirror.AuthMethod != want.AuthMethod {
 			return fmt.Errorf("got auth_method %s; want %s", mirror.AuthMethod, want.AuthMethod)
 		}
 
@@ -446,6 +444,48 @@ func TestAccGitlabProjectMirror_branchRegex(t *testing.T) {
 				ResourceName:      "gitlab_project_mirror.foo",
 				ImportState:       true,
 				ImportStateVerify: true,
+			},
+			// test to verify mirror_branch_regex doesn't always show as unknown in plan when not provided
+			// for https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/issues/6473
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_mirror" "bar" {
+						project  = "%d"
+						url      = "https://user:password@git.example.org/path/to/repo.git"
+						enabled  = true
+			  
+						keep_divergent_refs     = false
+						only_protected_branches = true
+			  		}
+				`, project.ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabProjectMirrorExists("gitlab_project_mirror.bar", &mirror),
+					testAccCheckGitlabProjectMirrorAttributes(&mirror, &testAccGitlabProjectMirrorExpectedAttributes{
+						Enabled:               true,
+						KeepDivergentRefs:     false,
+						OnlyProtectedBranches: true,
+					}),
+				),
+			},
+			// Verify upstream attributes with an import
+			{
+				ResourceName:            "gitlab_project_mirror.bar",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"url"},
+			},
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_mirror" "bar" {
+						project  = "%d"
+						url      = "https://user:password@git.example.org/path/to/repo.git"
+						enabled  = true
+			  
+						keep_divergent_refs     = false
+						only_protected_branches = true
+			  		}
+				`, project.ID),
+				PlanOnly: true,
 			},
 		},
 	})
