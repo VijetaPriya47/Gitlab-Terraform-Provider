@@ -1456,7 +1456,6 @@ func resourceGitlabProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 
 	if d.HasChange("ci_id_token_sub_claim_components") {
 		options.CIIdTokenSubClaimComponents = stringListToStringSlice(d.Get("ci_id_token_sub_claim_components").([]interface{}))
-
 	}
 
 	if d.HasChange("ci_forward_deployment_enabled") {
@@ -2389,7 +2388,7 @@ func createProject(ctx context.Context, d *schema.ResourceData, client *gitlab.C
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 	if v, ok := d.GetOkExists("group_runners_enabled"); ok {
-		options.GroupRunnersEnabled = gitlab.Bool(v.(bool))
+		options.GroupRunnersEnabled = gitlab.Ptr(v.(bool))
 	}
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
@@ -2562,7 +2561,6 @@ func updatePostCreateEditOptions(ctx context.Context, editProjectOptions *gitlab
 
 	if v, ok := d.GetOk("ci_id_token_sub_claim_components"); ok {
 		editProjectOptions.CIIdTokenSubClaimComponents = stringListToStringSlice(v.([]interface{}))
-
 	}
 
 	if v, ok := d.GetOk("ci_delete_pipelines_in_seconds"); ok {
@@ -2696,7 +2694,7 @@ func updatePostCreateEditOptions(ctx context.Context, editProjectOptions *gitlab
 		// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
 		// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 		if v, ok := d.GetOkExists("group_runners_enabled"); ok {
-			editProjectOptions.GroupRunnersEnabled = gitlab.Bool(v.(bool))
+			editProjectOptions.GroupRunnersEnabled = gitlab.Ptr(v.(bool))
 		}
 
 		if v, ok := d.GetOk("tags"); ok {
