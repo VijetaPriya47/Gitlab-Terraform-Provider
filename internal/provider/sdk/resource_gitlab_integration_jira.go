@@ -82,7 +82,8 @@ func resourceGitlabIntegrationJiraSchema(description string) *schema.Resource {
 				ValidateFunc: validateURLFunc,
 			},
 			"project_key": {
-				Description: "The short identifier for your JIRA project, all uppercase, e.g., PROJ.",
+				Description: "The short identifier for your JIRA project. Must be all uppercase. For example, `PROJ`.",
+				Deprecated:  "`project_key` is deprecated. Use `project_keys` instead.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Default:     "",
