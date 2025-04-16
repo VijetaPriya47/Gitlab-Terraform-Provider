@@ -81,6 +81,13 @@ func gitlabGroupLDAPLinkSchema() map[string]*schema.Schema {
 			ForceNew:         true,
 			ExactlyOneOf:     []string{"access_level", "group_access"},
 		},
+		"member_role_id": {
+			Description: "The ID of a custom member role. Only available for Ultimate instances. When using a custom role, the `group_access` must match the base role used to create the custom role.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
+			ForceNew:    true,
+		},
 		// Changing GitLab API parameter "provider" to "ldap_provider" to avoid clashing with the Terraform "provider" key word
 		"ldap_provider": {
 			Description: "The name of the LDAP provider as stored in the GitLab database. Note that this is NOT the value of the `label` attribute as shown in the web UI. In most cases this will be `ldapmain` but you may use the [LDAP check rake task](https://docs.gitlab.com/administration/raketasks/ldap/#check) for receiving the LDAP server name: `LDAP: ... Server: ldapmain`",
@@ -188,6 +195,9 @@ func resourceGitlabGroupLdapLinkCreate(ctx context.Context, d *schema.ResourceDa
 	if filter != "" {
 		options.Filter = &filter
 	}
+	if v, ok := d.GetOk("member_role_id"); v != nil && ok {
+		options.MemberRoleID = gitlab.Ptr(int64(v.(int)))
+	}
 
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Create GitLab group LdapLink %s", d.Id()))
 	ldapLink, _, err := client.Groups.AddGroupLDAPLink(group, options, gitlab.WithContext(ctx))
@@ -242,6 +252,7 @@ func resourceGitlabGroupLdapLinkRead(ctx context.Context, d *schema.ResourceData
 			d.Set("group_access", api.AccessLevelValueToName[ldapLink.GroupAccess])
 			d.Set("ldap_provider", ldapLink.Provider)
 			d.Set("filter", ldapLink.Filter)
+			d.Set("member_role_id", ldapLink.MemberRoleID)
 			found = true
 			break
 		}
