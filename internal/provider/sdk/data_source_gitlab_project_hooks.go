@@ -12,7 +12,7 @@ var _ = registerDataSource("gitlab_project_hooks", func() *schema.Resource {
 	return &schema.Resource{
 		Description: `The ` + "`gitlab_project_hooks`" + ` data source allows to retrieve details about hooks in a project.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/projects/#list-project-hooks)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_webhooks/#list-webhooks-for-a-project)`,
 
 		ReadContext: dataSourceGitlabProjectHooksRead,
 		Schema: map[string]*schema.Schema{

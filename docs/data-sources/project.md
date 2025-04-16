@@ -4,14 +4,14 @@ page_title: "gitlab_project Data Source - terraform-provider-gitlab"
 subcategory: ""
 description: |-
   The gitlab_project data source allows details of a project to be retrieved by either its ID or its path with namespace.
-  Upstream API: GitLab REST API docs https://docs.gitlab.com/api/projects/#get-single-project
+  Upstream API: GitLab REST API docs https://docs.gitlab.com/api/projects/#get-a-single-project
 ---
 
 # gitlab_project (Data Source)
 
 The `gitlab_project` data source allows details of a project to be retrieved by either its ID or its path with namespace.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/projects/#get-single-project)
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/projects/#get-a-single-project)
 
 ## Example Usage
 

@@ -15,7 +15,7 @@ var _ = registerDataSource("gitlab_user_sshkeys", func() *schema.Resource {
 	return &schema.Resource{
 		Description: `The ` + "`gitlab_user_sshkeys`" + ` data source allows a list of SSH keys to be retrieved by either the user ID or username.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/users/#list-ssh-keys-for-user)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/user_keys/#list-all-ssh-keys-for-a-user)`,
 
 		ReadContext: dataSourceGitlabUserKeysRead,
 		Schema: map[string]*schema.Schema{

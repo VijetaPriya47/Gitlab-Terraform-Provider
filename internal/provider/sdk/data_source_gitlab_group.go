@@ -16,7 +16,7 @@ var _ = registerDataSource("gitlab_group", func() *schema.Resource {
 	return &schema.Resource{
 		Description: `The ` + "`gitlab_group`" + ` data source allows details of a group to be retrieved by its id or full path.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/groups/#details-of-a-group)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/groups/#get-a-single-group)`,
 
 		ReadContext: dataSourceGitlabGroupRead,
 		Schema: map[string]*schema.Schema{
@@ -135,14 +135,12 @@ var _ = registerDataSource("gitlab_group", func() *schema.Resource {
 })
 
 func dataSourceGitlabGroupSharedWithGroups() *schema.Schema {
-
 	return &schema.Schema{
 		Description: "Describes groups which have access shared to this group.",
 		Type:        schema.TypeList,
 		Computed:    true,
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
-
 				"group_id": {
 					Description: "The ID of the group shared with.",
 					Type:        schema.TypeInt,
@@ -171,7 +169,6 @@ func dataSourceGitlabGroupSharedWithGroups() *schema.Schema {
 			},
 		},
 	}
-
 }
 
 func dataSourceGitlabGroupRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {

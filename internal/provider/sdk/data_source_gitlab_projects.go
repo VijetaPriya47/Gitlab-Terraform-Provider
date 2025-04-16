@@ -18,7 +18,7 @@ import (
 // Schemas
 
 // WARN: client-go may not be up-to-date with Gitlab exposed options
-// https://docs.gitlab.com/api/groups/#list-a-groups-projects
+// https://docs.gitlab.com/api/groups/#list-projects
 // https://docs.gitlab.com/api/projects/#list-all-projects
 
 // Helper functions
