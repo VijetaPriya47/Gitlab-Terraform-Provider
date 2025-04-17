@@ -15,7 +15,7 @@ import (
 var _ = registerResource("gitlab_integration_jira", func() *schema.Resource {
 	return resourceGitlabIntegrationJiraSchema(`The ` + "`gitlab_integration_jira`" + ` resource allows to manage the lifecycle of a project integration with Jira.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/integrations/#jira)`)
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#jira-issues)`)
 })
 
 var _ = registerResource("gitlab_service_jira", func() *schema.Resource {
@@ -23,7 +23,7 @@ var _ = registerResource("gitlab_service_jira", func() *schema.Resource {
 
 ~> This resource is deprecated. use ` + "`gitlab_integration_jira`" + `instead!
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/integrations/#jira)`)
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#jira-issues)`)
 	schema.DeprecationMessage = `This resource is deprecated. use ` + "`gitlab_integration_jira`" + `instead!`
 	return schema
 })

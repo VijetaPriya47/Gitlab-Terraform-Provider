@@ -14,7 +14,7 @@ import (
 var _ = registerResource("gitlab_integration_slack", func() *schema.Resource {
 	return resourceGitlabIntegrationSlackSchema(`The ` + "`gitlab_integration_slack`" + ` resource allows to manage the lifecycle of a project integration with Slack.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/integrations/#slack-notifications)`)
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#slack-notifications)`)
 })
 
 var _ = registerResource("gitlab_service_slack", func() *schema.Resource {
@@ -22,7 +22,7 @@ var _ = registerResource("gitlab_service_slack", func() *schema.Resource {
 
 ~> This resource is deprecated. use ` + "`gitlab_integration_slack`" + `instead!
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/integrations/#slack-notifications)`)
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#slack-notifications)`)
 	schema.DeprecationMessage = `This resource is deprecated. use ` + "`gitlab_integration_slack`" + `instead!`
 	return schema
 })

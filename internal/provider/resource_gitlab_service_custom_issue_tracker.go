@@ -40,7 +40,7 @@ func (r *gitlabServiceCustomIssueTrackerResource) Schema(ctx context.Context, re
 
 ~> This resource is deprecated. use ` + "`gitlab_integration_custom_issue_tracker`" + `instead!
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/integrations/#custom-issue-tracker)`
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#custom-issue-tracker)`
 }
 
 /////////////////

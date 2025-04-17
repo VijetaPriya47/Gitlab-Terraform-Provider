@@ -59,7 +59,7 @@ func (r *gitlabIntegrationJenkinsResource) Schema(_ context.Context, _ resource.
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_integration_jenkins`" + ` resource allows to manage the lifecycle of a project integration with Jenkins.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/integrations/#jenkins)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#jenkins)`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:            true,

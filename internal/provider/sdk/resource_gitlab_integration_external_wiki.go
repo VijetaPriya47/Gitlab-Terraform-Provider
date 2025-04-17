@@ -16,7 +16,7 @@ import (
 var _ = registerResource("gitlab_integration_external_wiki", func() *schema.Resource {
 	return resourceGitlabIntegrationEmailsOnPushResource(`The ` + "`gitlab_integration_external_wiki`" + ` resource allows to manage the lifecycle of a project integration with External Wiki Service.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/integrations/#external-wiki)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#external-wiki)`,
 	)
 })
 
@@ -25,7 +25,7 @@ var _ = registerResource("gitlab_service_external_wiki", func() *schema.Resource
 
 ~> This resource is deprecated. use ` + "`gitlab_integration_external_wiki`" + `instead!
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/integrations/#external-wiki)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#external-wiki)`,
 	)
 	resource.DeprecationMessage = `This resource is deprecated. use ` + "`gitlab_integration_external_wiki`" + `instead!`
 	return resource
