@@ -175,6 +175,11 @@ func TestAccGitlabGroupLdapLink_customRole(t *testing.T) {
 		BaseAccessLevel:   gitlab.Ptr(gitlab.MaintainerPermissions),
 		ReadVulnerability: gitlab.Ptr(true),
 	})
+	roleTwo := testutil.CreateCustomInstanceRole(t, &gitlab.CreateMemberRoleOptions{
+		Name:              gitlab.Ptr(fmt.Sprintf("test-role-two-%d", rInt)),
+		BaseAccessLevel:   gitlab.Ptr(gitlab.MaintainerPermissions),
+		ReadVulnerability: gitlab.Ptr(true),
+	})
 	group := testutil.CreateGroups(t, 1)[0]
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -194,6 +199,27 @@ func TestAccGitlabGroupLdapLink_customRole(t *testing.T) {
 					ldap_provider = "default"
 					filter        = "(&(objectClass=person)(objectClass=user))"
 				}`, group.ID, role.ID),
+				Check: testAccCheckGitlabGroupLdapLinkExists("gitlab_group_ldap_link.foo", &ldapLink),
+			},
+			{
+				ResourceName:      "gitlab_group_ldap_link.foo",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"force",
+				},
+			},
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group_ldap_link" "foo" {
+					group 	      = "%d"
+					member_role_id = %d
+
+					// needs to match maintainer permissions in the role
+					group_access  = "maintainer" 
+					ldap_provider = "default"
+					filter        = "(&(objectClass=person)(objectClass=user))"
+				}`, group.ID, roleTwo.ID),
 				Check: testAccCheckGitlabGroupLdapLinkExists("gitlab_group_ldap_link.foo", &ldapLink),
 			},
 			{
