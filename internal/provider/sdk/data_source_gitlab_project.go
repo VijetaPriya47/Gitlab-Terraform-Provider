@@ -18,7 +18,7 @@ var _ = registerDataSource("gitlab_project", func() *schema.Resource {
 	return &schema.Resource{
 		Description: `The ` + "`gitlab_project`" + ` data source allows details of a project to be retrieved by either its ID or its path with namespace.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/projects/#get-single-project)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/projects/#get-a-single-project)`,
 
 		ReadContext: dataSourceGitlabProjectRead,
 

@@ -121,7 +121,7 @@ func dataSourceGitlabProjectMembershipRead(ctx context.Context, d *schema.Resour
 	} else if v, ok := d.GetOk("full_path"); ok {
 		pid = v.(string)
 	} else {
-		return diag.Errorf("one and only one of project_id or full_path must be set. This is a provider bug, please report upstream at https://gitlab.com/gitlab-org/terraform-provider-gitlab/issues")
+		return diag.Errorf("one and only one of project_id or full_path must be set. This is a provider bug, please report upstream at https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/issues")
 	}
 
 	// Get project to have both, the `project_id` and `full_path` for setting the state.

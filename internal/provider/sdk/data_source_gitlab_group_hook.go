@@ -13,7 +13,7 @@ var _ = registerDataSource("gitlab_group_hook", func() *schema.Resource {
 	return &schema.Resource{
 		Description: `The ` + "`gitlab_group_hook`" + ` data source allows to retrieve details about a hook in a group.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/groups/#get-group-hook)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/group_webhooks/#get-a-group-hook)`,
 
 		ReadContext: dataSourceGitlabGroupHookRead,
 		Schema:      datasourceSchemaFromResourceSchema(gitlabGroupHookSchema(), []string{"group", "hook_id"}, nil),

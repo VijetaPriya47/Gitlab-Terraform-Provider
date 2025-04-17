@@ -19,7 +19,7 @@ var _ = registerDataSource("gitlab_user", func() *schema.Resource {
 
 ~> When using the ` + "`email`" + ` attribute, an exact match is not guaranteed. The most related match will be returned. The most related match will prioritize an exact match if one is available.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/users/#single-user)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/users/#get-a-single-user)`,
 
 		ReadContext: dataSourceGitlabUserRead,
 		Schema: map[string]*schema.Schema{

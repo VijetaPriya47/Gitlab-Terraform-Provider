@@ -14,7 +14,7 @@ var _ = registerDataSource("gitlab_group_subgroups", func() *schema.Resource {
 	return &schema.Resource{
 		Description: `The ` + "`gitlab_group_subgroups`" + ` data source allows to get subgroups of a group.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/groups/#list-a-groups-subgroups)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/groups/#list-subgroups)`,
 
 		ReadContext: dataSourceGitlabGroupSubgroupsRead,
 		Schema: map[string]*schema.Schema{

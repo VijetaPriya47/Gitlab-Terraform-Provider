@@ -21,7 +21,7 @@ var _ = registerDataSource("gitlab_users", func() *schema.Resource {
 
 -> Some available options require administrator privileges.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ce/api/users/#list-users)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/users/#list-users)`,
 
 		ReadContext: dataSourceGitlabUsersRead,
 
