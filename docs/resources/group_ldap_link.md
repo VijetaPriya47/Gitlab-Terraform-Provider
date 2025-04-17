@@ -39,6 +39,7 @@ resource "gitlab_group_ldap_link" "test" {
 - `filter` (String) The LDAP filter for the group. Required if `cn` is not provided. Requires GitLab Premium or above.
 - `force` (Boolean) If true, then delete and replace an existing LDAP link if one exists. Will also remove an LDAP link if the parent group is not found.
 - `group_access` (String) Minimum access level for members of the LDAP group. Valid values are: `no one`, `minimal`, `guest`, `planner`, `reporter`, `developer`, `maintainer`, `owner`
+- `member_role_id` (Number) The ID of a custom member role. Only available for Ultimate instances. When using a custom role, the `group_access` must match the base role used to create the custom role.
 
 ### Read-Only
 

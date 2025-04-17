@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 
@@ -63,7 +63,7 @@ func TestAccGitlabGroupLdapLink_SchemaMigration0_1(t *testing.T) {
 func TestAccGitlabGroupLdapLink_basicCN(t *testing.T) {
 	testutil.SkipIfCE(t)
 
-	rInt := acctest.RandInt()
+	group := testutil.CreateGroups(t, 1)[0]
 	resourceName := "gitlab_group_ldap_link.foo"
 
 	// PreCheck runs after Config so load test data here
@@ -80,21 +80,15 @@ func TestAccGitlabGroupLdapLink_basicCN(t *testing.T) {
 
 			// Create a group LDAP link as a developer (uses testAccGitlabGroupLdapLinkCreateConfig for Config)
 			{
-				Config: fmt.Sprintf(`
-				resource "gitlab_group" "foo" {
-					name        = "foo%d"
-					path        = "foo%d"
-					description = "Terraform acceptance test - Group LDAP Links 1"
-				}
-				
+				Config: fmt.Sprintf(`				
 				resource "gitlab_group_ldap_link" "foo" {
-					group 		    = "${gitlab_group.foo.id}"
+					group 		    = "%d"
 					cn				    = "%s"
 					group_access 	= "developer"
 					ldap_provider = "%s"
 					force         = true
 				
-				}`, rInt, rInt, testLdapLink.CN, testLdapLink.Provider),
+				}`, group.ID, testLdapLink.CN, testLdapLink.Provider),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabGroupLdapLinkExists(resourceName, &ldapLink),
 					testAccCheckGitlabGroupLdapLinkAttributes(&ldapLink, &testAccGitlabGroupLdapLinkExpectedAttributes{
@@ -114,19 +108,13 @@ func TestAccGitlabGroupLdapLink_basicCN(t *testing.T) {
 
 			// Update the group LDAP link to change the access level (uses testAccGitlabGroupLdapLinkUpdateConfig for Config)
 			{
-				Config: fmt.Sprintf(`
-				resource "gitlab_group" "foo" {
-					name        = "foo%d"
-					path        = "foo%d"
-					description = "Terraform acceptance test - Group LDAP Links 2"
-				}
-				
+				Config: fmt.Sprintf(`			
 				resource "gitlab_group_ldap_link" "foo" {
-					group 		    = "${gitlab_group.foo.id}"
+					group 		    = "%d"
 					cn				    = "%s"
 					group_access 	= "maintainer"
 					ldap_provider = "%s"
-				}`, rInt, rInt, testLdapLink.CN, testLdapLink.Provider),
+				}`, group.ID, testLdapLink.CN, testLdapLink.Provider),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabGroupLdapLinkExists(resourceName, &ldapLink),
 					testAccCheckGitlabGroupLdapLinkAttributes(&ldapLink, &testAccGitlabGroupLdapLinkExpectedAttributes{
@@ -154,7 +142,8 @@ func TestAccGitlabGroupLdapLink_basicFilter(t *testing.T) {
 
 			// Create a group LDAP link using a valid filter
 			{
-				Config: fmt.Sprintf(`resource "gitlab_group_ldap_link" "foo" {
+				Config: fmt.Sprintf(`
+				resource "gitlab_group_ldap_link" "foo" {
 					group 	      = "%d"
 					filter        = "(&(objectClass=person)(objectClass=user))"
 					group_access  = "developer"
@@ -165,6 +154,76 @@ func TestAccGitlabGroupLdapLink_basicFilter(t *testing.T) {
 			},
 			{
 				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"force",
+				},
+			},
+		},
+	})
+}
+
+func TestAccGitlabGroupLdapLink_customRole(t *testing.T) {
+	testutil.SkipIfCE(t)
+	var ldapLink gitlab.LDAPGroupLink
+
+	// Create a custom instance role to use for testing
+	rInt := acctest.RandInt()
+	role := testutil.CreateCustomInstanceRole(t, &gitlab.CreateMemberRoleOptions{
+		Name:              gitlab.Ptr(fmt.Sprintf("test-role-%d", rInt)),
+		BaseAccessLevel:   gitlab.Ptr(gitlab.MaintainerPermissions),
+		ReadVulnerability: gitlab.Ptr(true),
+	})
+	roleTwo := testutil.CreateCustomInstanceRole(t, &gitlab.CreateMemberRoleOptions{
+		Name:              gitlab.Ptr(fmt.Sprintf("test-role-two-%d", rInt)),
+		BaseAccessLevel:   gitlab.Ptr(gitlab.MaintainerPermissions),
+		ReadVulnerability: gitlab.Ptr(true),
+	})
+	group := testutil.CreateGroups(t, 1)[0]
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabGroupLdapLinkDestroy,
+		Steps: []resource.TestStep{
+
+			// Create a group LDAP link using a valid filter
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group_ldap_link" "foo" {
+					group 	      = "%d"
+					member_role_id = %d
+
+					// needs to match maintainer permissions in the role
+					group_access  = "maintainer" 
+					ldap_provider = "default"
+					filter        = "(&(objectClass=person)(objectClass=user))"
+				}`, group.ID, role.ID),
+				Check: testAccCheckGitlabGroupLdapLinkExists("gitlab_group_ldap_link.foo", &ldapLink),
+			},
+			{
+				ResourceName:      "gitlab_group_ldap_link.foo",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"force",
+				},
+			},
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group_ldap_link" "foo" {
+					group 	      = "%d"
+					member_role_id = %d
+
+					// needs to match maintainer permissions in the role
+					group_access  = "maintainer" 
+					ldap_provider = "default"
+					filter        = "(&(objectClass=person)(objectClass=user))"
+				}`, group.ID, roleTwo.ID),
+				Check: testAccCheckGitlabGroupLdapLinkExists("gitlab_group_ldap_link.foo", &ldapLink),
+			},
+			{
+				ResourceName:      "gitlab_group_ldap_link.foo",
 				ImportState:       true,
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{
