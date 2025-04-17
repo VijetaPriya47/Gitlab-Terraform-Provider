@@ -21,9 +21,11 @@ import (
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
 
-var _ resource.Resource = &gitlabGroupIssueBoardResource{}
-var _ resource.ResourceWithConfigure = &gitlabGroupIssueBoardResource{}
-var _ resource.ResourceWithImportState = &gitlabGroupIssueBoardResource{}
+var (
+	_ resource.Resource                = &gitlabGroupIssueBoardResource{}
+	_ resource.ResourceWithConfigure   = &gitlabGroupIssueBoardResource{}
+	_ resource.ResourceWithImportState = &gitlabGroupIssueBoardResource{}
+)
 
 func init() {
 	registerResource(NewGitLabGroupIssueBoardResource)
@@ -169,7 +171,6 @@ func (r *gitlabGroupIssueBoardResource) Read(ctx context.Context, req resource.R
 	}
 
 	boardId, err := strconv.Atoi(boardID)
-
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Invalid board ID provided, board ID should be an Int",
@@ -277,8 +278,12 @@ func (r *gitlabGroupIssueBoardResource) Update(ctx context.Context, req resource
 			resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 			resp.Diagnostics.AddError("GitLab API error occurred", "failed to delete list ")
 		}
-
 	}
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	listsData := make([]*gitlab.BoardList, len(data.Lists))
 	// Sort data.Lists based on list Position
 	sort.Slice(data.Lists, func(i, j int) bool {
@@ -347,7 +352,6 @@ func (r *gitlabGroupIssueBoardResource) Delete(ctx context.Context, req resource
 	}
 
 	boardId, err := strconv.Atoi(boardID)
-
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Internal provider error",
@@ -375,7 +379,6 @@ func (r *gitlabGroupIssueBoardResource) Configure(ctx context.Context, req resou
 }
 
 func (r *gitlabGroupIssueBoardResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-
 	var data *gitlabGroupIssueBoardResourceModel
 
 	// Read Terraform plan data into the model

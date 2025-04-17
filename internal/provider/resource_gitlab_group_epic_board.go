@@ -532,6 +532,11 @@ func (r *gitlabGroupEpicBoardResource) Create(ctx context.Context, req resource.
 			resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to create epic board list: %v from query %s", listResp["errors"], query.Query))
 		}
 	}
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	groupEpicBoard, _, err := r.client.GroupEpicBoards.GetGroupEpicBoard(group.ID, EpicBoardId, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
