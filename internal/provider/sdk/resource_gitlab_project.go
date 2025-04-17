@@ -278,7 +278,7 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 		ConflictsWith: []string{"import_url", "forked_from_project_id"},
 	},
 	"squash_option": {
-		Description:  "Squash commits when merge request. Valid values are `never`, `always`, `default_on`, or `default_off`. The default value is `default_off`.",
+		Description:  "Squash commits when merge request is merged. Valid values are `never` (Do not allow), `always` (Require), `default_on` (Encourage), or `default_off` (Allow). The default value is `default_off` (Allow).",
 		Type:         schema.TypeString,
 		Optional:     true,
 		Computed:     true,
