@@ -226,8 +226,6 @@ func TestAccDataProjectEnvironment_clusterAgent(t *testing.T) {
 }
 
 func TestAccDataProjectEnvironment_autoStopSetting(t *testing.T) {
-	testutil.RunIfAtLeast(t, "17.8")
-
 	project := testutil.CreateProject(t)
 	optsCreateEnvironmentOptions := gitlab.CreateEnvironmentOptions{
 		Name:            gitlab.Ptr(acctest.RandString(10)),
