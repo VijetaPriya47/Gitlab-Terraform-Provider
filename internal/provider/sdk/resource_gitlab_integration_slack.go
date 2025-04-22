@@ -12,24 +12,10 @@ import (
 )
 
 var _ = registerResource("gitlab_integration_slack", func() *schema.Resource {
-	return resourceGitlabIntegrationSlackSchema(`The ` + "`gitlab_integration_slack`" + ` resource allows to manage the lifecycle of a project integration with Slack.
-
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#slack-notifications)`)
-})
-
-var _ = registerResource("gitlab_service_slack", func() *schema.Resource {
-	schema := resourceGitlabIntegrationSlackSchema(`The ` + "`gitlab_service_slack`" + ` resource allows to manage the lifecycle of a project integration with Slack.
-
-~> This resource is deprecated. use ` + "`gitlab_integration_slack`" + `instead!
-
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#slack-notifications)`)
-	schema.DeprecationMessage = `This resource is deprecated. use ` + "`gitlab_integration_slack`" + `instead!`
-	return schema
-})
-
-func resourceGitlabIntegrationSlackSchema(description string) *schema.Resource {
 	return &schema.Resource{
-		Description: description,
+		Description: `The ` + "`gitlab_integration_slack`" + ` resource allows you to manage the lifecycle of a project integration with Slack.
+
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#slack-notifications)`,
 
 		CreateContext: resourceGitlabIntegrationSlackCreate,
 		ReadContext:   resourceGitlabIntegrationSlackRead,
@@ -206,7 +192,7 @@ func resourceGitlabIntegrationSlackSchema(description string) *schema.Resource {
 			},
 		},
 	}
-}
+})
 
 func resourceGitlabIntegrationSlackCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*gitlab.Client)

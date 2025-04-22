@@ -227,44 +227,6 @@ func TestAccGitlabIntegrationSlack_basic(t *testing.T) {
 	})
 }
 
-func TestAccGitlabIntegrationSlack_backwardsCompatibility(t *testing.T) {
-	var slackService gitlab.SlackService
-
-	project := testutil.CreateProject(t)
-	slackResourceName := "gitlab_service_slack.slack"
-
-	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
-		CheckDestroy:             testAccCheckGitlabServiceSlackDestroy,
-		Steps: []resource.TestStep{
-			// Create a project and a slack integration with minimal settings
-			{
-				Config: fmt.Sprintf(`			
-				resource "gitlab_service_slack" "slack" {
-				  project                      = "%d"
-				  webhook                      = "https://test.com"
-				}
-				`, project.ID),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabSlackIntegrationExists(slackResourceName, &slackService),
-					resource.TestCheckResourceAttr(slackResourceName, "webhook", "https://test.com"),
-				),
-			},
-			{
-				ResourceName:      slackResourceName,
-				ImportStateIdFunc: getSlackProjectID(slackResourceName),
-				ImportState:       true,
-				ImportStateVerify: true,
-				ImportStateVerifyIgnore: []string{
-					"notify_only_broken_pipelines",
-					"notify_only_default_branch",
-					"webhook",
-				},
-			},
-		},
-	})
-}
-
 func testAccCheckGitlabSlackIntegrationExists(n string, service *gitlab.SlackService) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
