@@ -174,7 +174,7 @@ func resourceGitlabIntegrationMicrosoftTeamsRead(ctx context.Context, d *schema.
 	// The webhook is explicitly not set anymore, due to being removed from the API. It will now
 	// use whatever is in the configuration to determine the value.
 	// See https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/issues/1421 for more info.
-	//d.Set("webhook", teamsService.Properties.WebHook)
+	// d.Set("webhook", teamsService.Properties.WebHook)
 
 	d.Set("project", project)
 	d.Set("created_at", teamsService.CreatedAt.String())

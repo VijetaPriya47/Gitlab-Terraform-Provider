@@ -178,7 +178,7 @@ func resourceGitlabIntegrationMattermostCreate(ctx context.Context, d *schema.Re
 	opts.Username = gitlab.Ptr(d.Get("username").(string))
 	// Channel is not yet implemented by GitLab, contrary to what the documentation states
 	// See https://gitlab.com/gitlab-org/gitlab/-/blob/902aaf4b412dc61a165b588611885cd60afb7a69/app/models/integrations/base_chat_notification.rb#L170
-	//opts.Channel = gitlab.Ptr(d.Get("channel").(string))
+	// opts.Channel = gitlab.Ptr(d.Get("channel").(string))
 	opts.NotifyOnlyBrokenPipelines = gitlab.Ptr(d.Get("notify_only_broken_pipelines").(bool))
 	opts.BranchesToBeNotified = gitlab.Ptr(d.Get("branches_to_be_notified").(string))
 	opts.PushEvents = gitlab.Ptr(d.Get("push_events").(bool))
@@ -228,10 +228,10 @@ func resourceGitlabIntegrationMattermostRead(ctx context.Context, d *schema.Reso
 	// The webhook is explicitly not set anymore, due to being removed from the API. It will now
 	// use whatever is in the configuration to determine the value.
 	// See https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/issues/1421 for more info.
-	//d.Set("webhook", service.Properties.WebHook)
+	// d.Set("webhook", service.Properties.WebHook)
 	// Channel is not yet implemented by GitLab, contrary to what the documentation states
 	// See https://gitlab.com/gitlab-org/gitlab/-/blob/902aaf4b412dc61a165b588611885cd60afb7a69/app/models/integrations/base_chat_notification.rb#L170
-	//d.Set("channel", service.Properties.Channel)
+	// d.Set("channel", service.Properties.Channel)
 
 	d.Set("project", project)
 	d.Set("username", service.Properties.Username)
