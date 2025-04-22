@@ -1060,13 +1060,6 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 
-		"hashed_storage_enabled": {
-			Description: "Create new projects using hashed storage paths: Enable immutable, hash-based paths and repository names to store repositories on disk. This prevents repositories from having to be moved or renamed when the Project URL changes and may improve disk I/O performance. (Always enabled in GitLab versions 13.0 and later, configuration is scheduled for removal in 14.0).",
-			Type:        schema.TypeBool,
-			Optional:    true,
-			Computed:    true,
-		},
-
 		"help_page_hide_commercial_content": {
 			Description: "Hide marketing-related entries from help.",
 			Type:        schema.TypeBool,
@@ -1110,49 +1103,17 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 		},
 
 		"housekeeping_enabled": {
-			Description: `
-				Enable or disable Git housekeeping.
-				If enabled, requires either housekeeping_optimize_repository_period OR housekeeping_bitmaps_enabled, housekeeping_full_repack_period, housekeeping_gc_period, and housekeeping_incremental_repack_period.
-				Options housekeeping_bitmaps_enabled, housekeeping_full_repack_period, housekeeping_gc_period, and housekeeping_incremental_repack_period are deprecated. Use housekeeping_optimize_repository_period instead.
-			`,
-			Type:     schema.TypeBool,
-			Optional: true,
-			Computed: true,
-		},
-
-		"housekeeping_full_repack_period": {
-			Description:   "Number of Git pushes after which an incremental git repack is run.",
-			Type:          schema.TypeInt,
-			Deprecated:    "housekeeping_full_repack_period is deprecated. Use housekeeping_optimize_repository_period instead.",
-			ConflictsWith: []string{"housekeeping_optimize_repository_period"},
-			Optional:      true,
-			Computed:      true,
-		},
-
-		"housekeeping_gc_period": {
-			Description:   "Number of Git pushes after which git gc is run.",
-			Type:          schema.TypeInt,
-			Deprecated:    "housekeeping_gc_period is deprecated. Use housekeeping_optimize_repository_period instead.",
-			ConflictsWith: []string{"housekeeping_optimize_repository_period"},
-			Optional:      true,
-			Computed:      true,
-		},
-
-		"housekeeping_incremental_repack_period": {
-			Description:   "Number of Git pushes after which an incremental git repack is run.",
-			Type:          schema.TypeInt,
-			Deprecated:    "housekeeping_incremental_repack_period is deprecated. Use housekeeping_optimize_repository_period instead.",
-			ConflictsWith: []string{"housekeeping_optimize_repository_period"},
-			Optional:      true,
-			Computed:      true,
+			Description: "Enable or disable Git housekeeping. If enabled, requires housekeeping_optimize_repository_period.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
 		},
 
 		"housekeeping_optimize_repository_period": {
-			Description:   "Number of Git pushes after which an incremental git repack is run.",
-			Type:          schema.TypeInt,
-			ConflictsWith: []string{"housekeeping_full_repack_period", "housekeeping_gc_period", "housekeeping_incremental_repack_period"},
-			Optional:      true,
-			Computed:      true,
+			Description: "Number of Git pushes after which an incremental git-repack is run.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
 		},
 
 		"html_emails_enabled": {
@@ -1441,7 +1402,7 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 		},
 
 		"nuget_skip_metadata_url_validation": {
-			Description: "Indicates whether to skip metadata URL validation for the NuGet package. Introduced in GitLab 17.0.",
+			Description: "Indicates whether to skip metadata URL validation for the NuGet package.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Computed:    true,
@@ -1725,17 +1686,9 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 		},
 
 		"repository_storages_weighted": {
-			Description: "(GitLab 13.1 and later) Hash of names of taken from gitlab.yml to weights. New projects are created in one of these stores, chosen by a weighted random selection.",
+			Description: "Hash of names taken from gitlab.yml to weights. New projects are created in one of these stores, chosen by a weighted random selection.",
 			Type:        schema.TypeMap,
 			Elem:        &schema.Schema{Type: schema.TypeInt},
-			Optional:    true,
-			Computed:    true,
-		},
-
-		"repository_storages": {
-			Description: "(GitLab 13.0 and earlier) List of names of enabled storage paths, taken from gitlab.yml. New projects are created in one of these stores, chosen at random.",
-			Type:        schema.TypeList,
-			Elem:        &schema.Schema{Type: schema.TypeString},
 			Optional:    true,
 			Computed:    true,
 		},
@@ -2447,7 +2400,6 @@ func gitlabApplicationSettingsToStateMap(settings *api.Settings) map[string]inte
 	stateMap["grafana_url"] = settings.GrafanaURL
 	stateMap["gravatar_enabled"] = settings.GravatarEnabled
 	stateMap["group_owners_can_manage_default_branch_protection"] = settings.GroupOwnersCanManageDefaultBranchProtection
-	stateMap["hashed_storage_enabled"] = settings.HashedStorageEnabled
 	stateMap["help_page_hide_commercial_content"] = settings.HelpPageHideCommercialContent
 	stateMap["help_page_support_url"] = settings.HelpPageSupportURL
 	stateMap["help_page_text"] = settings.HelpPageText
@@ -2455,9 +2407,6 @@ func gitlabApplicationSettingsToStateMap(settings *api.Settings) map[string]inte
 	stateMap["hide_third_party_offers"] = settings.HideThirdPartyOffers
 	stateMap["home_page_url"] = settings.HomePageURL
 	stateMap["housekeeping_enabled"] = settings.HousekeepingEnabled
-	stateMap["housekeeping_full_repack_period"] = settings.HousekeepingFullRepackPeriod
-	stateMap["housekeeping_gc_period"] = settings.HousekeepingGcPeriod
-	stateMap["housekeeping_incremental_repack_period"] = settings.HousekeepingIncrementalRepackPeriod
 	stateMap["housekeeping_optimize_repository_period"] = settings.HousekeepingOptimizeRepositoryPeriod
 	stateMap["html_emails_enabled"] = settings.HTMLEmailsEnabled
 	stateMap["import_sources"] = settings.ImportSources
@@ -2538,7 +2487,6 @@ func gitlabApplicationSettingsToStateMap(settings *api.Settings) map[string]inte
 	stateMap["repository_checks_enabled"] = settings.RepositoryChecksEnabled
 	stateMap["repository_size_limit"] = settings.RepositorySizeLimit
 	stateMap["repository_storages_weighted"] = settings.RepositoryStoragesWeighted
-	stateMap["repository_storages"] = settings.RepositoryStorages
 	stateMap["require_admin_approval_after_user_signup"] = settings.RequireAdminApprovalAfterUserSignup
 	stateMap["require_admin_two_factor_authentication"] = settings.RequireAdminTwoFactorAuthentication
 	stateMap["require_personal_access_token_expiry"] = settings.RequirePersonalAccessTokenExpiry
@@ -3188,10 +3136,6 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 		options.GroupOwnersCanManageDefaultBranchProtection = gitlab.Ptr(d.Get("group_owners_can_manage_default_branch_protection").(bool))
 	}
 
-	if d.HasChange("hashed_storage_enabled") {
-		options.HashedStorageEnabled = gitlab.Ptr(d.Get("hashed_storage_enabled").(bool))
-	}
-
 	if d.HasChange("help_page_hide_commercial_content") {
 		options.HelpPageHideCommercialContent = gitlab.Ptr(d.Get("help_page_hide_commercial_content").(bool))
 	}
@@ -3218,18 +3162,6 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 
 	if d.HasChange("housekeeping_enabled") {
 		options.HousekeepingEnabled = gitlab.Ptr(d.Get("housekeeping_enabled").(bool))
-	}
-
-	if d.HasChange("housekeeping_full_repack_period") {
-		options.HousekeepingFullRepackPeriod = gitlab.Ptr(d.Get("housekeeping_full_repack_period").(int))
-	}
-
-	if d.HasChange("housekeeping_gc_period") {
-		options.HousekeepingGcPeriod = gitlab.Ptr(d.Get("housekeeping_gc_period").(int))
-	}
-
-	if d.HasChange("housekeeping_incremental_repack_period") {
-		options.HousekeepingIncrementalRepackPeriod = gitlab.Ptr(d.Get("housekeeping_incremental_repack_period").(int))
 	}
 
 	if d.HasChange("housekeeping_optimize_repository_period") {
@@ -3508,10 +3440,6 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	if d.HasChange("repository_storages_weighted") {
 		gv := fromIntegerMap(d.Get("repository_storages_weighted"))
 		options.RepositoryStoragesWeighted = &gv
-	}
-
-	if d.HasChange("repository_storages") {
-		options.RepositoryStorages = stringListToStringSlice(d.Get("repository_storages").([]interface{}))
 	}
 
 	if d.HasChange("require_admin_approval_after_user_signup") {

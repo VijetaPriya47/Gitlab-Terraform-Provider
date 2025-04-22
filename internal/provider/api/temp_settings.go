@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 type Settings struct {
@@ -177,7 +177,6 @@ type Settings struct {
 	GroupOwnersCanManageDefaultBranchProtection           bool                     `json:"group_owners_can_manage_default_branch_protection"`
 	GroupRunnerTokenExpirationInterval                    int                      `json:"group_runner_token_expiration_interval"`
 	HTMLEmailsEnabled                                     bool                     `json:"html_emails_enabled"`
-	HashedStorageEnabled                                  bool                     `json:"hashed_storage_enabled"`
 	HelpPageDocumentationBaseURL                          string                   `json:"help_page_documentation_base_url"`
 	HelpPageHideCommercialContent                         bool                     `json:"help_page_hide_commercial_content"`
 	HelpPageSupportURL                                    string                   `json:"help_page_support_url"`
@@ -185,11 +184,7 @@ type Settings struct {
 	HelpText                                              string                   `json:"help_text"`
 	HideThirdPartyOffers                                  bool                     `json:"hide_third_party_offers"`
 	HomePageURL                                           string                   `json:"home_page_url"`
-	HousekeepingBitmapsEnabled                            bool                     `json:"housekeeping_bitmaps_enabled"`
 	HousekeepingEnabled                                   bool                     `json:"housekeeping_enabled"`
-	HousekeepingFullRepackPeriod                          int                      `json:"housekeeping_full_repack_period"`
-	HousekeepingGcPeriod                                  int                      `json:"housekeeping_gc_period"`
-	HousekeepingIncrementalRepackPeriod                   int                      `json:"housekeeping_incremental_repack_period"`
 	HousekeepingOptimizeRepositoryPeriod                  int                      `json:"housekeeping_optimize_repository_period"`
 	ImportSources                                         []string                 `json:"import_sources"`
 	InactiveProjectsDeleteAfterMonths                     int                      `json:"inactive_projects_delete_after_months"`
@@ -286,7 +281,6 @@ type Settings struct {
 	RememberMeEnabled                                     bool                     `json:"remember_me_enabled"`
 	RepositoryChecksEnabled                               bool                     `json:"repository_checks_enabled"`
 	RepositorySizeLimit                                   int                      `json:"repository_size_limit"`
-	RepositoryStorages                                    []string                 `json:"repository_storages"`
 	RepositoryStoragesWeighted                            map[string]int           `json:"repository_storages_weighted"`
 	RequireAdminApprovalAfterUserSignup                   bool                     `json:"require_admin_approval_after_user_signup"`
 	RequireAdminTwoFactorAuthentication                   bool                     `json:"require_admin_two_factor_authentication"`
