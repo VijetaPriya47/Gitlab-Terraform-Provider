@@ -62,7 +62,7 @@ var _ = registerResource("gitlab_integration_slack", func() *schema.Resource {
 				Computed:    true,
 			},
 			// TODO: Currently, client-go doesn't implement this option yet.
-			//       see https://gitlab.com/gitlab-org/api/client-go/issues/1354
+			//       see https://gitlab.com/gitlab-org/api/client-go/-/issues/1354
 			// "commit_events": {
 			// 	Description: "Enable notifications for commit events.",
 			// 	Type:        schema.TypeBool,
@@ -118,7 +118,7 @@ var _ = registerResource("gitlab_integration_slack", func() *schema.Resource {
 				Computed:    true,
 			},
 			// TODO: Currently, client-go doesn't implement this option yet.
-			//       see https://gitlab.com/gitlab-org/api/client-go/issues/1354
+			//       see https://gitlab.com/gitlab-org/api/client-go/-/issues/1354
 			"job_events": {
 				Description: "Enable notifications for job events. **ATTENTION**: This attribute is currently not being submitted to the GitLab API, due to https://gitlab.com/gitlab-org/api/client-go/issues/1354.",
 				Type:        schema.TypeBool,
@@ -210,7 +210,7 @@ func resourceGitlabIntegrationSlackCreate(ctx context.Context, d *schema.Resourc
 	opts.NotifyOnlyDefaultBranch = gitlab.Ptr(d.Get("notify_only_default_branch").(bool))
 	opts.BranchesToBeNotified = gitlab.Ptr(d.Get("branches_to_be_notified").(string))
 	// TODO: Currently, client-go doesn't implement this option yet.
-	//       see https://gitlab.com/gitlab-org/api/client-go/issues/1354
+	//       see https://gitlab.com/gitlab-org/api/client-go/-/issues/1354
 	// opts.CommitEvents = gitlab.Ptr(d.Get("commit_events").(bool))
 	opts.ConfidentialIssueChannel = gitlab.Ptr(d.Get("confidential_issue_channel").(string))
 	opts.ConfidentialIssuesEvents = gitlab.Ptr(d.Get("confidential_issues_events").(bool))
@@ -224,7 +224,7 @@ func resourceGitlabIntegrationSlackCreate(ctx context.Context, d *schema.Resourc
 	opts.IssueChannel = gitlab.Ptr(d.Get("issue_channel").(string))
 	opts.IssuesEvents = gitlab.Ptr(d.Get("issues_events").(bool))
 	// TODO: Currently, client-go doesn't implement this option yet.
-	//       see https://gitlab.com/gitlab-org/api/client-go/issues/1354
+	//       see https://gitlab.com/gitlab-org/api/client-go/-/issues/1354
 	// opts.JobEvents = gitlab.Ptr(d.Get("job_events").(bool))
 	opts.MergeRequestChannel = gitlab.Ptr(d.Get("merge_request_channel").(string))
 	opts.MergeRequestsEvents = gitlab.Ptr(d.Get("merge_requests_events").(bool))
@@ -285,7 +285,7 @@ func resourceGitlabIntegrationSlackRead(ctx context.Context, d *schema.ResourceD
 	d.Set("issue_channel", service.Properties.IssueChannel)
 	d.Set("issues_events", service.IssuesEvents)
 	// TODO: Currently, client-go doesn't implement this option yet.
-	//       see https://gitlab.com/gitlab-org/api/client-go/issues/1354
+	//       see https://gitlab.com/gitlab-org/api/client-go/-/issues/1354
 	d.Set("job_events", service.JobEvents)
 	d.Set("merge_request_channel", service.Properties.MergeRequestChannel)
 	d.Set("merge_requests_events", service.MergeRequestsEvents)

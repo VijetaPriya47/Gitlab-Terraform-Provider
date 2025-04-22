@@ -15,12 +15,12 @@ import (
 )
 
 var _ = registerResource("gitlab_project_approval_rule", func() *schema.Resource {
-	var validRuleTypeValues = []string{
+	validRuleTypeValues := []string{
 		"regular",
 		"any_approver",
 		"report_approver",
 	}
-	var validReportTypeValues = []string{
+	validReportTypeValues := []string{
 		"code_coverage",
 	}
 	return &schema.Resource{
@@ -35,7 +35,7 @@ var _ = registerResource("gitlab_project_approval_rule", func() *schema.Resource
 ~> Since a project is limited to one "any_approver" rule, attempting to add two "any_approver" rules to the same project in terraform will result in 
    terraform identifying changes with every "plan" operation, and may result in an error during the "apply" operation.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/merge_request_approvals/#project-level-mr-approvals)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/merge_request_approvals/#project-approval-rules)`,
 
 		CreateContext: resourceGitlabProjectApprovalRuleCreate,
 		ReadContext:   resourceGitlabProjectApprovalRuleRead,
@@ -126,7 +126,7 @@ func resourceGitlabProjectApprovalRuleCreate(ctx context.Context, d *schema.Reso
 
 	project := d.Get("project").(string)
 
-	//Retrieve the rule_type, which is needed to determine if the rule is "any_approver"
+	// Retrieve the rule_type, which is needed to determine if the rule is "any_approver"
 	ruleType := ""
 	if v, ok := d.GetOk("rule_type"); ok {
 		ruleType = v.(string)
@@ -145,8 +145,8 @@ func resourceGitlabProjectApprovalRuleCreate(ctx context.Context, d *schema.Reso
 		anyApproverRuleId = ruleId
 	}
 
-	//If our ruleID is not 0, we need to update instead of create.
-	//ruleID will be 0 if the rule is not found, or if the import is disabled
+	// If our ruleID is not 0, we need to update instead of create.
+	// ruleID will be 0 if the rule is not found, or if the import is disabled
 	ruleIDString := ""
 	if anyApproverRuleId == 0 {
 

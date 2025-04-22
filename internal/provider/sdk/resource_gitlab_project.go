@@ -1146,7 +1146,7 @@ func resourceGitlabProjectCreate(ctx context.Context, d *schema.ResourceData, me
 
 			// Branch protection for a newly created branch is an async action, so use WaitForState to ensure it's protected
 			// before we continue. Note this check should only be required when there is a custom default branch set
-			// See issue 800: https://gitlab.com/gitlab-org/terraform-provider-gitlab/issues/800
+			// See issue 800: https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/issues/800
 			stateConf := &retry.StateChangeConf{
 				Pending: []string{"false"},
 				Target:  []string{"true"},

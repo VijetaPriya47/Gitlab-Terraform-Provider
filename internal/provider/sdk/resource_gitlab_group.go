@@ -774,7 +774,7 @@ func resourceGitlabGroupUpdate(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	// Always set visibility ; workaround for
-	// https://gitlab.com/gitlab-org/gitlab-ce/issues/38459
+	// https://gitlab.com/gitlab-org/gitlab-foss/-/issues/38459
 	if v, ok := d.GetOk("visibility_level"); ok {
 		options.Visibility = stringToVisibilityLevel(v.(string))
 	}
