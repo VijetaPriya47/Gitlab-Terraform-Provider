@@ -19,8 +19,6 @@ var _ = registerResource("gitlab_topic", func() *schema.Resource {
 
 -> Topics are the successors for project tags. Aside from avoiding terminology collisions with Git tags, they are more descriptive and better searchable.
 
-~> Deleting a topic was implemented in GitLab 14.9. For older versions of GitLab set ` + "`soft_destroy = true`" + ` to empty out a topic instead of deleting it.
-
 **Upstream API**: [GitLab REST API docs for topics](https://docs.gitlab.com/api/topics/)
 `,
 
@@ -39,15 +37,9 @@ var _ = registerResource("gitlab_topic", func() *schema.Resource {
 				Required:    true,
 			},
 			"title": {
-				Description: "The topic's description. Requires at least GitLab 15.0 for which it's a required argument.",
+				Description: "The topic's description.",
 				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"soft_destroy": {
-				Description: "Empty the topics fields instead of deleting it.",
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Deprecated:  "GitLab 14.9 introduced the proper deletion of topics. This field is no longer needed.",
+				Required:    true,
 			},
 			"description": {
 				Description: "A text describing the topic.",
@@ -61,16 +53,10 @@ var _ = registerResource("gitlab_topic", func() *schema.Resource {
 
 func resourceGitlabTopicCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
-	if err := resourceGitlabTopicEnsureTitleSupport(ctx, client, d); err != nil {
-		return diag.FromErr(err)
-	}
 
 	options := &gitlab.CreateTopicOptions{
-		Name: gitlab.Ptr(d.Get("name").(string)),
-	}
-
-	if v, ok := d.GetOk("title"); ok {
-		options.Title = gitlab.Ptr(v.(string))
+		Name:  gitlab.Ptr(d.Get("name").(string)),
+		Title: gitlab.Ptr(d.Get("title").(string)),
 	}
 
 	if v, ok := d.GetOk("description"); ok {
@@ -129,9 +115,6 @@ func resourceGitlabTopicRead(ctx context.Context, d *schema.ResourceData, meta i
 func resourceGitlabTopicUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	options := &gitlab.UpdateTopicOptions{}
-	if err := resourceGitlabTopicEnsureTitleSupport(ctx, client, d); err != nil {
-		return diag.FromErr(err)
-	}
 
 	if d.HasChange("name") {
 		options.Name = gitlab.Ptr(d.Get("name").(string))
@@ -175,52 +158,11 @@ func resourceGitlabTopicDelete(ctx context.Context, d *schema.ResourceData, meta
 	if err != nil {
 		return diag.Errorf("Failed to convert topic id %s to int: %s", d.Id(), err)
 	}
-	softDestroy := d.Get("soft_destroy").(bool)
-
-	deleteNotSupported, err := api.IsGitLabVersionLessThan(ctx, client, "14.9")()
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	if !softDestroy && deleteNotSupported {
-		return diag.Errorf("GitLab 14.9 introduced the proper deletion of topics. Set `soft_destroy = true` to empty out a topic instead of deleting it.")
-	}
-
-	// NOTE: the `soft_destroy` field is deprecated and will be removed in a future version.
-	//       It was only introduced because GitLab prior to 14.9 didn't support topic deletion.
-	if softDestroy {
-		tflog.Warn(ctx, fmt.Sprintf("[WARN] Not deleting gitlab topic %s. Instead emptying its description", d.Id()))
-
-		options := &gitlab.UpdateTopicOptions{
-			Description: gitlab.Ptr(""),
-		}
-
-		_, _, err = client.Topics.UpdateTopic(topicID, options, gitlab.WithContext(ctx))
-		if err != nil {
-			return diag.Errorf("Failed to update topic %d: %s", topicID, err)
-		}
-
-		return nil
-	}
 
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] delete gitlab topic %s", d.Id()))
 
 	if _, err = client.Topics.DeleteTopic(topicID, gitlab.WithContext(ctx)); err != nil {
 		return diag.Errorf("Failed to delete topic %d: %s", topicID, err)
-	}
-
-	return nil
-}
-
-func resourceGitlabTopicEnsureTitleSupport(ctx context.Context, client *gitlab.Client, d *schema.ResourceData) error {
-	isTitleSupported, err := api.IsGitLabVersionAtLeast(ctx, client, "15.0")()
-	if err != nil {
-		return err
-	}
-
-	if _, ok := d.GetOk("title"); isTitleSupported && !ok {
-		return fmt.Errorf("title is a required attribute for GitLab 15.0 and newer. Please specify it in the configuration")
-	} else if !isTitleSupported && ok {
-		return fmt.Errorf("title is not supported by your version of GitLab. At least GitLab 15.0 is required")
 	}
 
 	return nil

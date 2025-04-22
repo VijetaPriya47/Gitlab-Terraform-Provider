@@ -142,32 +142,6 @@ func TestAccGitlabTopic_WithAvatar(t *testing.T) {
 	resource.Test(t, testCase)
 }
 
-func TestAccGitlabTopic_softDestroy(t *testing.T) {
-	var topic gitlab.Topic
-	rInt := acctest.RandInt()
-
-	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
-		CheckDestroy:             testAccCheckGitlabTopicSoftDestroy,
-		Steps: []resource.TestStep{
-			// Create a topic with soft_destroy enabled
-			{
-				Config: fmt.Sprintf(`
-				resource "gitlab_topic" "foo" {
-				  name        = "foo-soft-destroy-%d"
-				  title       = "Foo Req %d"
-				  description = "Terraform acceptance tests"
-				
-				  soft_destroy = true
-				}`, rInt, rInt),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabTopicExists("gitlab_topic.foo", &topic),
-				),
-			},
-		},
-	})
-}
-
 func testAccCheckGitlabTopicExists(n string, assign *gitlab.Topic) resource.TestCheckFunc {
 	return func(s *terraform.State) (err error) {
 		defer func() {
@@ -196,7 +170,6 @@ func testAccCheckGitlabTopicExists(n string, assign *gitlab.Topic) resource.Test
 type testAccGitlabTopicExpectedAttributes struct {
 	Name        string
 	Description string
-	SoftDestroy bool
 }
 
 func testAccCheckGitlabTopicAttributes(topic *gitlab.Topic, want *testAccGitlabTopicExpectedAttributes) resource.TestCheckFunc {
@@ -234,40 +207,6 @@ func testAccCheckGitlabTopicDestroy(s *terraform.State) (err error) {
 		if err == nil {
 			if topic != nil && fmt.Sprintf("%d", topic.ID) == rs.Primary.ID {
 				return fmt.Errorf("topic %s still exists", rs.Primary.ID)
-			}
-		}
-		if !api.Is404(err) {
-			return err
-		}
-		return nil
-	}
-	return nil
-}
-
-func testAccCheckGitlabTopicSoftDestroy(s *terraform.State) (err error) {
-	defer func() {
-		if err != nil {
-			err = fmt.Errorf("destroying gitlab topic failed: %w", err)
-		}
-	}()
-
-	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "gitlab_topic" {
-			continue
-		}
-
-		id, err := strconv.Atoi(rs.Primary.ID)
-		if err != nil {
-			return err
-		}
-
-		topic, _, err := testutil.TestGitlabClient.Topics.GetTopic(id)
-		if err == nil {
-			if topic != nil && fmt.Sprintf("%d", topic.ID) == rs.Primary.ID {
-				if topic.Description != "" {
-					return fmt.Errorf("topic still has a description")
-				}
-				return nil
 			}
 		}
 		if !api.Is404(err) {
