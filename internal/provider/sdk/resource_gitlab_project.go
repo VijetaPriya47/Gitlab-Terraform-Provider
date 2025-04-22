@@ -440,12 +440,6 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 		Computed:     true,
 		RequiredWith: []string{"import_url"},
 	},
-	"build_coverage_regex": {
-		Description: "Test coverage parsing for the project. This is deprecated feature in GitLab 15.0.",
-		Type:        schema.TypeString,
-		Optional:    true,
-		Deprecated:  "build_coverage_regex is removed in GitLab 15.0.",
-	},
 	"issues_template": {
 		Description: "Sets the template for new issues in the project.",
 		Type:        schema.TypeString,
@@ -767,7 +761,7 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 		ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(validProjectAccessLevels, false)),
 	},
 	"pre_receive_secret_detection_enabled": {
-		Description: "Whether Secret Push Detection is enabled. Requires GitLab Ultimate and at least GitLab 17.3.",
+		Description: "Whether Secret Push Detection is enabled. Requires GitLab Ultimate.",
 		Type:        schema.TypeBool,
 		Optional:    true,
 		Computed:    true,
@@ -946,11 +940,7 @@ func resourceGitlabProjectSetToState(ctx context.Context, client *gitlab.Client,
 	}
 	d.Set("empty_repo", project.EmptyRepo)
 	d.Set("archived", project.Archived)
-	if supportsSquashOption, err := api.IsGitLabVersionAtLeast(ctx, client, "14.1")(); err != nil {
-		return err
-	} else if supportsSquashOption {
-		d.Set("squash_option", project.SquashOption)
-	}
+	d.Set("squash_option", project.SquashOption)
 	d.Set("remove_source_branch_after_merge", project.RemoveSourceBranchAfterMerge)
 	d.Set("printing_merge_request_link_enabled", project.PrintingMergeRequestLinkEnabled)
 	d.Set("packages_enabled", project.PackagesEnabled)
@@ -1014,10 +1004,6 @@ func resourceGitlabProjectSetToState(ctx context.Context, client *gitlab.Client,
 	d.Set("wiki_access_level", string(project.WikiAccessLevel))
 	d.Set("squash_commit_template", project.SquashCommitTemplate)
 	d.Set("merge_commit_template", project.MergeCommitTemplate)
-
-	// Note: This field is deprecated and will always be an empty string starting in GitLab 15.0.
-	d.Set("build_coverage_regex", project.BuildCoverageRegex)
-
 	d.Set("ci_default_git_depth", project.CIDefaultGitDepth)
 	d.Set("ci_delete_pipelines_in_seconds", project.CIDeletePipelinesInSeconds)
 	d.Set("avatar_url", project.AvatarURL)
@@ -1374,9 +1360,7 @@ func resourceGitlabProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 		options.LFSEnabled = gitlab.Ptr(d.Get("lfs_enabled").(bool))
 	}
 
-	if supportsSquashOption, err := api.IsGitLabVersionAtLeast(ctx, client, "14.1")(); err != nil {
-		return diag.FromErr(err)
-	} else if supportsSquashOption && d.HasChange("squash_option") {
+	if d.HasChange("squash_option") {
 		options.SquashOption = stringToSquashOptionValue(d.Get("squash_option").(string))
 	}
 
@@ -1436,10 +1420,6 @@ func resourceGitlabProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 			}
 			options.ImportURL = gitlab.Ptr(importURL)
 		}
-	}
-
-	if d.HasChange("build_coverage_regex") {
-		options.IssuesTemplate = gitlab.Ptr(d.Get("build_coverage_regex").(string))
 	}
 
 	if d.HasChange("issues_template") {
@@ -2112,10 +2092,6 @@ func createProject(ctx context.Context, d *schema.ResourceData, client *gitlab.C
 		Name: gitlab.Ptr(d.Get("name").(string)),
 	}
 
-	if v, ok := d.GetOk("build_coverage_regex"); ok {
-		options.BuildCoverageRegex = gitlab.Ptr(v.(string))
-	}
-
 	if v, ok := d.GetOk("path"); ok {
 		options.Path = gitlab.Ptr(v.(string))
 	}
@@ -2420,12 +2396,8 @@ func createProject(ctx context.Context, d *schema.ResourceData, client *gitlab.C
 		options.CIConfigPath = gitlab.Ptr(v.(string))
 	}
 
-	if supportsSquashOption, err := api.IsGitLabVersionAtLeast(ctx, client, "14.1")(); err != nil {
-		return nil, diag.FromErr(err)
-	} else if supportsSquashOption {
-		if v, ok := d.GetOk("squash_option"); ok {
-			options.SquashOption = stringToSquashOptionValue(v.(string))
-		}
+	if v, ok := d.GetOk("squash_option"); ok {
+		options.SquashOption = stringToSquashOptionValue(v.(string))
 	}
 
 	avatar, err := handleAvatarOnCreate(d)
@@ -2715,12 +2687,8 @@ func updatePostCreateEditOptions(ctx context.Context, editProjectOptions *gitlab
 			editProjectOptions.LFSEnabled = gitlab.Ptr(v.(bool))
 		}
 
-		if supportsSquashOption, err := api.IsGitLabVersionAtLeast(ctx, client, "14.1")(); err != nil {
-			return diag.FromErr(err)
-		} else if supportsSquashOption {
-			if v, ok := d.GetOk("squash_option"); ok {
-				editProjectOptions.SquashOption = stringToSquashOptionValue(v.(string))
-			}
+		if v, ok := d.GetOk("squash_option"); ok {
+			editProjectOptions.SquashOption = stringToSquashOptionValue(v.(string))
 		}
 
 		// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
@@ -2743,10 +2711,6 @@ func updatePostCreateEditOptions(ctx context.Context, editProjectOptions *gitlab
 
 		if v, ok := d.GetOk("pages_access_level"); ok {
 			editProjectOptions.PagesAccessLevel = stringToAccessControlValue(v.(string))
-		}
-
-		if v, ok := d.GetOk("build_coverage_regex"); ok {
-			editProjectOptions.IssuesTemplate = gitlab.Ptr(v.(string))
 		}
 
 		if v, ok := d.GetOk("ci_config_path"); ok {
@@ -2943,17 +2907,6 @@ func updatePostCreateEditOptions(ctx context.Context, editProjectOptions *gitlab
 }
 
 func updateProjectSecretDetectionValue(ctx context.Context, client *gitlab.Client, projectPath string, input bool) error {
-	// check if the version of GitLab is at least 17.3 before the call is attempted, and return with no error if lower than
-	// 17.3 to skip the call
-	versionOk, err := api.IsGitLabVersionAtLeast(ctx, client, "17.3")()
-	if err != nil {
-		return fmt.Errorf("failed to determine GitLab version when checking if Secret Push Detection is supported. Error: %v", err)
-	}
-	if !versionOk {
-		// A earlier version of GitLab is being used, so exit before we try to enable the setting
-		return nil
-	}
-
 	tflog.Debug(ctx, "Attempting to update Secrets Detection for project", map[string]interface{}{
 		"project": projectPath,
 		"value":   input,
@@ -2975,7 +2928,7 @@ func updateProjectSecretDetectionValue(ctx context.Context, client *gitlab.Clien
 	}
 
 	var response *updateSecretDetectionGraphQLResponse
-	_, err = api.SendGraphQLRequest(ctx, client, query, &response)
+	_, err := api.SendGraphQLRequest(ctx, client, query, &response)
 	if err != nil {
 		return err
 	}
