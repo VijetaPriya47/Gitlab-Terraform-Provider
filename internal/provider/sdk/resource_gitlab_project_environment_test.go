@@ -309,8 +309,6 @@ func TestAccGitlabProjectEnvironment_ClusterAgent(t *testing.T) {
 }
 
 func TestAccGitlabProjectEnvironment_AutoStopSetting(t *testing.T) {
-	testutil.RunIfAtLeast(t, "17.8")
-
 	testName := acctest.RandString(10)
 	testProject := testutil.CreateProject(t)
 
