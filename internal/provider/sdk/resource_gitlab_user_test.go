@@ -614,58 +614,6 @@ func TestAccGitlabUser_password_reset(t *testing.T) {
 	})
 }
 
-func TestAccGitlabUser_external_provider(t *testing.T) {
-	var user gitlab.User
-	rInt := acctest.RandInt()
-
-	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
-		CheckDestroy:             testAccCheckGitlabUserDestroy,
-		Steps: []resource.TestStep{
-			// Test error if extern_uid set and external_provider isn't
-			{
-				Config: fmt.Sprintf(`
-				resource "gitlab_user" "foo" {
-				  name           = "foo %d"
-				  username       = "listest%d"
-				  email          = "listest%d@ssss.com"
-				  reset_password = true
-				  extern_uid     = "%d"
-				}
-				  `, rInt, rInt, rInt, rInt),
-				ExpectError: regexp.MustCompile("Missing required argument"),
-			},
-			// Test error if external_provider set and extern_uid isn't
-			{
-				Config: fmt.Sprintf(`
-				resource "gitlab_user" "foo" {
-				  name              = "foo %d"
-				  username          = "listest%d"
-				  email             = "listest%d@ssss.com"
-				  reset_password    = true
-				  external_provider = "google"
-				}
-				  `, rInt, rInt, rInt),
-				ExpectError: regexp.MustCompile("Missing required argument"),
-			},
-			// Create a user with both set
-			{
-				Config: fmt.Sprintf(`
-				resource "gitlab_user" "foo" {
-				  name              = "foo %d"
-				  username          = "listest%d"
-				  email             = "listest%d@ssss.com"
-				  reset_password    = true
-				  extern_uid        = "%d"
-				  external_provider = "google"
-				}
-				  `, rInt, rInt, rInt, rInt),
-				Check: testAccCheckGitlabUserExists("gitlab_user.foo", &user),
-			},
-		},
-	})
-}
-
 func TestAccGitlabUser_validation(t *testing.T) {
 	var user gitlab.User
 	rInt := acctest.RandInt()
@@ -708,10 +656,8 @@ func TestAccGitlabUser_forceRandomPassword(t *testing.T) {
 					username              = "listtest%d"
 					email                 = "listtest%d@ssss.com"
 					force_random_password = true
-					extern_uid            = "%d"
-					external_provider     = "google"
 				}
-				`, rInt, rInt, rInt, rInt),
+				`, rInt, rInt, rInt),
 				Check: testAccCheckGitlabUserExists("gitlab_user.foo", &user),
 			},
 			// re-run the same config with just a plan to ensure `ForceNew` doesn't cause a destroy
@@ -722,10 +668,8 @@ func TestAccGitlabUser_forceRandomPassword(t *testing.T) {
 					username              = "listtest%d"
 					email                 = "listtest%d@ssss.com"
 					force_random_password = true
-					extern_uid            = "%d"
-					external_provider     = "google"
 				}
-				`, rInt, rInt, rInt, rInt),
+				`, rInt, rInt, rInt),
 				Check:    testAccCheckGitlabUserExists("gitlab_user.foo", &user),
 				PlanOnly: true,
 			},

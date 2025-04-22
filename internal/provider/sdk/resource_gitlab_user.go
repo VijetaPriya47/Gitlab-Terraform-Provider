@@ -113,13 +113,6 @@ var _ = registerResource("gitlab_user", func() *schema.Resource {
 				Optional:    true,
 				Default:     false,
 			},
-			"extern_uid": {
-				Description:  "String, a specific external authentication provider UID.",
-				Type:         schema.TypeString,
-				Optional:     true,
-				RequiredWith: []string{"external_provider"},
-				Deprecated:   "To be removed in 18.0. Use gitlab_user_identity resource instead. See https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/issues/1295",
-			},
 			"reset_password": {
 				Description: "Boolean, defaults to false. Send user password reset link.",
 				Type:        schema.TypeBool,
@@ -144,13 +137,6 @@ var _ = registerResource("gitlab_user", func() *schema.Resource {
 				Optional:    true,
 				Computed:    true,
 			},
-			"external_provider": {
-				Description:  "String, the external provider.",
-				Type:         schema.TypeString,
-				Optional:     true,
-				RequiredWith: []string{"extern_uid"},
-				Deprecated:   "To be removed in 18.0. Use gitlab_user_identity resource instead. See https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/issues/1295",
-			},
 		},
 	}
 })
@@ -166,14 +152,6 @@ func resourceGitlabUserSetToState(d *schema.ResourceData, user *gitlab.User) {
 	d.Set("note", user.Note)
 	d.Set("state", user.State)
 	d.Set("namespace_id", user.NamespaceID)
-
-	if len(user.ExternUID) != 0 {
-		d.Set("extern_uid", user.ExternUID)
-	}
-
-	if len(user.Provider) != 0 {
-		d.Set("external_provider", user.Provider)
-	}
 }
 
 func resourceGitlabUserCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -194,14 +172,6 @@ func resourceGitlabUserCreate(ctx context.Context, d *schema.ResourceData, meta 
 
 	if len(d.Get("password").(string)) != 0 {
 		options.Password = gitlab.Ptr(d.Get("password").(string))
-	}
-
-	if len(d.Get("extern_uid").(string)) != 0 {
-		options.ExternUID = gitlab.Ptr(d.Get("extern_uid").(string))
-	}
-
-	if len(d.Get("external_provider").(string)) != 0 {
-		options.Provider = gitlab.Ptr(d.Get("external_provider").(string))
 	}
 
 	// Validate the options set
@@ -289,16 +259,8 @@ func resourceGitlabUserUpdate(ctx context.Context, d *schema.ResourceData, meta 
 		options.External = gitlab.Ptr(d.Get("is_external").(bool))
 	}
 
-	if d.HasChange("extern_uid") {
-		options.ExternUID = gitlab.Ptr(d.Get("extern_uid").(string))
-	}
-
 	if d.HasChange("note") {
 		options.Note = gitlab.Ptr(d.Get("note").(string))
-	}
-
-	if d.HasChange("external_provider") {
-		options.Provider = gitlab.Ptr(d.Get("external_provider").(string))
 	}
 
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab user %s", d.Id()))
