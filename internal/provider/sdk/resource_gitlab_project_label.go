@@ -18,7 +18,7 @@ var _ = registerResource("gitlab_label", func() *schema.Resource {
 
 ~> This resource is deprecated. use ` + "`gitlab_project_label`" + `instead!
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/labels/#project-labels)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/labels/#get-a-single-project-label)`,
 		DeprecationMessage: "Ths resource is deprecated. Use `gitlab_project_label` instead!",
 		CreateContext:      resourceGitlabProjectLabelCreate,
 		ReadContext:        resourceGitlabProjectLabelRead,
@@ -43,7 +43,7 @@ var _ = registerResource("gitlab_project_label", func() *schema.Resource {
 	return &schema.Resource{
 		Description: `The ` + "`" + `gitlab_project_label` + "`" + ` resource allows to manage the lifecycle of a project label.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/labels/#project-labels)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/labels/#get-a-single-project-label)`,
 
 		CreateContext: resourceGitlabProjectLabelCreate,
 		ReadContext:   resourceGitlabProjectLabelRead,

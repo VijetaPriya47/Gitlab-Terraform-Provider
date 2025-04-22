@@ -82,7 +82,7 @@ func TestAccGitlabInstanceVariable_basic(t *testing.T) {
 				),
 			},
 			// Update the instance variable to enable "masked" for a value that does not meet masking requirements, and expect an error with no state change.
-			// ref: https://docs.gitlab.com/ce/ci/variables/README/#masked-variable-requirements
+			// ref: https://docs.gitlab.com/ci/variables/#mask-a-cicd-variable
 			{
 				Config: fmt.Sprintf(`
 					resource "gitlab_instance_variable" "foo" {
@@ -106,7 +106,7 @@ func TestAccGitlabInstanceVariable_basic(t *testing.T) {
 				)),
 			},
 			// Update the instance variable to to enable "masked" and meet masking requirements
-			// ref: https://docs.gitlab.com/ce/ci/variables/README/#masked-variable-requirements
+			// ref: https://docs.gitlab.com/ci/variables/#mask-a-cicd-variable
 			{
 				Config: fmt.Sprintf(`
 					resource "gitlab_instance_variable" "foo" {

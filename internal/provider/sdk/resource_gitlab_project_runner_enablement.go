@@ -16,7 +16,7 @@ var _ = registerResource("gitlab_project_runner_enablement", func() *schema.Reso
 	return &schema.Resource{
 		Description: `The ` + "`gitlab_project_runner_enablement`" + ` resource allows to enable a runner in a project.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/runners/#enable-a-runner-in-project)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/runners/#assign-a-runner-to-project)`,
 		CreateContext: resourceGitlabProjectRunnerEnablementCreate,
 		ReadContext:   resourceGitlabProjectRunnerEnablementRead,
 		DeleteContext: resourceGitlabProjectRunnerEnablementDelete,
@@ -117,7 +117,6 @@ func projectAndRunnerFromID(ctx context.Context, id string) (string, int, error)
 		return projectID, runnerID, err
 	}
 	return projectID, runnerID, nil
-
 }
 
 func resourceGitlabProjectRunnerEnablementDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {

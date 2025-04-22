@@ -18,7 +18,7 @@ var _ = registerResource("gitlab_project_share_group", func() *schema.Resource {
 	return &schema.Resource{
 		Description: `The ` + "`" + `gitlab_project_share_group` + "`" + ` resource allows to manage the lifecycle of project shared with a group.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/projects/#share-project-with-group)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/projects/#share-a-project-with-a-group)`,
 
 		CreateContext: resourceGitlabProjectShareGroupCreate,
 		ReadContext:   resourceGitlabProjectShareGroupRead,
@@ -183,10 +183,10 @@ func resourceGitlabProjectShareGroupSetToState(d *schema.ResourceData, group str
 	GroupName        string `json:"group_name"`
 	GroupFullPath    string `json:"group_full_path"`
 	GroupAccessLevel int    `json:"group_access_level"`
-}, projectId *string) {
-
-	//This cast is needed due to an inconsistency in the upstream API
-	//GroupAccessLevel is returned as an int but the map we lookup is sorted by the int alias AccessLevelValue
+}, projectId *string,
+) {
+	// This cast is needed due to an inconsistency in the upstream API
+	// GroupAccessLevel is returned as an int but the map we lookup is sorted by the int alias AccessLevelValue
 	convertedAccessLevel := gitlab.AccessLevelValue(group.GroupAccessLevel)
 
 	d.Set("project", projectId)
