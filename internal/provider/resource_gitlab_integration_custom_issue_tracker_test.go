@@ -14,41 +14,6 @@ import (
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
-func TestAcc_GitlabIntegrationCustomIssueTracker_backwardsCompatibility(t *testing.T) {
-	testProject := testutil.CreateProject(t)
-
-	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		CheckDestroy:             testAccGitlabIntegrationCustomIssueTrackerCheckDestroy(testProject.ID),
-		Steps: []resource.TestStep{
-			// Create a Custom Issue Tracker integration
-			{
-				Config: fmt.Sprintf(`
-				resource "gitlab_service_custom_issue_tracker" "this" {
-					project     = "%s"
-					project_url = "https://customtracker.com"
-					issues_url  = "https://customtracker.com/:id"
-				}
-				`, testProject.PathWithNamespace),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrSet("gitlab_service_custom_issue_tracker.this", "id"),
-					resource.TestCheckResourceAttrSet("gitlab_service_custom_issue_tracker.this", "project"),
-					resource.TestCheckResourceAttrSet("gitlab_service_custom_issue_tracker.this", "project_url"),
-					resource.TestCheckResourceAttrSet("gitlab_service_custom_issue_tracker.this", "issues_url"),
-					resource.TestCheckResourceAttrSet("gitlab_service_custom_issue_tracker.this", "active"),
-					resource.TestCheckResourceAttrSet("gitlab_service_custom_issue_tracker.this", "created_at"),
-				),
-			},
-			// Verify upstream attributes with an import.
-			{
-				ResourceName:      "gitlab_service_custom_issue_tracker.this",
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
-		},
-	})
-}
-
 func TestAcc_GitlabIntegrationCustomIssueTracker_basic(t *testing.T) {
 	testProject := testutil.CreateProject(t)
 
