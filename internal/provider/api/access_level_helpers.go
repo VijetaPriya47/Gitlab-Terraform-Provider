@@ -17,7 +17,7 @@ import (
 // your fingers crossed it's correct :)
 
 // see the source of truth for `AccessLevelNameToValue` and `AccessLevelValueToName`
-// here: https://docs.gitlab.com/api/members/#valid-access-levels
+// here: https://docs.gitlab.com/api/members/#roles
 var ValidGroupAccessLevelNames = []string{
 	"no one",
 	"minimal",

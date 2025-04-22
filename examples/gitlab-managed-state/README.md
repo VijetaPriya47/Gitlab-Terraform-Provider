@@ -58,5 +58,5 @@ $ terraform destroy
 
 ## References
 
-1. [GitLab managed Terraform State](https://docs.gitlab.com/user/infrastructure/terraform_state/)
-2. [Infrastructure as code with Terraform and GitLab](https://docs.gitlab.com/user/infrastructure/index/)
+1. [GitLab managed Terraform State](https://docs.gitlab.com/user/infrastructure/iac/terraform_state/)
+2. [Infrastructure as code with Terraform and GitLab](https://docs.gitlab.com/user/infrastructure/iac/)
