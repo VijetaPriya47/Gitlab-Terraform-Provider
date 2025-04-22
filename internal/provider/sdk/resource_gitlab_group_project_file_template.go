@@ -23,7 +23,7 @@ For more information about which file types are available as templates, view
 
 -> This resource requires a GitLab Enterprise instance with a Premium license.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/groups/#update-group)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/groups/#update-group-attributes)`,
 
 		// Since this resource updates an in-place resource, the update method is the same as the create method
 		CreateContext: resourceGitLabGroupProjectFileTemplateCreateOrUpdate,
@@ -112,21 +112,21 @@ func resourceGitLabGroupProjectFileTemplateDelete(ctx context.Context, d *schema
 
 func updateGroupWithOverwrittenFileTemplateOption(client *gitlab.Client, groupID int, options *gitlab.UpdateGroupOptions) (*gitlab.Group, *gitlab.Response, error) {
 	return client.Groups.UpdateGroup(groupID, options, func(request *retryablehttp.Request) error {
-		//Overwrite the GroupUpdateOptions struct to remove the "omitempty", which forces the client to send an empty
-		//string in just this request.
+		// Overwrite the GroupUpdateOptions struct to remove the "omitempty", which forces the client to send an empty
+		// string in just this request.
 		removeOmitEmptyOptions := struct {
 			FileTemplateProjectID *string `url:"file_template_project_id" json:"file_template_project_id"`
 		}{
 			FileTemplateProjectID: nil,
 		}
 
-		//Create the new body request with the above struct
+		// Create the new body request with the above struct
 		newBody, err := json.Marshal(removeOmitEmptyOptions)
 		if err != nil {
 			return err
 		}
 
-		//Set the request body to have the newly updated body
+		// Set the request body to have the newly updated body
 		err = request.SetBody(newBody)
 		if err != nil {
 			return err
