@@ -64,12 +64,14 @@ func (r *gitlabMemberRoleResource) Schema(ctx context.Context, req resource.Sche
 	allowedBaseAccessLevels := []string{"DEVELOPER", "GUEST", "MAINTAINER", "MINIMAL_ACCESS", "OWNER", "REPORTER"}
 
 	// similarly, these are also required to all be in uppercase.
-	allowedEnabledPermissions := []string{"ADMIN_CICD_VARIABLES", "ADMIN_COMPLIANCE_FRAMEWORK", "ADMIN_GROUP_MEMBER",
+	allowedEnabledPermissions := []string{
+		"ADMIN_CICD_VARIABLES", "ADMIN_COMPLIANCE_FRAMEWORK", "ADMIN_GROUP_MEMBER",
 		"ADMIN_INTEGRATIONS", "ADMIN_MERGE_REQUEST", "ADMIN_PROTECTED_BRANCH", "ADMIN_PUSH_RULES", "ADMIN_RUNNERS", "ADMIN_TERRAFORM_STATE",
 		"ADMIN_VULNERABILITY", "ADMIN_WEB_HOOK", "ARCHIVE_PROJECT", "MANAGE_DEPLOY_TOKENS", "MANAGE_GROUP_ACCESS_TOKENS",
 		"MANAGE_MERGE_REQUEST_SETTINGS", "MANAGE_PROJECT_ACCESS_TOKENS", "MANAGE_SECURITY_POLICY_LINK", "READ_ADMIN_CICD", "READ_ADMIN_DASHBOARD",
 		"READ_CODE", "READ_COMPLIANCE_DASHBOARD", "READ_CRM_CONTACT", "READ_DEPENDENCY", "READ_RUNNERS", "READ_VULNERABILITY", "REMOVE_GROUP",
-		"REMOVE_PROJECT"}
+		"REMOVE_PROJECT",
+	}
 
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_member_role`" + ` resource allows to manage the lifecycle of a custom member role.
@@ -120,7 +122,7 @@ Custom roles allow an organization to create user roles with the precise privile
 				PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 			"created_at": schema.StringAttribute{
-				MarkdownDescription: "Timestamp of when the member role was created. Only available with GitLab version 17.3 or higher.",
+				MarkdownDescription: "Timestamp of when the member role was created.",
 				Computed:            true,
 				PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
@@ -154,7 +156,6 @@ func (r *gitlabMemberRoleResource) Configure(ctx context.Context, req resource.C
 // Use the `ModifyPlan` to determine if Gitlab instance is self-hosted vs SaaS.
 // If instance is SaaS, group_path is required. If instance is self-hosted, group_path is not permitted.
 func (r *gitlabMemberRoleResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
-
 	// Retrieve the plan data to start with
 	var planData *gitlabMemberRoleResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &planData)...)
@@ -210,14 +211,6 @@ func (r *gitlabMemberRoleResource) Read(ctx context.Context, req resource.ReadRe
 	id := data.Id.ValueString()
 	groupPath := data.GroupPath.ValueString()
 
-	createdAtQuery := ""
-	isVersionAtLeast173, err := api.IsGitLabVersionAtLeast(ctx, r.client, "17.3")()
-	if err != nil {
-		tflog.Debug(ctx, "unable to determine version of GitLab. Cannot determine which API property to read from.", map[string]interface{}{"Error": err})
-	}
-	if isVersionAtLeast173 {
-		createdAtQuery = "createdAt,"
-	}
 	query := api.GraphQLQuery{
 		Query: fmt.Sprintf(`
 			query {
@@ -225,7 +218,7 @@ func (r *gitlabMemberRoleResource) Read(ctx context.Context, req resource.ReadRe
 					baseAccessLevel {
 						stringValue
 					},
-					%s
+					createdAt,
 					description,
 					editPath,
 					enabledPermissions {
@@ -236,7 +229,7 @@ func (r *gitlabMemberRoleResource) Read(ctx context.Context, req resource.ReadRe
 					id,
 					name,
 				}
-			}`, id, createdAtQuery),
+			}`, id),
 	}
 	tflog.Debug(ctx, "executing GraphQL Query to retrieve current custom member role", map[string]interface{}{
 		"query": query.Query,
@@ -283,16 +276,6 @@ func (r *gitlabMemberRoleResource) Create(ctx context.Context, req resource.Crea
 		permissions = append(permissions, v.ValueString())
 	}
 
-	// createdAt is not a valid field prior to 17.3
-	createdAtQuery := ""
-	isVersionAtLeast173, err := api.IsGitLabVersionAtLeast(ctx, r.client, "17.3")()
-	if err != nil {
-		tflog.Debug(ctx, "unable to determine version of GitLab. Cannot determine which API property to read from.", map[string]interface{}{"Error": err})
-	}
-	if isVersionAtLeast173 {
-		createdAtQuery = "createdAt,"
-	}
-
 	// If SaaS instance, include groupPath
 	groupPathQuery := ""
 	if len(r.client.BaseURL().Host) == 0 || r.client.BaseURL().Host == "gitlab.com" {
@@ -315,7 +298,7 @@ func (r *gitlabMemberRoleResource) Create(ctx context.Context, req resource.Crea
 						baseAccessLevel {
 							stringValue
 						},
-						%s
+						createdAt,
 						description,
 						editPath,
 						enabledPermissions {
@@ -328,7 +311,7 @@ func (r *gitlabMemberRoleResource) Create(ctx context.Context, req resource.Crea
 					}
 					errors
 				}
-			}`, groupPathQuery, name, description, baseAccessLevel, permissions, createdAtQuery),
+			}`, groupPathQuery, name, description, baseAccessLevel, permissions),
 	}
 
 	tflog.Debug(ctx, "executing GraphQL Query to create custom member role", map[string]interface{}{
@@ -443,16 +426,6 @@ func (r *gitlabMemberRoleResource) Update(ctx context.Context, req resource.Upda
 		permissions = append(permissions, v.ValueString())
 	}
 
-	// createdAt is not a valid field prior to 17.3
-	createdAtQuery := ""
-	isVersionAtLeast173, err := api.IsGitLabVersionAtLeast(ctx, r.client, "17.3")()
-	if err != nil {
-		tflog.Debug(ctx, "unable to determine version of GitLab. Cannot determine which API property to read from.", map[string]interface{}{"Error": err})
-	}
-	if isVersionAtLeast173 {
-		createdAtQuery = "createdAt,"
-	}
-
 	query := api.GraphQLQuery{
 		Query: fmt.Sprintf(`
 			mutation {
@@ -468,7 +441,7 @@ func (r *gitlabMemberRoleResource) Update(ctx context.Context, req resource.Upda
 						baseAccessLevel {
 							stringValue
 						},
-						%s
+						createdAt,
 						description,
 						editPath,
 						enabledPermissions {
@@ -481,7 +454,7 @@ func (r *gitlabMemberRoleResource) Update(ctx context.Context, req resource.Upda
 					}
 					errors
 				}
-			}`, id, name, description, permissions, createdAtQuery),
+			}`, id, name, description, permissions),
 	}
 	tflog.Debug(ctx, "executing GraphQL Query to update custom member role", map[string]interface{}{
 		"query": query.Query,
