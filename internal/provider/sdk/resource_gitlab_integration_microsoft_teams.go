@@ -12,24 +12,10 @@ import (
 )
 
 var _ = registerResource("gitlab_integration_microsoft_teams", func() *schema.Resource {
-	return resourceGitlabIntegrationMicrosoftTeamsSchema(`The ` + "`gitlab_integration_microsoft_teams`" + ` resource allows to manage the lifecycle of a project integration with Microsoft Teams.
-
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#microsoft-teams-notifications)`)
-})
-
-var _ = registerResource("gitlab_service_microsoft_teams", func() *schema.Resource {
-	schema := resourceGitlabIntegrationMicrosoftTeamsSchema(`The ` + "`gitlab_service_microsoft_teams`" + ` resource allows to manage the lifecycle of a project integration with Microsoft Teams.
-
-~> This resource is deprecated. use ` + "`gitlab_integration_microsoft_teams`" + `instead!
-
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#microsoft-teams-notifications)`)
-	schema.DeprecationMessage = `This resource is deprecated. use ` + "`gitlab_integration_microsoft_teams`" + `instead!`
-	return schema
-})
-
-func resourceGitlabIntegrationMicrosoftTeamsSchema(description string) *schema.Resource {
 	return &schema.Resource{
-		Description: description,
+		Description: `The ` + "`gitlab_integration_microsoft_teams`" + ` resource allows you to manage the lifecycle of a project integration with Microsoft Teams.
+
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#microsoft-teams-notifications)`,
 
 		CreateContext: resourceGitlabIntegrationMicrosoftTeamsCreate,
 		ReadContext:   resourceGitlabIntegrationMicrosoftTeamsRead,
@@ -124,7 +110,7 @@ func resourceGitlabIntegrationMicrosoftTeamsSchema(description string) *schema.R
 			},
 		},
 	}
-}
+})
 
 func resourceGitlabIntegrationMicrosoftTeamsCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
@@ -174,7 +160,7 @@ func resourceGitlabIntegrationMicrosoftTeamsRead(ctx context.Context, d *schema.
 	// The webhook is explicitly not set anymore, due to being removed from the API. It will now
 	// use whatever is in the configuration to determine the value.
 	// See https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/issues/1421 for more info.
-	//d.Set("webhook", teamsService.Properties.WebHook)
+	// d.Set("webhook", teamsService.Properties.WebHook)
 
 	d.Set("project", project)
 	d.Set("created_at", teamsService.CreatedAt.String())
