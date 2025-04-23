@@ -10,63 +10,19 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
-
-// Remove when we remove `service` alias.
-func TestAccGitlabIntegrationEmailsOnPush_backwardsCompatibleToService(t *testing.T) {
-	testProject := testutil.CreateProject(t)
-
-	var emailsOnPushService gitlab.EmailsOnPushService
-
-	var recipients1 = "mynumberonerecipient@example.com"
-	var emailsOnPushResourceName = "gitlab_service_emails_on_push.this"
-
-	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
-		CheckDestroy:             testAccCheckGitlabIntegrationEmailsOnPushDestroy,
-		Steps: []resource.TestStep{
-			// Create an Emails on Push integration
-			{
-				Config: fmt.Sprintf(`
-				resource "gitlab_service_emails_on_push" "this" {
-					project    = %[1]d
-					recipients = "%[2]s"
-				}
-				`, testProject.ID, recipients1),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabIntegrationEmailsOnPushExists(emailsOnPushResourceName, &emailsOnPushService),
-					resource.TestCheckResourceAttr(emailsOnPushResourceName, "recipients", recipients1),
-					resource.TestCheckResourceAttr(emailsOnPushResourceName, "active", "true"),
-					resource.TestCheckResourceAttrWith(emailsOnPushResourceName, "created_at", func(value string) error {
-						expectedValue := emailsOnPushService.CreatedAt.Format(time.RFC3339)
-						if value != expectedValue {
-							return fmt.Errorf("should be equal to %s", expectedValue)
-						}
-						return nil
-					}),
-				),
-			},
-			// Verify import
-			{
-				ResourceName:      "gitlab_service_emails_on_push.this",
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
-		},
-	})
-}
 
 func TestAccGitlabIntegrationEmailsOnPush_basic(t *testing.T) {
 	testProject := testutil.CreateProject(t)
 
 	var emailsOnPushService gitlab.EmailsOnPushService
 
-	var recipients1 = "mynumberonerecipient@example.com"
-	var recipients2 = "mynumbertworecipient@example.com"
-	var emailsOnPushResourceName = "gitlab_integration_emails_on_push.this"
+	recipients1 := "mynumberonerecipient@example.com"
+	recipients2 := "mynumbertworecipient@example.com"
+	emailsOnPushResourceName := "gitlab_integration_emails_on_push.this"
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
