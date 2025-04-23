@@ -14,24 +14,10 @@ import (
 )
 
 var _ = registerResource("gitlab_integration_pipelines_email", func() *schema.Resource {
-	return resourceGitlabIntegrationPipelinesEmailSchema(`The ` + "`gitlab_integration_pipelines_email`" + ` resource allows to manage the lifecycle of a project integration with Pipeline Emails Service.
-
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#pipeline-status-emails)`)
-})
-
-var _ = registerResource("gitlab_service_pipelines_email", func() *schema.Resource {
-	schema := resourceGitlabIntegrationPipelinesEmailSchema(`The ` + "`gitlab_service_pipelines_email`" + ` resource allows to manage the lifecycle of a project integration with Pipeline Emails Service.
-
-~> This resource is deprecated. use ` + "`gitlab_integration_pipelines_email`" + `instead!
-
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#pipeline-status-emails)`)
-	schema.DeprecationMessage = `This resource is deprecated. use ` + "`gitlab_integration_pipelines_email`" + `instead!`
-	return schema
-})
-
-func resourceGitlabIntegrationPipelinesEmailSchema(description string) *schema.Resource {
 	return &schema.Resource{
-		Description: description,
+		Description: `The ` + "`gitlab_integration_pipelines_email`" + ` resource allows to manage the lifecycle of a project integration with Pipeline Emails Service.
+
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#pipeline-status-emails)`,
 
 		CreateContext: resourceGitlabIntegrationPipelinesEmailCreate,
 		ReadContext:   resourceGitlabIntegrationPipelinesEmailRead,
@@ -69,7 +55,7 @@ func resourceGitlabIntegrationPipelinesEmailSchema(description string) *schema.R
 			},
 		},
 	}
-}
+})
 
 func resourceGitlabIntegrationPipelinesEmailSetToState(d *schema.ResourceData, service *gitlab.PipelinesEmailService) {
 	d.Set("recipients", strings.Split(service.Properties.Recipients, ",")) // lintignore: XR004 // TODO: Resolve this tfproviderlint issue
