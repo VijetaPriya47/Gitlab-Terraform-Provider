@@ -164,33 +164,27 @@ func resourceGitlabProjectApprovalRuleCreate(ctx context.Context, d *schema.Reso
 		if ruleType, ok := d.GetOk("rule_type"); ok {
 			options.RuleType = gitlab.Ptr(ruleType.(string))
 
-			supportsReportType, err := api.IsGitLabVersionAtLeast(ctx, client, "17.2")()
-			if err != nil {
-				return diag.FromErr(err)
-			}
-			if supportsReportType {
-				if reportType, ok := d.GetOk("report_type"); ok {
+			if reportType, ok := d.GetOk("report_type"); ok {
 
-					if ruleType.(string) != "report_approver" {
-						return diag.Diagnostics{
-							diag.Diagnostic{
-								Severity: diag.Error,
-								Summary:  "rule_type incorrect",
-								Detail:   "rule_type should be set to `report_approver`",
-							},
-						}
+				if ruleType.(string) != "report_approver" {
+					return diag.Diagnostics{
+						diag.Diagnostic{
+							Severity: diag.Error,
+							Summary:  "rule_type incorrect",
+							Detail:   "rule_type should be set to `report_approver`",
+						},
 					}
-					if name != "Coverage-Check" {
-						return diag.Diagnostics{
-							diag.Diagnostic{
-								Severity: diag.Error,
-								Summary:  "name incorrect",
-								Detail:   "if rule_type is `report_approver` then name should be set to 'Coverage-Check'",
-							},
-						}
-					}
-					options.ReportType = gitlab.Ptr(reportType.(string))
 				}
+				if name != "Coverage-Check" {
+					return diag.Diagnostics{
+						diag.Diagnostic{
+							Severity: diag.Error,
+							Summary:  "name incorrect",
+							Detail:   "if rule_type is `report_approver` then name should be set to 'Coverage-Check'",
+						},
+					}
+				}
+				options.ReportType = gitlab.Ptr(reportType.(string))
 			}
 		}
 
