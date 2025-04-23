@@ -15,29 +15,10 @@ import (
 )
 
 var _ = registerResource("gitlab_integration_emails_on_push", func() *schema.Resource {
-	return resourceGitLabIntegrationEmailOnPushResource(
-		`The ` + "`gitlab_integration_emails_on_push`" + ` resource allows to manage the lifecycle of a project integration with Emails on Push Service.
-
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#emails-on-push)`,
-	)
-})
-
-// Support the pre-16.0 syntax for several releases.
-var _ = registerResource("gitlab_service_emails_on_push", func() *schema.Resource {
-	resource := resourceGitLabIntegrationEmailOnPushResource(
-		`The ` + "`gitlab_service_emails_on_push`" + ` resource allows to manage the lifecycle of a project integration with Emails on Push Service.
-
-~> This resource is deprecated. Please use ` + "`gitlab_integration_emails_on_push`" + ` instead!
-
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#emails-on-push)`,
-	)
-	resource.DeprecationMessage = `This resource is deprecated. Please use ` + "`gitlab_integration_emails_on_push`" + ` instead!`
-	return resource
-})
-
-func resourceGitLabIntegrationEmailOnPushResource(description string) *schema.Resource {
 	return &schema.Resource{
-		Description:   description,
+		Description: `The ` + "`gitlab_integration_emails_on_push`" + ` resource allows to manage the lifecycle of a project integration with Emails on Push Service.
+
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#emails-on-push)`,
 		CreateContext: resourceGitlabIntegrationEmailsOnPushCreate,
 		ReadContext:   resourceGitlabIntegrationEmailsOnPushRead,
 		UpdateContext: resourceGitlabIntegrationEmailsOnPushCreate,
@@ -114,7 +95,7 @@ func resourceGitLabIntegrationEmailOnPushResource(description string) *schema.Re
 			},
 		},
 	}
-}
+})
 
 func resourceGitlabIntegrationEmailsOnPushCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
