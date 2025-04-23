@@ -539,3 +539,176 @@ func testAccCheckGitlabPersonalAccessTokenDestroy(s *terraform.State) error {
 
 	return nil
 }
+
+// TestAccGitlabPersonalAccessToken_rotateRevokedTokenGracefully tests the scenario where
+// a token has been externally revoked but Terraform gracefully handles rotation
+func TestAccGitlabPersonalAccessToken_rotateRevokedTokenGracefully(t *testing.T) {
+	user := testutil.CreateUsers(t, 1)[0]
+	tokenToCheck := ""
+
+	// All steps use the same config. Only the external circumstances change.
+	config := fmt.Sprintf(`
+		resource "gitlab_personal_access_token" "revoked" {
+		  name = "token_to_be_revoked"
+		  user_id = %d
+		  scopes = ["api"]
+
+		  // Create a token good for 30 days, that rotates after 15 days
+		  rotation_configuration = {
+			  expiration_days = 30
+			  rotate_before_days = 15
+		  }
+		}
+		`, user.ID)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		CheckDestroy:             testAccCheckGitlabPersonalAccessTokenDestroy,
+		Steps: []resource.TestStep{
+			// Create a Personal Access Token
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_personal_access_token.revoked", "rotation_configuration.expiration_days", "30"),
+					resource.TestCheckResourceAttrWith("gitlab_personal_access_token.revoked", "token", func(value string) error {
+						// Store token value to compare later
+						tokenToCheck = value
+						return nil
+					}),
+				),
+			},
+			// Simulate external revocation of the token, followed by `terraform refresh`.
+			{
+				PreConfig: func() {
+					if err := revokePersonalAccessToken(user.ID, "token_to_be_revoked"); err != nil {
+						t.Fatalf("Failed to revoke token: %v", err)
+					}
+				},
+				// Use RefreshState to force reading the current state
+				RefreshState: true,
+				// We expect changes since the token is now revoked
+				ExpectNonEmptyPlan: true,
+			},
+			// Apply the config. This should recreate the token since it was revoked externally.
+			{
+				Config: config,
+				// Success case - no error expected
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_personal_access_token.revoked", "name", "token_to_be_revoked"),
+					resource.TestCheckResourceAttr("gitlab_personal_access_token.revoked", "active", "true"),
+					resource.TestCheckResourceAttr("gitlab_personal_access_token.revoked", "revoked", "false"),
+					resource.TestCheckResourceAttrWith("gitlab_personal_access_token.revoked", "token", func(value string) error {
+						// Verify new token is different from the revoked one
+						if value == tokenToCheck {
+							return fmt.Errorf("token was not rotated after being revoked")
+						}
+						return nil
+					}),
+				),
+			},
+			// Verify upstream resource with an import
+			{
+				ResourceName:            "gitlab_personal_access_token.revoked",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"token", "rotation_configuration"},
+			},
+		},
+	})
+}
+
+// TestAccGitlabPersonalAccessToken_revokedTokenWithPastExpiry tests that a token
+// with an absolute expiry date is not recreated once it expires.
+func TestAccGitlabPersonalAccessToken_revokedTokenWithPastExpiry(t *testing.T) {
+	user := testutil.CreateUsers(t, 1)[0]
+
+	expiryDate := testutil.GetCurrentTimePlusDays(t, 2)
+	expiryDateStr := time.Time(expiryDate).Format(api.Iso8601)
+	futureDate := testutil.GetCurrentTimestampPlusDays(t, 10)
+
+	// Config with short expiration date
+	config := fmt.Sprintf(`
+		resource "gitlab_personal_access_token" "expired" {
+		  name = "token_to_expire"
+		  user_id = %d
+		  scopes = ["api"]
+
+		  // Will expire in 2 days
+		  expires_at = "%s"
+		}
+	`, user.ID, expiryDateStr)
+
+	// Not running in parallel since we're manipulating environment variables
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		CheckDestroy:             testAccCheckGitlabPersonalAccessTokenDestroy,
+		Steps: []resource.TestStep{
+			// Create a Personal Access Token that will expire soon
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_personal_access_token.expired", "expires_at", expiryDateStr),
+					resource.TestCheckResourceAttr("gitlab_personal_access_token.expired", "active", "true"),
+				),
+			},
+			// Now move time forward past the expiration and revoke the token
+			{
+				PreConfig: func() {
+					// Set time to future, so the token is expired
+					t.Setenv("GITLAB_TESTING_TIME", futureDate.Format(time.RFC3339))
+
+					if err := revokePersonalAccessToken(user.ID, "token_to_expire"); err != nil {
+						t.Fatalf("Failed to revoke token: %v", err)
+					}
+				},
+				// Refresh state to detect the token is expired and revoked
+				RefreshState: true,
+				// We do NOT expect changes since the token was expired anyway
+				ExpectNonEmptyPlan: false,
+			},
+			// Apply the config again - this should not attempt to recreate the token
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_personal_access_token.expired", "expires_at", expiryDateStr),
+					resource.TestCheckResourceAttr("gitlab_personal_access_token.expired", "active", "false"),
+					resource.TestCheckResourceAttr("gitlab_personal_access_token.expired", "revoked", "true"),
+				),
+			},
+			// Verify with import
+			{
+				ResourceName:            "gitlab_personal_access_token.expired",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"token"},
+			},
+		},
+	})
+}
+
+func revokePersonalAccessToken(userID int, tokenName string) error {
+	tokenID, err := personalAccessTokenID(userID, tokenName)
+	if err != nil {
+		return err
+	}
+
+	_, err = testutil.TestGitlabClient.PersonalAccessTokens.RevokePersonalAccessToken(tokenID)
+	return err
+}
+
+func personalAccessTokenID(userID int, tokenName string) (int, error) {
+	tokens, _, err := testutil.TestGitlabClient.PersonalAccessTokens.ListPersonalAccessTokens(&gitlab.ListPersonalAccessTokensOptions{
+		UserID: gitlab.Ptr(userID),
+	})
+	if err != nil {
+		return 0, err
+	}
+
+	for _, token := range tokens {
+		if token.Name == tokenName {
+			return token.ID, nil
+		}
+	}
+
+	return 0, fmt.Errorf("user %d token with name %s does not exist", userID, tokenName)
+}
