@@ -10,54 +10,10 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
-
-func TestAccGitlabIntegrationExternalWiki_backwardsCompatibleToService(t *testing.T) {
-	testProject := testutil.CreateProject(t)
-
-	var externalWikiService gitlab.ExternalWikiService
-
-	externalWikiURL1 := "http://mynumberonewiki.com"
-	externalWikiResourceName := "gitlab_service_external_wiki.this"
-
-	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
-		CheckDestroy:             testAccCheckGitlabServiceExternalWikiDestroy,
-		Steps: []resource.TestStep{
-			// Create an External Wiki service
-			{
-				Config: fmt.Sprintf(`
-				resource "gitlab_service_external_wiki" "this" {
-					project           = %[1]d
-					external_wiki_url = "%[2]s"
-				}
-				`, testProject.ID, externalWikiURL1),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabIntegrationExternalWikiExists(externalWikiResourceName, &externalWikiService),
-					resource.TestCheckResourceAttr(externalWikiResourceName, "external_wiki_url", externalWikiURL1),
-					resource.TestCheckResourceAttr(externalWikiResourceName, "external_wiki_url", externalWikiURL1),
-					resource.TestCheckResourceAttr(externalWikiResourceName, "active", "true"),
-					resource.TestCheckResourceAttrWith(externalWikiResourceName, "created_at", func(value string) error {
-						expectedValue := externalWikiService.CreatedAt.Format(time.RFC3339)
-						if value != expectedValue {
-							return fmt.Errorf("should be equal to %s", expectedValue)
-						}
-						return nil
-					}),
-				),
-			},
-			// Verify import
-			{
-				ResourceName:      "gitlab_service_external_wiki.this",
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
-		},
-	})
-}
 
 func TestAccGitlabIntegrationExternalWiki_basic(t *testing.T) {
 	testProject := testutil.CreateProject(t)
@@ -66,7 +22,6 @@ func TestAccGitlabIntegrationExternalWiki_basic(t *testing.T) {
 
 	externalWikiURL1 := "http://mynumberonewiki.com"
 	externalWikiURL2 := "http://mynumbertwowiki.com"
-	externalWikiResourceName := "gitlab_integration_external_wiki.this"
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
@@ -81,11 +36,11 @@ func TestAccGitlabIntegrationExternalWiki_basic(t *testing.T) {
 					}
 				`, testProject.ID, externalWikiURL1),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabIntegrationExternalWikiExists(externalWikiResourceName, &externalWikiService),
-					resource.TestCheckResourceAttr(externalWikiResourceName, "external_wiki_url", externalWikiURL1),
-					resource.TestCheckResourceAttr(externalWikiResourceName, "external_wiki_url", externalWikiURL1),
-					resource.TestCheckResourceAttr(externalWikiResourceName, "active", "true"),
-					resource.TestCheckResourceAttrWith(externalWikiResourceName, "created_at", func(value string) error {
+					testAccCheckGitlabIntegrationExternalWikiExists("gitlab_integration_external_wiki.this", &externalWikiService),
+					resource.TestCheckResourceAttr("gitlab_integration_external_wiki.this", "external_wiki_url", externalWikiURL1),
+					resource.TestCheckResourceAttr("gitlab_integration_external_wiki.this", "external_wiki_url", externalWikiURL1),
+					resource.TestCheckResourceAttr("gitlab_integration_external_wiki.this", "active", "true"),
+					resource.TestCheckResourceAttrWith("gitlab_integration_external_wiki.this", "created_at", func(value string) error {
 						expectedValue := externalWikiService.CreatedAt.Format(time.RFC3339)
 						if value != expectedValue {
 							return fmt.Errorf("should be equal to %s", expectedValue)
@@ -109,16 +64,16 @@ func TestAccGitlabIntegrationExternalWiki_basic(t *testing.T) {
 					}
 				`, testProject.ID, externalWikiURL2),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabIntegrationExternalWikiExists(externalWikiResourceName, &externalWikiService),
-					resource.TestCheckResourceAttr(externalWikiResourceName, "external_wiki_url", externalWikiURL2),
-					resource.TestCheckResourceAttrWith(externalWikiResourceName, "created_at", func(value string) error {
+					testAccCheckGitlabIntegrationExternalWikiExists("gitlab_integration_external_wiki.this", &externalWikiService),
+					resource.TestCheckResourceAttr("gitlab_integration_external_wiki.this", "external_wiki_url", externalWikiURL2),
+					resource.TestCheckResourceAttrWith("gitlab_integration_external_wiki.this", "created_at", func(value string) error {
 						expectedValue := externalWikiService.CreatedAt.Format(time.RFC3339)
 						if value != expectedValue {
 							return fmt.Errorf("should be equal to %s", expectedValue)
 						}
 						return nil
 					}),
-					resource.TestCheckResourceAttrWith(externalWikiResourceName, "updated_at", func(value string) error {
+					resource.TestCheckResourceAttrWith("gitlab_integration_external_wiki.this", "updated_at", func(value string) error {
 						expectedValue := externalWikiService.UpdatedAt.Format(time.RFC3339)
 						if value != expectedValue {
 							return fmt.Errorf("should be equal to %s", expectedValue)
@@ -142,8 +97,8 @@ func TestAccGitlabIntegrationExternalWiki_basic(t *testing.T) {
 					}
 				`, testProject.ID, externalWikiURL1),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabIntegrationExternalWikiExists(externalWikiResourceName, &externalWikiService),
-					resource.TestCheckResourceAttr(externalWikiResourceName, "external_wiki_url", externalWikiURL1),
+					testAccCheckGitlabIntegrationExternalWikiExists("gitlab_integration_external_wiki.this", &externalWikiService),
+					resource.TestCheckResourceAttr("gitlab_integration_external_wiki.this", "external_wiki_url", externalWikiURL1),
 				),
 			},
 			// Verify import

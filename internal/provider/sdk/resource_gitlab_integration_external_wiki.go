@@ -14,26 +14,10 @@ import (
 )
 
 var _ = registerResource("gitlab_integration_external_wiki", func() *schema.Resource {
-	return resourceGitlabIntegrationEmailsOnPushResource(`The ` + "`gitlab_integration_external_wiki`" + ` resource allows to manage the lifecycle of a project integration with External Wiki Service.
-
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#external-wiki)`,
-	)
-})
-
-var _ = registerResource("gitlab_service_external_wiki", func() *schema.Resource {
-	resource := resourceGitlabIntegrationEmailsOnPushResource(`The ` + "`gitlab_service_external_wiki`" + ` resource allows to manage the lifecycle of a project integration with External Wiki Service.
-
-~> This resource is deprecated. use ` + "`gitlab_integration_external_wiki`" + `instead!
-
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#external-wiki)`,
-	)
-	resource.DeprecationMessage = `This resource is deprecated. use ` + "`gitlab_integration_external_wiki`" + `instead!`
-	return resource
-})
-
-func resourceGitlabIntegrationEmailsOnPushResource(description string) *schema.Resource {
 	return &schema.Resource{
-		Description: description,
+		Description: `The ` + "`gitlab_integration_external_wiki`" + ` resource allows to manage the lifecycle of a project integration with External Wiki Service.
+
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#external-wiki)`,
 
 		CreateContext: resourceGitlabIntegrationExternalWikiCreate,
 		ReadContext:   resourceGitlabIntegrationExternalWikiRead,
@@ -84,7 +68,7 @@ func resourceGitlabIntegrationEmailsOnPushResource(description string) *schema.R
 			},
 		},
 	}
-}
+})
 
 func resourceGitlabIntegrationExternalWikiCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
