@@ -13,24 +13,10 @@ import (
 )
 
 var _ = registerResource("gitlab_integration_jira", func() *schema.Resource {
-	return resourceGitlabIntegrationJiraSchema(`The ` + "`gitlab_integration_jira`" + ` resource allows to manage the lifecycle of a project integration with Jira.
-
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#jira-issues)`)
-})
-
-var _ = registerResource("gitlab_service_jira", func() *schema.Resource {
-	schema := resourceGitlabIntegrationJiraSchema(`The ` + "`gitlab_service_jira`" + ` resource allows to manage the lifecycle of a project integration with Jira.
-
-~> This resource is deprecated. use ` + "`gitlab_integration_jira`" + `instead!
-
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#jira-issues)`)
-	schema.DeprecationMessage = `This resource is deprecated. use ` + "`gitlab_integration_jira`" + `instead!`
-	return schema
-})
-
-func resourceGitlabIntegrationJiraSchema(description string) *schema.Resource {
 	return &schema.Resource{
-		Description: description,
+		Description: `The ` + "`gitlab_integration_jira`" + ` resource allows to manage the lifecycle of a project integration with Jira.
+
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#jira-issues)`,
 
 		CreateContext: resourceGitlabIntegrationJiraCreate,
 		ReadContext:   resourceGitlabIntegrationJiraRead,
@@ -161,7 +147,7 @@ func resourceGitlabIntegrationJiraSchema(description string) *schema.Resource {
 			},
 		},
 	}
-}
+})
 
 func resourceGitlabIntegrationJiraCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
