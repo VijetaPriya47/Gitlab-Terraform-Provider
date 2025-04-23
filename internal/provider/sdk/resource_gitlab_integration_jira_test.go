@@ -17,8 +17,6 @@ import (
 
 func TestAcc_GitlabIntegrationJira_basic(t *testing.T) {
 	var jiraService gitlab.JiraService
-	jiraResourceName := "gitlab_integration_jira.jira"
-
 	project := testutil.CreateProject(t)
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -39,19 +37,19 @@ func TestAcc_GitlabIntegrationJira_basic(t *testing.T) {
 				}
 				`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabIntegrationJiraExists(jiraResourceName, &jiraService),
-					resource.TestCheckResourceAttr(jiraResourceName, "url", "https://test.com"),
-					resource.TestCheckResourceAttr(jiraResourceName, "username", "user1"),
-					resource.TestCheckResourceAttr(jiraResourceName, "password", "mypass"),
-					resource.TestCheckResourceAttr(jiraResourceName, "commit_events", "true"),
-					resource.TestCheckResourceAttr(jiraResourceName, "merge_requests_events", "false"),
-					resource.TestCheckResourceAttr(jiraResourceName, "use_inherited_settings", "false"),
-					resource.TestCheckResourceAttr(jiraResourceName, "jira_issue_transition_automatic", "true"),
+					testAccCheckGitlabIntegrationJiraExists("gitlab_integration_jira.jira", &jiraService),
+					resource.TestCheckResourceAttr("gitlab_integration_jira.jira", "url", "https://test.com"),
+					resource.TestCheckResourceAttr("gitlab_integration_jira.jira", "username", "user1"),
+					resource.TestCheckResourceAttr("gitlab_integration_jira.jira", "password", "mypass"),
+					resource.TestCheckResourceAttr("gitlab_integration_jira.jira", "commit_events", "true"),
+					resource.TestCheckResourceAttr("gitlab_integration_jira.jira", "merge_requests_events", "false"),
+					resource.TestCheckResourceAttr("gitlab_integration_jira.jira", "use_inherited_settings", "false"),
+					resource.TestCheckResourceAttr("gitlab_integration_jira.jira", "jira_issue_transition_automatic", "true"),
 				),
 			},
 			// Verify Import
 			{
-				ResourceName:      jiraResourceName,
+				ResourceName:      "gitlab_integration_jira.jira",
 				ImportState:       true,
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{
@@ -77,23 +75,23 @@ func TestAcc_GitlabIntegrationJira_basic(t *testing.T) {
 				}
 				`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabIntegrationJiraExists(jiraResourceName, &jiraService),
-					resource.TestCheckResourceAttr(jiraResourceName, "url", "https://testurl.com"),
-					resource.TestCheckResourceAttr(jiraResourceName, "api_url", "https://testurl.com/rest"),
-					resource.TestCheckResourceAttr(jiraResourceName, "username", "user2"),
-					resource.TestCheckResourceAttr(jiraResourceName, "password", "mypass_update"),
-					resource.TestCheckResourceAttr(jiraResourceName, "jira_issue_transition_automatic", "false"),
-					resource.TestCheckResourceAttr(jiraResourceName, "jira_issue_transition_id", "3"),
-					resource.TestCheckResourceAttr(jiraResourceName, "commit_events", "false"),
-					resource.TestCheckResourceAttr(jiraResourceName, "merge_requests_events", "true"),
-					resource.TestCheckResourceAttr(jiraResourceName, "use_inherited_settings", "false"),
-					resource.TestCheckResourceAttr(jiraResourceName, "jira_issue_regex", "TEST-[0-9]+"),
-					resource.TestCheckResourceAttr(jiraResourceName, "issues_enabled", "true"),
+					testAccCheckGitlabIntegrationJiraExists("gitlab_integration_jira.jira", &jiraService),
+					resource.TestCheckResourceAttr("gitlab_integration_jira.jira", "url", "https://testurl.com"),
+					resource.TestCheckResourceAttr("gitlab_integration_jira.jira", "api_url", "https://testurl.com/rest"),
+					resource.TestCheckResourceAttr("gitlab_integration_jira.jira", "username", "user2"),
+					resource.TestCheckResourceAttr("gitlab_integration_jira.jira", "password", "mypass_update"),
+					resource.TestCheckResourceAttr("gitlab_integration_jira.jira", "jira_issue_transition_automatic", "false"),
+					resource.TestCheckResourceAttr("gitlab_integration_jira.jira", "jira_issue_transition_id", "3"),
+					resource.TestCheckResourceAttr("gitlab_integration_jira.jira", "commit_events", "false"),
+					resource.TestCheckResourceAttr("gitlab_integration_jira.jira", "merge_requests_events", "true"),
+					resource.TestCheckResourceAttr("gitlab_integration_jira.jira", "use_inherited_settings", "false"),
+					resource.TestCheckResourceAttr("gitlab_integration_jira.jira", "jira_issue_regex", "TEST-[0-9]+"),
+					resource.TestCheckResourceAttr("gitlab_integration_jira.jira", "issues_enabled", "true"),
 				),
 			},
 			// Verify Import
 			{
-				ResourceName:      jiraResourceName,
+				ResourceName:      "gitlab_integration_jira.jira",
 				ImportState:       true,
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{
@@ -116,22 +114,22 @@ func TestAcc_GitlabIntegrationJira_basic(t *testing.T) {
 				}
 				`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabIntegrationJiraExists(jiraResourceName, &jiraService),
-					resource.TestCheckResourceAttr(jiraResourceName, "url", "https://test.com"),
-					resource.TestCheckResourceAttr(jiraResourceName, "api_url", "https://testurl.com/rest"),
-					resource.TestCheckResourceAttr(jiraResourceName, "username", "user1"),
-					resource.TestCheckResourceAttr(jiraResourceName, "password", "mypass"),
-					resource.TestCheckResourceAttr(jiraResourceName, "commit_events", "true"),
-					resource.TestCheckResourceAttr(jiraResourceName, "merge_requests_events", "false"),
-					resource.TestCheckResourceAttr(jiraResourceName, "use_inherited_settings", "false"),
-					resource.TestCheckResourceAttr(jiraResourceName, "jira_issue_regex", ""),
-					resource.TestCheckResourceAttr(jiraResourceName, "issues_enabled", "false"),
-					resource.TestCheckResourceAttr(jiraResourceName, "jira_issue_transition_automatic", "true"),
+					testAccCheckGitlabIntegrationJiraExists("gitlab_integration_jira.jira", &jiraService),
+					resource.TestCheckResourceAttr("gitlab_integration_jira.jira", "url", "https://test.com"),
+					resource.TestCheckResourceAttr("gitlab_integration_jira.jira", "api_url", "https://testurl.com/rest"),
+					resource.TestCheckResourceAttr("gitlab_integration_jira.jira", "username", "user1"),
+					resource.TestCheckResourceAttr("gitlab_integration_jira.jira", "password", "mypass"),
+					resource.TestCheckResourceAttr("gitlab_integration_jira.jira", "commit_events", "true"),
+					resource.TestCheckResourceAttr("gitlab_integration_jira.jira", "merge_requests_events", "false"),
+					resource.TestCheckResourceAttr("gitlab_integration_jira.jira", "use_inherited_settings", "false"),
+					resource.TestCheckResourceAttr("gitlab_integration_jira.jira", "jira_issue_regex", ""),
+					resource.TestCheckResourceAttr("gitlab_integration_jira.jira", "issues_enabled", "false"),
+					resource.TestCheckResourceAttr("gitlab_integration_jira.jira", "jira_issue_transition_automatic", "true"),
 				),
 			},
 			// Verify Import
 			{
-				ResourceName:      jiraResourceName,
+				ResourceName:      "gitlab_integration_jira.jira",
 				ImportState:       true,
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{
@@ -146,7 +144,6 @@ func TestAcc_GitlabIntegrationJira_basic(t *testing.T) {
 
 func TestAcc_GitlabIntegrationJira_projectKey(t *testing.T) {
 	var jiraService gitlab.JiraService
-	jiraResourceName := "gitlab_integration_jira.jira"
 	project := testutil.CreateProject(t)
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -166,12 +163,12 @@ func TestAcc_GitlabIntegrationJira_projectKey(t *testing.T) {
 					  merge_requests_events    = false
 					}`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabIntegrationJiraExists(jiraResourceName, &jiraService),
+					testAccCheckGitlabIntegrationJiraExists("gitlab_integration_jira.jira", &jiraService),
 				),
 			},
 			// Verify Import
 			{
-				ResourceName:      jiraResourceName,
+				ResourceName:      "gitlab_integration_jira.jira",
 				ImportState:       true,
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{
@@ -185,8 +182,6 @@ func TestAcc_GitlabIntegrationJira_projectKey(t *testing.T) {
 
 func TestAcc_GitlabIntegrationJira_authType_basicAuth(t *testing.T) {
 	var jiraService gitlab.JiraService
-	jiraResourceName := "gitlab_service_jira.jira"
-
 	project := testutil.CreateProject(t)
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -196,7 +191,7 @@ func TestAcc_GitlabIntegrationJira_authType_basicAuth(t *testing.T) {
 			// Create a project and a jira service
 			{
 				Config: fmt.Sprintf(`
-				resource "gitlab_service_jira" "jira" {
+				resource "gitlab_integration_jira" "jira" {
 				  project  = "%d"
 				  url      = "https://test.com"
 					jira_auth_type = 0
@@ -207,18 +202,18 @@ func TestAcc_GitlabIntegrationJira_authType_basicAuth(t *testing.T) {
 				}
 				`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabIntegrationJiraExists(jiraResourceName, &jiraService),
-					resource.TestCheckResourceAttr(jiraResourceName, "url", "https://test.com"),
-					resource.TestCheckResourceAttr(jiraResourceName, "jira_auth_type", "0"),
-					resource.TestCheckResourceAttr(jiraResourceName, "username", "user1"),
-					resource.TestCheckResourceAttr(jiraResourceName, "password", "mypass"),
-					resource.TestCheckResourceAttr(jiraResourceName, "commit_events", "true"),
-					resource.TestCheckResourceAttr(jiraResourceName, "merge_requests_events", "false"),
+					testAccCheckGitlabIntegrationJiraExists("gitlab_integration_jira.jira", &jiraService),
+					resource.TestCheckResourceAttr("gitlab_integration_jira.jira", "url", "https://test.com"),
+					resource.TestCheckResourceAttr("gitlab_integration_jira.jira", "jira_auth_type", "0"),
+					resource.TestCheckResourceAttr("gitlab_integration_jira.jira", "username", "user1"),
+					resource.TestCheckResourceAttr("gitlab_integration_jira.jira", "password", "mypass"),
+					resource.TestCheckResourceAttr("gitlab_integration_jira.jira", "commit_events", "true"),
+					resource.TestCheckResourceAttr("gitlab_integration_jira.jira", "merge_requests_events", "false"),
 				),
 			},
 			// Verify Import
 			{
-				ResourceName:      jiraResourceName,
+				ResourceName:      "gitlab_integration_jira.jira",
 				ImportState:       true,
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{
@@ -232,8 +227,6 @@ func TestAcc_GitlabIntegrationJira_authType_basicAuth(t *testing.T) {
 
 func TestAcc_GitlabIntegrationJira_authType_tokenAuth(t *testing.T) {
 	var jiraService gitlab.JiraService
-	jiraResourceName := "gitlab_service_jira.jira"
-
 	project := testutil.CreateProject(t)
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -243,7 +236,7 @@ func TestAcc_GitlabIntegrationJira_authType_tokenAuth(t *testing.T) {
 			// Create a project and a jira service
 			{
 				Config: fmt.Sprintf(`
-				resource "gitlab_service_jira" "jira" {
+				resource "gitlab_integration_jira" "jira" {
 				  project  = "%d"
 				  url      = "https://test.com"
 				  jira_auth_type = 1
@@ -252,61 +245,16 @@ func TestAcc_GitlabIntegrationJira_authType_tokenAuth(t *testing.T) {
 				}
 				`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabIntegrationJiraExists(jiraResourceName, &jiraService),
-					resource.TestCheckResourceAttr(jiraResourceName, "url", "https://test.com"),
-					resource.TestCheckResourceAttr(jiraResourceName, "jira_auth_type", "1"),
-					resource.TestCheckResourceAttr(jiraResourceName, "password", "mypass"),
-					resource.TestCheckResourceAttr(jiraResourceName, "use_inherited_settings", "false"),
+					testAccCheckGitlabIntegrationJiraExists("gitlab_integration_jira.jira", &jiraService),
+					resource.TestCheckResourceAttr("gitlab_integration_jira.jira", "url", "https://test.com"),
+					resource.TestCheckResourceAttr("gitlab_integration_jira.jira", "jira_auth_type", "1"),
+					resource.TestCheckResourceAttr("gitlab_integration_jira.jira", "password", "mypass"),
+					resource.TestCheckResourceAttr("gitlab_integration_jira.jira", "use_inherited_settings", "false"),
 				),
 			},
 			// Verify Import
 			{
-				ResourceName:      jiraResourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
-				ImportStateVerifyIgnore: []string{
-					"password",
-					"comment_on_event_enabled", // ignored due to a bug in GitLab 17.9
-				},
-			},
-		},
-	})
-}
-
-func TestAcc_GitlabIntegrationJira_backwardsCompatibility(t *testing.T) {
-	var jiraService gitlab.JiraService
-	jiraResourceName := "gitlab_service_jira.jira"
-
-	project := testutil.CreateProject(t)
-
-	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
-		CheckDestroy:             testAccCheckGitlabIntegrationJiraDestroy,
-		Steps: []resource.TestStep{
-			// Create a project and a jira service
-			{
-				Config: fmt.Sprintf(`
-				resource "gitlab_service_jira" "jira" {
-				  project  = "%d"
-				  url      = "https://test.com"
-				  username = "user1"
-				  password = "mypass"
-				  commit_events = true
-				  merge_requests_events    = false
-				}
-				`, project.ID),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabIntegrationJiraExists(jiraResourceName, &jiraService),
-					resource.TestCheckResourceAttr(jiraResourceName, "url", "https://test.com"),
-					resource.TestCheckResourceAttr(jiraResourceName, "username", "user1"),
-					resource.TestCheckResourceAttr(jiraResourceName, "password", "mypass"),
-					resource.TestCheckResourceAttr(jiraResourceName, "commit_events", "true"),
-					resource.TestCheckResourceAttr(jiraResourceName, "merge_requests_events", "false"),
-				),
-			},
-			// Verify Import
-			{
-				ResourceName:      jiraResourceName,
+				ResourceName:      "gitlab_integration_jira.jira",
 				ImportState:       true,
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{
