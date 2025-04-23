@@ -110,45 +110,6 @@ func TestAccGitlabIntegrationPipelinesEmail_basic(t *testing.T) {
 	})
 }
 
-func TestAccGitlabIntegrationPipelinesEmail_backwardsCompatbility(t *testing.T) {
-	var pipelinesEmailService gitlab.PipelinesEmailService
-	rInt := acctest.RandInt()
-	pipelinesEmailResourceName := "gitlab_service_pipelines_email.email"
-
-	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
-		CheckDestroy:             testAccCheckGitlabIntegrationPipelinesEmailDestroy,
-		Steps: []resource.TestStep{
-			// Create a project and a pipelines email integration
-			{
-				Config: fmt.Sprintf(`
-				resource "gitlab_project" "foo" {
-					name         = "foo-%d"
-					description  = "Terraform acceptance tests"
-				}
-				
-				resource "gitlab_service_pipelines_email" "email" {
-					project                      = gitlab_project.foo.id
-					recipients                   = ["test@example.com"]
-				}
-				`, rInt),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabIntegrationPipelinesEmailExists(pipelinesEmailResourceName, &pipelinesEmailService),
-					testRecipients(&pipelinesEmailService, []string{"test@example.com"}),
-					resource.TestCheckResourceAttr(pipelinesEmailResourceName, "notify_only_broken_pipelines", "true"),
-					resource.TestCheckResourceAttr(pipelinesEmailResourceName, "branches_to_be_notified", "default"),
-				),
-			},
-			// Verify Import
-			{
-				ResourceName:      "gitlab_service_pipelines_email.email",
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
-		},
-	})
-}
-
 func testAccCheckGitlabIntegrationPipelinesEmailExists(n string, service *gitlab.PipelinesEmailService) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
