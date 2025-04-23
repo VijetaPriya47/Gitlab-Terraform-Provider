@@ -15,12 +15,12 @@ import (
 )
 
 var _ = registerResource("gitlab_project_approval_rule", func() *schema.Resource {
-	var validRuleTypeValues = []string{
+	validRuleTypeValues := []string{
 		"regular",
 		"any_approver",
 		"report_approver",
 	}
-	var validReportTypeValues = []string{
+	validReportTypeValues := []string{
 		"code_coverage",
 	}
 	return &schema.Resource{
@@ -126,7 +126,7 @@ func resourceGitlabProjectApprovalRuleCreate(ctx context.Context, d *schema.Reso
 
 	project := d.Get("project").(string)
 
-	//Retrieve the rule_type, which is needed to determine if the rule is "any_approver"
+	// Retrieve the rule_type, which is needed to determine if the rule is "any_approver"
 	ruleType := ""
 	if v, ok := d.GetOk("rule_type"); ok {
 		ruleType = v.(string)
@@ -145,8 +145,8 @@ func resourceGitlabProjectApprovalRuleCreate(ctx context.Context, d *schema.Reso
 		anyApproverRuleId = ruleId
 	}
 
-	//If our ruleID is not 0, we need to update instead of create.
-	//ruleID will be 0 if the rule is not found, or if the import is disabled
+	// If our ruleID is not 0, we need to update instead of create.
+	// ruleID will be 0 if the rule is not found, or if the import is disabled
 	ruleIDString := ""
 	if anyApproverRuleId == 0 {
 
@@ -164,33 +164,27 @@ func resourceGitlabProjectApprovalRuleCreate(ctx context.Context, d *schema.Reso
 		if ruleType, ok := d.GetOk("rule_type"); ok {
 			options.RuleType = gitlab.Ptr(ruleType.(string))
 
-			supportsReportType, err := api.IsGitLabVersionAtLeast(ctx, client, "17.2")()
-			if err != nil {
-				return diag.FromErr(err)
-			}
-			if supportsReportType {
-				if reportType, ok := d.GetOk("report_type"); ok {
+			if reportType, ok := d.GetOk("report_type"); ok {
 
-					if ruleType.(string) != "report_approver" {
-						return diag.Diagnostics{
-							diag.Diagnostic{
-								Severity: diag.Error,
-								Summary:  "rule_type incorrect",
-								Detail:   "rule_type should be set to `report_approver`",
-							},
-						}
+				if ruleType.(string) != "report_approver" {
+					return diag.Diagnostics{
+						diag.Diagnostic{
+							Severity: diag.Error,
+							Summary:  "rule_type incorrect",
+							Detail:   "rule_type should be set to `report_approver`",
+						},
 					}
-					if name != "Coverage-Check" {
-						return diag.Diagnostics{
-							diag.Diagnostic{
-								Severity: diag.Error,
-								Summary:  "name incorrect",
-								Detail:   "if rule_type is `report_approver` then name should be set to 'Coverage-Check'",
-							},
-						}
-					}
-					options.ReportType = gitlab.Ptr(reportType.(string))
 				}
+				if name != "Coverage-Check" {
+					return diag.Diagnostics{
+						diag.Diagnostic{
+							Severity: diag.Error,
+							Summary:  "name incorrect",
+							Detail:   "if rule_type is `report_approver` then name should be set to 'Coverage-Check'",
+						},
+					}
+				}
+				options.ReportType = gitlab.Ptr(reportType.(string))
 			}
 		}
 
