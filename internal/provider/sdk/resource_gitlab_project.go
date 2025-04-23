@@ -820,24 +820,11 @@ var resourceContainerExpirationPolicyAttributesSchema = &schema.Resource{
 			Optional:    true,
 			Computed:    true,
 		},
-		"name_regex": {
-			Description: "The regular expression to match image names to delete.",
-			Deprecated:  "`name_regex` has been deprecated. Use `name_regex_delete` instead.",
-			Type:        schema.TypeString,
-			ConflictsWith: []string{
-				"container_expiration_policy.0.name_regex_delete",
-			},
-			Optional: true,
-			Computed: true,
-		},
 		"name_regex_delete": {
 			Description: "The regular expression to match image names to delete.",
-			ConflictsWith: []string{
-				"container_expiration_policy.0.name_regex",
-			},
-			Type:     schema.TypeString,
-			Optional: true,
-			Computed: true,
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
 		},
 		"name_regex_keep": {
 			Description: "The regular expression to match image names to keep.",
@@ -1998,14 +1985,12 @@ func flattenContainerExpirationPolicy(policy *gitlab.ContainerExpirationPolicy) 
 		return
 	}
 
-	// We're setting both name_regex and name_regex_delete to keep backwards compatibility.
 	values = []map[string]interface{}{
 		{
 			"cadence":           policy.Cadence,
 			"keep_n":            policy.KeepN,
 			"older_than":        policy.OlderThan,
 			"name_regex_delete": policy.NameRegex,
-			"name_regex":        policy.NameRegex,
 			"name_regex_keep":   policy.NameRegexKeep,
 			"enabled":           policy.Enabled,
 		},

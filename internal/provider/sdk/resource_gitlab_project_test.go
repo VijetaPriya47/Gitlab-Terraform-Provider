@@ -2672,10 +2672,7 @@ func TestAccGitlabProject_containerExpirationPolicyRegex(t *testing.T) {
 					testAccCheckGitlabProjectExists("gitlab_project.this", &received),
 					resource.TestCheckResourceAttr("gitlab_project.this", "container_expiration_policy.0.enabled", "true"),
 					resource.TestCheckResourceAttr("gitlab_project.this", "container_expiration_policy.0.cadence", "1d"),
-
-					// Check that both name_regex values are set properly, since setting one will set them both.
 					resource.TestCheckResourceAttr("gitlab_project.this", "container_expiration_policy.0.name_regex_delete", "[0-9a-zA-Z]{40}"),
-					resource.TestCheckResourceAttr("gitlab_project.this", "container_expiration_policy.0.name_regex", "[0-9a-zA-Z]{40}"),
 				),
 			},
 			// Verify Import
@@ -2683,36 +2680,6 @@ func TestAccGitlabProject_containerExpirationPolicyRegex(t *testing.T) {
 				ResourceName:      "gitlab_project.this",
 				ImportState:       true,
 				ImportStateVerify: true,
-			},
-		},
-	})
-}
-
-func TestAccGitlabProject_doubleContainerExpirationPolicyRegexError(t *testing.T) {
-	rInt := acctest.RandInt()
-
-	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
-		CheckDestroy:             testAccCheckGitlabProjectDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: fmt.Sprintf(`
-					resource "gitlab_project" "this" {
-						name = "foo-%d"
-
-						container_expiration_policy {
-							enabled = true
-							cadence = "1d"
-							keep_n            = 5
-							name_regex_keep   = ""
-							older_than        = "7d"
-							name_regex_delete = "[0-9a-zA-Z]{40}"
-							name_regex        = "[0-9a-zA-Z]{40}"
-						}
-
-						visibility_level = "public"
-					}`, rInt),
-				ExpectError: regexp.MustCompile("Error: Conflicting configuration arguments"),
 			},
 		},
 	})
