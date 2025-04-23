@@ -64,22 +64,12 @@ func gitlabGroupLDAPLinkSchema() map[string]*schema.Schema {
 			ForceNew:      true,
 			ConflictsWith: []string{"cn"},
 		},
-		"access_level": {
-			Description:      fmt.Sprintf("Minimum access level for members of the LDAP group. Valid values are: %s", utils.RenderValueListForDocs(api.ValidGroupAccessLevelNames)),
-			Type:             schema.TypeString,
-			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(api.ValidGroupAccessLevelNames, false)),
-			Optional:         true,
-			ForceNew:         true,
-			Deprecated:       "Use `group_access` instead of the `access_level` attribute.",
-			ExactlyOneOf:     []string{"access_level", "group_access"},
-		},
 		"group_access": {
 			Description:      fmt.Sprintf("Minimum access level for members of the LDAP group. Valid values are: %s", utils.RenderValueListForDocs(api.ValidGroupAccessLevelNames)),
 			Type:             schema.TypeString,
 			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(api.ValidGroupAccessLevelNames, false)),
-			Optional:         true,
+			Required:         true,
 			ForceNew:         true,
-			ExactlyOneOf:     []string{"access_level", "group_access"},
 		},
 		"member_role_id": {
 			Description: "The ID of a custom member role. Only available for Ultimate instances. When using a custom role, the `group_access` must match the base role used to create the custom role.",
@@ -166,15 +156,7 @@ func resourceGitlabGroupLdapLinkCreate(ctx context.Context, d *schema.ResourceDa
 	group := d.Get("group").(string)
 	cn := d.Get("cn").(string)
 	filter := d.Get("filter").(string)
-
-	var groupAccess gitlab.AccessLevelValue
-	if v, ok := d.GetOk("group_access"); ok {
-		groupAccess = gitlab.AccessLevelValue(api.AccessLevelNameToValue[v.(string)])
-	} else if v, ok := d.GetOk("access_level"); ok {
-		groupAccess = gitlab.AccessLevelValue(api.AccessLevelNameToValue[v.(string)])
-	} else {
-		return diag.Errorf("Neither `group_access` nor `access_level` (deprecated) is set")
-	}
+	groupAccess := gitlab.AccessLevelValue(api.AccessLevelNameToValue[d.Get("group_access").(string)])
 
 	ldapProvider := d.Get("ldap_provider").(string)
 	force := d.Get("force").(bool)
