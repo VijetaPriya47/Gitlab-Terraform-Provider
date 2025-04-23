@@ -55,8 +55,6 @@ func gitlabProjectVariableGetSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Optional:    true,
 			Default:     "*",
-			// Versions of GitLab prior to 13.4 cannot update environment_scope.
-			ForceNew: true,
 		},
 		"raw": {
 			Description: "Whether the variable is treated as a raw string. Default: false. When true, variables in the value are not expanded.",
