@@ -803,3 +803,178 @@ func testAccCheckGitlabGroupAccessTokenDestroy(s *terraform.State) error {
 
 	return nil
 }
+
+// TestAccGitlabGroupAccessToken_rotateRevokedTokenGracefully tests the scenario where
+// a token has been externally revoked but Terraform gracefully handles rotation
+func TestAccGitlabGroupAccessToken_rotateRevokedTokenGracefully(t *testing.T) {
+	group := testutil.CreateGroups(t, 1)[0]
+	tokenToCheck := ""
+
+	// All steps use the same config. Only the external circumstances change.
+	config := fmt.Sprintf(`
+		resource "gitlab_group_access_token" "revoked" {
+		  name = "token_to_be_revoked"
+		  group = %d
+		  access_level = "developer"
+		  scopes = ["api"]
+
+		  // Create a token good for 30 days, that rotates after 15 days
+		  rotation_configuration = {
+			  expiration_days = 30
+			  rotate_before_days = 15
+		  }
+		}
+		`, group.ID)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		CheckDestroy:             testAccCheckGitlabGroupAccessTokenDestroy,
+		Steps: []resource.TestStep{
+			// Create a Group Access Token
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_group_access_token.revoked", "rotation_configuration.expiration_days", "30"),
+					resource.TestCheckResourceAttrWith("gitlab_group_access_token.revoked", "token", func(value string) error {
+						// Store token value to compare later
+						tokenToCheck = value
+						return nil
+					}),
+				),
+			},
+			// Simulate external revocation of the token, followed by `terraform refresh`.
+			{
+				PreConfig: func() {
+					if err := revokeGroupAccessToken(group.ID, "token_to_be_revoked"); err != nil {
+						t.Fatalf("Failed to revoke token: %v", err)
+					}
+				},
+				// Use RefreshState to force reading the current state
+				RefreshState: true,
+				// We expect changes since the token is now revoked
+				ExpectNonEmptyPlan: true,
+			},
+			// Apply the config. This should recreate the token since it was revoked externally.
+			{
+				Config: config,
+				// Success case - no error expected
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_group_access_token.revoked", "name", "token_to_be_revoked"),
+					resource.TestCheckResourceAttr("gitlab_group_access_token.revoked", "active", "true"),
+					resource.TestCheckResourceAttr("gitlab_group_access_token.revoked", "revoked", "false"),
+					resource.TestCheckResourceAttrWith("gitlab_group_access_token.revoked", "token", func(value string) error {
+						// Verify new token is different from the revoked one
+						if value == tokenToCheck {
+							return fmt.Errorf("token was not rotated after being revoked")
+						}
+						return nil
+					}),
+				),
+			},
+			// Verify upstream resource with an import
+			{
+				ResourceName:            "gitlab_group_access_token.revoked",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"token", "rotation_configuration"},
+			},
+		},
+	})
+}
+
+// TestAccGitlabGroupAccessToken_revokedTokenWithPastExpiry tests that a token
+// with an absolute expiry date is not recreated once it expires.
+func TestAccGitlabGroupAccessToken_revokedTokenWithPastExpiry(t *testing.T) {
+	group := testutil.CreateGroups(t, 1)[0]
+
+	expiryDate := testutil.GetCurrentTimePlusDays(t, 2)
+	expiryDateStr := time.Time(expiryDate).Format(api.Iso8601)
+	futureDate := testutil.GetCurrentTimestampPlusDays(t, 10)
+
+	// Config with short expiration date
+	config := fmt.Sprintf(`
+		resource "gitlab_group_access_token" "expired" {
+		  name = "token_to_expire"
+		  group = %d
+		  access_level = "developer"
+		  scopes = ["api"]
+
+		  // Will expire in 2 days
+		  expires_at = "%s"
+		}
+	`, group.ID, expiryDateStr)
+
+	// Not running in parallel since we're manipulating environment variables
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		CheckDestroy:             testAccCheckGitlabGroupAccessTokenDestroy,
+		Steps: []resource.TestStep{
+			// Create a Group Access Token that will expire soon
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_group_access_token.expired", "expires_at", expiryDateStr),
+					resource.TestCheckResourceAttr("gitlab_group_access_token.expired", "active", "true"),
+				),
+			},
+			// Now move time forward past the expiration and revoke the token
+			{
+				PreConfig: func() {
+					// Set time to future, so the token is expired
+					t.Setenv("GITLAB_TESTING_TIME", futureDate.Format(time.RFC3339))
+
+					if err := revokeGroupAccessToken(group.ID, "token_to_expire"); err != nil {
+						t.Fatalf("Failed to revoke token: %v", err)
+					}
+				},
+				// Refresh state to detect the token is expired and revoked
+				RefreshState: true,
+				// We do NOT expect changes since the token was expired anyway
+				ExpectNonEmptyPlan: false,
+			},
+			// Apply the config again - this should not attempt to recreate the token
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_group_access_token.expired", "expires_at", expiryDateStr),
+					resource.TestCheckResourceAttr("gitlab_group_access_token.expired", "active", "false"),
+					resource.TestCheckResourceAttr("gitlab_group_access_token.expired", "revoked", "true"),
+				),
+			},
+			// Verify with import
+			{
+				ResourceName:            "gitlab_group_access_token.expired",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"token"},
+			},
+		},
+	})
+}
+
+// Helper function to revoke a group access token
+func revokeGroupAccessToken(groupID int, tokenName string) error {
+	tokenID, err := groupAccessTokenID(groupID, tokenName)
+	if err != nil {
+		return err
+	}
+
+	_, err = testutil.TestGitlabClient.GroupAccessTokens.RevokeGroupAccessToken(groupID, tokenID, nil)
+	return err
+}
+
+// Helper function to get the ID of a group access token
+func groupAccessTokenID(groupID int, tokenName string) (int, error) {
+	tokens, _, err := testutil.TestGitlabClient.GroupAccessTokens.ListGroupAccessTokens(fmt.Sprintf("%d", groupID), nil)
+	if err != nil {
+		return 0, err
+	}
+
+	for _, token := range tokens {
+		if token.Name == tokenName {
+			return token.ID, nil
+		}
+	}
+
+	return 0, fmt.Errorf("group %d token with name %s does not exist", groupID, tokenName)
+}

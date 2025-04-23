@@ -265,6 +265,13 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) ModifyPlan(ctx context.Co
 		return
 	}
 
+	// Check whether the token was revoked.
+	// Re-create it if it's been revoked externally, to ensure its available.
+	if stateData != nil && stateData.Revoked.ValueBool() {
+		r.modifyPlanRevoked(ctx, stateData, planData, resp)
+		return
+	}
+
 	// Check to determine if we need to rotate the expiry date
 	shouldSetExpiration := false
 
@@ -348,6 +355,48 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) ModifyPlan(ctx context.Co
 			resp.Diagnostics.Append(resp.Plan.Set(ctx, planData)...)
 		}
 	}
+}
+
+// modifyPlanRevoked handles token rotation if the token has been revoked externally.
+func (r *gitlabGroupServiceAccountAccessTokenResource) modifyPlanRevoked(ctx context.Context, stateData *gitlabGroupServiceAccountAccessTokenResourceModel, planData *gitlabGroupServiceAccountAccessTokenResourceModel, resp *resource.ModifyPlanResponse) {
+	// If it has an expiration date, check if it's in the future
+	if stateData.RotationConfiguration == nil && !stateData.ExpiresAt.IsNull() && !stateData.ExpiresAt.IsUnknown() {
+		expiryDate, err := time.Parse(api.Iso8601, stateData.ExpiresAt.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Error parsing expiry date",
+				fmt.Sprintf("Could not parse expiry date %s: %s", stateData.ExpiresAt.ValueString(), err),
+			)
+			return
+		}
+
+		// If the expiry date is in the past, do not recreate the token.
+		if expiryDate.Before(api.CurrentTime()) {
+			tflog.Debug(ctx, "[gitlab_group_service_account_access_token] Token has been revoked externally but was expired anyway, no recreation needed")
+			return
+		}
+	}
+
+	tflog.Debug(ctx, "[gitlab_group_service_account_access_token] Token has been revoked externally and is still needed, marking for recreation")
+
+	// Tell Terraform that a change to the revoked attribute requires replacing the resource
+	resp.RequiresReplace = append(resp.RequiresReplace, path.Root("revoked"))
+
+	// Calculate new expiration date
+	expiryDate, err := r.determineExpiryDate(planData)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error determining new expiry date",
+			fmt.Sprintf("Could not determine new expiry date: %s", err),
+		)
+		return
+	}
+
+	// Set the planned values
+	planData.ExpiresAt = types.StringValue(expiryDate.String())
+	planData.Revoked = types.BoolValue(false) // Expect the new token to be not revoked
+
+	resp.Diagnostics.Append(resp.Plan.Set(ctx, planData)...)
 }
 
 // Validate that the expiration date is valid. This runs during `ModifyPlan` instead of in a `ValidateConfig` because the GitLab client hasn't been
