@@ -183,7 +183,7 @@ func (r *gitlabGroupIssueBoardResource) Read(ctx context.Context, req resource.R
 	groupIssueBoard, _, err := r.client.GroupIssueBoards.GetGroupIssueBoard(groupID, boardId, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			tflog.Debug(ctx, "group issue board does not exist, removing from state", map[string]interface{}{
+			tflog.Debug(ctx, "group issue board does not exist, removing from state", map[string]any{
 				"group": groupID, "environment": boardID,
 			})
 			resp.State.RemoveResource(ctx)
@@ -323,7 +323,7 @@ func (r *gitlabGroupIssueBoardResource) Update(ctx context.Context, req resource
 	r.groupIssueBoardToStateModel(ctx, groupID, issueBoard, data)
 
 	// Log the creation of the resource
-	tflog.Debug(ctx, "updated a group issue board", map[string]interface{}{
+	tflog.Debug(ctx, "updated a group issue board", map[string]any{
 		"group": groupID, "board": issueBoard.Name,
 	})
 
@@ -426,7 +426,7 @@ func (r *gitlabGroupIssueBoardResource) Create(ctx context.Context, req resource
 		// If we get here and we have a hydrated issue board, save the board to state.
 		// something... really weird happened.
 		if issueBoard != nil {
-			tflog.Warn(ctx, "Creating Group Issue Board encountered an error, but still returned a hydrated issue board. Aborting.", map[string]interface{}{
+			tflog.Warn(ctx, "Creating Group Issue Board encountered an error, but still returned a hydrated issue board. Aborting.", map[string]any{
 				"group": groupID,
 				"board": issueBoard.Name,
 			})
@@ -453,7 +453,7 @@ func (r *gitlabGroupIssueBoardResource) Create(ctx context.Context, req resource
 
 		// If we get here and we have a hydrated issue board, save the board to state before we error.
 		if issueBoard != nil {
-			tflog.Warn(ctx, "Creating Group Issue Board encountered an error, but still returned a hydrated issue board. Aborting.", map[string]interface{}{
+			tflog.Warn(ctx, "Creating Group Issue Board encountered an error, but still returned a hydrated issue board. Aborting.", map[string]any{
 				"group": groupID,
 				"board": issueBoard.Name,
 			})
@@ -509,7 +509,7 @@ func (r *gitlabGroupIssueBoardResource) Create(ctx context.Context, req resource
 	r.groupIssueBoardToStateModel(ctx, groupID, issueBoard, data)
 
 	// Log the creation of the resource
-	tflog.Debug(ctx, "created a group issue board", map[string]interface{}{
+	tflog.Debug(ctx, "created a group issue board", map[string]any{
 		"group": groupID, "board": issueBoard.Name,
 	})
 

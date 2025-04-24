@@ -130,8 +130,8 @@ func gitlabGroupHookSchema() map[string]*schema.Schema {
 	}
 }
 
-func gitlabGroupHookToStateMap(group string, hook *gitlab.GroupHook) map[string]interface{} {
-	stateMap := make(map[string]interface{})
+func gitlabGroupHookToStateMap(group string, hook *gitlab.GroupHook) map[string]any {
+	stateMap := make(map[string]any)
 	stateMap["group"] = group
 	stateMap["group_id"] = hook.GroupID
 	stateMap["hook_id"] = hook.ID

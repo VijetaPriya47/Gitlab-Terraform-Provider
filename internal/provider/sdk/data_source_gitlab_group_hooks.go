@@ -33,7 +33,7 @@ var _ = registerDataSource("gitlab_group_hooks", func() *schema.Resource {
 	}
 })
 
-func dataSourceGitlabGroupHooksRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceGitlabGroupHooksRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	group := d.Get("group").(string)
@@ -61,7 +61,7 @@ func dataSourceGitlabGroupHooksRead(ctx context.Context, d *schema.ResourceData,
 	return nil
 }
 
-func flattenGitlabGroupHooks(group string, hooks []*gitlab.GroupHook) (values []map[string]interface{}) {
+func flattenGitlabGroupHooks(group string, hooks []*gitlab.GroupHook) (values []map[string]any) {
 	for _, hook := range hooks {
 		values = append(values, gitlabGroupHookToStateMap(group, hook))
 	}

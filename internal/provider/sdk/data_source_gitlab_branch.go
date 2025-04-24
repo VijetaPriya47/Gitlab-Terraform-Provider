@@ -75,7 +75,7 @@ var _ = registerDataSource("gitlab_branch", func() *schema.Resource {
 	}
 })
 
-func dataSourceGitlabBranchRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceGitlabBranchRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	name := d.Get("name").(string)
 	project := d.Get("project").(string)

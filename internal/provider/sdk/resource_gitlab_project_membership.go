@@ -108,7 +108,7 @@ func resourceGitlabProjectMembershipResourceV0() *schema.Resource {
 }
 
 // resourceGitlabProjectMembershipStateUpgradeV0 performs the state migration from V0 to V1.
-func resourceGitlabProjectMembershipStateUpgradeV0(ctx context.Context, rawState map[string]interface{}, meta interface{}) (map[string]interface{}, error) {
+func resourceGitlabProjectMembershipStateUpgradeV0(ctx context.Context, rawState map[string]any, meta any) (map[string]any, error) {
 	if rawState["project_id"] != nil {
 		projectId, ok := rawState["project_id"].(string)
 		if !ok {
@@ -116,12 +116,12 @@ func resourceGitlabProjectMembershipStateUpgradeV0(ctx context.Context, rawState
 		}
 		rawState["project"] = projectId
 		delete(rawState, "project_id")
-		tflog.Debug(ctx, "attempting state migration from V0 to V1 - changing the `project_id` attribute to `project`", map[string]interface{}{"project_id": projectId})
+		tflog.Debug(ctx, "attempting state migration from V0 to V1 - changing the `project_id` attribute to `project`", map[string]any{"project_id": projectId})
 	}
 	return rawState, nil
 }
 
-func resourceGitlabProjectMembershipCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectMembershipCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	userId := d.Get("user_id").(int)
@@ -150,7 +150,7 @@ func resourceGitlabProjectMembershipCreate(ctx context.Context, d *schema.Resour
 	return resourceGitlabProjectMembershipRead(ctx, d, meta)
 }
 
-func resourceGitlabProjectMembershipRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectMembershipRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	id := d.Id()
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab project projectMember %s", id))
@@ -186,7 +186,7 @@ func projectAndUserIdFromId(ctx context.Context, id string) (string, int, error)
 	return project, userId, e
 }
 
-func resourceGitlabProjectMembershipUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectMembershipUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	userId := d.Get("user_id").(int)
@@ -212,7 +212,7 @@ func resourceGitlabProjectMembershipUpdate(ctx context.Context, d *schema.Resour
 	return resourceGitlabProjectMembershipRead(ctx, d, meta)
 }
 
-func resourceGitlabProjectMembershipDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectMembershipDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	id := d.Id()

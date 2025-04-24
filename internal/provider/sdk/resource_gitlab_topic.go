@@ -51,7 +51,7 @@ var _ = registerResource("gitlab_topic", func() *schema.Resource {
 	}
 })
 
-func resourceGitlabTopicCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabTopicCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	options := &gitlab.CreateTopicOptions{
@@ -85,7 +85,7 @@ func resourceGitlabTopicCreate(ctx context.Context, d *schema.ResourceData, meta
 	return resourceGitlabTopicRead(ctx, d, meta)
 }
 
-func resourceGitlabTopicRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabTopicRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	topicID, err := strconv.Atoi(d.Id())
@@ -112,7 +112,7 @@ func resourceGitlabTopicRead(ctx context.Context, d *schema.ResourceData, meta i
 	return nil
 }
 
-func resourceGitlabTopicUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabTopicUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	options := &gitlab.UpdateTopicOptions{}
 
@@ -152,7 +152,7 @@ func resourceGitlabTopicUpdate(ctx context.Context, d *schema.ResourceData, meta
 	return resourceGitlabTopicRead(ctx, d, meta)
 }
 
-func resourceGitlabTopicDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabTopicDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	topicID, err := strconv.Atoi(d.Id())
 	if err != nil {

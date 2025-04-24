@@ -213,7 +213,7 @@ func (r *gitlabGroupEpicBoardResource) Read(ctx context.Context, req resource.Re
 	groupEpicBoard, _, err := r.client.GroupEpicBoards.GetGroupEpicBoard(groupID, boardId, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			tflog.Debug(ctx, "group epic board does not exist, removing from state", map[string]interface{}{
+			tflog.Debug(ctx, "group epic board does not exist, removing from state", map[string]any{
 				"group": groupID, "environment": boardID,
 			})
 			resp.State.RemoveResource(ctx)
@@ -288,7 +288,7 @@ func (r *gitlabGroupEpicBoardResource) Update(ctx context.Context, req resource.
 				}
 			}`, boardId, boardName, labels_str),
 	}
-	tflog.Debug(ctx, "executing GraphQL Query to create epic board", map[string]interface{}{
+	tflog.Debug(ctx, "executing GraphQL Query to create epic board", map[string]any{
 		"query": query.Query,
 	})
 
@@ -319,7 +319,7 @@ func (r *gitlabGroupEpicBoardResource) Update(ctx context.Context, req resource.
 	groupEpicBoard, _, err = r.client.GroupEpicBoards.GetGroupEpicBoard(groupID, EpicBoardId, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			tflog.Debug(ctx, "group epic board does not exist, removing from state", map[string]interface{}{
+			tflog.Debug(ctx, "group epic board does not exist, removing from state", map[string]any{
 				"group": groupID, "environment": EpicBoardId,
 			})
 			resp.State.RemoveResource(ctx)
@@ -333,7 +333,7 @@ func (r *gitlabGroupEpicBoardResource) Update(ctx context.Context, req resource.
 	r.groupEpicBoardToStateModel(groupID, groupEpicBoard, data)
 
 	// Log the creation of the resource
-	tflog.Debug(ctx, "updated a group epic board", map[string]interface{}{
+	tflog.Debug(ctx, "updated a group epic board", map[string]any{
 		"group": groupID, "board": groupEpicBoard.Name,
 	})
 
@@ -390,11 +390,11 @@ func (r *gitlabGroupEpicBoardResource) Delete(ctx context.Context, req resource.
 			}`, boardId),
 	}
 
-	tflog.Debug(ctx, "executing GraphQL Query to delete epic board", map[string]interface{}{
+	tflog.Debug(ctx, "executing GraphQL Query to delete epic board", map[string]any{
 		"query": query.Query,
 	})
 
-	var destroyResp map[string]interface{}
+	var destroyResp map[string]any
 	if _, err = api.SendGraphQLRequest(ctx, r.client, query, &destroyResp); err != nil {
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to delete epic board: %s from query %s", err.Error(), query.Query))
 		return
@@ -434,7 +434,7 @@ func (r *gitlabGroupEpicBoardResource) Create(ctx context.Context, req resource.
 	group, _, err := r.client.Groups.GetGroup(groupID, nil, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			tflog.Debug(ctx, "group does not exist, removing resource from state", map[string]interface{}{
+			tflog.Debug(ctx, "group does not exist, removing resource from state", map[string]any{
 				"group": groupID,
 			})
 			return
@@ -469,7 +469,7 @@ func (r *gitlabGroupEpicBoardResource) Create(ctx context.Context, req resource.
 				}
 			}`, group.FullPath, boardName),
 	}
-	tflog.Debug(ctx, "executing GraphQL Query to create epic board", map[string]interface{}{
+	tflog.Debug(ctx, "executing GraphQL Query to create epic board", map[string]any{
 		"query": query.Query,
 	})
 
@@ -524,7 +524,7 @@ func (r *gitlabGroupEpicBoardResource) Create(ctx context.Context, req resource.
 				}
 			}`, boardID, v.ID),
 		}
-		var listResp map[string]interface{}
+		var listResp map[string]any
 		if _, err = api.SendGraphQLRequest(ctx, r.client, query, &listResp); err != nil {
 			resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to create epic board list: %s from query %s", err.Error(), query.Query))
 		}
@@ -540,7 +540,7 @@ func (r *gitlabGroupEpicBoardResource) Create(ctx context.Context, req resource.
 	groupEpicBoard, _, err := r.client.GroupEpicBoards.GetGroupEpicBoard(group.ID, EpicBoardId, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			tflog.Debug(ctx, "group epic board does not exist, removing from state", map[string]interface{}{
+			tflog.Debug(ctx, "group epic board does not exist, removing from state", map[string]any{
 				"group": groupID, "environment": EpicBoardId,
 			})
 			resp.State.RemoveResource(ctx)
@@ -554,7 +554,7 @@ func (r *gitlabGroupEpicBoardResource) Create(ctx context.Context, req resource.
 	r.groupEpicBoardToStateModel(groupID, groupEpicBoard, data)
 
 	// Log the creation of the resource
-	tflog.Debug(ctx, "created a group epic board", map[string]interface{}{
+	tflog.Debug(ctx, "created a group epic board", map[string]any{
 		"group": groupID, "board": groupEpicBoard.Name,
 	})
 

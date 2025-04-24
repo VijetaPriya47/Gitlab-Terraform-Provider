@@ -74,7 +74,7 @@ func resourceGitlabPipelineTriggerResourceV0() *schema.Resource {
 }
 
 // resourceGitlabPipelineTriggerStateUpgradeV0 performs the state migration from V0 to V1.
-func resourceGitlabPipelineTriggerStateUpgradeV0(ctx context.Context, rawState map[string]interface{}, meta interface{}) (map[string]interface{}, error) {
+func resourceGitlabPipelineTriggerStateUpgradeV0(ctx context.Context, rawState map[string]any, meta any) (map[string]any, error) {
 	project := rawState["project"].(string)
 	oldId := rawState["id"].(string)
 
@@ -83,9 +83,9 @@ func resourceGitlabPipelineTriggerStateUpgradeV0(ctx context.Context, rawState m
 		return nil, fmt.Errorf("unable to convert pipeline trigger id %q to integer to migrate to new schema: %w", oldId, err)
 	}
 
-	tflog.Debug(ctx, "attempting state migration from V0 to V1 - changing the `id` attribute format", map[string]interface{}{"project": project, "v0-id": oldId})
+	tflog.Debug(ctx, "attempting state migration from V0 to V1 - changing the `id` attribute format", map[string]any{"project": project, "v0-id": oldId})
 	rawState["id"] = resourceGitlabPipelineTriggerBuildId(project, pipelineTriggerId)
-	tflog.Debug(ctx, "migrated `id` attribute for V0 to V1", map[string]interface{}{"v0-id": oldId, "v1-id": rawState["id"]})
+	tflog.Debug(ctx, "migrated `id` attribute for V0 to V1", map[string]any{"v0-id": oldId, "v1-id": rawState["id"]})
 	return rawState, nil
 }
 
@@ -109,7 +109,7 @@ func resourceGitlabPipelineTriggerParseId(id string) (string, int, error) {
 	return project, pipelineTriggerId, nil
 }
 
-func resourceGitlabPipelineTriggerCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabPipelineTriggerCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Get("project").(string)
 	options := &gitlab.AddPipelineTriggerOptions{
@@ -134,7 +134,7 @@ func resourceGitlabPipelineTriggerCreate(ctx context.Context, d *schema.Resource
 	return resourceGitlabPipelineTriggerRead(ctx, d, meta)
 }
 
-func resourceGitlabPipelineTriggerRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabPipelineTriggerRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project, pipelineTriggerId, err := resourceGitlabPipelineTriggerParseId(d.Id())
 	if err != nil {
@@ -160,7 +160,7 @@ func resourceGitlabPipelineTriggerRead(ctx context.Context, d *schema.ResourceDa
 	return nil
 }
 
-func resourceGitlabPipelineTriggerUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabPipelineTriggerUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project, pipelineTriggerId, err := resourceGitlabPipelineTriggerParseId(d.Id())
 	if err != nil {
@@ -185,7 +185,7 @@ func resourceGitlabPipelineTriggerUpdate(ctx context.Context, d *schema.Resource
 	return resourceGitlabPipelineTriggerRead(ctx, d, meta)
 }
 
-func resourceGitlabPipelineTriggerDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabPipelineTriggerDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project, pipelineTriggerId, err := resourceGitlabPipelineTriggerParseId(d.Id())
 	if err != nil {

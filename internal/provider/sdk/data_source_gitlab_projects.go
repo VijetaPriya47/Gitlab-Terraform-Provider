@@ -22,8 +22,8 @@ import (
 // https://docs.gitlab.com/api/projects/#list-all-projects
 
 // Helper functions
-func flattenProjectPermissions(permissions *gitlab.Permissions) []map[string]interface{} {
-	m := make(map[string]interface{}, 2)
+func flattenProjectPermissions(permissions *gitlab.Permissions) []map[string]any {
+	m := make(map[string]any, 2)
 	if permissions != nil {
 		if permissions.ProjectAccess != nil {
 			m["project_access"] = map[string]int{
@@ -38,12 +38,12 @@ func flattenProjectPermissions(permissions *gitlab.Permissions) []map[string]int
 			}
 		}
 	}
-	return []map[string]interface{}{m}
+	return []map[string]any{m}
 }
 
-func flattenProjectNamespace(namespace *gitlab.ProjectNamespace) (values []map[string]interface{}) {
+func flattenProjectNamespace(namespace *gitlab.ProjectNamespace) (values []map[string]any) {
 	if namespace != nil {
-		values = []map[string]interface{}{
+		values = []map[string]any{
 			{
 				"id":        namespace.ID,
 				"name":      namespace.Name,
@@ -71,9 +71,9 @@ func flattenProjectLinks(links *gitlab.Links) (values map[string]string) {
 	return values
 }
 
-func flattenForkedFromProject(forked *gitlab.ForkParent) (values []map[string]interface{}) {
+func flattenForkedFromProject(forked *gitlab.ForkParent) (values []map[string]any) {
 	if forked != nil {
-		values = []map[string]interface{}{
+		values = []map[string]any{
 			{
 				"http_url_to_repo":    forked.HTTPURLToRepo,
 				"id":                  forked.ID,
@@ -88,9 +88,9 @@ func flattenForkedFromProject(forked *gitlab.ForkParent) (values []map[string]in
 	return values
 }
 
-func flattenGitlabBasicUser(user *gitlab.User) (values []map[string]interface{}) {
+func flattenGitlabBasicUser(user *gitlab.User) (values []map[string]any) {
 	if user != nil {
-		values = []map[string]interface{}{
+		values = []map[string]any{
 			{
 				"id":          user.ID,
 				"username":    user.Username,
@@ -104,9 +104,9 @@ func flattenGitlabBasicUser(user *gitlab.User) (values []map[string]interface{})
 	return values
 }
 
-func flattenProjects(projects []*gitlab.Project) (values []map[string]interface{}) {
+func flattenProjects(projects []*gitlab.Project) (values []map[string]any) {
 	for _, project := range projects {
-		v := map[string]interface{}{
+		v := map[string]any{
 			"id":                                project.ID,
 			"description":                       project.Description,
 			"default_branch":                    project.DefaultBranch,
@@ -1082,7 +1082,7 @@ var _ = registerDataSource("gitlab_projects", func() *schema.Resource {
 
 // CRUD methods
 
-func dataSourceGitlabProjectsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceGitlabProjectsRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	var projectList []*gitlab.Project
 
@@ -1314,11 +1314,11 @@ func dataSourceGitlabProjectsRead(ctx context.Context, d *schema.ResourceData, m
 	return nil
 }
 
-func flattenSharedWithGroupsOptions(project *gitlab.Project) []interface{} {
-	var sharedWithGroupsList []interface{}
+func flattenSharedWithGroupsOptions(project *gitlab.Project) []any {
+	var sharedWithGroupsList []any
 
 	for _, option := range project.SharedWithGroups {
-		values := map[string]interface{}{
+		values := map[string]any{
 			"group_id":           option.GroupID,
 			"group_access_level": api.AccessLevelValueToName[gitlab.AccessLevelValue(option.GroupAccessLevel)],
 			"group_name":         option.GroupName,

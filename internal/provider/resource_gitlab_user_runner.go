@@ -256,7 +256,7 @@ func (r *gitlabUserRunnerResource) Create(ctx context.Context, req resource.Crea
 		options.MaintenanceNote = gitlab.Ptr(data.MaintenanceNote.ValueString())
 	}
 
-	tflog.Debug(ctx, "Creating new GitLab Runner", map[string]interface{}{
+	tflog.Debug(ctx, "Creating new GitLab Runner", map[string]any{
 		"options": options,
 	})
 	userRunner, _, err := r.client.Users.CreateUserRunner(options)
@@ -297,7 +297,7 @@ func (r *gitlabUserRunnerResource) Read(ctx context.Context, req resource.ReadRe
 	runner, _, err := r.client.Runners.GetRunnerDetails(runnerId)
 	if err != nil {
 		if api.Is404(err) {
-			tflog.Debug(ctx, "[DEBUG] gitlab runner not found", map[string]interface{}{
+			tflog.Debug(ctx, "[DEBUG] gitlab runner not found", map[string]any{
 				"runnerId": runnerId,
 			})
 			resp.State.RemoveResource(ctx)
@@ -353,7 +353,7 @@ func (r *gitlabUserRunnerResource) Update(ctx context.Context, req resource.Upda
 		options.MaintenanceNote = gitlab.Ptr(data.MaintenanceNote.ValueString())
 	}
 
-	tflog.Debug(ctx, "Updating GitLab Runner ID", map[string]interface{}{
+	tflog.Debug(ctx, "Updating GitLab Runner ID", map[string]any{
 		"runnerId": runnerId,
 		"options":  options,
 	})
@@ -376,7 +376,7 @@ func (r *gitlabUserRunnerResource) Delete(ctx context.Context, req resource.Dele
 
 	runnerId, err := strconv.Atoi(data.ID.ValueString())
 	if err != nil {
-		tflog.Debug(ctx, "[DEBUG] gitlab runner ID in state is not a number.", map[string]interface{}{
+		tflog.Debug(ctx, "[DEBUG] gitlab runner ID in state is not a number.", map[string]any{
 			"id": data.ID.ValueString(),
 		})
 		resp.Diagnostics.Append(diag.NewErrorDiagnostic(
@@ -386,7 +386,7 @@ func (r *gitlabUserRunnerResource) Delete(ctx context.Context, req resource.Dele
 		return
 	}
 
-	tflog.Debug(ctx, "Deleting GitLab Runner by ID", map[string]interface{}{
+	tflog.Debug(ctx, "Deleting GitLab Runner by ID", map[string]any{
 		"runnerId": runnerId,
 	})
 	if _, err = r.client.Runners.DeleteRegisteredRunnerByID(runnerId); err != nil {

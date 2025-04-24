@@ -41,7 +41,7 @@ var _ = registerResource("gitlab_project_runner_enablement", func() *schema.Reso
 	}
 })
 
-func resourceGitlabProjectRunnerEnablementCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectRunnerEnablementCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	projectID := d.Get("project").(string)
 	runnerID := d.Get("runner_id").(int)
@@ -62,7 +62,7 @@ func resourceGitlabProjectRunnerEnablementCreate(ctx context.Context, d *schema.
 	return resourceGitlabProjectRunnerEnablementRead(ctx, d, meta)
 }
 
-func resourceGitlabProjectRunnerEnablementRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectRunnerEnablementRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project, runnerID, err := projectAndRunnerFromID(ctx, d.Id())
 	if err != nil {
@@ -119,7 +119,7 @@ func projectAndRunnerFromID(ctx context.Context, id string) (string, int, error)
 	return projectID, runnerID, nil
 }
 
-func resourceGitlabProjectRunnerEnablementDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectRunnerEnablementDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	projectID, runnerID, err := projectAndRunnerFromID(ctx, d.Id())

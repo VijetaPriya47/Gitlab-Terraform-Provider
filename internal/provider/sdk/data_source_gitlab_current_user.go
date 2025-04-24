@@ -68,7 +68,7 @@ var _ = registerDataSource("gitlab_current_user", func() *schema.Resource {
 	}
 })
 
-func dataSourceGitlabCurrentUserRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceGitlabCurrentUserRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	query := api.GraphQLQuery{

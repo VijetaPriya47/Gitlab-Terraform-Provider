@@ -39,8 +39,8 @@ func gitlabClusterAgentSchema() map[string]*schema.Schema {
 	}
 }
 
-func gitlabClusterAgentToStateMap(project string, clusterAgent *gitlab.Agent) map[string]interface{} {
-	stateMap := make(map[string]interface{})
+func gitlabClusterAgentToStateMap(project string, clusterAgent *gitlab.Agent) map[string]any {
+	stateMap := make(map[string]any)
 	stateMap["project"] = project
 	stateMap["name"] = clusterAgent.Name
 	stateMap["agent_id"] = clusterAgent.ID

@@ -108,7 +108,7 @@ var _ = registerDataSource("gitlab_instance_deploy_keys", func() *schema.Resourc
 	}
 })
 
-func dataSourceGitlabInstanceDeployKeysRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceGitlabInstanceDeployKeysRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	// Get group memberships
@@ -143,10 +143,10 @@ func dataSourceGitlabInstanceDeployKeysRead(ctx context.Context, d *schema.Resou
 	return nil
 }
 
-func flattenGitlabInstanceDeployKeys(keys []*gitlab.InstanceDeployKey) []interface{} {
-	result := []interface{}{}
+func flattenGitlabInstanceDeployKeys(keys []*gitlab.InstanceDeployKey) []any {
+	result := []any{}
 	for _, instanceDeployKey := range keys {
-		values := map[string]interface{}{
+		values := map[string]any{
 			"id":                         instanceDeployKey.ID,
 			"title":                      instanceDeployKey.Title,
 			"created_at":                 instanceDeployKey.CreatedAt.Format(time.RFC3339),
@@ -159,10 +159,10 @@ func flattenGitlabInstanceDeployKeys(keys []*gitlab.InstanceDeployKey) []interfa
 	return result
 }
 
-func flattenGitlabInstanceDeployKeysProjectsWithWriteAccess(projects []*gitlab.DeployKeyProject) []interface{} {
-	result := []interface{}{}
+func flattenGitlabInstanceDeployKeysProjectsWithWriteAccess(projects []*gitlab.DeployKeyProject) []any {
+	result := []any{}
 	for _, project := range projects {
-		values := map[string]interface{}{
+		values := map[string]any{
 			"id":                  project.ID,
 			"description":         project.Description,
 			"name":                project.Name,

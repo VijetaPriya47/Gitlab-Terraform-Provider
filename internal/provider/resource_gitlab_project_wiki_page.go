@@ -218,7 +218,7 @@ func (r *gitlabWikiPageResource) Update(ctx context.Context, req resource.Update
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
-	tflog.Info(ctx, "Wiki page updated", map[string]interface{}{"id": data.Id.ValueString()})
+	tflog.Info(ctx, "Wiki page updated", map[string]any{"id": data.Id.ValueString()})
 }
 
 // Delete removes the GitLab wiki page.
@@ -236,7 +236,7 @@ func (r *gitlabWikiPageResource) Delete(ctx context.Context, req resource.Delete
 		return
 	}
 	resp.State.RemoveResource(ctx)
-	tflog.Info(ctx, "Wiki page deleted", map[string]interface{}{"id": data.Id.ValueString()})
+	tflog.Info(ctx, "Wiki page deleted", map[string]any{"id": data.Id.ValueString()})
 }
 
 func (r *gitlabWikiPageResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {

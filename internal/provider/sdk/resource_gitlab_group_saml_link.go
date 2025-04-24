@@ -64,7 +64,7 @@ var _ = registerResource("gitlab_group_saml_link", func() *schema.Resource {
 	}
 })
 
-func resourceGitlabGroupSamlLinkCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabGroupSamlLinkCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	group := d.Get("group").(string)
@@ -90,7 +90,7 @@ func resourceGitlabGroupSamlLinkCreate(ctx context.Context, d *schema.ResourceDa
 	return resourceGitlabGroupSamlLinkRead(ctx, d, meta)
 }
 
-func resourceGitlabGroupSamlLinkRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabGroupSamlLinkRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	group, samlGroupName, parse_err := utils.ParseTwoPartID(d.Id())
 	if parse_err != nil {
@@ -117,7 +117,7 @@ func resourceGitlabGroupSamlLinkRead(ctx context.Context, d *schema.ResourceData
 	return nil
 }
 
-func resourceGitlabGroupSamlLinkDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabGroupSamlLinkDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	group, samlGroupName, parse_err := utils.ParseTwoPartID(d.Id())
 	if parse_err != nil {

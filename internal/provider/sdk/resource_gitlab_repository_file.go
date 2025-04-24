@@ -131,7 +131,7 @@ var _ = registerResource("gitlab_repository_file", func() *schema.Resource {
 	}
 })
 
-func resourceGitlabRepositoryFileCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabRepositoryFileCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	project := d.Get("project").(string)
 	filePath := d.Get("file_path").(string)
 
@@ -255,7 +255,7 @@ func resourceGitlabRepositoryFileCreate(ctx context.Context, d *schema.ResourceD
 	return resourceGitlabRepositoryFileRead(ctx, d, meta)
 }
 
-func resourceGitlabRepositoryFileRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabRepositoryFileRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project, branch, filePath, err := resourceGitLabRepositoryFileParseId(d.Id())
 	if err != nil {
@@ -303,7 +303,7 @@ func resourceGitlabRepositoryFileRead(ctx context.Context, d *schema.ResourceDat
 	return nil
 }
 
-func resourceGitlabRepositoryFileUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabRepositoryFileUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	project, branch, filePath, err := resourceGitLabRepositoryFileParseId(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
@@ -372,7 +372,7 @@ func resourceGitlabRepositoryFileUpdate(ctx context.Context, d *schema.ResourceD
 	return resourceGitlabRepositoryFileRead(ctx, d, meta)
 }
 
-func resourceGitlabRepositoryFileDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabRepositoryFileDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	project, branch, filePath, err := resourceGitLabRepositoryFileParseId(d.Id())
 	if err != nil {
 		return diag.FromErr(err)

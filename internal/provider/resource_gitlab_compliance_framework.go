@@ -178,14 +178,14 @@ func (r *gitlabComplianceFrameworkResource) Read(ctx context.Context, req resour
 				}
 			}`, namespacePath, frameworkID),
 	}
-	tflog.Debug(ctx, "executing GraphQL Query to retrieve current compliance framework", map[string]interface{}{
+	tflog.Debug(ctx, "executing GraphQL Query to retrieve current compliance framework", map[string]any{
 		"query": query.Query,
 	})
 
 	var response ComplianceFrameworkResponse
 	if _, err := api.SendGraphQLRequest(ctx, r.client, query, &response); err != nil {
 		if api.Is404(err) {
-			tflog.Debug(ctx, "compliance framework does not exist, removing from state", map[string]interface{}{
+			tflog.Debug(ctx, "compliance framework does not exist, removing from state", map[string]any{
 				"namespace_path": namespacePath, "framework_id": frameworkID,
 			})
 			resp.State.RemoveResource(ctx)
@@ -257,7 +257,7 @@ func (r *gitlabComplianceFrameworkResource) Create(ctx context.Context, req reso
 				}
 			}`, name, description, color, defaultFramework, pipelineConfigurationFullPath, namespacePath),
 	}
-	tflog.Debug(ctx, "executing GraphQL Query to create compliance framework", map[string]interface{}{
+	tflog.Debug(ctx, "executing GraphQL Query to create compliance framework", map[string]any{
 		"query": query.Query,
 	})
 
@@ -291,7 +291,7 @@ func (r *gitlabComplianceFrameworkResource) Create(ctx context.Context, req reso
 	r.complianceFrameworkToStateModel(&response.Data.CreateComplianceFramework.Framework, namespacePath, data)
 
 	// Log the creation of the resource
-	tflog.Debug(ctx, "created a compliance framework", map[string]interface{}{
+	tflog.Debug(ctx, "created a compliance framework", map[string]any{
 		"id": data.Id.ValueString(), "namespace_path": data.NamespacePath.ValueString(), "framework_id": data.FrameworkId.ValueString(), "name": data.Name.ValueString(),
 	})
 
@@ -363,7 +363,7 @@ func (r *gitlabComplianceFrameworkResource) Delete(ctx context.Context, req reso
 				}
 			}`, frameworkID),
 	}
-	tflog.Debug(ctx, "executing GraphQL Query to delete compliance framework", map[string]interface{}{
+	tflog.Debug(ctx, "executing GraphQL Query to delete compliance framework", map[string]any{
 		"query": query.Query,
 	})
 
@@ -420,7 +420,7 @@ func (r *gitlabComplianceFrameworkResource) update(ctx context.Context, data *gi
 				}
 			}`, name, description, color, defaultFramework, pipelineConfigurationFullPath, frameworkID),
 	}
-	tflog.Debug(ctx, "executing GraphQL Query to update compliance framework", map[string]interface{}{
+	tflog.Debug(ctx, "executing GraphQL Query to update compliance framework", map[string]any{
 		"query": query.Query,
 	})
 
@@ -451,7 +451,7 @@ func (r *gitlabComplianceFrameworkResource) update(ctx context.Context, data *gi
 	r.complianceFrameworkToStateModel(&response.Data.UpdateComplianceFramework.ComplianceFramework, namespacePath, data)
 
 	// Log the update of the resource
-	tflog.Debug(ctx, "updated a compliance framework", map[string]interface{}{
+	tflog.Debug(ctx, "updated a compliance framework", map[string]any{
 		"id": data.Id.ValueString(), "namespace_path": data.NamespacePath.ValueString(), "framework_id": data.FrameworkId.ValueString(), "name": data.Name.ValueString(),
 	})
 

@@ -21,6 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
+	"slices"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces
@@ -369,11 +370,8 @@ func (r *gitlabProjectJobTokenScopesResource) setAllowedTargetGroups(ctx context
 func (r *gitlabProjectJobTokenScopesResource) compareAndGenerateActions(desiredIDs []int, currentIDs []int) (create []int, delete []int) {
 	for _, cid := range currentIDs {
 		shouldDelete := true
-		for _, did := range desiredIDs {
-			if did == cid {
-				shouldDelete = false
-				break
-			}
+		if slices.Contains(desiredIDs, cid) {
+			shouldDelete = false
 		}
 		if shouldDelete {
 			delete = append(delete, cid)
@@ -382,11 +380,8 @@ func (r *gitlabProjectJobTokenScopesResource) compareAndGenerateActions(desiredI
 
 	for _, did := range desiredIDs {
 		shouldCreate := true
-		for _, cid := range currentIDs {
-			if cid == did {
-				shouldCreate = false
-				break
-			}
+		if slices.Contains(currentIDs, did) {
+			shouldCreate = false
 		}
 
 		if shouldCreate {
@@ -417,7 +412,7 @@ func (r *gitlabProjectJobTokenScopesResource) getProjectCIJobScopes(ctx context.
 		projectScopes = append(projectScopes, paginatedProjects...)
 		options.Page = resp.NextPage
 
-		tflog.Debug(ctx, "Read CI/CD Job Token inbound allowlist for project", map[string]interface{}{
+		tflog.Debug(ctx, "Read CI/CD Job Token inbound allowlist for project", map[string]any{
 			"project":                      project,
 			"page":                         options.Page,
 			"number_of_project_identified": len(projectScopes),
@@ -427,7 +422,7 @@ func (r *gitlabProjectJobTokenScopesResource) getProjectCIJobScopes(ctx context.
 	// Remove itself from the list, which will cause issues during the "set" operation, and during post-apply calculations.
 	for i, p := range projectScopes {
 		if p.PathWithNamespace == project || strconv.Itoa(p.ID) == project {
-			projectScopes = append(projectScopes[:i], projectScopes[i+1:]...)
+			projectScopes = slices.Delete(projectScopes, i, i+1)
 			break
 		}
 	}
@@ -454,7 +449,7 @@ func (r *gitlabProjectJobTokenScopesResource) getProjectCIJobScopesGroups(ctx co
 		groupsScopes = append(groupsScopes, paginatedGroups...)
 		options.Page = resp.NextPage
 
-		tflog.Debug(ctx, "Read CI/CD Job Token inbound groups_allowlist for project", map[string]interface{}{
+		tflog.Debug(ctx, "Read CI/CD Job Token inbound groups_allowlist for project", map[string]any{
 			"project":                     projectID,
 			"page":                        options.Page,
 			"number_of_groups_identified": len(paginatedGroups),

@@ -84,7 +84,7 @@ var _ = registerDataSource("gitlab_project_branches", func() *schema.Resource {
 	}
 })
 
-func dataSourceGitlabProjectBranchesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceGitlabProjectBranchesRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	tflog.Info(ctx, "[INFO] Reading Gitlab branches")
@@ -116,9 +116,9 @@ func dataSourceGitlabProjectBranchesRead(ctx context.Context, d *schema.Resource
 	return nil
 }
 
-func flattenBranches(branches []*gitlab.Branch) (values []map[string]interface{}) {
+func flattenBranches(branches []*gitlab.Branch) (values []map[string]any) {
 	for _, branch := range branches {
-		values = append(values, map[string]interface{}{
+		values = append(values, map[string]any{
 			"name":                 branch.Name,
 			"merged":               branch.Merged,
 			"protected":            branch.Protected,

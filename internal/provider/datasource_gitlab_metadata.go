@@ -136,7 +136,7 @@ func (d *gitlabMetadataDataSource) Read(ctx context.Context, req datasource.Read
 	}
 
 	// Set state
-	tflog.Trace(ctx, "setting GitLab Metadata from API into state", map[string]interface{}{
+	tflog.Trace(ctx, "setting GitLab Metadata from API into state", map[string]any{
 		"id": state.Id,
 	})
 	diags := resp.State.Set(ctx, &state)

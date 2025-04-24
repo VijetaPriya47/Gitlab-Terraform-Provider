@@ -154,7 +154,7 @@ func resourceGitlabUserSetToState(d *schema.ResourceData, user *gitlab.User) {
 	d.Set("namespace_id", user.NamespaceID)
 }
 
-func resourceGitlabUserCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabUserCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	options := &gitlab.CreateUserOptions{
 		Email:               gitlab.Ptr(d.Get("email").(string)),
@@ -205,7 +205,7 @@ func resourceGitlabUserCreate(ctx context.Context, d *schema.ResourceData, meta 
 	return resourceGitlabUserRead(ctx, d, meta)
 }
 
-func resourceGitlabUserRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabUserRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] import -- read gitlab user %s", d.Id()))
 
@@ -225,7 +225,7 @@ func resourceGitlabUserRead(ctx context.Context, d *schema.ResourceData, meta in
 	return nil
 }
 
-func resourceGitlabUserUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabUserUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	options := &gitlab.ModifyUserOptions{}
@@ -306,7 +306,7 @@ func resourceGitlabUserUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	return resourceGitlabUserRead(ctx, d, meta)
 }
 
-func resourceGitlabUserDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabUserDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Delete gitlab user %s", d.Id()))
 
@@ -319,7 +319,7 @@ func resourceGitlabUserDelete(ctx context.Context, d *schema.ResourceData, meta 
 	stateConf := &retry.StateChangeConf{
 		Timeout: 10 * time.Minute,
 		Target:  []string{"Deleted"},
-		Refresh: func() (interface{}, string, error) {
+		Refresh: func() (any, string, error) {
 			user, resp, err := client.Users.GetUser(id, gitlab.GetUsersOptions{}, gitlab.WithContext(ctx))
 			if resp != nil && resp.StatusCode == 404 {
 				return user, "Deleted", nil

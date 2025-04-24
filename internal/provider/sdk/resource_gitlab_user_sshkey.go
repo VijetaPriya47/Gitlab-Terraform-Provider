@@ -30,7 +30,7 @@ var _ = registerResource("gitlab_user_sshkey", func() *schema.Resource {
 	}
 })
 
-func resourceGitlabUserSSHKeyCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabUserSSHKeyCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	userID, userIDOk := d.GetOk("user_id")
 
@@ -89,7 +89,7 @@ func resourceGitlabUserSSHKeyCreate(ctx context.Context, d *schema.ResourceData,
 	return resourceGitlabUserSSHKeyRead(ctx, d, meta)
 }
 
-func resourceGitlabUserSSHKeyRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabUserSSHKeyRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	userID, keyID, err := resourceGitlabUserSSHKeyParseID(d.Id())
@@ -138,7 +138,7 @@ func resourceGitlabUserSSHKeyRead(ctx context.Context, d *schema.ResourceData, m
 	return nil
 }
 
-func resourceGitlabUserSSHKeyDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabUserSSHKeyDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	_, keyID, err := resourceGitlabUserSSHKeyParseID(d.Id())

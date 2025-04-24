@@ -77,8 +77,8 @@ func gitlabRepositoryFileGetSchema() map[string]*schema.Schema {
 	}
 }
 
-func gitlabRepositoryFileToStateMap(project string, repositoryFile *gitlab.File) map[string]interface{} {
-	stateMap := make(map[string]interface{})
+func gitlabRepositoryFileToStateMap(project string, repositoryFile *gitlab.File) map[string]any {
+	stateMap := make(map[string]any)
 	stateMap["project"] = project
 	stateMap["file_name"] = repositoryFile.FileName
 	stateMap["file_path"] = repositoryFile.FilePath

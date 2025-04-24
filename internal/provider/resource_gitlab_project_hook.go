@@ -143,7 +143,7 @@ func (r *gitlabProjectHookResource) Create(ctx context.Context, req resource.Cre
 		options.CustomHeaders = &headers
 	}
 
-	tflog.Debug(ctx, "creating gitlab project hook with details", map[string]interface{}{
+	tflog.Debug(ctx, "creating gitlab project hook with details", map[string]any{
 		"project": data.Project,
 		"url":     data.URL.ValueString(),
 	})
@@ -173,7 +173,7 @@ func (r *gitlabProjectHookResource) Read(ctx context.Context, req resource.ReadR
 		return
 	}
 
-	tflog.Debug(ctx, "reading gitlab project hook with details", map[string]interface{}{
+	tflog.Debug(ctx, "reading gitlab project hook with details", map[string]any{
 		"project": project,
 		"id":      hookId,
 	})
@@ -182,7 +182,7 @@ func (r *gitlabProjectHookResource) Read(ctx context.Context, req resource.ReadR
 	if err != nil {
 		// Project/Hook not found
 		if api.Is404(err) {
-			tflog.Debug(ctx, "gitlab project hook not found, removing from state", map[string]interface{}{
+			tflog.Debug(ctx, "gitlab project hook not found, removing from state", map[string]any{
 				"project": project,
 				"id":      hookId,
 			})
@@ -250,7 +250,7 @@ func (r *gitlabProjectHookResource) Update(ctx context.Context, req resource.Upd
 		options.CustomHeaders = &headers
 	}
 
-	tflog.Debug(ctx, "updating gitlab project hook with details", map[string]interface{}{
+	tflog.Debug(ctx, "updating gitlab project hook with details", map[string]any{
 		"project": data.Project,
 		"url":     data.URL.ValueString(),
 	})
@@ -302,7 +302,7 @@ func (d *gitlabProjectHookResource) UpgradeState(ctx context.Context) map[int64]
 				data.v0StateUpgrade(ctx)
 
 				resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
-				tflog.Debug(ctx, "migrated `id` attribute for V0 to V1", map[string]interface{}{"v1-id": data.ID.ValueString()})
+				tflog.Debug(ctx, "migrated `id` attribute for V0 to V1", map[string]any{"v1-id": data.ID.ValueString()})
 			},
 		},
 	}
@@ -539,7 +539,7 @@ func (d *gitlabProjectHookResourceModel) modelToStateModel(a *gitlab.ProjectHook
 func (d *gitlabProjectHookResourceModel) v0StateUpgrade(ctx context.Context) {
 	// The old ID was just the hook ID, and didn't contain the project
 	oldIdValue := d.ID.ValueStringPointer()
-	tflog.Debug(ctx, "attempting state migration from V0 to V1 - changing the `id` attribute format", map[string]interface{}{"project": d.Project.ValueString(), "v0-id": oldIdValue})
+	tflog.Debug(ctx, "attempting state migration from V0 to V1 - changing the `id` attribute format", map[string]any{"project": d.Project.ValueString(), "v0-id": oldIdValue})
 
 	// Update the ID format and save that back into `data` as the ID
 	d.ID = types.StringValue(utils.BuildTwoPartID(d.Project.ValueStringPointer(), oldIdValue))

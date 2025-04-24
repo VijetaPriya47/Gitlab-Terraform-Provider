@@ -289,7 +289,7 @@ func (r *gitlabGroupAccessTokenResource) ModifyPlan(ctx context.Context, req res
 		if stateData != nil {
 			expiresAt = stateData.ExpiresAt.ValueString()
 		}
-		tflog.Debug(ctx, "[GroupAccessToken] State is not populated, or the expires_at value is nil. Creating the token for the first time.", map[string]interface{}{
+		tflog.Debug(ctx, "[GroupAccessToken] State is not populated, or the expires_at value is nil. Creating the token for the first time.", map[string]any{
 			"is_state_nil": stateData == nil,
 			"expires_at":   expiresAt,
 		})
@@ -319,7 +319,7 @@ func (r *gitlabGroupAccessTokenResource) ModifyPlan(ctx context.Context, req res
 		}
 
 		// Logs for assisting with support
-		tflog.Debug(ctx, "[GroupAccessToken] State is populated, and a rotation configuration is detected. Determining if token should be rotated.", map[string]interface{}{
+		tflog.Debug(ctx, "[GroupAccessToken] State is populated, and a rotation configuration is detected. Determining if token should be rotated.", map[string]any{
 			"expires_at":             rotateBefore,
 			"detected_current_time":  api.CurrentTime(),
 			"detected_rotation_date": gapTime,
@@ -351,7 +351,7 @@ func (r *gitlabGroupAccessTokenResource) ModifyPlan(ctx context.Context, req res
 			planData.CreatedAt = types.StringUnknown()
 
 			// Logs for assisting with support
-			tflog.Debug(ctx, "[GroupAccessToken] Rotation is required, settings plan data", map[string]interface{}{
+			tflog.Debug(ctx, "[GroupAccessToken] Rotation is required, settings plan data", map[string]any{
 				"new_expires_at": expiryDate.String(),
 				"expires_at":     stateData.ExpiresAt.ValueString(),
 				"group":          planData.Group.ValueString(),

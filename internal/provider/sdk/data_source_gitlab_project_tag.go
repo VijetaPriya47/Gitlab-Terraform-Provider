@@ -31,7 +31,7 @@ var _ = registerDataSource("gitlab_project_tag", func() *schema.Resource {
 	}
 })
 
-func dataSourceGitlabProjectTagRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceGitlabProjectTagRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	name := d.Get("name").(string)
 	project := d.Get("project").(string)

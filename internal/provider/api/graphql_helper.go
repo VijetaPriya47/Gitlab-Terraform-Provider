@@ -10,7 +10,7 @@ import (
 )
 
 // Helper method for modifying client requests appropriately for sending a GraphQL call instead of a REST call.
-func SendGraphQLRequest(ctx context.Context, client *gitlab.Client, query GraphQLQuery, response interface{}) (interface{}, error) {
+func SendGraphQLRequest(ctx context.Context, client *gitlab.Client, query GraphQLQuery, response any) (any, error) {
 	request, err := client.NewRequest("POST", "", query, nil)
 	if err != nil {
 		return nil, err
@@ -22,7 +22,7 @@ func SendGraphQLRequest(ctx context.Context, client *gitlab.Client, query GraphQ
 		// Read the body of the request so we can log it
 		body, _ := io.ReadAll(resp.Body)
 		defer resp.Body.Close()
-		tflog.Debug(ctx, "GraphQL request failed", map[string]interface{}{
+		tflog.Debug(ctx, "GraphQL request failed", map[string]any{
 			"status_code": resp.StatusCode,
 			"body":        string(body),
 		})

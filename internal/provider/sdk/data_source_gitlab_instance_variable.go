@@ -19,7 +19,7 @@ var _ = registerDataSource("gitlab_instance_variable", func() *schema.Resource {
 	}
 })
 
-func dataSourceGitlabInstanceVariableRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceGitlabInstanceVariableRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	key := d.Get("key").(string)
 

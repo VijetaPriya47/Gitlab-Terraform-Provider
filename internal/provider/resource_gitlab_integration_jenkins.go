@@ -202,7 +202,7 @@ func (r *gitlabIntegrationJenkinsResource) update(ctx context.Context, plan *tfs
 		TagPushEvents:         data.TagPushEvents.ValueBoolPointer(),
 	}
 
-	tflog.Debug(ctx, "Update Gitlab Jenkins integration", map[string]interface{}{
+	tflog.Debug(ctx, "Update Gitlab Jenkins integration", map[string]any{
 		"options": options,
 	})
 

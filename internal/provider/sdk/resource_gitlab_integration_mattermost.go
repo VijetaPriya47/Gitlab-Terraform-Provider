@@ -164,7 +164,7 @@ var _ = registerResource("gitlab_integration_mattermost", func() *schema.Resourc
 	}
 })
 
-func resourceGitlabIntegrationMattermostCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabIntegrationMattermostCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Get("project").(string)
 	d.SetId(project)
@@ -208,7 +208,7 @@ func resourceGitlabIntegrationMattermostCreate(ctx context.Context, d *schema.Re
 	return resourceGitlabIntegrationMattermostRead(ctx, d, meta)
 }
 
-func resourceGitlabIntegrationMattermostRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabIntegrationMattermostRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	var diags diag.Diagnostics
 	client := meta.(*gitlab.Client)
 	project := d.Id()
@@ -259,11 +259,11 @@ func resourceGitlabIntegrationMattermostRead(ctx context.Context, d *schema.Reso
 	return diags
 }
 
-func resourceGitlabIntegrationMattermostUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabIntegrationMattermostUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	return resourceGitlabIntegrationMattermostCreate(ctx, d, meta)
 }
 
-func resourceGitlabIntegrationMattermostDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabIntegrationMattermostDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Id()
 

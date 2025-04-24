@@ -51,7 +51,7 @@ var _ = registerDataSource("gitlab_project_tags", func() *schema.Resource {
 	}
 })
 
-func dataSourceGitlabProjectTagsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceGitlabProjectTagsRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	project := d.Get("project").(string)
@@ -102,9 +102,9 @@ func dataSourceGitlabProjectTagsRead(ctx context.Context, d *schema.ResourceData
 	return nil
 }
 
-func flattenDataTags(tags []*gitlab.Tag) (values []map[string]interface{}) {
+func flattenDataTags(tags []*gitlab.Tag) (values []map[string]any) {
 	for _, tag := range tags {
-		values = append(values, map[string]interface{}{
+		values = append(values, map[string]any{
 			"commit":    flattenCommit(tag.Commit),
 			"release":   flattenReleaseNote(tag.Release),
 			"name":      tag.Name,

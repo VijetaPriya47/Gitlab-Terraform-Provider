@@ -227,7 +227,7 @@ func (r *gitlabTagProtectionResource) Create(ctx context.Context, req resource.C
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 
 	// Log the creation of the resource
-	tflog.Debug(ctx, "Created a protected tag", map[string]interface{}{
+	tflog.Debug(ctx, "Created a protected tag", map[string]any{
 		"project_id": data.Project.ValueString(), "tag": data.Tag.ValueString(),
 	})
 }
@@ -256,7 +256,7 @@ func (r *gitlabTagProtectionResource) Read(ctx context.Context, req resource.Rea
 	protectedTag, _, err := r.client.ProtectedTags.GetProtectedTag(projectID, tag, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			tflog.Debug(ctx, "protected tag does not exist, removing from state", map[string]interface{}{
+			tflog.Debug(ctx, "protected tag does not exist, removing from state", map[string]any{
 				"project_id": projectID, "tag": tag,
 			})
 			resp.State.RemoveResource(ctx)
@@ -296,7 +296,7 @@ func (r *gitlabTagProtectionResource) Delete(ctx context.Context, req resource.D
 		return
 	}
 
-	tflog.Debug(ctx, "Delete gitlab protected tag", map[string]interface{}{
+	tflog.Debug(ctx, "Delete gitlab protected tag", map[string]any{
 		"project_id": data.Project.ValueString(), "tag": data.Tag.ValueString(),
 	})
 }

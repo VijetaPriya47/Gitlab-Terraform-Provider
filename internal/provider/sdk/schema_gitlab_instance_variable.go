@@ -57,8 +57,8 @@ func gitlabInstanceVariableGetSchema() map[string]*schema.Schema {
 	}
 }
 
-func gitlabInstanceVariableToStateMap(variable *gitlab.InstanceVariable) map[string]interface{} {
-	stateMap := make(map[string]interface{})
+func gitlabInstanceVariableToStateMap(variable *gitlab.InstanceVariable) map[string]any {
+	stateMap := make(map[string]any)
 	stateMap["key"] = variable.Key
 	stateMap["value"] = variable.Value
 	stateMap["description"] = variable.Description

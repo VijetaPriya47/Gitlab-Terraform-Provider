@@ -19,7 +19,7 @@ var _ = registerDataSource("gitlab_project_milestone", func() *schema.Resource {
 	}
 })
 
-func dataSourceGitlabProjectMilestoneRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceGitlabProjectMilestoneRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Get("project").(string)
 	milestoneID := d.Get("milestone_id").(int)

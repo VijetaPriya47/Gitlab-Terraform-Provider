@@ -45,7 +45,7 @@ var _ = registerDataSource("gitlab_release_links", func() *schema.Resource {
 	}
 })
 
-func dataSourceGitlabReleaseLinksRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceGitlabReleaseLinksRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	project := d.Get("project").(string)
@@ -79,7 +79,7 @@ func dataSourceGitlabReleaseLinksRead(ctx context.Context, d *schema.ResourceDat
 	return nil
 }
 
-func flattenGitlabReleaseLinks(project string, tagName string, releaseLinks []*gitlab.ReleaseLink) (values []map[string]interface{}) {
+func flattenGitlabReleaseLinks(project string, tagName string, releaseLinks []*gitlab.ReleaseLink) (values []map[string]any) {
 	for _, releaseLink := range releaseLinks {
 		values = append(values, gitlabReleaseLinkToStateMap(project, tagName, releaseLink))
 	}

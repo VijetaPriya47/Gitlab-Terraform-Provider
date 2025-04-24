@@ -157,13 +157,13 @@ func (d *gitlabProjectSecurityPolicyAttachmentResource) Read(ctx context.Context
 	}
 
 	// Read the policy project
-	tflog.Info(ctx, "Waiting up to 1 minutes for reading the policy project to succeed. Sometimes a blank value is returned without this.", map[string]interface{}{
+	tflog.Info(ctx, "Waiting up to 1 minutes for reading the policy project to succeed. Sometimes a blank value is returned without this.", map[string]any{
 		"project": project,
 	})
 
 	response, err := d.readPolicy(ctx, projectIds)
 	if err != nil {
-		tflog.Error(ctx, "Received an error when reading the policy. Exiting", map[string]interface{}{
+		tflog.Error(ctx, "Received an error when reading the policy. Exiting", map[string]any{
 			"project":        project,
 			"policy_project": policyProject,
 		})
@@ -172,7 +172,7 @@ func (d *gitlabProjectSecurityPolicyAttachmentResource) Read(ctx context.Context
 	}
 
 	if response.Data.Project == nil {
-		tflog.Warn(ctx, "Project for the gitlab_project_security_policy_attachment returned nil from the GraphQL call, which usually means the project doesn't exist anymore.", map[string]interface{}{
+		tflog.Warn(ctx, "Project for the gitlab_project_security_policy_attachment returned nil from the GraphQL call, which usually means the project doesn't exist anymore.", map[string]any{
 			"project":        project,
 			"policy_project": policyProject,
 		})
@@ -186,7 +186,7 @@ func (d *gitlabProjectSecurityPolicyAttachmentResource) Read(ctx context.Context
 
 		data.PolicyProject = types.StringValue(parsedPolicyId)
 
-		tflog.Debug(ctx, "Parsed a valid security policy project. Adding to state", map[string]interface{}{
+		tflog.Debug(ctx, "Parsed a valid security policy project. Adding to state", map[string]any{
 			"project":        project,
 			"policy_project": parsedPolicyId,
 		})
@@ -230,7 +230,7 @@ func (d *gitlabProjectSecurityPolicyAttachmentResource) Update(ctx context.Conte
 
 		response, err := d.readPolicy(ctx, projectIds)
 		if err != nil {
-			tflog.Error(ctx, "Received an error when reading the policy. Exiting", map[string]interface{}{
+			tflog.Error(ctx, "Received an error when reading the policy. Exiting", map[string]any{
 				"project":        data.Project.ValueString(),
 				"policy_project": data.PolicyProject.ValueString(),
 			})
@@ -239,7 +239,7 @@ func (d *gitlabProjectSecurityPolicyAttachmentResource) Update(ctx context.Conte
 
 		// If we read, and our read doesn't match our expected policy project, retry.
 		if response.Data.Project.SecurityPolicyProject.ID != data.PolicyProject.ValueString() {
-			tflog.Warn(ctx, "Received a mismatched policy post-update, retryin update", map[string]interface{}{
+			tflog.Warn(ctx, "Received a mismatched policy post-update, retryin update", map[string]any{
 				"project":        data.Project.ValueString(),
 				"policy_project": data.PolicyProject.ValueString(),
 			})
@@ -249,7 +249,7 @@ func (d *gitlabProjectSecurityPolicyAttachmentResource) Update(ctx context.Conte
 		return nil
 	})
 
-	tflog.Debug(ctx, "Updated security policy project", map[string]interface{}{
+	tflog.Debug(ctx, "Updated security policy project", map[string]any{
 		"project":        data.Project.ValueString(),
 		"policy_project": data.PolicyProject.ValueString(),
 	})
@@ -299,7 +299,7 @@ func (d *gitlabProjectSecurityPolicyAttachmentResource) Delete(ctx context.Conte
 		return
 	}
 
-	tflog.Debug(ctx, "Successfully deleted security policy project", map[string]interface{}{
+	tflog.Debug(ctx, "Successfully deleted security policy project", map[string]any{
 		"project":        data.Project.ValueString(),
 		"policy_project": data.PolicyProject.ValueString(),
 	})

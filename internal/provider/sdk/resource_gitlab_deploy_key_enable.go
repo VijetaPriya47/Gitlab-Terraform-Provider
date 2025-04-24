@@ -62,7 +62,7 @@ var _ = registerResource("gitlab_deploy_key_enable", func() *schema.Resource {
 	}
 })
 
-func resourceGitlabDeployKeyEnableCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabDeployKeyEnableCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Get("project").(string)
 
@@ -91,7 +91,7 @@ func resourceGitlabDeployKeyEnableCreate(ctx context.Context, d *schema.Resource
 	return resourceGitlabDeployKeyEnableRead(ctx, d, meta)
 }
 
-func resourceGitlabDeployKeyEnableRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabDeployKeyEnableRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	project, deployKeyID, err := resourceGitLabDeployKeyEnableParseId(d.Id())
@@ -120,7 +120,7 @@ func resourceGitlabDeployKeyEnableRead(ctx context.Context, d *schema.ResourceDa
 	return nil
 }
 
-func resourceGitlabDeployKeyEnableDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabDeployKeyEnableDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	project, deployKeyID, err := resourceGitLabDeployKeyEnableParseId(d.Id())

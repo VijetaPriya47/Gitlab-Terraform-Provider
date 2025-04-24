@@ -70,8 +70,8 @@ func gitlabProjectVariableGetSchema() map[string]*schema.Schema {
 	}
 }
 
-func gitlabProjectVariableToStateMap(project string, variable *gitlab.ProjectVariable) map[string]interface{} {
-	stateMap := make(map[string]interface{})
+func gitlabProjectVariableToStateMap(project string, variable *gitlab.ProjectVariable) map[string]any {
+	stateMap := make(map[string]any)
 	stateMap["project"] = project
 	stateMap["key"] = variable.Key
 	stateMap["value"] = variable.Value

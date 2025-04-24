@@ -37,7 +37,7 @@ var _ = registerResource("gitlab_cluster_agent", func() *schema.Resource {
 	}
 })
 
-func resourceGitlabClusterAgentCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabClusterAgentCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	project := d.Get("project").(string)
@@ -55,7 +55,7 @@ func resourceGitlabClusterAgentCreate(ctx context.Context, d *schema.ResourceDat
 	return resourceGitlabClusterAgentRead(ctx, d, meta)
 }
 
-func resourceGitlabClusterAgentRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabClusterAgentRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project, agentID, err := resourceGitlabClusterAgentParseID(d.Id())
 	if err != nil {
@@ -80,7 +80,7 @@ func resourceGitlabClusterAgentRead(ctx context.Context, d *schema.ResourceData,
 	return nil
 }
 
-func resourceGitlabClusterAgentDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabClusterAgentDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project, agentID, err := resourceGitlabClusterAgentParseID(d.Id())
 	if err != nil {

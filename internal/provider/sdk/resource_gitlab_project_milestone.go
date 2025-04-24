@@ -35,7 +35,7 @@ var _ = registerResource("gitlab_project_milestone", func() *schema.Resource {
 	}
 })
 
-func resourceGitlabProjectMilestoneCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectMilestoneCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Get("project").(string)
 	title := d.Get("title").(string)
@@ -83,7 +83,7 @@ func resourceGitlabProjectMilestoneCreate(ctx context.Context, d *schema.Resourc
 	return resourceGitlabProjectMilestoneRead(ctx, d, meta)
 }
 
-func resourceGitlabProjectMilestoneRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectMilestoneRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project, milestoneID, err := resourceGitLabProjectMilestoneParseId(d.Id())
 	if err != nil {
@@ -109,7 +109,7 @@ func resourceGitlabProjectMilestoneRead(ctx context.Context, d *schema.ResourceD
 	return nil
 }
 
-func resourceGitlabProjectMilestoneUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectMilestoneUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project, milestoneID, err := resourceGitLabProjectMilestoneParseId(d.Id())
 	if err != nil {
@@ -153,7 +153,7 @@ func resourceGitlabProjectMilestoneUpdate(ctx context.Context, d *schema.Resourc
 	return resourceGitlabProjectMilestoneRead(ctx, d, meta)
 }
 
-func resourceGitlabProjectMilestoneDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectMilestoneDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project, milestoneID, err := resourceGitLabProjectMilestoneParseId(d.Id())
 	if err != nil {

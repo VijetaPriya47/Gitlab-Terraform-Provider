@@ -30,7 +30,7 @@ var _ = registerResource("gitlab_release_link", func() *schema.Resource {
 	}
 })
 
-func resourceGitlabReleaseLinkCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabReleaseLinkCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Get("project").(string)
 	tagName := d.Get("tag_name").(string)
@@ -60,7 +60,7 @@ func resourceGitlabReleaseLinkCreate(ctx context.Context, d *schema.ResourceData
 	return resourceGitlabReleaseLinkRead(ctx, d, meta)
 }
 
-func resourceGitlabReleaseLinkRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabReleaseLinkRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project, tagName, linkID, err := resourceGitLabReleaseLinkParseId(d.Id())
 	if err != nil {
@@ -86,7 +86,7 @@ func resourceGitlabReleaseLinkRead(ctx context.Context, d *schema.ResourceData, 
 	return nil
 }
 
-func resourceGitlabReleaseLinkUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabReleaseLinkUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project, tagName, linkID, err := resourceGitLabReleaseLinkParseId(d.Id())
 	if err != nil {
@@ -118,7 +118,7 @@ func resourceGitlabReleaseLinkUpdate(ctx context.Context, d *schema.ResourceData
 	return resourceGitlabReleaseLinkRead(ctx, d, meta)
 }
 
-func resourceGitlabReleaseLinkDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabReleaseLinkDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project, tagName, linkID, err := resourceGitLabReleaseLinkParseId(d.Id())
 	if err != nil {

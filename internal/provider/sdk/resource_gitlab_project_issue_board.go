@@ -33,7 +33,7 @@ var _ = registerResource("gitlab_project_issue_board", func() *schema.Resource {
 	}
 })
 
-func resourceGitlabProjectIssueBoardCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectIssueBoardCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	project := d.Get("project").(string)
@@ -73,7 +73,7 @@ func resourceGitlabProjectIssueBoardCreate(ctx context.Context, d *schema.Resour
 	}
 
 	if v, ok := d.GetOk("lists"); ok {
-		if err = resourceGitlabProjectIssueBoardCreateLists(ctx, client, project, issueBoard, v.([]interface{})); err != nil {
+		if err = resourceGitlabProjectIssueBoardCreateLists(ctx, client, project, issueBoard, v.([]any)); err != nil {
 			return diag.FromErr(err)
 		}
 	}
@@ -81,7 +81,7 @@ func resourceGitlabProjectIssueBoardCreate(ctx context.Context, d *schema.Resour
 	return resourceGitlabProjectIssueBoardRead(ctx, d, meta)
 }
 
-func resourceGitlabProjectIssueBoardRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectIssueBoardRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project, issueBoardID, err := resourceGitlabProjectIssueBoardParseID(d.Id())
 	if err != nil {
@@ -106,7 +106,7 @@ func resourceGitlabProjectIssueBoardRead(ctx context.Context, d *schema.Resource
 	return nil
 }
 
-func resourceGitlabProjectIssueBoardUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectIssueBoardUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project, issueBoardID, err := resourceGitlabProjectIssueBoardParseID(d.Id())
 	if err != nil {
@@ -149,7 +149,7 @@ func resourceGitlabProjectIssueBoardUpdate(ctx context.Context, d *schema.Resour
 		}
 		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] deleted lists for Project Issue Board %q in project %q", updatedIssueBoard.Name, project))
 
-		if err = resourceGitlabProjectIssueBoardCreateLists(ctx, client, project, updatedIssueBoard, d.Get("lists").([]interface{})); err != nil {
+		if err = resourceGitlabProjectIssueBoardCreateLists(ctx, client, project, updatedIssueBoard, d.Get("lists").([]any)); err != nil {
 			return diag.FromErr(err)
 		}
 	}
@@ -157,7 +157,7 @@ func resourceGitlabProjectIssueBoardUpdate(ctx context.Context, d *schema.Resour
 	return resourceGitlabProjectIssueBoardRead(ctx, d, meta)
 }
 
-func resourceGitlabProjectIssueBoardDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectIssueBoardDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project, issueBoardID, err := resourceGitlabProjectIssueBoardParseID(d.Id())
 	if err != nil {
@@ -190,7 +190,7 @@ func resourceGitlabProjectIssueBoardParseID(id string) (string, int, error) {
 	return project, issueBoardID, nil
 }
 
-func resourceGitlabProjectIssueBoardCreateLists(ctx context.Context, client *gitlab.Client, project string, issueBoard *gitlab.IssueBoard, lists []interface{}) error {
+func resourceGitlabProjectIssueBoardCreateLists(ctx context.Context, client *gitlab.Client, project string, issueBoard *gitlab.IssueBoard, lists []any) error {
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] creating lists for Project Issue Board %q in project %q", issueBoard.Name, project))
 	for i, listData := range lists {
 		position := i + 1
@@ -198,7 +198,7 @@ func resourceGitlabProjectIssueBoardCreateLists(ctx context.Context, client *git
 
 		listOptions := gitlab.CreateIssueBoardListOptions{}
 		if listData != nil {
-			l := listData.(map[string]interface{})
+			l := listData.(map[string]any)
 			if v, ok := l["label_id"]; ok && v != 0 {
 				listOptions.LabelID = gitlab.Ptr(v.(int))
 			}

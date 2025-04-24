@@ -89,8 +89,8 @@ func gitlabProjectMilestoneGetSchema() map[string]*schema.Schema {
 	}
 }
 
-func gitlabProjectMilestoneToStateMap(project string, milestone *gitlab.Milestone) map[string]interface{} {
-	stateMap := make(map[string]interface{})
+func gitlabProjectMilestoneToStateMap(project string, milestone *gitlab.Milestone) map[string]any {
+	stateMap := make(map[string]any)
 	stateMap["iid"] = milestone.IID
 	stateMap["milestone_id"] = milestone.ID
 	stateMap["project"] = project

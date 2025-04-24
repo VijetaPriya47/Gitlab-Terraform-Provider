@@ -52,7 +52,7 @@ var _ = registerResource("gitlab_project_issue", func() *schema.Resource {
 	}
 })
 
-func resourceGitlabProjectIssueCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectIssueCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Get("project").(string)
 
@@ -128,7 +128,7 @@ func resourceGitlabProjectIssueCreate(ctx context.Context, d *schema.ResourceDat
 	return resourceGitlabProjectIssueRead(ctx, d, meta)
 }
 
-func resourceGitlabProjectIssueRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectIssueRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project, issueIID, err := resourceGitLabProjectIssueParseId(d.Id())
 	if err != nil {
@@ -152,7 +152,7 @@ func resourceGitlabProjectIssueRead(ctx context.Context, d *schema.ResourceData,
 	return nil
 }
 
-func resourceGitlabProjectIssueUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectIssueUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project, issueIID, err := resourceGitLabProjectIssueParseId(d.Id())
 	if err != nil {
@@ -209,7 +209,7 @@ func resourceGitlabProjectIssueUpdate(ctx context.Context, d *schema.ResourceDat
 	return resourceGitlabProjectIssueRead(ctx, d, meta)
 }
 
-func resourceGitlabProjectIssueDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectIssueDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project, issueIID, err := resourceGitLabProjectIssueParseId(d.Id())
 	if err != nil {

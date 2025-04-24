@@ -187,7 +187,7 @@ func (r *gitlabIntegrationTelegramResource) Read(ctx context.Context, req resour
 	service, _, err := r.client.Services.GetTelegramService(projectId, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			tflog.Debug(ctx, "telegram integration doesn't exist, removing from state", map[string]interface{}{
+			tflog.Debug(ctx, "telegram integration doesn't exist, removing from state", map[string]any{
 				"project": data.Project,
 			})
 			resp.State.RemoveResource(ctx)
@@ -259,7 +259,7 @@ func (r *gitlabIntegrationTelegramResource) Delete(ctx context.Context, req reso
 
 	if _, err := r.client.Services.DeleteTelegramService(projectId, gitlab.WithContext(ctx)); err != nil {
 		if api.Is404(err) {
-			tflog.Debug(ctx, "telegram integration doesn't exist, removing from state", map[string]interface{}{
+			tflog.Debug(ctx, "telegram integration doesn't exist, removing from state", map[string]any{
 				"project": data.Project,
 			})
 			return

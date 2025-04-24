@@ -78,7 +78,7 @@ func gitlabProjectShareGroupSchema() map[string]*schema.Schema {
 	}
 }
 
-func resourceGitlabProjectShareGroupCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectShareGroupCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	groupId := d.Get("group_id").(int)
@@ -108,7 +108,7 @@ func resourceGitlabProjectShareGroupCreate(ctx context.Context, d *schema.Resour
 	return resourceGitlabProjectShareGroupRead(ctx, d, meta)
 }
 
-func resourceGitlabProjectShareGroupRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectShareGroupRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	id := d.Id()
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab project projectMember %s", id))
@@ -159,7 +159,7 @@ func projectAndGroupIdFromId(id string) (string, int, error) {
 	return project, groupId, nil
 }
 
-func resourceGitlabProjectShareGroupDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectShareGroupDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	id := d.Id()
@@ -225,7 +225,7 @@ func resourceGitlabProjectShareGroupResourceV0() *schema.Resource {
 	}
 }
 
-func resourceGitlabProjectShareGroupStateUpgradeV0(ctx context.Context, rawState map[string]interface{}, meta interface{}) (map[string]interface{}, error) {
+func resourceGitlabProjectShareGroupStateUpgradeV0(ctx context.Context, rawState map[string]any, meta any) (map[string]any, error) {
 	rawState["group_access"] = rawState["access_level"]
 	delete(rawState, "access_level")
 	return rawState, nil
@@ -268,7 +268,7 @@ func resourceGitlabProjectShareGroupResourceV1() *schema.Resource {
 }
 
 // resourceGitlabProjectShareGroupStateUpgradeV1 performs the state migration from V1 to V2.
-func resourceGitlabProjectShareGroupStateUpgradeV1(ctx context.Context, rawState map[string]interface{}, meta interface{}) (map[string]interface{}, error) {
+func resourceGitlabProjectShareGroupStateUpgradeV1(ctx context.Context, rawState map[string]any, meta any) (map[string]any, error) {
 	if rawState["project_id"] != nil {
 		projectId, ok := rawState["project_id"].(string)
 		if !ok {
@@ -276,7 +276,7 @@ func resourceGitlabProjectShareGroupStateUpgradeV1(ctx context.Context, rawState
 		}
 		rawState["project"] = projectId
 		delete(rawState, "project_id")
-		tflog.Debug(ctx, "attempting state migration from V0 to V1 - changing the `project_id` attribute to `project`", map[string]interface{}{"project_id": projectId})
+		tflog.Debug(ctx, "attempting state migration from V0 to V1 - changing the `project_id` attribute to `project`", map[string]any{"project_id": projectId})
 	}
 	return rawState, nil
 }

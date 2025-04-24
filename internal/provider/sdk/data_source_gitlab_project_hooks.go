@@ -33,7 +33,7 @@ var _ = registerDataSource("gitlab_project_hooks", func() *schema.Resource {
 	}
 })
 
-func dataSourceGitlabProjectHooksRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceGitlabProjectHooksRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	project := d.Get("project").(string)
@@ -61,7 +61,7 @@ func dataSourceGitlabProjectHooksRead(ctx context.Context, d *schema.ResourceDat
 	return nil
 }
 
-func flattenGitlabProjectHooks(project string, hooks []*gitlab.ProjectHook) (values []map[string]interface{}) {
+func flattenGitlabProjectHooks(project string, hooks []*gitlab.ProjectHook) (values []map[string]any) {
 	for _, hook := range hooks {
 		values = append(values, gitlabProjectHookToStateMap(project, hook))
 	}

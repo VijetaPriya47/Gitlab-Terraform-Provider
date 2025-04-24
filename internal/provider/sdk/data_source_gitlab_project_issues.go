@@ -216,7 +216,7 @@ var _ = registerDataSource("gitlab_project_issues", func() *schema.Resource {
 	}
 })
 
-func dataSourceGitlabProjectIssuesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceGitlabProjectIssuesRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	project := d.Get("project").(string)
@@ -376,7 +376,7 @@ func dataSourceGitlabProjectIssuesRead(ctx context.Context, d *schema.ResourceDa
 	return nil
 }
 
-func flattenGitlabProjectIssues(issues []*gitlab.Issue) (values []map[string]interface{}) {
+func flattenGitlabProjectIssues(issues []*gitlab.Issue) (values []map[string]any) {
 	for _, issue := range issues {
 		values = append(values, gitlabProjectIssueToStateMap(fmt.Sprintf("%d", issue.ProjectID), issue))
 	}

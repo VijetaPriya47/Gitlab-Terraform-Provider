@@ -37,7 +37,7 @@ var _ = registerDataSource("gitlab_cluster_agents", func() *schema.Resource {
 	}
 })
 
-func dataSourceGitlabClusterAgentsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceGitlabClusterAgentsRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	project := d.Get("project").(string)
@@ -66,9 +66,9 @@ func dataSourceGitlabClusterAgentsRead(ctx context.Context, d *schema.ResourceDa
 	return nil
 }
 
-func flattenClusterAgentsForState(clusterAgents []*gitlab.Agent) (values []map[string]interface{}) {
+func flattenClusterAgentsForState(clusterAgents []*gitlab.Agent) (values []map[string]any) {
 	for _, clusterAgent := range clusterAgents {
-		values = append(values, map[string]interface{}{
+		values = append(values, map[string]any{
 			"name":               clusterAgent.Name,
 			"agent_id":           clusterAgent.ID,
 			"created_at":         clusterAgent.CreatedAt.Format(time.RFC3339),

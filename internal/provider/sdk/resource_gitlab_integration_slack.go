@@ -194,7 +194,7 @@ var _ = registerResource("gitlab_integration_slack", func() *schema.Resource {
 	}
 })
 
-func resourceGitlabIntegrationSlackCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabIntegrationSlackCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Get("project").(string)
 	d.SetId(project)
@@ -247,7 +247,7 @@ func resourceGitlabIntegrationSlackCreate(ctx context.Context, d *schema.Resourc
 	return resourceGitlabIntegrationSlackRead(ctx, d, meta)
 }
 
-func resourceGitlabIntegrationSlackRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabIntegrationSlackRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Id()
 
@@ -303,11 +303,11 @@ func resourceGitlabIntegrationSlackRead(ctx context.Context, d *schema.ResourceD
 	return nil
 }
 
-func resourceGitlabIntegrationSlackUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabIntegrationSlackUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	return resourceGitlabIntegrationSlackCreate(ctx, d, meta)
 }
 
-func resourceGitlabIntegrationSlackDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabIntegrationSlackDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Id()
 

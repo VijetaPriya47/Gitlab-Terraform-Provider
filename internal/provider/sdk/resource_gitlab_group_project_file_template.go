@@ -54,7 +54,7 @@ For more information about which file types are available as templates, view
 	}
 })
 
-func resourceGitLabGroupProjectFileTemplateRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitLabGroupProjectFileTemplateRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	groupID := d.Get("group_id").(int)
@@ -79,7 +79,7 @@ func resourceGitLabGroupProjectFileTemplateRead(ctx context.Context, d *schema.R
 	return nil
 }
 
-func resourceGitLabGroupProjectFileTemplateCreateOrUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitLabGroupProjectFileTemplateCreateOrUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	groupID := d.Get("group_id").(int)
@@ -98,7 +98,7 @@ func resourceGitLabGroupProjectFileTemplateCreateOrUpdate(ctx context.Context, d
 	return resourceGitLabGroupProjectFileTemplateRead(ctx, d, meta)
 }
 
-func resourceGitLabGroupProjectFileTemplateDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitLabGroupProjectFileTemplateDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	groupID := d.Get("group_id").(int)
 	options := &gitlab.UpdateGroupOptions{}

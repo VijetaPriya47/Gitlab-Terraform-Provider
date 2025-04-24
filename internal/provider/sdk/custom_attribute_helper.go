@@ -28,7 +28,7 @@ func CreateCustomAttributeResource(idName string, createGetter CreateGetter, cre
 		d.Set("value", customAttribute.Value)
 	}
 
-	readFunc := func(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	readFunc := func(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 		client := meta.(*gitlab.Client)
 		getter := createGetter(client)
 		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read Custom Attribute %s", d.Id()))
@@ -47,7 +47,7 @@ func CreateCustomAttributeResource(idName string, createGetter CreateGetter, cre
 		return nil
 	}
 
-	setFunc := func(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	setFunc := func(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 		client := meta.(*gitlab.Client)
 		setter := createSetter(client)
 
@@ -68,7 +68,7 @@ func CreateCustomAttributeResource(idName string, createGetter CreateGetter, cre
 		return readFunc(ctx, d, meta)
 	}
 
-	deleteFunc := func(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	deleteFunc := func(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 		client := meta.(*gitlab.Client)
 		deleter := createDeleter(client)
 		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] delete Custom Attribute %s", d.Id()))

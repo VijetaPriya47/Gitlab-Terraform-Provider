@@ -182,8 +182,8 @@ func gitlabGroupSchema() map[string]*schema.Schema {
 	}
 }
 
-func gitlabGroupToStateMap(group *gitlab.Group) map[string]interface{} {
-	stateMap := make(map[string]interface{})
+func gitlabGroupToStateMap(group *gitlab.Group) map[string]any {
+	stateMap := make(map[string]any)
 	stateMap["group_id"] = group.ID
 	stateMap["auto_devops_enabled"] = group.AutoDevopsEnabled
 	stateMap["avatar_url"] = group.AvatarURL

@@ -257,7 +257,7 @@ var _ = registerDataSource("gitlab_users", func() *schema.Resource {
 	}
 })
 
-func dataSourceGitlabUsersRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceGitlabUsersRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	listUsersOptions, id, err := expandGitlabUsersOptions(d)
@@ -281,11 +281,11 @@ func dataSourceGitlabUsersRead(ctx context.Context, d *schema.ResourceData, meta
 	return nil
 }
 
-func flattenGitlabUsers(users []*gitlab.User) []interface{} {
-	usersList := []interface{}{}
+func flattenGitlabUsers(users []*gitlab.User) []any {
+	usersList := []any{}
 
 	for _, user := range users {
-		values := map[string]interface{}{
+		values := map[string]any{
 			"id":                 user.ID,
 			"username":           user.Username,
 			"email":              user.Email,

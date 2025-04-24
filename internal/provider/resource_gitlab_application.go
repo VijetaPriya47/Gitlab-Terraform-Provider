@@ -141,7 +141,7 @@ func (r *gitlabApplicationResource) Create(ctx context.Context, req resource.Cre
 		return
 	}
 
-	tflog.Debug(ctx, "creating application", map[string]interface{}{
+	tflog.Debug(ctx, "creating application", map[string]any{
 		"scopes": data.Scopes.String(),
 	})
 	scopes := conv.StringSetToStrings(data.Scopes)
@@ -171,7 +171,7 @@ func (r *gitlabApplicationResource) Create(ctx context.Context, req resource.Cre
 
 	r.applicationModelToState(application, data)
 	// Log the creation of the resource
-	tflog.Debug(ctx, "created an application", map[string]interface{}{
+	tflog.Debug(ctx, "created an application", map[string]any{
 		"name": data.Name.ValueString(), "id": data.Id.ValueString(),
 	})
 
@@ -196,7 +196,7 @@ func (r *gitlabApplicationResource) Read(ctx context.Context, req resource.ReadR
 		return
 	}
 
-	tflog.Trace(ctx, "found application", map[string]interface{}{
+	tflog.Trace(ctx, "found application", map[string]any{
 		"application": gitlab.Stringify(application),
 	})
 

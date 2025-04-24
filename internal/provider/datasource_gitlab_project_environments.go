@@ -250,7 +250,7 @@ func (d *gitLabProjectEnvironmentsDataSource) Read(ctx context.Context, req data
 	resp.Diagnostics.Append(diags...)
 }
 
-func (d *gitLabProjectEnvironmentsDataSource) getAllEnvironments(ctx context.Context, projectID interface{}, options *gitlab.ListEnvironmentsOptions) ([]*gitlab.Environment, error) {
+func (d *gitLabProjectEnvironmentsDataSource) getAllEnvironments(ctx context.Context, projectID any, options *gitlab.ListEnvironmentsOptions) ([]*gitlab.Environment, error) {
 	var environments []*gitlab.Environment
 	for options.Page != 0 {
 		// Make API call to read environments

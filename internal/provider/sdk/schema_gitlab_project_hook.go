@@ -124,8 +124,8 @@ func gitlabProjectHookSchema() map[string]*schema.Schema {
 	}
 }
 
-func gitlabProjectHookToStateMap(project string, hook *gitlab.ProjectHook) map[string]interface{} {
-	stateMap := make(map[string]interface{})
+func gitlabProjectHookToStateMap(project string, hook *gitlab.ProjectHook) map[string]any {
+	stateMap := make(map[string]any)
 	stateMap["project"] = project
 	stateMap["project_id"] = hook.ProjectID
 	stateMap["hook_id"] = hook.ID

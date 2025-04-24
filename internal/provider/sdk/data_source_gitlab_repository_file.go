@@ -29,7 +29,7 @@ var _ = registerDataSource("gitlab_repository_file", func() *schema.Resource {
 	}
 })
 
-func dataSourceGitlabRepositoryFileRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceGitlabRepositoryFileRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Get("project").(string)
 	filePath := d.Get("file_path").(string)

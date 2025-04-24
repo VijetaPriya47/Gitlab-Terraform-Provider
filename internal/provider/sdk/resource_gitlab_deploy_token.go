@@ -126,7 +126,7 @@ func resourceGitlabDeployTokenResourceV0() *schema.Resource {
 }
 
 // resourceGitlabDeployTokenStateUpgradeV0 performs the state migration from V0 to V1.
-func resourceGitlabDeployTokenStateUpgradeV0(ctx context.Context, rawState map[string]interface{}, meta interface{}) (map[string]interface{}, error) {
+func resourceGitlabDeployTokenStateUpgradeV0(ctx context.Context, rawState map[string]any, meta any) (map[string]any, error) {
 	var deployTokenType string
 	var typeId string
 	if project, isProject := rawState["project"]; isProject && project != nil && project != "" {
@@ -146,9 +146,9 @@ func resourceGitlabDeployTokenStateUpgradeV0(ctx context.Context, rawState map[s
 		return nil, fmt.Errorf("cannot migrate state from V0 to V1 because id %q cannot be converted into an integer: %w", oldId, err)
 	}
 
-	tflog.Debug(ctx, "attempting state migration from V0 to V1 - changing the `id` attribute format", map[string]interface{}{"deployTokenType": deployTokenType, "typeId": typeId, "v0-id": oldId})
+	tflog.Debug(ctx, "attempting state migration from V0 to V1 - changing the `id` attribute format", map[string]any{"deployTokenType": deployTokenType, "typeId": typeId, "v0-id": oldId})
 	rawState["id"] = resourceGitlabDeployTokenBuildId(deployTokenType, typeId, deployTokenId)
-	tflog.Debug(ctx, "migrated `id` attribute for V0 to V1", map[string]interface{}{"v0-id": oldId, "v1-id": rawState["id"]})
+	tflog.Debug(ctx, "migrated `id` attribute for V0 to V1", map[string]any{"v0-id": oldId, "v1-id": rawState["id"]})
 	return rawState, nil
 }
 
@@ -170,7 +170,7 @@ func resourceGitlabDeployTokenParseId(id string) (string, string, int, error) {
 	return parts[0], parts[1], deployTokenId, nil
 }
 
-func resourceGitlabDeployTokenCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabDeployTokenCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project, isProject := d.GetOk("project")
 	group, isGroup := d.GetOk("group")
@@ -232,7 +232,7 @@ func resourceGitlabDeployTokenCreate(ctx context.Context, d *schema.ResourceData
 	return resourceGitlabDeployTokenRead(ctx, d, meta)
 }
 
-func resourceGitlabDeployTokenRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabDeployTokenRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	deployTokenType, typeId, deployTokenId, err := resourceGitlabDeployTokenParseId(d.Id())
 	if err != nil {
@@ -276,7 +276,7 @@ func resourceGitlabDeployTokenRead(ctx context.Context, d *schema.ResourceData, 
 	return nil
 }
 
-func resourceGitlabDeployTokenDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabDeployTokenDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	deployTokenType, typeId, deployTokenId, err := resourceGitlabDeployTokenParseId(d.Id())
 	if err != nil {

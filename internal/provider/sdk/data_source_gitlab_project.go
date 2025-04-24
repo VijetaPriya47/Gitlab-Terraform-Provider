@@ -551,12 +551,12 @@ var datasourceContainerExpirationPolicyAttributesSchema = &schema.Resource{
 	},
 }
 
-func dataSourceGitlabProjectRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceGitlabProjectRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	tflog.Debug(ctx, "[INFO] Reading Gitlab project")
 
-	var pid interface{}
+	var pid any
 	if v, ok := d.GetOk("id"); ok {
 		pid = v
 	} else if v, ok := d.GetOk("path_with_namespace"); ok {
@@ -665,9 +665,9 @@ func dataSourceGitlabProjectRead(ctx context.Context, d *schema.ResourceData, me
 	return nil
 }
 
-func flattenProjectSharedWithGroups(project *gitlab.Project) (values []map[string]interface{}) {
+func flattenProjectSharedWithGroups(project *gitlab.Project) (values []map[string]any) {
 	for _, sharedGroup := range project.SharedWithGroups {
-		v := map[string]interface{}{
+		v := map[string]any{
 			"group_id":           sharedGroup.GroupID,
 			"group_name":         sharedGroup.GroupName,
 			"group_full_path":    sharedGroup.GroupFullPath,

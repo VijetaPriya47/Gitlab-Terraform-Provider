@@ -70,7 +70,7 @@ func ExtractIIDFromGlobalID(globalID string) (int, error) {
 func CurrentTime() time.Time {
 	testingTime, err := time.Parse(time.RFC3339, os.Getenv("GITLAB_TESTING_TIME"))
 	if err == nil {
-		tflog.Warn(context.Background(), "[WARNING] Use of `GITLAB_TESTING_TIME` detected. Using mocked time instead of system time. Disable for production use.", map[string]interface{}{
+		tflog.Warn(context.Background(), "[WARNING] Use of `GITLAB_TESTING_TIME` detected. Using mocked time instead of system time. Disable for production use.", map[string]any{
 			"testing_time": testingTime.Format(time.RFC3339),
 		})
 		return testingTime

@@ -20,7 +20,7 @@ var _ = registerDataSource("gitlab_project_hook", func() *schema.Resource {
 	}
 })
 
-func dataSourceGitlabProjectHookRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceGitlabProjectHookRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Get("project").(string)
 	hookID := d.Get("hook_id").(int)

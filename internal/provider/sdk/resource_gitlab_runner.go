@@ -110,7 +110,7 @@ use the ` + "`gitlab_user_runner`" + ` resource!
 	}
 })
 
-func resourceGitLabRunnerCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitLabRunnerCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	options := &gitlab.RegisterNewRunnerOptions{
@@ -171,7 +171,7 @@ func resourceGitLabRunnerCreate(ctx context.Context, d *schema.ResourceData, met
 	return resourceGitLabRunnerRead(ctx, d, meta)
 }
 
-func resourceGitLabRunnerRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitLabRunnerRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	runnerID, err := strconv.Atoi(d.Id())
 	if err != nil {
@@ -200,7 +200,7 @@ func resourceGitLabRunnerRead(ctx context.Context, d *schema.ResourceData, meta 
 	return nil
 }
 
-func resourceGitLabRunnerUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitLabRunnerUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	runnerID := d.Id()
 
@@ -253,7 +253,7 @@ func resourceGitLabRunnerUpdate(ctx context.Context, d *schema.ResourceData, met
 
 }
 
-func resourceGitLabRunnerDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitLabRunnerDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	runnerID, err := strconv.Atoi(d.Id())
 	if err != nil {

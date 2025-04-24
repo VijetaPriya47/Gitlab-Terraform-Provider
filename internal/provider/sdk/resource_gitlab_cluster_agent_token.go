@@ -32,7 +32,7 @@ var _ = registerResource("gitlab_cluster_agent_token", func() *schema.Resource {
 	}
 })
 
-func resourceGitlabClusterAgentTokenCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabClusterAgentTokenCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	project := d.Get("project").(string)
@@ -57,7 +57,7 @@ func resourceGitlabClusterAgentTokenCreate(ctx context.Context, d *schema.Resour
 	return resourceGitlabClusterAgentTokenRead(ctx, d, meta)
 }
 
-func resourceGitlabClusterAgentTokenRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabClusterAgentTokenRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project, agentID, tokenID, err := resourceGitlabClusterAgentTokenParseID(d.Id())
 	if err != nil {
@@ -82,7 +82,7 @@ func resourceGitlabClusterAgentTokenRead(ctx context.Context, d *schema.Resource
 	return nil
 }
 
-func resourceGitlabClusterAgentTokenDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabClusterAgentTokenDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project, agentID, tokenID, err := resourceGitlabClusterAgentTokenParseID(d.Id())
 	if err != nil {

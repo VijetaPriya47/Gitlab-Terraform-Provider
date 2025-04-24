@@ -171,7 +171,7 @@ func dataSourceGitlabGroupSharedWithGroups() *schema.Schema {
 	}
 }
 
-func dataSourceGitlabGroupRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceGitlabGroupRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	var group *gitlab.Group
@@ -237,9 +237,9 @@ func dataSourceGitlabGroupRead(ctx context.Context, d *schema.ResourceData, meta
 	return nil
 }
 
-func flattenSharedWithGroups(group *gitlab.Group) (values []map[string]interface{}) {
+func flattenSharedWithGroups(group *gitlab.Group) (values []map[string]any) {
 	for _, sharedGroup := range group.SharedWithGroups {
-		v := map[string]interface{}{
+		v := map[string]any{
 			"group_id":           sharedGroup.GroupID,
 			"group_name":         sharedGroup.GroupName,
 			"group_full_path":    sharedGroup.GroupFullPath,
