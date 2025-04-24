@@ -270,8 +270,8 @@ func gitlabProjectIssueGetSchema() map[string]*schema.Schema {
 	}
 }
 
-func gitlabProjectIssueToStateMap(project string, issue *gitlab.Issue) map[string]interface{} {
-	stateMap := make(map[string]interface{})
+func gitlabProjectIssueToStateMap(project string, issue *gitlab.Issue) map[string]any {
+	stateMap := make(map[string]any)
 	stateMap["project"] = project
 	stateMap["iid"] = issue.IID
 	stateMap["title"] = issue.Title
@@ -398,12 +398,12 @@ func flattenIssueLinks(issueLinks *gitlab.IssueLinks) (result map[string]string)
 	return result
 }
 
-func flattenIssueTaskCompletionStatus(taskCompletionStatus *gitlab.TasksCompletionStatus) (result []map[string]interface{}) {
+func flattenIssueTaskCompletionStatus(taskCompletionStatus *gitlab.TasksCompletionStatus) (result []map[string]any) {
 	if taskCompletionStatus == nil {
 		return
 	}
 
-	result = []map[string]interface{}{
+	result = []map[string]any{
 		{
 			"count":           taskCompletionStatus.Count,
 			"completed_count": taskCompletionStatus.CompletedCount,

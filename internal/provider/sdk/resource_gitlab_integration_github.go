@@ -105,7 +105,7 @@ func resourceGitlabIntegrationGithubSetToState(d *schema.ResourceData, service *
 	d.Set("active", service.Active)
 }
 
-func resourceGitlabIntegrationGithubCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabIntegrationGithubCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Get("project").(string)
 
@@ -125,7 +125,7 @@ func resourceGitlabIntegrationGithubCreate(ctx context.Context, d *schema.Resour
 	return resourceGitlabIntegrationGithubRead(ctx, d, meta)
 }
 
-func resourceGitlabIntegrationGithubRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabIntegrationGithubRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Get("project").(string)
 
@@ -149,11 +149,11 @@ func resourceGitlabIntegrationGithubRead(ctx context.Context, d *schema.Resource
 	return nil
 }
 
-func resourceGitlabIntegrationGithubUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabIntegrationGithubUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	return resourceGitlabIntegrationGithubCreate(ctx, d, meta)
 }
 
-func resourceGitlabIntegrationGithubDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabIntegrationGithubDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Get("project").(string)
 
@@ -167,7 +167,7 @@ func resourceGitlabIntegrationGithubDelete(ctx context.Context, d *schema.Resour
 	return nil
 }
 
-func resourceGitlabIntegrationGithubImportState(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceGitlabIntegrationGithubImportState(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 	d.Set("project", d.Id())
 
 	return []*schema.ResourceData{d}, nil

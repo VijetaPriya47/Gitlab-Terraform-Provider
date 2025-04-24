@@ -147,7 +147,7 @@ var _ = registerDataSource("gitlab_groups", func() *schema.Resource {
 	}
 })
 
-func dataSourceGitlabGroupsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceGitlabGroupsRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	listGroupsOptions, id, err := expandGitlabGroupsOptions(d)
@@ -177,11 +177,11 @@ func dataSourceGitlabGroupsRead(ctx context.Context, d *schema.ResourceData, met
 	return nil
 }
 
-func flattenGitlabGroups(groups []*gitlab.Group) []interface{} {
-	groupsList := []interface{}{}
+func flattenGitlabGroups(groups []*gitlab.Group) []any {
+	groupsList := []any{}
 
 	for _, group := range groups {
-		values := map[string]interface{}{
+		values := map[string]any{
 			"group_id":               group.ID,
 			"full_path":              group.FullPath,
 			"name":                   group.Name,

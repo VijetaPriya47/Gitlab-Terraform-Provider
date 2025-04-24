@@ -19,7 +19,7 @@ var _ = registerDataSource("gitlab_project_issue", func() *schema.Resource {
 	}
 })
 
-func dataSourceGitlabProjectIssueRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceGitlabProjectIssueRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Get("project").(string)
 	issueIID := d.Get("iid").(int)

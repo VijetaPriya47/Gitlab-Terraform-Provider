@@ -153,7 +153,7 @@ func (d *gitLabComplianceFrameworkDataSource) Read(ctx context.Context, req data
 
 	// loop over results looking for exact match
 	var matchingFramework api.GraphQLComplianceFramework
-	tflog.Debug(ctx, "Found Compliance Frameworks in Namespace", map[string]interface{}{
+	tflog.Debug(ctx, "Found Compliance Frameworks in Namespace", map[string]any{
 		"number found": len(response.Data.Namespace.ComplianceFrameworks.Nodes),
 		"namespace":    state.NamespacePath.ValueString(),
 	})

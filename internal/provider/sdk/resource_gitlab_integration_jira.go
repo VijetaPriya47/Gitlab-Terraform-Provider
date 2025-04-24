@@ -149,7 +149,7 @@ var _ = registerResource("gitlab_integration_jira", func() *schema.Resource {
 	}
 })
 
-func resourceGitlabIntegrationJiraCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabIntegrationJiraCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	project := d.Get("project").(string)
@@ -190,7 +190,7 @@ func resourceGitlabIntegrationJiraCreate(ctx context.Context, d *schema.Resource
 	return resourceGitlabIntegrationJiraRead(ctx, d, meta)
 }
 
-func resourceGitlabIntegrationJiraRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabIntegrationJiraRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Id()
 
@@ -247,11 +247,11 @@ func resourceGitlabIntegrationJiraRead(ctx context.Context, d *schema.ResourceDa
 	return nil
 }
 
-func resourceGitlabIntegrationJiraUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabIntegrationJiraUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	return resourceGitlabIntegrationJiraCreate(ctx, d, meta)
 }
 
-func resourceGitlabIntegrationJiraDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabIntegrationJiraDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	project := d.Get("project").(string)

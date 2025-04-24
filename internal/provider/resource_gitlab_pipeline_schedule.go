@@ -199,9 +199,9 @@ func resourceGitlabPipelineScheduleStateUpgradeV0ToV1(ctx context.Context, data 
 		return nil, fmt.Errorf("unable to convert pipeline schedule id %q to integer to migrate to new schema: %s", oldID, err.Error())
 	}
 
-	tflog.Debug(ctx, "attempting state migration from V0 to V1 - changing the `id` attribute format", map[string]interface{}{"project": project, "v0-id": oldID})
+	tflog.Debug(ctx, "attempting state migration from V0 to V1 - changing the `id` attribute format", map[string]any{"project": project, "v0-id": oldID})
 	newID := utils.BuildTwoPartID(&project, &oldID)
-	tflog.Debug(ctx, "migrated `id` attribute for V0 to V1", map[string]interface{}{"v0-id": oldID, "v1-id": newID})
+	tflog.Debug(ctx, "migrated `id` attribute for V0 to V1", map[string]any{"v0-id": oldID, "v1-id": newID})
 
 	newData := &gitlabPipelineScheduleResourceModel{
 		ID:                 types.StringValue(newID),
@@ -295,7 +295,7 @@ func (r *gitlabPipelineScheduleResource) Read(ctx context.Context, req resource.
 	pipelineSchedule, _, err := r.client.PipelineSchedules.GetPipelineSchedule(projectID, pipelineScheduleID, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			tflog.Debug(ctx, "pipeline schedule does not exist, removing from state", map[string]interface{}{
+			tflog.Debug(ctx, "pipeline schedule does not exist, removing from state", map[string]any{
 				"project": projectID, "pipelineSchedule": pipelineScheduleID,
 			})
 			resp.State.RemoveResource(ctx)
@@ -353,7 +353,7 @@ func (r *gitlabPipelineScheduleResource) Update(ctx context.Context, req resourc
 	}
 
 	if data.TakeOwnership.ValueBool() {
-		tflog.Debug(ctx, "[DEBUG] Taking ownership of gitlab PipelineSchedule.", map[string]interface{}{"pipelineSchedule": data.ID})
+		tflog.Debug(ctx, "[DEBUG] Taking ownership of gitlab PipelineSchedule.", map[string]any{"pipelineSchedule": data.ID})
 
 		_, _, err := r.client.PipelineSchedules.TakeOwnershipOfPipelineSchedule(projectID, pipelineScheduleID, nil, gitlab.WithContext(ctx))
 		if err != nil {
@@ -377,7 +377,7 @@ func (r *gitlabPipelineScheduleResource) Update(ctx context.Context, req resourc
 	r.pipelineScheduleToStateModel(projectID, pipelineSchedule, data)
 
 	// Log the creation of the resource
-	tflog.Debug(ctx, "updated a pipeline schedule", map[string]interface{}{
+	tflog.Debug(ctx, "updated a pipeline schedule", map[string]any{
 		"project": projectID, "pipelineSchedule": pipelineScheduleID,
 	})
 
@@ -460,7 +460,7 @@ func (r *gitlabPipelineScheduleResource) Create(ctx context.Context, req resourc
 	r.pipelineScheduleToStateModel(projectID, pipelineSchedule, data)
 
 	// Log the creation of the resource
-	tflog.Debug(ctx, "created a pipeline schedule", map[string]interface{}{
+	tflog.Debug(ctx, "created a pipeline schedule", map[string]any{
 		"project": projectID, "pipelineSchedule": rawPipelineScheduleID,
 	})
 

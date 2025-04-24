@@ -79,7 +79,7 @@ var _ = registerResource("gitlab_system_hook", func() *schema.Resource {
 	}
 })
 
-func resourceGitlabSystemHookCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabSystemHookCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	options := &gitlab.AddHookOptions{
@@ -131,7 +131,7 @@ func resourceGitlabSystemHookCreate(ctx context.Context, d *schema.ResourceData,
 	return resourceGitlabSystemHookRead(ctx, d, meta)
 }
 
-func resourceGitlabSystemHookRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabSystemHookRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	hookID, err := strconv.Atoi(d.Id())
 	if err != nil {
@@ -159,7 +159,7 @@ func resourceGitlabSystemHookRead(ctx context.Context, d *schema.ResourceData, m
 	return nil
 }
 
-func resourceGitlabSystemHookDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabSystemHookDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	hookID, err := strconv.Atoi(d.Id())
 	if err != nil {

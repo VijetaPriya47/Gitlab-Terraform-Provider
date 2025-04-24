@@ -67,7 +67,7 @@ var _ = registerDataSource("gitlab_project_milestones", func() *schema.Resource 
 	}
 })
 
-func dataSourceGitlabProjectMilestonesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceGitlabProjectMilestonesRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	project := d.Get("project").(string)
@@ -123,7 +123,7 @@ func dataSourceGitlabProjectMilestonesRead(ctx context.Context, d *schema.Resour
 	return nil
 }
 
-func flattenGitlabProjectMilestones(project string, milestones []*gitlab.Milestone) (values []map[string]interface{}) {
+func flattenGitlabProjectMilestones(project string, milestones []*gitlab.Milestone) (values []map[string]any) {
 	for _, milestone := range milestones {
 		values = append(values, gitlabProjectMilestoneToStateMap(project, milestone))
 	}

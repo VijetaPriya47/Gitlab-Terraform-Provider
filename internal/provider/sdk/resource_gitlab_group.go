@@ -375,7 +375,7 @@ var _ = registerResource("gitlab_group", func() *schema.Resource {
 	}
 })
 
-func resourceGitlabGroupCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabGroupCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	options := &gitlab.CreateGroupOptions{
 		Name: gitlab.Ptr(d.Get("name").(string)),
@@ -460,11 +460,11 @@ func resourceGitlabGroupCreate(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	if v, ok := d.GetOk("default_branch_protection_defaults.0"); ok {
-		defaults := v.(map[string]interface{})
+		defaults := v.(map[string]any)
 		options.DefaultBranchProtectionDefaults = &gitlab.DefaultBranchProtectionDefaultsOptions{
-			AllowedToPush:           gitlab.Ptr(convertAccessLevelNamesToValues(defaults["allowed_to_push"].([]interface{}))),
+			AllowedToPush:           gitlab.Ptr(convertAccessLevelNamesToValues(defaults["allowed_to_push"].([]any))),
 			AllowForcePush:          gitlab.Ptr(defaults["allow_force_push"].(bool)),
-			AllowedToMerge:          gitlab.Ptr(convertAccessLevelNamesToValues(defaults["allowed_to_merge"].([]interface{}))),
+			AllowedToMerge:          gitlab.Ptr(convertAccessLevelNamesToValues(defaults["allowed_to_merge"].([]any))),
 			DeveloperCanInitialPush: gitlab.Ptr(defaults["developer_can_initial_push"].(bool)),
 		}
 	}
@@ -498,7 +498,7 @@ func resourceGitlabGroupCreate(ctx context.Context, d *schema.ResourceData, meta
 		options.WikiAccessLevel = stringToAccessControlValue(v.(string))
 	}
 
-	tflog.Debug(ctx, "[DEBUG] create gitlab group", map[string]interface{}{
+	tflog.Debug(ctx, "[DEBUG] create gitlab group", map[string]any{
 		"name": *options.Name,
 	})
 
@@ -514,13 +514,13 @@ func resourceGitlabGroupCreate(ctx context.Context, d *schema.ResourceData, meta
 	stateConf := &retry.StateChangeConf{
 		Pending: []string{"Creating"},
 		Target:  []string{"Created"},
-		Refresh: func() (interface{}, string, error) {
+		Refresh: func() (any, string, error) {
 			out, _, err := client.Groups.GetGroup(group.ID, nil, gitlab.WithContext(ctx))
 			if err != nil {
 				if api.Is404(err) {
 					return out, "Creating", nil
 				}
-				tflog.Error(ctx, "[ERROR] Received error retrieving group", map[string]interface{}{
+				tflog.Error(ctx, "[ERROR] Received error retrieving group", map[string]any{
 					"group_id": group.ID,
 					"error":    err,
 				})
@@ -546,7 +546,7 @@ func resourceGitlabGroupCreate(ctx context.Context, d *schema.ResourceData, meta
 		err := editOrAddGroupPushRules(ctx, client, d.Id(), d)
 		if err != nil {
 			if api.Is404(err) {
-				tflog.Error(ctx, "[ERROR] Failed to edit push rules for group", map[string]interface{}{
+				tflog.Error(ctx, "[ERROR] Failed to edit push rules for group", map[string]any{
 					"group_id": d.Id(),
 					"error":    err,
 				})
@@ -566,12 +566,12 @@ func resourceGitlabGroupCreate(ctx context.Context, d *schema.ResourceData, meta
 
 	// IP Restriction can only be set on update.
 	if v, ok := d.GetOk("ip_restriction_ranges"); ok {
-		updateOptions.IPRestrictionRanges = stringListToCommaSeparatedString(v.([]interface{}))
+		updateOptions.IPRestrictionRanges = stringListToCommaSeparatedString(v.([]any))
 	}
 
 	// Email domains can only be set on update.
 	if v, ok := d.GetOk("allowed_email_domains_list"); ok {
-		updateOptions.AllowedEmailDomainsList = stringListToCommaSeparatedString(v.([]interface{}))
+		updateOptions.AllowedEmailDomainsList = stringListToCommaSeparatedString(v.([]any))
 	}
 
 	if v, ok := d.GetOk("shared_runners_setting"); ok {
@@ -587,7 +587,7 @@ func resourceGitlabGroupCreate(ctx context.Context, d *schema.ResourceData, meta
 	return resourceGitlabGroupRead(ctx, d, meta)
 }
 
-func convertAccessLevelNamesToValues(names []interface{}) []*gitlab.GroupAccessLevel {
+func convertAccessLevelNamesToValues(names []any) []*gitlab.GroupAccessLevel {
 	valuesList := []*gitlab.GroupAccessLevel{}
 
 	for _, name := range names {
@@ -601,10 +601,10 @@ func convertAccessLevelNamesToValues(names []interface{}) []*gitlab.GroupAccessL
 	return valuesList
 }
 
-func resourceGitlabGroupRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabGroupRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
-	tflog.Debug(ctx, "[DEBUG] read gitlab group", map[string]interface{}{
+	tflog.Debug(ctx, "[DEBUG] read gitlab group", map[string]any{
 		"group_id": d.Id(),
 	})
 
@@ -615,7 +615,7 @@ func resourceGitlabGroupRead(ctx context.Context, d *schema.ResourceData, meta i
 	)
 	if err != nil {
 		if api.Is404(err) {
-			tflog.Debug(ctx, "[DEBUG] gitlab group not found so removing", map[string]interface{}{
+			tflog.Debug(ctx, "[DEBUG] gitlab group not found so removing", map[string]any{
 				"id": d.Id(),
 			})
 			d.SetId("")
@@ -624,7 +624,7 @@ func resourceGitlabGroupRead(ctx context.Context, d *schema.ResourceData, meta i
 		return diag.FromErr(err)
 	}
 	if group.MarkedForDeletionOn != nil {
-		tflog.Debug(ctx, "[DEBUG] gitlab group marked for deletion", map[string]interface{}{
+		tflog.Debug(ctx, "[DEBUG] gitlab group marked for deletion", map[string]any{
 			"id": d.Id(),
 		})
 		d.SetId("")
@@ -664,7 +664,7 @@ func resourceGitlabGroupRead(ctx context.Context, d *schema.ResourceData, meta i
 	d.Set("default_branch_protection", group.DefaultBranchProtection)
 
 	if group.DefaultBranchProtectionDefaults != nil {
-		err = d.Set("default_branch_protection_defaults", []map[string]interface{}{
+		err = d.Set("default_branch_protection_defaults", []map[string]any{
 			{
 				"allowed_to_push":            convertAccessLevelValuesToNames(group.DefaultBranchProtectionDefaults.AllowedToPush),
 				"allow_force_push":           group.DefaultBranchProtectionDefaults.AllowForcePush,
@@ -709,11 +709,11 @@ func resourceGitlabGroupRead(ctx context.Context, d *schema.ResourceData, meta i
 	}
 
 	if isEE {
-		tflog.Debug(ctx, "[DEBUG] read gitlab group push rules", map[string]interface{}{"id": d.Id()})
+		tflog.Debug(ctx, "[DEBUG] read gitlab group push rules", map[string]any{"id": d.Id()})
 
 		pushRules, _, err := client.Groups.GetGroupPushRules(d.Id(), gitlab.WithContext(ctx))
 		if api.Is404(err) {
-			tflog.Error(ctx, "[ERROR] Failed to get push rules for group", map[string]interface{}{
+			tflog.Error(ctx, "[ERROR] Failed to get push rules for group", map[string]any{
 				"group_id": d.Id(),
 				"error":    err,
 			})
@@ -744,7 +744,7 @@ func convertAccessLevelValuesToNames(values []*gitlab.GroupAccessLevel) []*strin
 	return namesList
 }
 
-func resourceGitlabGroupUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabGroupUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	options := &gitlab.UpdateGroupOptions{}
@@ -837,11 +837,11 @@ func resourceGitlabGroupUpdate(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	if d.HasChange("ip_restriction_ranges") {
-		options.IPRestrictionRanges = stringListToCommaSeparatedString(d.Get("ip_restriction_ranges").([]interface{}))
+		options.IPRestrictionRanges = stringListToCommaSeparatedString(d.Get("ip_restriction_ranges").([]any))
 	}
 
 	if d.HasChange("allowed_email_domains_list") {
-		options.AllowedEmailDomainsList = stringListToCommaSeparatedString(d.Get("allowed_email_domains_list").([]interface{}))
+		options.AllowedEmailDomainsList = stringListToCommaSeparatedString(d.Get("allowed_email_domains_list").([]any))
 	}
 
 	avatar, err := handleAvatarOnUpdate(d)
@@ -863,7 +863,7 @@ func resourceGitlabGroupUpdate(ctx context.Context, d *schema.ResourceData, meta
 		options.SharedRunnersSetting = stringToSharedRunnersSetting(d.Get("shared_runners_setting").(string))
 	}
 
-	tflog.Debug(ctx, "update gitlab group", map[string]interface{}{
+	tflog.Debug(ctx, "update gitlab group", map[string]any{
 		"group_id": d.Id(),
 		"options":  fmt.Sprintf("%+v", options),
 	})
@@ -884,7 +884,7 @@ func resourceGitlabGroupUpdate(ctx context.Context, d *schema.ResourceData, meta
 		err := editOrAddGroupPushRules(ctx, client, d.Id(), d)
 		if err != nil {
 			if api.Is404(err) {
-				tflog.Error(ctx, "[ERROR] Failed to edit push rules for group", map[string]interface{}{
+				tflog.Error(ctx, "[ERROR] Failed to edit push rules for group", map[string]any{
 					"group_id": d.Id(),
 					"error":    err,
 				})
@@ -906,7 +906,7 @@ func transferSubGroup(ctx context.Context, d *schema.ResourceData, client *gitla
 
 	opt := &gitlab.TransferSubGroupOptions{}
 	if parentId != 0 {
-		tflog.Debug(ctx, "transfer gitlab group", map[string]interface{}{
+		tflog.Debug(ctx, "transfer gitlab group", map[string]any{
 			"group_id":  d.Id(),
 			"old_group": o,
 			"new_group": parentId,
@@ -914,7 +914,7 @@ func transferSubGroup(ctx context.Context, d *schema.ResourceData, client *gitla
 
 		opt.GroupID = gitlab.Ptr(parentId)
 	} else {
-		tflog.Debug(ctx, "turn gitlab group into a new top-level group", map[string]interface{}{
+		tflog.Debug(ctx, "turn gitlab group into a new top-level group", map[string]any{
 			"group_id":  d.Id(),
 			"old_group": o,
 		})
@@ -928,9 +928,9 @@ func transferSubGroup(ctx context.Context, d *schema.ResourceData, client *gitla
 	return nil
 }
 
-func resourceGitlabGroupDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabGroupDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
-	tflog.Debug(ctx, "delete gitlab group", map[string]interface{}{
+	tflog.Debug(ctx, "delete gitlab group", map[string]any{
 		"id": d.Id(),
 	})
 
@@ -944,13 +944,13 @@ func resourceGitlabGroupDelete(ctx context.Context, d *schema.ResourceData, meta
 	stateConf := &retry.StateChangeConf{
 		Pending: []string{"Deleting"},
 		Target:  []string{"Deleted"},
-		Refresh: func() (interface{}, string, error) {
+		Refresh: func() (any, string, error) {
 			out, response, err := client.Groups.GetGroup(d.Id(), nil, gitlab.WithContext(ctx))
 			if err != nil {
 				if response != nil && response.StatusCode == 404 {
 					return out, "Deleted", nil
 				}
-				tflog.Error(ctx, "Received error", map[string]interface{}{
+				tflog.Error(ctx, "Received error", map[string]any{
 					"error": err,
 				})
 				return out, "Error", err
@@ -974,7 +974,7 @@ func resourceGitlabGroupDelete(ctx context.Context, d *schema.ResourceData, meta
 
 	// If permanent deletion is selected, issue a second "permanently delete" API call
 	if d.Get("permanently_remove_on_delete").(bool) && d.Get("full_path").(string) != "" {
-		tflog.Debug(ctx, "Attempting to permanently delete the group", map[string]interface{}{
+		tflog.Debug(ctx, "Attempting to permanently delete the group", map[string]any{
 			"group": d.Get("full_path").(string),
 		})
 
@@ -992,13 +992,13 @@ func resourceGitlabGroupDelete(ctx context.Context, d *schema.ResourceData, meta
 		stateConf := &retry.StateChangeConf{
 			Pending: []string{"Deleting"},
 			Target:  []string{"Deleted"},
-			Refresh: func() (interface{}, string, error) {
+			Refresh: func() (any, string, error) {
 				out, response, err := client.Groups.GetGroup(d.Id(), nil, gitlab.WithContext(ctx))
 				if err != nil {
 					if response != nil && response.StatusCode == 404 {
 						return out, "Deleted", nil
 					}
-					tflog.Error(ctx, "Received error", map[string]interface{}{
+					tflog.Error(ctx, "Received error", map[string]any{
 						"error": err,
 					})
 					return out, "Error", err
@@ -1020,7 +1020,7 @@ func resourceGitlabGroupDelete(ctx context.Context, d *schema.ResourceData, meta
 }
 
 func editOrAddGroupPushRules(ctx context.Context, client *gitlab.Client, groupID string, d *schema.ResourceData) error {
-	tflog.Debug(ctx, "[DEBUG] Editing push rules for group", map[string]interface{}{
+	tflog.Debug(ctx, "[DEBUG] Editing push rules for group", map[string]any{
 		"group_id": groupID,
 	})
 
@@ -1032,7 +1032,7 @@ func editOrAddGroupPushRules(ctx context.Context, client *gitlab.Client, groupID
 			return err
 		}
 		if (gitlab.AddGroupPushRuleOptions{}) != addOptions {
-			tflog.Debug(ctx, "[DEBUG] Creating new push rules for group", map[string]interface{}{
+			tflog.Debug(ctx, "[DEBUG] Creating new push rules for group", map[string]any{
 				"group_id": groupID,
 			})
 			_, _, err = client.Groups.AddGroupPushRule(groupID, &addOptions, gitlab.WithContext(ctx))
@@ -1040,7 +1040,7 @@ func editOrAddGroupPushRules(ctx context.Context, client *gitlab.Client, groupID
 				return err
 			}
 		} else {
-			tflog.Debug(ctx, "[DEBUG] Don't create new push rules for defaults for group", map[string]interface{}{
+			tflog.Debug(ctx, "[DEBUG] Don't create new push rules for defaults for group", map[string]any{
 				"group_id": groupID,
 			})
 		}
@@ -1053,7 +1053,7 @@ func editOrAddGroupPushRules(ctx context.Context, client *gitlab.Client, groupID
 		return err
 	}
 	if (gitlab.EditGroupPushRuleOptions{}) != editOptions {
-		tflog.Debug(ctx, "[DEBUG] Editing existing push rules for group", map[string]interface{}{
+		tflog.Debug(ctx, "[DEBUG] Editing existing push rules for group", map[string]any{
 			"group_id": groupID,
 		})
 		_, _, err = client.Groups.EditGroupPushRule(groupID, &editOptions, gitlab.WithContext(ctx))
@@ -1061,7 +1061,7 @@ func editOrAddGroupPushRules(ctx context.Context, client *gitlab.Client, groupID
 			return err
 		}
 	} else {
-		tflog.Debug(ctx, "[DEBUG] Don't edit existing push rules for defaults for group", map[string]interface{}{
+		tflog.Debug(ctx, "[DEBUG] Don't edit existing push rules for defaults for group", map[string]any{
 			"group_id": groupID,
 		})
 	}
@@ -1072,9 +1072,9 @@ func editOrAddGroupPushRules(ctx context.Context, client *gitlab.Client, groupID
 func expandDefaultBranchProtectionDefaults(d *schema.ResourceData) gitlab.DefaultBranchProtectionDefaultsOptions {
 	options := gitlab.DefaultBranchProtectionDefaultsOptions{}
 
-	options.AllowedToPush = gitlab.Ptr(convertAccessLevelNamesToValues(d.Get("default_branch_protection_defaults.0.allowed_to_push").([]interface{})))
+	options.AllowedToPush = gitlab.Ptr(convertAccessLevelNamesToValues(d.Get("default_branch_protection_defaults.0.allowed_to_push").([]any)))
 	options.AllowForcePush = gitlab.Ptr(d.Get("default_branch_protection_defaults.0.allow_force_push").(bool))
-	options.AllowedToMerge = gitlab.Ptr(convertAccessLevelNamesToValues(d.Get("default_branch_protection_defaults.0.allowed_to_merge").([]interface{})))
+	options.AllowedToMerge = gitlab.Ptr(convertAccessLevelNamesToValues(d.Get("default_branch_protection_defaults.0.allowed_to_merge").([]any)))
 	options.DeveloperCanInitialPush = gitlab.Ptr(d.Get("default_branch_protection_defaults.0.developer_can_initial_push").(bool))
 
 	return options
@@ -1196,12 +1196,12 @@ func expandAddGroupPushRuleOptions(ctx context.Context, client *gitlab.Client, d
 	return options, nil
 }
 
-func flattenGroupPushRules(ctx context.Context, client *gitlab.Client, pushRules *gitlab.GroupPushRules) (values []map[string]interface{}, err error) {
+func flattenGroupPushRules(ctx context.Context, client *gitlab.Client, pushRules *gitlab.GroupPushRules) (values []map[string]any, err error) {
 	if pushRules == nil {
-		return []map[string]interface{}{}, nil
+		return []map[string]any{}, nil
 	}
 
-	values = []map[string]interface{}{
+	values = []map[string]any{
 		{
 			"author_email_regex":            pushRules.AuthorEmailRegex,
 			"branch_name_regex":             pushRules.BranchNameRegex,

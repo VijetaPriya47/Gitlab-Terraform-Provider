@@ -121,7 +121,7 @@ var _ = registerResource("gitlab_project_approval_rule", func() *schema.Resource
 	}
 })
 
-func resourceGitlabProjectApprovalRuleCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectApprovalRuleCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	project := d.Get("project").(string)
@@ -188,7 +188,7 @@ func resourceGitlabProjectApprovalRuleCreate(ctx context.Context, d *schema.Reso
 			}
 		}
 
-		tflog.Debug(ctx, `Creating gitlab project-level rule`, map[string]interface{}{
+		tflog.Debug(ctx, `Creating gitlab project-level rule`, map[string]any{
 			"Project": project, "Options": options,
 		})
 
@@ -209,7 +209,7 @@ func resourceGitlabProjectApprovalRuleCreate(ctx context.Context, d *schema.Reso
 			ProtectedBranchIDs:            expandProtectedBranchIDs(d.Get("protected_branch_ids")),
 			AppliesToAllProtectedBranches: gitlab.Ptr(d.Get("applies_to_all_protected_branches").(bool)),
 		}
-		tflog.Debug(ctx, `Updating project level approval rule for "any_approver"`, map[string]interface{}{
+		tflog.Debug(ctx, `Updating project level approval rule for "any_approver"`, map[string]any{
 			"Project": project, "RuleID": anyApproverRuleId, "Options": options,
 		})
 
@@ -225,8 +225,8 @@ func resourceGitlabProjectApprovalRuleCreate(ctx context.Context, d *schema.Reso
 	return resourceGitlabProjectApprovalRuleRead(ctx, d, meta)
 }
 
-func resourceGitlabProjectApprovalRuleRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, `Reading gitlab project-level rule`, map[string]interface{}{"ruleId": d.Id()})
+func resourceGitlabProjectApprovalRuleRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, `Reading gitlab project-level rule`, map[string]any{"ruleId": d.Id()})
 
 	projectID, parsedRuleID, err := utils.ParseTwoPartID(d.Id())
 	if err != nil {
@@ -242,7 +242,7 @@ func resourceGitlabProjectApprovalRuleRead(ctx context.Context, d *schema.Resour
 	rule, _, err := client.Projects.GetProjectApprovalRule(projectID, ruleID, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			tflog.Debug(ctx, `No gitlab project-level rule found, removing from state`, map[string]interface{}{"ruleId": d.Id()})
+			tflog.Debug(ctx, `No gitlab project-level rule found, removing from state`, map[string]any{"ruleId": d.Id()})
 			d.SetId("")
 			return nil
 		}
@@ -275,7 +275,7 @@ func resourceGitlabProjectApprovalRuleRead(ctx context.Context, d *schema.Resour
 	return nil
 }
 
-func resourceGitlabProjectApprovalRuleUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectApprovalRuleUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	projectID, ruleID, err := utils.ParseTwoPartID(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
@@ -295,7 +295,7 @@ func resourceGitlabProjectApprovalRuleUpdate(ctx context.Context, d *schema.Reso
 		AppliesToAllProtectedBranches: gitlab.Ptr(d.Get("applies_to_all_protected_branches").(bool)),
 	}
 
-	tflog.Debug(ctx, `Updating gitlab project-level rule`, map[string]interface{}{"project": projectID, "options": options})
+	tflog.Debug(ctx, `Updating gitlab project-level rule`, map[string]any{"project": projectID, "options": options})
 
 	client := meta.(*gitlab.Client)
 
@@ -307,7 +307,7 @@ func resourceGitlabProjectApprovalRuleUpdate(ctx context.Context, d *schema.Reso
 	return resourceGitlabProjectApprovalRuleRead(ctx, d, meta)
 }
 
-func resourceGitlabProjectApprovalRuleDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectApprovalRuleDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	project, ruleID, err := utils.ParseTwoPartID(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
@@ -318,7 +318,7 @@ func resourceGitlabProjectApprovalRuleDelete(ctx context.Context, d *schema.Reso
 		return diag.FromErr(err)
 	}
 
-	tflog.Debug(ctx, `Deleting gitlab project-level rule`, map[string]interface{}{"ruleId": ruleIDInt, "project": project})
+	tflog.Debug(ctx, `Deleting gitlab project-level rule`, map[string]any{"ruleId": ruleIDInt, "project": project})
 
 	client := meta.(*gitlab.Client)
 
@@ -365,7 +365,7 @@ func flattenProtectedBranchIDs(protectedBranches []*gitlab.ProtectedBranch) []in
 }
 
 // expandApproverIds Expands an interface into a list of ints to read from state.
-func expandApproverIds(ids interface{}) *[]int {
+func expandApproverIds(ids any) *[]int {
 	var approverIDs []int
 
 	for _, id := range ids.(*schema.Set).List() {
@@ -375,7 +375,7 @@ func expandApproverIds(ids interface{}) *[]int {
 	return &approverIDs
 }
 
-func expandProtectedBranchIDs(ids interface{}) *[]int {
+func expandProtectedBranchIDs(ids any) *[]int {
 	var protectedBranchIDs []int
 
 	for _, id := range ids.(*schema.Set).List() {
@@ -389,11 +389,11 @@ func getAnyApproverRuleId(ctx context.Context, client *gitlab.Client, project st
 	rules, _, err := client.Projects.GetProjectApprovalRules(project, &gitlab.GetProjectApprovalRulesListsOptions{})
 	if err != nil {
 		if api.Is404(err) {
-			tflog.Debug(ctx, `Project approval rules not found, skipping update for "any_approver" and creating instead.`, map[string]interface{}{
+			tflog.Debug(ctx, `Project approval rules not found, skipping update for "any_approver" and creating instead.`, map[string]any{
 				"project": project,
 			})
 		} else {
-			tflog.Error(ctx, `Error calling GitLab APi when retrieving approval rules for the "any_approver" rule check.`, map[string]interface{}{
+			tflog.Error(ctx, `Error calling GitLab APi when retrieving approval rules for the "any_approver" rule check.`, map[string]any{
 				"project": project,
 			})
 			return 0, err
@@ -402,14 +402,14 @@ func getAnyApproverRuleId(ctx context.Context, client *gitlab.Client, project st
 
 	for _, v := range rules {
 		if v.RuleType == "any_approver" && v.ApprovalsRequired == 0 {
-			tflog.Debug(ctx, `"any_approver" rule with 0 approvers already exists, updating instead of creating.`, map[string]interface{}{
+			tflog.Debug(ctx, `"any_approver" rule with 0 approvers already exists, updating instead of creating.`, map[string]any{
 				"project": project, "rule_id": v.ID,
 			})
 			return v.ID, nil
 		}
 
 		if v.RuleType == "any_approver" && v.ApprovalsRequired > 0 {
-			tflog.Debug(ctx, `"any_approver" rule with more than 0 approvers exists, not eligible for auto-import.`, map[string]interface{}{
+			tflog.Debug(ctx, `"any_approver" rule with more than 0 approvers exists, not eligible for auto-import.`, map[string]any{
 				"project": project, "rule_id": v.ID, "approvals_required": v.ApprovalsRequired,
 			})
 			return 0, nil

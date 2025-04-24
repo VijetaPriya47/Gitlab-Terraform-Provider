@@ -104,7 +104,7 @@ func (r *gitlabProjectTargetBranchRule) Create(ctx context.Context, req resource
 		return
 	}
 
-	tflog.Trace(ctx, "found project", map[string]interface{}{
+	tflog.Trace(ctx, "found project", map[string]any{
 		"project": gitlab.Stringify(projectGID),
 	})
 
@@ -121,7 +121,7 @@ func (r *gitlabProjectTargetBranchRule) Create(ctx context.Context, req resource
 			}`, projectGID.ProjectGQLID, data.SourceBranchPattern.ValueString(), data.TargetBranchName.ValueString()),
 	}
 
-	tflog.Debug(ctx, "executing GraphQL Query to create gitlab_project_target_branch_rule", map[string]interface{}{
+	tflog.Debug(ctx, "executing GraphQL Query to create gitlab_project_target_branch_rule", map[string]any{
 		"query": query.Query,
 	})
 	var response getProjectTargetBranchRuleCreateResponse
@@ -138,7 +138,7 @@ func (r *gitlabProjectTargetBranchRule) Create(ctx context.Context, req resource
 		}
 	}
 
-	tflog.Debug(ctx, "response from GraphQL Query to create gitlab_project_target_branch_rule", map[string]interface{}{
+	tflog.Debug(ctx, "response from GraphQL Query to create gitlab_project_target_branch_rule", map[string]any{
 		"response": response,
 	})
 
@@ -167,7 +167,7 @@ func (r *gitlabProjectTargetBranchRule) Read(ctx context.Context, req resource.R
 	project, _, err := r.client.Projects.GetProject(projectID, nil, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			tflog.Debug(ctx, "project does not exist, removing resource from state", map[string]interface{}{
+			tflog.Debug(ctx, "project does not exist, removing resource from state", map[string]any{
 				"project": data.Project.ValueString(),
 			})
 			resp.State.RemoveResource(ctx)
@@ -192,7 +192,7 @@ func (r *gitlabProjectTargetBranchRule) Read(ctx context.Context, req resource.R
 			}`, project.PathWithNamespace),
 	}
 
-	tflog.Debug(ctx, "executing GraphQL Query to read gitlab_project_target_branch_rule", map[string]interface{}{
+	tflog.Debug(ctx, "executing GraphQL Query to read gitlab_project_target_branch_rule", map[string]any{
 		"query": query.Query,
 	})
 
@@ -203,7 +203,7 @@ func (r *gitlabProjectTargetBranchRule) Read(ctx context.Context, req resource.R
 		return
 	}
 
-	tflog.Debug(ctx, "response from GraphQL Query to read gitlab_project_target_branch_rule", map[string]interface{}{
+	tflog.Debug(ctx, "response from GraphQL Query to read gitlab_project_target_branch_rule", map[string]any{
 		"response": response,
 	})
 
@@ -215,7 +215,7 @@ func (r *gitlabProjectTargetBranchRule) Read(ctx context.Context, req resource.R
 	}
 
 	if value.Id != targetBranchRuleID {
-		tflog.Debug(ctx, "targetBranchRuleID not found in project, removing resource from state", map[string]interface{}{
+		tflog.Debug(ctx, "targetBranchRuleID not found in project, removing resource from state", map[string]any{
 			"project": data.Project.ValueString(),
 		})
 		resp.State.RemoveResource(ctx)
@@ -265,7 +265,7 @@ func (r *gitlabProjectTargetBranchRule) Delete(ctx context.Context, req resource
 			}`, targetBranchRuleID),
 	}
 
-	tflog.Debug(ctx, "executing GraphQL Query to delete gitlab_project_target_branch_rule", map[string]interface{}{
+	tflog.Debug(ctx, "executing GraphQL Query to delete gitlab_project_target_branch_rule", map[string]any{
 		"query": query.Query,
 	})
 
@@ -277,7 +277,7 @@ func (r *gitlabProjectTargetBranchRule) Delete(ctx context.Context, req resource
 	}
 
 	if response.Data.ProjectTargetBranchRuleDestroy.ClientMutationID != "projectTargetBranchRuleDestroy" {
-		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("No mutation id was returned by GraphQL API: %s", map[string]interface{}{
+		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("No mutation id was returned by GraphQL API: %s", map[string]any{
 			"response": response,
 		}))
 		return
@@ -290,7 +290,7 @@ func (r *gitlabProjectTargetBranchRule) Delete(ctx context.Context, req resource
 		}
 	}
 
-	tflog.Debug(ctx, "response from GraphQL Query to delete gitlab_project_target_branch_rule", map[string]interface{}{
+	tflog.Debug(ctx, "response from GraphQL Query to delete gitlab_project_target_branch_rule", map[string]any{
 		"response": response,
 	})
 

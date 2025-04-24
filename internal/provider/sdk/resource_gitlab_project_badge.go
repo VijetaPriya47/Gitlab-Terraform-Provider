@@ -63,7 +63,7 @@ var _ = registerResource("gitlab_project_badge", func() *schema.Resource {
 	}
 })
 
-func resourceGitlabProjectBadgeCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectBadgeCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	projectID := d.Get("project").(string)
 	options := &gitlab.AddProjectBadgeOptions{
@@ -86,7 +86,7 @@ func resourceGitlabProjectBadgeCreate(ctx context.Context, d *schema.ResourceDat
 	return resourceGitlabProjectBadgeRead(ctx, d, meta)
 }
 
-func resourceGitlabProjectBadgeRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectBadgeRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	projectID, badgeID, err := resourceGitlabProjectBadgeParseID(d.Id())
 	if err != nil {
@@ -109,7 +109,7 @@ func resourceGitlabProjectBadgeRead(ctx context.Context, d *schema.ResourceData,
 	return nil
 }
 
-func resourceGitlabProjectBadgeUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectBadgeUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	projectID, badgeID, err := resourceGitlabProjectBadgeParseID(d.Id())
 	if err != nil {
@@ -132,7 +132,7 @@ func resourceGitlabProjectBadgeUpdate(ctx context.Context, d *schema.ResourceDat
 	return resourceGitlabProjectBadgeRead(ctx, d, meta)
 }
 
-func resourceGitlabProjectBadgeDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectBadgeDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	projectID, badgeID, err := resourceGitlabProjectBadgeParseID(d.Id())
 	if err != nil {

@@ -62,7 +62,7 @@ var _ = registerResource("gitlab_user_gpgkey", func() *schema.Resource {
 	}
 })
 
-func resourceGitlabUserGPGKeyCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabUserGPGKeyCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	options := &gitlab.AddGPGKeyOptions{
@@ -99,7 +99,7 @@ func resourceGitlabUserGPGKeyCreate(ctx context.Context, d *schema.ResourceData,
 	return resourceGitlabUserGPGKeyRead(ctx, d, meta)
 }
 
-func resourceGitlabUserGPGKeyRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabUserGPGKeyRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	userID, keyID, err := resourceGitlabUserGPGKeyParseID(d.Id())
@@ -131,7 +131,7 @@ func resourceGitlabUserGPGKeyRead(ctx context.Context, d *schema.ResourceData, m
 	return nil
 }
 
-func resourceGitlabUserGPGKeyDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabUserGPGKeyDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	var isAdmin bool

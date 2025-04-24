@@ -162,7 +162,7 @@ func (r *gitlabGroupHookResource) Create(ctx context.Context, req resource.Creat
 		options.CustomHeaders = &headers
 	}
 
-	tflog.Debug(ctx, "creating gitlab group hook with details", map[string]interface{}{
+	tflog.Debug(ctx, "creating gitlab group hook with details", map[string]any{
 		"group": data.Group,
 		"url":   data.URL.ValueString(),
 	})
@@ -192,7 +192,7 @@ func (r *gitlabGroupHookResource) Read(ctx context.Context, req resource.ReadReq
 		return
 	}
 
-	tflog.Debug(ctx, "reading gitlab Group hook with details", map[string]interface{}{
+	tflog.Debug(ctx, "reading gitlab Group hook with details", map[string]any{
 		"group": group,
 		"id":    hookId,
 	})
@@ -201,7 +201,7 @@ func (r *gitlabGroupHookResource) Read(ctx context.Context, req resource.ReadReq
 	if err != nil {
 		// Group/Hook not found
 		if api.Is404(err) {
-			tflog.Debug(ctx, "gitlab Group hook not found, removing from state", map[string]interface{}{
+			tflog.Debug(ctx, "gitlab Group hook not found, removing from state", map[string]any{
 				"group": group,
 				"id":    hookId,
 			})
@@ -283,7 +283,7 @@ func (r *gitlabGroupHookResource) Update(ctx context.Context, req resource.Updat
 		options.CustomHeaders = &headers
 	}
 
-	tflog.Debug(ctx, "updating gitlab Group hook with details", map[string]interface{}{
+	tflog.Debug(ctx, "updating gitlab Group hook with details", map[string]any{
 		"group": data.Group,
 		"url":   data.URL.ValueString(),
 	})

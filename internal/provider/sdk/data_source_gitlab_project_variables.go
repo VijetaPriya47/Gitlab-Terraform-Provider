@@ -41,7 +41,7 @@ var _ = registerDataSource("gitlab_project_variables", func() *schema.Resource {
 	}
 })
 
-func dataSourceGitlabProjectVariablesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceGitlabProjectVariablesRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Get("project").(string)
 	environmentScope := d.Get("environment_scope").(string)
@@ -69,7 +69,7 @@ func dataSourceGitlabProjectVariablesRead(ctx context.Context, d *schema.Resourc
 	return nil
 }
 
-func flattenGitlabProjectVariables(project string, variables []*gitlab.ProjectVariable) (values []map[string]interface{}) {
+func flattenGitlabProjectVariables(project string, variables []*gitlab.ProjectVariable) (values []map[string]any) {
 	for _, variable := range variables {
 		values = append(values, gitlabProjectVariableToStateMap(project, variable))
 	}

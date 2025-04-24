@@ -118,7 +118,7 @@ func (r *gitlabInstanceServiceAccountResource) Create(ctx context.Context, req r
 
 	data.userToStateModel(serviceAccount)
 	// Log the creation of the resource
-	tflog.Debug(ctx, "created a service account", map[string]interface{}{
+	tflog.Debug(ctx, "created a service account", map[string]any{
 		"id":       data.ServiceAccountID.ValueString(),
 		"name":     data.Name.ValueString(),
 		"username": data.Username.ValueString(),
@@ -152,7 +152,7 @@ func (r *gitlabInstanceServiceAccountResource) Read(ctx context.Context, req res
 		return
 	}
 
-	tflog.Trace(ctx, "found service account", map[string]interface{}{
+	tflog.Trace(ctx, "found service account", map[string]any{
 		"service account": gitlab.Stringify(serviceAccount),
 	})
 

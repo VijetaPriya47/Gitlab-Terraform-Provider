@@ -350,7 +350,7 @@ func (r *gitlabProjectProtectedEnvironmentResource) Create(ctx context.Context, 
 	}
 	options.ApprovalRules = &approvalRulesOption
 
-	tflog.Debug(ctx, "Creating protected environment with options", map[string]interface{}{
+	tflog.Debug(ctx, "Creating protected environment with options", map[string]any{
 		"data":      data,
 		"projectId": projectID,
 		"name":      environmentName,
@@ -371,7 +371,7 @@ func (r *gitlabProjectProtectedEnvironmentResource) Create(ctx context.Context, 
 		return
 	}
 
-	tflog.Debug(ctx, "Protected Environment before state is persisted", map[string]interface{}{
+	tflog.Debug(ctx, "Protected Environment before state is persisted", map[string]any{
 		"data":        data,
 		"projectId":   projectID,
 		"name":        environmentName,
@@ -413,7 +413,7 @@ func (r *gitlabProjectProtectedEnvironmentResource) Read(ctx context.Context, re
 	protectedEnvironment, _, err := r.client.ProtectedEnvironments.GetProtectedEnvironment(projectID, environmentName, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			tflog.Debug(ctx, "protected environment does not exist, removing from state", map[string]interface{}{
+			tflog.Debug(ctx, "protected environment does not exist, removing from state", map[string]any{
 				"project": projectID, "environment": environmentName,
 			})
 			resp.State.RemoveResource(ctx)
@@ -426,7 +426,7 @@ func (r *gitlabProjectProtectedEnvironmentResource) Read(ctx context.Context, re
 	// persist API response in state model
 	r.protectedEnvironmentToStateModel(ctx, resp.Diagnostics, projectID, protectedEnvironment, data)
 
-	tflog.Debug(ctx, "Protected Environment when state is being read", map[string]interface{}{
+	tflog.Debug(ctx, "Protected Environment when state is being read", map[string]any{
 		"project": projectID,
 		"name":    environmentName,
 		"data":    data,
@@ -600,7 +600,7 @@ func (r *gitlabProjectProtectedEnvironmentResource) Update(ctx context.Context, 
 	}
 	options.ApprovalRules = &approvalRulesOptionSlice
 
-	tflog.Debug(ctx, "Updating protected environment with options", map[string]interface{}{
+	tflog.Debug(ctx, "Updating protected environment with options", map[string]any{
 		"project":          projectID,
 		"options":          options,
 		"environment_name": environmentName,
@@ -619,7 +619,7 @@ func (r *gitlabProjectProtectedEnvironmentResource) Update(ctx context.Context, 
 		return
 	}
 
-	tflog.Debug(ctx, "Updating protected environment completed with options", map[string]interface{}{
+	tflog.Debug(ctx, "Updating protected environment completed with options", map[string]any{
 		"project":          projectID,
 		"environment_name": environmentName,
 		"result":           protectedEnvironment,

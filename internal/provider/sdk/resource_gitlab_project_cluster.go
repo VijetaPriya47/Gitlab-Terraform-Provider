@@ -129,7 +129,7 @@ var _ = registerResource("gitlab_project_cluster", func() *schema.Resource {
 	}
 })
 
-func resourceGitlabProjectClusterCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectClusterCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Get("project").(string)
 
@@ -183,7 +183,7 @@ func resourceGitlabProjectClusterCreate(ctx context.Context, d *schema.ResourceD
 	return resourceGitlabProjectClusterRead(ctx, d, meta)
 }
 
-func resourceGitlabProjectClusterRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectClusterRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	project, clusterId, err := projectIdAndClusterIdFromId(d.Id())
@@ -226,7 +226,7 @@ func resourceGitlabProjectClusterRead(ctx context.Context, d *schema.ResourceDat
 	return nil
 }
 
-func resourceGitlabProjectClusterUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectClusterUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	project, clusterId, err := projectIdAndClusterIdFromId(d.Id())
@@ -285,7 +285,7 @@ func resourceGitlabProjectClusterUpdate(ctx context.Context, d *schema.ResourceD
 	return resourceGitlabProjectClusterRead(ctx, d, meta)
 }
 
-func resourceGitlabProjectClusterDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectClusterDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project, clusterId, err := projectIdAndClusterIdFromId(d.Id())
 	if err != nil {

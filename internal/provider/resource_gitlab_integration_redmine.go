@@ -127,7 +127,7 @@ func (r *gitlabIntegrationRedmineResource) Create(ctx context.Context, req resou
 		return
 	}
 
-	tflog.Debug(ctx, "Update Redmine integration.", map[string]interface{}{
+	tflog.Debug(ctx, "Update Redmine integration.", map[string]any{
 		"project":                data.Project,
 		"new_issue_url":          data.NewIssueURL,
 		"project_url":            data.ProjectURL,
@@ -155,7 +155,7 @@ func (r *gitlabIntegrationRedmineResource) Read(ctx context.Context, req resourc
 	redmineService, _, err := r.client.Services.GetRedmineService(projectId, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			tflog.Debug(ctx, "Redmine integration doesn't exist, removing from state", map[string]interface{}{
+			tflog.Debug(ctx, "Redmine integration doesn't exist, removing from state", map[string]any{
 				"project":     data.Project,
 				"project_url": data.ProjectURL,
 			})
@@ -177,7 +177,7 @@ func (r *gitlabIntegrationRedmineResource) Update(ctx context.Context, req resou
 		return
 	}
 
-	tflog.Debug(ctx, "Update Redmine integration.", map[string]interface{}{
+	tflog.Debug(ctx, "Update Redmine integration.", map[string]any{
 		"project":                data.Project,
 		"new_issue_url":          data.NewIssueURL,
 		"project_url":            data.ProjectURL,
@@ -204,7 +204,7 @@ func (r *gitlabIntegrationRedmineResource) Delete(ctx context.Context, req resou
 	projectId := data.ID.ValueString()
 	if _, err := r.client.Services.DeleteRedmineService(projectId, gitlab.WithContext(ctx)); err != nil {
 		if api.Is404(err) {
-			tflog.Debug(ctx, "Redmine integration doesn't exist, removing from state", map[string]interface{}{
+			tflog.Debug(ctx, "Redmine integration doesn't exist, removing from state", map[string]any{
 				"project":     data.Project,
 				"project_url": data.ProjectURL,
 			})

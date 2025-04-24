@@ -462,7 +462,7 @@ func (s *Settings) UnmarshalJSON(data []byte) error {
 	}
 
 	// Parse into an interface so we can check the value of the container registry to see if it's empty
-	var m map[string]interface{}
+	var m map[string]any
 	if err := json.Unmarshal(data, &m); err != nil {
 		return err
 	}

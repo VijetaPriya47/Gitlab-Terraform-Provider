@@ -63,7 +63,7 @@ func resourceGitlabIntegrationPipelinesEmailSetToState(d *schema.ResourceData, s
 	d.Set("branches_to_be_notified", service.Properties.BranchesToBeNotified)
 }
 
-func resourceGitlabIntegrationPipelinesEmailCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabIntegrationPipelinesEmailCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Get("project").(string)
 	d.SetId(project)
@@ -83,7 +83,7 @@ func resourceGitlabIntegrationPipelinesEmailCreate(ctx context.Context, d *schem
 	return resourceGitlabIntegrationPipelinesEmailRead(ctx, d, meta)
 }
 
-func resourceGitlabIntegrationPipelinesEmailRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabIntegrationPipelinesEmailRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Id()
 
@@ -104,7 +104,7 @@ func resourceGitlabIntegrationPipelinesEmailRead(ctx context.Context, d *schema.
 	return nil
 }
 
-func resourceGitlabIntegrationPipelinesEmailDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabIntegrationPipelinesEmailDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Id()
 

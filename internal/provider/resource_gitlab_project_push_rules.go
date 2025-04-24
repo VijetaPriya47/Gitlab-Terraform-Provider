@@ -243,7 +243,7 @@ func (r *gitlabProjectPushRulesResource) Read(ctx context.Context, req resource.
 	pushRules, _, err := r.client.Projects.GetProjectPushRules(projectID, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			tflog.Debug(ctx, "push rules for project do not exist, removing resource from state", map[string]interface{}{
+			tflog.Debug(ctx, "push rules for project do not exist, removing resource from state", map[string]any{
 				"project": projectID,
 			})
 			resp.State.RemoveResource(ctx)

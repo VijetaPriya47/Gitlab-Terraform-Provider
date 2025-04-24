@@ -361,7 +361,7 @@ func (r *gitlabGroupProtectedEnvironmentResource) Create(ctx context.Context, re
 	}
 	options.ApprovalRules = &approvalRulesOption
 
-	tflog.Debug(ctx, "Creating group protected environment with options", map[string]interface{}{
+	tflog.Debug(ctx, "Creating group protected environment with options", map[string]any{
 		"data":    data,
 		"groupId": groupID,
 		"name":    environmentName,
@@ -382,7 +382,7 @@ func (r *gitlabGroupProtectedEnvironmentResource) Create(ctx context.Context, re
 		return
 	}
 
-	tflog.Debug(ctx, "Group Protected Environment before state is persisted", map[string]interface{}{
+	tflog.Debug(ctx, "Group Protected Environment before state is persisted", map[string]any{
 		"data":        data,
 		"groupId":     groupID,
 		"name":        environmentName,
@@ -424,7 +424,7 @@ func (r *gitlabGroupProtectedEnvironmentResource) Read(ctx context.Context, req 
 	protectedEnvironment, _, err := r.client.GroupProtectedEnvironments.GetGroupProtectedEnvironment(groupID, environmentName, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			tflog.Debug(ctx, "protected environment does not exist, removing from state", map[string]interface{}{
+			tflog.Debug(ctx, "protected environment does not exist, removing from state", map[string]any{
 				"group": groupID, "environment": environmentName,
 			})
 			resp.State.RemoveResource(ctx)
@@ -437,7 +437,7 @@ func (r *gitlabGroupProtectedEnvironmentResource) Read(ctx context.Context, req 
 	// persist API response in state model
 	r.protectedEnvironmentToStateModel(ctx, resp.Diagnostics, groupID, protectedEnvironment, data)
 
-	tflog.Debug(ctx, "Protected Environment when state is being read", map[string]interface{}{
+	tflog.Debug(ctx, "Protected Environment when state is being read", map[string]any{
 		"group": groupID,
 		"name":  environmentName,
 		"data":  data,
@@ -612,7 +612,7 @@ func (r *gitlabGroupProtectedEnvironmentResource) Update(ctx context.Context, re
 	}
 	options.ApprovalRules = &approvalRulesOptionSlice
 
-	tflog.Debug(ctx, "Updating group protected environment with options", map[string]interface{}{
+	tflog.Debug(ctx, "Updating group protected environment with options", map[string]any{
 		"group":            groupID,
 		"options":          options,
 		"environment_name": environmentName,
@@ -631,7 +631,7 @@ func (r *gitlabGroupProtectedEnvironmentResource) Update(ctx context.Context, re
 		return
 	}
 
-	tflog.Debug(ctx, "Updating group protected environment completed with options", map[string]interface{}{
+	tflog.Debug(ctx, "Updating group protected environment completed with options", map[string]any{
 		"group":            groupID,
 		"environment_name": environmentName,
 		"result":           protectedEnvironment,

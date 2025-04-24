@@ -157,14 +157,14 @@ func (d *gitlabGroupSecurityPolicyAttachmentResource) Read(ctx context.Context, 
 	}
 
 	// Read the policy project
-	tflog.Info(ctx, "Reading the security policy project for the group.", map[string]interface{}{
+	tflog.Info(ctx, "Reading the security policy project for the group.", map[string]any{
 		"group":          group,
 		"policy_project": policyProject,
 	})
 
 	response, err := d.readPolicy(ctx, groupIds)
 	if err != nil {
-		tflog.Error(ctx, "Received an error when reading the policy. Exiting", map[string]interface{}{
+		tflog.Error(ctx, "Received an error when reading the policy. Exiting", map[string]any{
 			"grooup":         group,
 			"policy_project": policyProject,
 		})
@@ -173,7 +173,7 @@ func (d *gitlabGroupSecurityPolicyAttachmentResource) Read(ctx context.Context, 
 	}
 
 	if response.Data.Group == nil {
-		tflog.Warn(ctx, "Group for the gitlab_group_security_policy_attachment returned nil from the GraphQL call, which usually means the group doesn't exist anymore.", map[string]interface{}{
+		tflog.Warn(ctx, "Group for the gitlab_group_security_policy_attachment returned nil from the GraphQL call, which usually means the group doesn't exist anymore.", map[string]any{
 			"grooup":         group,
 			"policy_project": policyProject,
 		})
@@ -187,7 +187,7 @@ func (d *gitlabGroupSecurityPolicyAttachmentResource) Read(ctx context.Context, 
 
 		data.PolicyProject = types.StringValue(parsedPolicyId)
 
-		tflog.Debug(ctx, "Parsed a valid security policy project. Adding to state", map[string]interface{}{
+		tflog.Debug(ctx, "Parsed a valid security policy project. Adding to state", map[string]any{
 			"group":          group,
 			"policy_project": parsedPolicyId,
 		})
@@ -231,7 +231,7 @@ func (d *gitlabGroupSecurityPolicyAttachmentResource) Update(ctx context.Context
 
 		response, err := d.readPolicy(ctx, groupIds)
 		if err != nil {
-			tflog.Error(ctx, "Received an error when reading the policy. Exiting", map[string]interface{}{
+			tflog.Error(ctx, "Received an error when reading the policy. Exiting", map[string]any{
 				"group":          data.Group.ValueString(),
 				"policy_project": data.PolicyProject.ValueString(),
 			})
@@ -240,7 +240,7 @@ func (d *gitlabGroupSecurityPolicyAttachmentResource) Update(ctx context.Context
 
 		// If we read, and our read doesn't match our expected policy project, retry.
 		if response.Data.Group.SecurityPolicyProject.ID != data.PolicyProject.ValueString() {
-			tflog.Warn(ctx, "Received a mismatched policy post-update, retryin update", map[string]interface{}{
+			tflog.Warn(ctx, "Received a mismatched policy post-update, retryin update", map[string]any{
 				"group":          data.Group.ValueString(),
 				"policy_project": data.PolicyProject.ValueString(),
 			})
@@ -250,7 +250,7 @@ func (d *gitlabGroupSecurityPolicyAttachmentResource) Update(ctx context.Context
 		return nil
 	})
 
-	tflog.Debug(ctx, "Updated security policy project for group", map[string]interface{}{
+	tflog.Debug(ctx, "Updated security policy project for group", map[string]any{
 		"group":          data.Group.ValueString(),
 		"policy_project": data.PolicyProject.ValueString(),
 	})
@@ -300,7 +300,7 @@ func (d *gitlabGroupSecurityPolicyAttachmentResource) Delete(ctx context.Context
 		return
 	}
 
-	tflog.Debug(ctx, "Successfully deleted security policy project from group", map[string]interface{}{
+	tflog.Debug(ctx, "Successfully deleted security policy project from group", map[string]any{
 		"group":          data.Group.ValueString(),
 		"policy_project": data.PolicyProject.ValueString(),
 	})

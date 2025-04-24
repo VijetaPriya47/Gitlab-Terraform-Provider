@@ -160,7 +160,7 @@ func (d *gitlabGroupBillableMemberMembershipsDataSource) Read(ctx context.Contex
 	resp.Diagnostics.Append(diags...)
 }
 
-func (d *gitlabGroupBillableMemberMembershipsDataSource) fetchAllOfListMembershipsForBillableGroupMember(groupId interface{}, userId int, ctx context.Context) ([]*gitlab.BillableUserMembership, error) {
+func (d *gitlabGroupBillableMemberMembershipsDataSource) fetchAllOfListMembershipsForBillableGroupMember(groupId any, userId int, ctx context.Context) ([]*gitlab.BillableUserMembership, error) {
 	var membership []*gitlab.BillableUserMembership
 
 	listOptions := &gitlab.ListMembershipsForBillableGroupMemberOptions{

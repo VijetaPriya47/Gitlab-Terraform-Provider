@@ -112,7 +112,7 @@ var _ = registerResource("gitlab_integration_microsoft_teams", func() *schema.Re
 	}
 })
 
-func resourceGitlabIntegrationMicrosoftTeamsCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabIntegrationMicrosoftTeamsCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Get("project").(string)
 	d.SetId(project)
@@ -141,7 +141,7 @@ func resourceGitlabIntegrationMicrosoftTeamsCreate(ctx context.Context, d *schem
 	return resourceGitlabIntegrationMicrosoftTeamsRead(ctx, d, meta)
 }
 
-func resourceGitlabIntegrationMicrosoftTeamsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabIntegrationMicrosoftTeamsRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Id()
 
@@ -181,11 +181,11 @@ func resourceGitlabIntegrationMicrosoftTeamsRead(ctx context.Context, d *schema.
 	return nil
 }
 
-func resourceGitlabIntegrationMicrosoftTeamsUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabIntegrationMicrosoftTeamsUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	return resourceGitlabIntegrationMicrosoftTeamsCreate(ctx, d, meta)
 }
 
-func resourceGitlabIntegrationMicrosoftTeamsDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabIntegrationMicrosoftTeamsDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Id()
 

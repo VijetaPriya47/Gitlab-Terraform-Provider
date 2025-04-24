@@ -170,7 +170,7 @@ func (d *gitlabPagesDomainResource) Create(ctx context.Context, req resource.Cre
 	// Create the ID attribute (used for imports, among other things)
 	data.ID = types.StringValue(utils.BuildTwoPartID(&projectID, gitlab.Ptr(data.Domain.ValueString())))
 
-	tflog.Debug(ctx, "created pages domain", map[string]interface{}{
+	tflog.Debug(ctx, "created pages domain", map[string]any{
 		"url": data.URL, "project": data.Project,
 	})
 
@@ -198,7 +198,7 @@ func (d *gitlabPagesDomainResource) Read(ctx context.Context, req resource.ReadR
 	pagesDomain, _, err := d.client.PagesDomains.GetPagesDomain(projectID, domain)
 	if err != nil {
 		if api.Is404(err) {
-			tflog.Debug(ctx, "pages domain doesn't exist, removing from state", map[string]interface{}{
+			tflog.Debug(ctx, "pages domain doesn't exist, removing from state", map[string]any{
 				"url": data.URL, "project": data.Project,
 			})
 			resp.State.RemoveResource(ctx)
@@ -249,7 +249,7 @@ func (d *gitlabPagesDomainResource) Update(ctx context.Context, req resource.Upd
 	// Create the ID attribute (used for imports, among other things)
 	data.ID = types.StringValue(utils.BuildTwoPartID(gitlab.Ptr(data.Project.ValueString()), gitlab.Ptr(data.Domain.ValueString())))
 
-	tflog.Debug(ctx, "updated pages domain", map[string]interface{}{
+	tflog.Debug(ctx, "updated pages domain", map[string]any{
 		"url": data.URL, "project": data.Project,
 	})
 

@@ -1016,7 +1016,7 @@ func resourceGitlabProjectSetToState(ctx context.Context, client *gitlab.Client,
 	return nil
 }
 
-func resourceGitlabProjectCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	// Project that has either been created or forked
@@ -1026,7 +1026,7 @@ func resourceGitlabProjectCreate(ctx context.Context, d *schema.ResourceData, me
 	// or it's forked from an existing project and edited. This block checks the forked
 	// status and handles the base create or forked logic
 	if forkedFromProjectID, ok := d.GetOk("forked_from_project_id"); ok {
-		tflog.Debug(ctx, "Creating forked project", map[string]interface{}{
+		tflog.Debug(ctx, "Creating forked project", map[string]any{
 			"forked_from_project_id": forkedFromProjectID,
 			"data":                   d,
 		})
@@ -1039,7 +1039,7 @@ func resourceGitlabProjectCreate(ctx context.Context, d *schema.ResourceData, me
 
 	} else {
 
-		tflog.Debug(ctx, "Creating project", map[string]interface{}{
+		tflog.Debug(ctx, "Creating project", map[string]any{
 			"data": d,
 		})
 
@@ -1063,7 +1063,7 @@ func resourceGitlabProjectCreate(ctx context.Context, d *schema.ResourceData, me
 			Pending: []string{"scheduled", "started"},
 			Target:  []string{"finished"},
 			Timeout: d.Timeout(schema.TimeoutCreate),
-			Refresh: func() (interface{}, string, error) {
+			Refresh: func() (any, string, error) {
 				status, _, err := client.ProjectImportExport.ImportStatus(d.Id(), gitlab.WithContext(ctx))
 				if err != nil {
 					return nil, "", err
@@ -1143,7 +1143,7 @@ func resourceGitlabProjectCreate(ctx context.Context, d *schema.ResourceData, me
 				// When importing a project and changing the branch protection, the "TimeoutCreate" may
 				// happen twice, and that's OK.
 				Timeout: d.Timeout(schema.TimeoutCreate),
-				Refresh: func() (interface{}, string, error) {
+				Refresh: func() (any, string, error) {
 					branch, _, err = client.Branches.GetBranch(project.ID, project.DefaultBranch, gitlab.WithContext(ctx))
 					if err != nil {
 						if api.Is404(err) {
@@ -1154,7 +1154,7 @@ func resourceGitlabProjectCreate(ctx context.Context, d *schema.ResourceData, me
 						}
 
 						// This is legit error, return the error.
-						tflog.Debug(ctx, "Error received when attempting to read branch protection of the default branch", map[string]interface{}{
+						tflog.Debug(ctx, "Error received when attempting to read branch protection of the default branch", map[string]any{
 							"error":   err,
 							"project": project,
 							"branch":  project.DefaultBranch,
@@ -1162,7 +1162,7 @@ func resourceGitlabProjectCreate(ctx context.Context, d *schema.ResourceData, me
 						return nil, "", err
 					}
 
-					tflog.Debug(ctx, "Project polling for default branch status", map[string]interface{}{
+					tflog.Debug(ctx, "Project polling for default branch status", map[string]any{
 						"project":          project,
 						"branch":           project.DefaultBranch,
 						"protectionStatus": branch.Protected,
@@ -1190,7 +1190,7 @@ func resourceGitlabProjectCreate(ctx context.Context, d *schema.ResourceData, me
 	return resourceGitlabProjectRead(ctx, d, meta)
 }
 
-func resourceGitlabProjectRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab project %s", d.Id()))
 
@@ -1228,7 +1228,7 @@ func resourceGitlabProjectRead(ctx context.Context, d *schema.ResourceData, meta
 	return nil
 }
 
-func resourceGitlabProjectUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	// Always send the name field, to satisfy the requirement of having one
@@ -1422,7 +1422,7 @@ func resourceGitlabProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	if d.HasChange("ci_id_token_sub_claim_components") {
-		options.CIIdTokenSubClaimComponents = stringListToStringSlice(d.Get("ci_id_token_sub_claim_components").([]interface{}))
+		options.CIIdTokenSubClaimComponents = stringListToStringSlice(d.Get("ci_id_token_sub_claim_components").([]any))
 	}
 
 	if d.HasChange("ci_forward_deployment_enabled") {
@@ -1724,7 +1724,7 @@ func resourceGitlabProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 	return resourceGitlabProjectRead(ctx, d, meta)
 }
 
-func resourceGitlabProjectDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	if !d.Get("archive_on_destroy").(bool) {
@@ -1750,7 +1750,7 @@ func resourceGitlabProjectDelete(ctx context.Context, d *schema.ResourceData, me
 		stateConf := &retry.StateChangeConf{
 			Pending: []string{"Deleting"},
 			Target:  []string{"Deleted"},
-			Refresh: func() (interface{}, string, error) {
+			Refresh: func() (any, string, error) {
 				out, _, err := client.Projects.GetProject(d.Id(), nil, gitlab.WithContext(ctx))
 				if err != nil {
 					if api.Is404(err) {
@@ -1936,12 +1936,12 @@ func expandAddProjectPushRuleOptions(d *schema.ResourceData) gitlab.AddProjectPu
 	return options
 }
 
-func flattenProjectPushRules(pushRules *gitlab.ProjectPushRules) (values []map[string]interface{}) {
+func flattenProjectPushRules(pushRules *gitlab.ProjectPushRules) (values []map[string]any) {
 	if pushRules == nil {
-		return []map[string]interface{}{}
+		return []map[string]any{}
 	}
 
-	return []map[string]interface{}{
+	return []map[string]any{
 		{
 			"author_email_regex":            pushRules.AuthorEmailRegex,
 			"branch_name_regex":             pushRules.BranchNameRegex,
@@ -1960,12 +1960,12 @@ func flattenProjectPushRules(pushRules *gitlab.ProjectPushRules) (values []map[s
 	}
 }
 
-func flattenContainerExpirationPolicy(policy *gitlab.ContainerExpirationPolicy) (values []map[string]interface{}) {
+func flattenContainerExpirationPolicy(policy *gitlab.ContainerExpirationPolicy) (values []map[string]any) {
 	if policy == nil {
 		return
 	}
 
-	values = []map[string]interface{}{
+	values = []map[string]any{
 		{
 			"cadence":           policy.Cadence,
 			"keep_n":            policy.KeepN,
@@ -2014,7 +2014,7 @@ func expandContainerExpirationPolicyAttributes(d *schema.ResourceData) *gitlab.C
 	return &policy
 }
 
-func namespaceOrPathChanged(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
+func namespaceOrPathChanged(ctx context.Context, d *schema.ResourceDiff, meta any) bool {
 	return d.HasChange("namespace_id") || d.HasChange("path")
 }
 
@@ -2517,7 +2517,7 @@ func updatePostCreateEditOptions(ctx context.Context, editProjectOptions *gitlab
 	}
 
 	if v, ok := d.GetOk("ci_id_token_sub_claim_components"); ok {
-		editProjectOptions.CIIdTokenSubClaimComponents = stringListToStringSlice(v.([]interface{}))
+		editProjectOptions.CIIdTokenSubClaimComponents = stringListToStringSlice(v.([]any))
 	}
 
 	if v, ok := d.GetOk("ci_delete_pipelines_in_seconds"); ok {
@@ -2892,7 +2892,7 @@ func updatePostCreateEditOptions(ctx context.Context, editProjectOptions *gitlab
 }
 
 func updateProjectSecretDetectionValue(ctx context.Context, client *gitlab.Client, projectPath string, input bool) error {
-	tflog.Debug(ctx, "Attempting to update Secrets Detection for project", map[string]interface{}{
+	tflog.Debug(ctx, "Attempting to update Secrets Detection for project", map[string]any{
 		"project": projectPath,
 		"value":   input,
 	})
@@ -2948,7 +2948,7 @@ type updateSecretDetectionGraphQLResponse struct {
 }
 
 // Overrides the `omitempty` on the go-gitlab struct and sets the `ci_delete_pipelines_in_seconds` to nil
-func updateNilCIDeletePipelinesInSecondsSetting(client *gitlab.Client, pid interface{}) error {
+func updateNilCIDeletePipelinesInSecondsSetting(client *gitlab.Client, pid any) error {
 	// Empty struct required for the method call.
 	options := &gitlab.EditProjectOptions{}
 

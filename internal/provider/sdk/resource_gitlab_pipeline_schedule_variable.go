@@ -84,7 +84,7 @@ func resourceGitlabPipelineScheduleVariableResourceV0() *schema.Resource {
 }
 
 // resourceGitlabPipelineScheduleVariableStateUpgradeV0 performs the state migration from V0 to V1.
-func resourceGitlabPipelineScheduleVariableStateUpgradeV0(ctx context.Context, rawState map[string]interface{}, meta interface{}) (map[string]interface{}, error) {
+func resourceGitlabPipelineScheduleVariableStateUpgradeV0(ctx context.Context, rawState map[string]any, meta any) (map[string]any, error) {
 	project := rawState["project"].(string)
 	pipelineScheduleId, ok := rawState["pipeline_schedule_id"].(int)
 	if !ok {
@@ -94,9 +94,9 @@ func resourceGitlabPipelineScheduleVariableStateUpgradeV0(ctx context.Context, r
 
 	oldId := rawState["id"].(string)
 
-	tflog.Debug(ctx, "attempting state migration from V0 to V1 - changing the `id` attribute format", map[string]interface{}{"project": project, "pipeline_schedule_id": pipelineScheduleId, "key": key, "v0-id": oldId})
+	tflog.Debug(ctx, "attempting state migration from V0 to V1 - changing the `id` attribute format", map[string]any{"project": project, "pipeline_schedule_id": pipelineScheduleId, "key": key, "v0-id": oldId})
 	rawState["id"] = resourceGitlabPipelineScheduleVariableBuildId(project, pipelineScheduleId, key)
-	tflog.Debug(ctx, "migrated `id` attribute for V0 to V1", map[string]interface{}{"v0-id": oldId, "v1-id": rawState["id"]})
+	tflog.Debug(ctx, "migrated `id` attribute for V0 to V1", map[string]any{"v0-id": oldId, "v1-id": rawState["id"]})
 	return rawState, nil
 }
 
@@ -118,7 +118,7 @@ func resourceGitlabPipelineScheduleVariableParseId(id string) (string, int, stri
 	return parts[0], pipelineScheduleId, parts[2], nil
 }
 
-func resourceGitlabPipelineScheduleVariableCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabPipelineScheduleVariableCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Get("project").(string)
 	scheduleID := d.Get("pipeline_schedule_id").(int)
@@ -148,7 +148,7 @@ func resourceGitlabPipelineScheduleVariableCreate(ctx context.Context, d *schema
 	return resourceGitlabPipelineScheduleVariableRead(ctx, d, meta)
 }
 
-func resourceGitlabPipelineScheduleVariableRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabPipelineScheduleVariableRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	project, scheduleID, pipelineVariableKey, err := resourceGitlabPipelineScheduleVariableParseId(d.Id())
@@ -188,7 +188,7 @@ func resourceGitlabPipelineScheduleVariableRead(ctx context.Context, d *schema.R
 	return nil
 }
 
-func resourceGitlabPipelineScheduleVariableUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabPipelineScheduleVariableUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project, scheduleID, variableKey, err := resourceGitlabPipelineScheduleVariableParseId(d.Id())
 	if err != nil {
@@ -220,7 +220,7 @@ func resourceGitlabPipelineScheduleVariableUpdate(ctx context.Context, d *schema
 	return resourceGitlabPipelineScheduleVariableRead(ctx, d, meta)
 }
 
-func resourceGitlabPipelineScheduleVariableDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabPipelineScheduleVariableDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project, scheduleID, variableKey, err := resourceGitlabPipelineScheduleVariableParseId(d.Id())
 	if err != nil {

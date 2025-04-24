@@ -384,7 +384,7 @@ func (r *gitlabReleaseResource) Create(ctx context.Context, req resource.CreateR
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 
 	// Log the creation of the resource
-	tflog.Debug(ctx, "created a release", map[string]interface{}{
+	tflog.Debug(ctx, "created a release", map[string]any{
 		"name": data.Name.ValueString(), "id": data.ID.ValueString(),
 	})
 }

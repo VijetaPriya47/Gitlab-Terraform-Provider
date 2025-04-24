@@ -44,7 +44,7 @@ var _ = registerResource("gitlab_project_tag", func() *schema.Resource {
 	}
 })
 
-func resourceGitlabProjectTagCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectTagCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	name := d.Get("name").(string)
 	project := d.Get("project").(string)
@@ -65,7 +65,7 @@ func resourceGitlabProjectTagCreate(ctx context.Context, d *schema.ResourceData,
 	return resourceGitlabProjectTagRead(ctx, d, meta)
 }
 
-func resourceGitlabProjectTagRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectTagRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project, name, err := utils.ParseTwoPartID(d.Id())
 	if err != nil {
@@ -99,7 +99,7 @@ func resourceGitlabProjectTagRead(ctx context.Context, d *schema.ResourceData, m
 	return nil
 }
 
-func resourceGitlabProjectTagDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectTagDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project, name, err := utils.ParseTwoPartID(d.Id())
 	if err != nil {
@@ -114,11 +114,11 @@ func resourceGitlabProjectTagDelete(ctx context.Context, d *schema.ResourceData,
 	return nil
 }
 
-func flattenReleaseNote(releaseNote *gitlab.ReleaseNote) (values []map[string]interface{}) {
+func flattenReleaseNote(releaseNote *gitlab.ReleaseNote) (values []map[string]any) {
 	if releaseNote == nil {
-		return []map[string]interface{}{}
+		return []map[string]any{}
 	}
-	return []map[string]interface{}{
+	return []map[string]any{
 		{
 			"tag_name":    releaseNote.TagName,
 			"description": releaseNote.Description,

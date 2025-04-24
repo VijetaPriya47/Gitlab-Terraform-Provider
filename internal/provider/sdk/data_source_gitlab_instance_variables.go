@@ -28,7 +28,7 @@ var _ = registerDataSource("gitlab_instance_variables", func() *schema.Resource 
 	}
 })
 
-func dataSourceGitlabInstanceVariablesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceGitlabInstanceVariablesRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	options := &gitlab.ListInstanceVariablesOptions{
@@ -54,7 +54,7 @@ func dataSourceGitlabInstanceVariablesRead(ctx context.Context, d *schema.Resour
 	return nil
 }
 
-func flattenGitlabInstanceVariables(variables []*gitlab.InstanceVariable) (values []map[string]interface{}) {
+func flattenGitlabInstanceVariables(variables []*gitlab.InstanceVariable) (values []map[string]any) {
 	for _, variable := range variables {
 		values = append(values, gitlabInstanceVariableToStateMap(variable))
 	}

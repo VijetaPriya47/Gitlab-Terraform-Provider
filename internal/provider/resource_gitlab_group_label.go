@@ -196,7 +196,7 @@ func (r *gitlabGroupLabelResource) UpgradeState(context.Context) map[int64]resou
 
 		err := r.upgradeIdToV2Id(ctx, &data)
 		if err != nil {
-			tflog.Error(ctx, "Failed to upgrade resource ID", map[string]interface{}{
+			tflog.Error(ctx, "Failed to upgrade resource ID", map[string]any{
 				"oldId": data.ID.ValueString(),
 				"group": data.Group.ValueString(),
 			})
@@ -240,7 +240,7 @@ func (r *gitlabGroupLabelResource) upgradeIdToV2Id(ctx context.Context, input *g
 	stringLabelId := strconv.Itoa(int(input.LabelID.ValueInt64()))
 	newId := utils.BuildTwoPartID(input.Group.ValueStringPointer(), gitlab.Ptr(stringLabelId))
 
-	tflog.Debug(ctx, "Upgrading state to the V2 ID", map[string]interface{}{
+	tflog.Debug(ctx, "Upgrading state to the V2 ID", map[string]any{
 		"oldId": input.ID.ValueString(),
 		"group": input.Group.ValueString(),
 		"newId": newId,

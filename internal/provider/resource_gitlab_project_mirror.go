@@ -157,7 +157,7 @@ func (r *gitlabProjectMirrorResource) Create(ctx context.Context, req resource.C
 		options.AuthMethod = data.AuthMethod.ValueStringPointer()
 	}
 
-	tflog.Debug(ctx, "creating gitlab project mirror for project", map[string]interface{}{
+	tflog.Debug(ctx, "creating gitlab project mirror for project", map[string]any{
 		"project": data.Project,
 	})
 
@@ -189,7 +189,7 @@ func (r *gitlabProjectMirrorResource) Read(ctx context.Context, req resource.Rea
 		return
 	}
 
-	tflog.Debug(ctx, "reading gitlab project mirror with details", map[string]interface{}{
+	tflog.Debug(ctx, "reading gitlab project mirror with details", map[string]any{
 		"project": project,
 		"id":      mirrorId,
 	})
@@ -197,7 +197,7 @@ func (r *gitlabProjectMirrorResource) Read(ctx context.Context, req resource.Rea
 	mirror, _, err := r.client.ProjectMirrors.GetProjectMirror(project, mirrorId, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			tflog.Debug(ctx, "gitlab project mirror not found, removing from state", map[string]interface{}{
+			tflog.Debug(ctx, "gitlab project mirror not found, removing from state", map[string]any{
 				"project": project,
 				"id":      mirrorId,
 			})
@@ -253,7 +253,7 @@ func (r *gitlabProjectMirrorResource) Update(ctx context.Context, req resource.U
 		options.AuthMethod = data.AuthMethod.ValueStringPointer()
 	}
 
-	tflog.Debug(ctx, "updating gitlab project mirror", map[string]interface{}{
+	tflog.Debug(ctx, "updating gitlab project mirror", map[string]any{
 		"project":  project,
 		"mirrorId": mirrorId,
 	})

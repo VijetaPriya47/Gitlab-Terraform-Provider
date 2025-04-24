@@ -118,7 +118,7 @@ func (r *gitlabIntegrationHarborResource) Create(ctx context.Context, req resour
 		return
 	}
 
-	tflog.Debug(ctx, "Creating hardor integration for project", map[string]interface{}{
+	tflog.Debug(ctx, "Creating hardor integration for project", map[string]any{
 		"project":             data.ID.ValueString(),
 		"harbor_url":          data.URL.ValueString(),
 		"harbor_project_name": data.ProjectName.ValueString(),
@@ -158,7 +158,7 @@ func (r *gitlabIntegrationHarborResource) Update(ctx context.Context, req resour
 		return
 	}
 
-	tflog.Debug(ctx, "Updating hardor integration for project", map[string]interface{}{
+	tflog.Debug(ctx, "Updating hardor integration for project", map[string]any{
 		"project":             data.ID.ValueString(),
 		"harbor_url":          data.URL.ValueString(),
 		"harbor_project_name": data.ProjectName.ValueString(),

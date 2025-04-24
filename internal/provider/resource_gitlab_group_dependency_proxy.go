@@ -169,7 +169,7 @@ func (r *gitlabGroupDependencyProxyResource) Create(ctx context.Context, req res
 		return
 	}
 	// log a debug message that we've updated the proxy (both "create" and "update" technically update the proxy)
-	tflog.Debug(ctx, "Successfully updated dependency proxy settings for group", map[string]interface{}{
+	tflog.Debug(ctx, "Successfully updated dependency proxy settings for group", map[string]any{
 		"group":    group.FullPath,
 		"identity": data.Identity.ValueString(),
 	})

@@ -133,7 +133,7 @@ environment's ` + "`auto_stop_setting` " + `is set to ` + "`with_action`" + `, t
 	}
 })
 
-func resourceGitlabProjectEnvironmentCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectEnvironmentCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	name := d.Get("name").(string)
 	options := gitlab.CreateEnvironmentOptions{
 		Name: &name,
@@ -179,7 +179,7 @@ func resourceGitlabProjectEnvironmentCreate(ctx context.Context, d *schema.Resou
 	return resourceGitlabProjectEnvironmentRead(ctx, d, meta)
 }
 
-func resourceGitlabProjectEnvironmentRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectEnvironmentRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab environment %s", d.Id()))
 
 	project, environmentID, err := resourceGitlabProjectEnvironmentParseID(ctx, d)
@@ -226,7 +226,7 @@ func resourceGitlabProjectEnvironmentRead(ctx context.Context, d *schema.Resourc
 	return nil
 }
 
-func resourceGitlabProjectEnvironmentUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectEnvironmentUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab environment %s", d.Id()))
 
 	project, environmentID, err := resourceGitlabProjectEnvironmentParseID(ctx, d)
@@ -307,7 +307,7 @@ func updateNullableClusterAgentID(ctx context.Context, client *gitlab.Client, pi
 	return nil
 }
 
-func resourceGitlabProjectEnvironmentStop(ctx context.Context, d *schema.ResourceData, meta interface{}, force bool) diag.Diagnostics {
+func resourceGitlabProjectEnvironmentStop(ctx context.Context, d *schema.ResourceData, meta any, force bool) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project, environmentID, err := resourceGitlabProjectEnvironmentParseID(ctx, d)
 	if err != nil {
@@ -329,7 +329,7 @@ func resourceGitlabProjectEnvironmentStop(ctx context.Context, d *schema.Resourc
 		Timeout:    d.Timeout(schema.TimeoutDelete),
 		MinTimeout: 3 * time.Second,
 		Delay:      5 * time.Second,
-		Refresh: func() (interface{}, string, error) {
+		Refresh: func() (any, string, error) {
 
 			env, resp, err := client.Environments.StopEnvironment(project, environmentID, nil, gitlab.WithContext(ctx))
 
@@ -339,7 +339,7 @@ func resourceGitlabProjectEnvironmentStop(ctx context.Context, d *schema.Resourc
 				// Get the current environment status
 				currentEnv, _, getErr := client.Environments.GetEnvironment(project, environmentID, gitlab.WithContext(ctx))
 				if getErr != nil {
-					tflog.Warn(ctx, "Error retrieving status of environment for project", map[string]interface{}{
+					tflog.Warn(ctx, "Error retrieving status of environment for project", map[string]any{
 						"project":     project,
 						"environment": environmentID,
 					})
@@ -365,7 +365,7 @@ func resourceGitlabProjectEnvironmentStop(ctx context.Context, d *schema.Resourc
 	return nil
 }
 
-func resourceGitlabProjectEnvironmentDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectEnvironmentDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project, environmentID, err := resourceGitlabProjectEnvironmentParseID(ctx, d)
 	if err != nil {

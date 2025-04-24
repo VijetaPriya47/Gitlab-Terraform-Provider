@@ -188,7 +188,7 @@ var _ = registerDataSource("gitlab_user", func() *schema.Resource {
 	}
 })
 
-func dataSourceGitlabUserRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceGitlabUserRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	var user *gitlab.User
@@ -232,7 +232,7 @@ func dataSourceGitlabUserRead(ctx context.Context, d *schema.ResourceData, meta 
 			return diag.Errorf("couldn't find a user matching: %s%s", username, email)
 		} else {
 			if len(users) > 1 {
-				tflog.Info(ctx, "more than one user found matching. Will return the first user, since this can only happen when using `search`", map[string]interface{}{
+				tflog.Info(ctx, "more than one user found matching. Will return the first user, since this can only happen when using `search`", map[string]any{
 					"username": username,
 					"email":    email,
 				})

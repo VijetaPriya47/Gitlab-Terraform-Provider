@@ -283,7 +283,7 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) ModifyPlan(ctx context.Co
 		if stateData != nil {
 			expiresAt = stateData.ExpiresAt.ValueString()
 		}
-		tflog.Debug(ctx, "[ServiceAccountAccessToken] State is not populated, or the expires_at value is nil. Creating the token for the first time.", map[string]interface{}{
+		tflog.Debug(ctx, "[ServiceAccountAccessToken] State is not populated, or the expires_at value is nil. Creating the token for the first time.", map[string]any{
 			"is_state_nil": stateData == nil,
 			"expires_at":   expiresAt,
 		})
@@ -313,7 +313,7 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) ModifyPlan(ctx context.Co
 		}
 
 		// Logs for assisting with support
-		tflog.Debug(ctx, "[ServiceAccountAccessToken] State is populated, and a rotation configuration is detected. Determining if token should be rotated.", map[string]interface{}{
+		tflog.Debug(ctx, "[ServiceAccountAccessToken] State is populated, and a rotation configuration is detected. Determining if token should be rotated.", map[string]any{
 			"expires_at":             rotateBefore,
 			"detected_current_time":  api.CurrentTime(),
 			"detected_rotation_date": gapTime,
@@ -345,7 +345,7 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) ModifyPlan(ctx context.Co
 			planData.CreatedAt = types.StringUnknown()
 
 			// Logs for assisting with support
-			tflog.Debug(ctx, "[ServiceAccountAccessToken] Rotation is required, settings plan data", map[string]interface{}{
+			tflog.Debug(ctx, "[ServiceAccountAccessToken] Rotation is required, settings plan data", map[string]any{
 				"new_expires_at": expiryDate.String(),
 				"expires_at":     stateData.ExpiresAt.ValueString(),
 				"group":          planData.Group.ValueString(),
@@ -447,7 +447,7 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Read(ctx context.Context,
 	group := splitedID[0]
 	userID := splitedID[1]
 	accessTokenID := splitedID[2]
-	tflog.Debug(ctx, "Read gitlab GroupServiceAccountAccessToken", map[string]interface{}{"token_id": accessTokenID, "user_id": userID, "group": group})
+	tflog.Debug(ctx, "Read gitlab GroupServiceAccountAccessToken", map[string]any{"token_id": accessTokenID, "user_id": userID, "group": group})
 
 	// Make sure the token ID is an int
 	accessTokenIDInt, err := strconv.Atoi(accessTokenID)
@@ -464,7 +464,7 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Read(ctx context.Context,
 	if err != nil {
 		if api.Is404(err) {
 			// The access token doesn't exist anymore; remove it.
-			tflog.Debug(ctx, "AccessToken not found, removing from state", map[string]interface{}{"token_id": accessTokenID, "user_id": userID})
+			tflog.Debug(ctx, "AccessToken not found, removing from state", map[string]any{"token_id": accessTokenID, "user_id": userID})
 			resp.State.RemoveResource(ctx)
 			return
 		}
@@ -472,7 +472,7 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Read(ctx context.Context,
 		// If the read comes back as a permission error, this can _sometimes_ mean a non-admin/owner token is used, especially on gitlab.com.
 		// until group owners can read service account access tokens, we will rely on the state and ignore a 401.
 		if httpresp.StatusCode == http.StatusUnauthorized {
-			tflog.Warn(ctx, "AccessToken read returned a 401, ignoring because service account access tokens can't be read without an admin (top-level group owner on gitlab.com) token currently. This will make the tfplan rely on state data instead of the current API values.", map[string]interface{}{"token_id": accessTokenID, "user_id": userID})
+			tflog.Warn(ctx, "AccessToken read returned a 401, ignoring because service account access tokens can't be read without an admin (top-level group owner on gitlab.com) token currently. This will make the tfplan rely on state data instead of the current API values.", map[string]any{"token_id": accessTokenID, "user_id": userID})
 			return
 		}
 
@@ -620,7 +620,7 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Delete(ctx context.Contex
 	group := splitedID[0]
 	userID := splitedID[1]
 	accessTokenID := splitedID[2]
-	tflog.Debug(ctx, "Read gitlab GroupServiceAccountAccessToken", map[string]interface{}{"token_id": accessTokenID, "user_id": userID, "group": group})
+	tflog.Debug(ctx, "Read gitlab GroupServiceAccountAccessToken", map[string]any{"token_id": accessTokenID, "user_id": userID, "group": group})
 
 	accessTokenIDInt, err := strconv.Atoi(accessTokenID)
 	if err != nil {
@@ -642,7 +642,7 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Delete(ctx context.Contex
 	}
 
 	if isAdmin {
-		tflog.Debug(ctx, "[DEBUG] Deleting GroupServiceAccountAccessToken - direct delete due to admin (top-level group owner on gitlab.com) privileges", map[string]interface{}{"token_id": accessTokenID, "user_id": userID})
+		tflog.Debug(ctx, "[DEBUG] Deleting GroupServiceAccountAccessToken - direct delete due to admin (top-level group owner on gitlab.com) privileges", map[string]any{"token_id": accessTokenID, "user_id": userID})
 		_, err = r.client.PersonalAccessTokens.RevokePersonalAccessToken(accessTokenIDInt, gitlab.WithContext(ctx))
 		if err != nil {
 			resp.Diagnostics.AddError(
@@ -668,7 +668,7 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Delete(ctx context.Contex
 		}
 
 		// Create a new client from the token that exists in state, and use that client to delete the existing token.
-		tflog.Debug(ctx, "[DEBUG] Deleting GroupServiceAccountAccessToken - This will use the token that's in state to delete the token instead of relying on the provier's configured token.", map[string]interface{}{"token_id": accessTokenID, "user_id": userID})
+		tflog.Debug(ctx, "[DEBUG] Deleting GroupServiceAccountAccessToken - This will use the token that's in state to delete the token instead of relying on the provier's configured token.", map[string]any{"token_id": accessTokenID, "user_id": userID})
 		tokenClient, err := r.newGitLabClient(ctx, WithToken(data.Token.ValueString()), WithEarlyAuth(false))
 		if err != nil {
 			resp.Diagnostics.AddError(

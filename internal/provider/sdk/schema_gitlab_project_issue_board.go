@@ -97,8 +97,8 @@ func gitlabProjectIssueBoardSchema() map[string]*schema.Schema {
 	}
 }
 
-func gitlabProjectIssueBoardToStateMap(project string, issueBoard *gitlab.IssueBoard) map[string]interface{} {
-	stateMap := make(map[string]interface{})
+func gitlabProjectIssueBoardToStateMap(project string, issueBoard *gitlab.IssueBoard) map[string]any {
+	stateMap := make(map[string]any)
 	stateMap["project"] = project
 	stateMap["name"] = issueBoard.Name
 	if issueBoard.Milestone != nil {
@@ -117,13 +117,13 @@ func gitlabProjectIssueBoardToStateMap(project string, issueBoard *gitlab.IssueB
 	return stateMap
 }
 
-func flattenProjectIssueBoardLists(lists []*gitlab.BoardList) (values []map[string]interface{}) {
+func flattenProjectIssueBoardLists(lists []*gitlab.BoardList) (values []map[string]any) {
 	// GitLab returns the lists in arbitrary order, so we need to sort them by position first
 	sort.Slice(lists, func(i, j int) bool {
 		return lists[i].Position < lists[j].Position
 	})
 	for _, list := range lists {
-		v := map[string]interface{}{
+		v := map[string]any{
 			"id":       list.ID,
 			"position": list.Position,
 		}

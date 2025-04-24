@@ -12,9 +12,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"gitlab.com/gitlab-org/api/client-go"
+	"maps"
+	"slices"
 )
 
-var validateDateFunc = func(v interface{}, k string) (we []string, errors []error) {
+var validateDateFunc = func(v any, k string) (we []string, errors []error) {
 	value := v.(string)
 	//add zero hours and let time figure out correctness
 	_, e := time.Parse(time.RFC3339, value+"T00:00:00Z")
@@ -24,7 +26,7 @@ var validateDateFunc = func(v interface{}, k string) (we []string, errors []erro
 	return
 }
 
-var validateURLFunc = func(v interface{}, k string) (s []string, errors []error) {
+var validateURLFunc = func(v any, k string) (s []string, errors []error) {
 	value := v.(string)
 	url, err := url.Parse(value)
 
@@ -152,7 +154,7 @@ func stringToAccessControlValue(s string) *gitlab.AccessControlValue {
 }
 
 // lintignore: V011 // TODO: Resolve this tfproviderlint issue
-var StringIsGitlabVariableName = func(v interface{}, k string) (s []string, es []error) {
+var StringIsGitlabVariableName = func(v any, k string) (s []string, es []error) {
 	value, ok := v.(string)
 	if !ok {
 		es = append(es, fmt.Errorf("expected type of %s to be string", k))
@@ -169,7 +171,7 @@ var StringIsGitlabVariableName = func(v interface{}, k string) (s []string, es [
 	return
 }
 
-var StringIsGitlabVariableType = func(v interface{}, k string) (s []string, es []error) {
+var StringIsGitlabVariableType = func(v any, k string) (s []string, es []error) {
 	value, ok := v.(string)
 	if !ok {
 		es = append(es, fmt.Errorf("expected type of %s to be string", k))
@@ -182,7 +184,7 @@ var StringIsGitlabVariableType = func(v interface{}, k string) (s []string, es [
 	return
 }
 
-func stringListToStringSlice(stringList []interface{}) *[]string {
+func stringListToStringSlice(stringList []any) *[]string {
 	ret := []string{}
 	if stringList == nil {
 		return &ret
@@ -215,7 +217,7 @@ func intSetToIntSlice(intSet *schema.Set) *[]int {
 	return &ret
 }
 
-func intListToIntSlice(intList []interface{}) *[]int {
+func intListToIntSlice(intList []any) *[]int {
 	ret := []int{}
 	if intList == nil {
 		return &ret
@@ -226,7 +228,7 @@ func intListToIntSlice(intList []interface{}) *[]int {
 	return &ret
 }
 
-func stringListToVisibilityLevelSlice(strings []interface{}) *[]gitlab.VisibilityValue {
+func stringListToVisibilityLevelSlice(strings []any) *[]gitlab.VisibilityValue {
 	ret := []gitlab.VisibilityValue{}
 	if strings == nil {
 		return &ret
@@ -237,14 +239,14 @@ func stringListToVisibilityLevelSlice(strings []interface{}) *[]gitlab.Visibilit
 	return &ret
 }
 
-func stringListToCommaSeparatedString(stringList []interface{}) *string {
+func stringListToCommaSeparatedString(stringList []any) *string {
 	ret := strings.Join(*stringListToStringSlice(stringList), ",")
 	return &ret
 }
 
-func fromIntegerMap(value interface{}) map[string]int {
+func fromIntegerMap(value any) map[string]int {
 	integerMap := make(map[string]int)
-	for k, v := range value.(map[string]interface{}) {
+	for k, v := range value.(map[string]any) {
 		integerMap[k] = v.(int)
 	}
 	return integerMap
@@ -254,7 +256,7 @@ func fromIntegerMap(value interface{}) map[string]int {
 const iso8601 = "2006-01-02"
 
 // isISO8601 validates if the given value is a ISO8601 compatible date in the YYYY-MM-DD format.
-func isISO6801Date(i interface{}, p cty.Path) diag.Diagnostics {
+func isISO6801Date(i any, p cty.Path) diag.Diagnostics {
 	v := i.(string)
 
 	if _, err := time.Parse(iso8601, v); err != nil {
@@ -276,20 +278,13 @@ func parseISO8601Date(v string) (*gitlab.ISOTime, error) {
 
 // contains checks if a string is present in a slice
 func contains(s []string, str string) bool {
-	for _, v := range s {
-		if v == str {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(s, str)
 }
 
 func constructSchema(schemas ...map[string]*schema.Schema) map[string]*schema.Schema {
 	schema := make(map[string]*schema.Schema)
 	for _, s := range schemas {
-		for k, v := range s {
-			schema[k] = v
-		}
+		maps.Copy(schema, s)
 	}
 	return schema
 }
@@ -363,7 +358,7 @@ func excludeElementsFromSchema(oldSchema map[string]*schema.Schema, excludedElem
 	return newSchema
 }
 
-func setStateMapInResourceData(stateMap map[string]interface{}, d *schema.ResourceData) error {
+func setStateMapInResourceData(stateMap map[string]any, d *schema.ResourceData) error {
 	for k, v := range stateMap {
 		// lintignore: R001 // for convenience sake, to reduce maintenance burden we are ok not having literals here.
 		if err := d.Set(k, v); err != nil {

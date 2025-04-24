@@ -162,7 +162,7 @@ func (r *gitlabProjectJobTokenScopeResource) Create(ctx context.Context, req res
 		targetType = targetTypeProject
 
 		// Log the creation of the resource
-		tflog.Debug(ctx, "Added the target project to CI/CD Job Token inbound allowlist", map[string]interface{}{
+		tflog.Debug(ctx, "Added the target project to CI/CD Job Token inbound allowlist", map[string]any{
 			"project": projectID, "target_project": targetIDStr,
 		})
 
@@ -177,7 +177,7 @@ func (r *gitlabProjectJobTokenScopeResource) Create(ctx context.Context, req res
 		targetIDStr = strconv.Itoa(addTokenResponse.TargetGroupID)
 		targetType = targetTypeGroup
 		// Log the creation of the resource
-		tflog.Debug(ctx, "Added the target group to CI/CD Job Token inbound allowlist", map[string]interface{}{
+		tflog.Debug(ctx, "Added the target group to CI/CD Job Token inbound allowlist", map[string]any{
 			"project": projectID, "target_group": targetIDStr,
 		})
 	}
@@ -314,7 +314,7 @@ func resourceGitlabProjectJobTokenScopeStateUpgradeV0ToV1(ctx context.Context, d
 	// Target type will always be project because v0 only supported projects
 	targetType := targetTypeProject
 
-	tflog.Debug(ctx, "migrating state from V0 to V1", map[string]interface{}{
+	tflog.Debug(ctx, "migrating state from V0 to V1", map[string]any{
 		"old_id": data.Id.ValueString(),
 		"type":   targetType,
 	})

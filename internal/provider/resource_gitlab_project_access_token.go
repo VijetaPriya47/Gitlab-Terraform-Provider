@@ -293,7 +293,7 @@ func (r *gitlabProjectAccessTokenResource) ModifyPlan(ctx context.Context, req r
 		if stateData != nil {
 			expiresAt = stateData.ExpiresAt.ValueString()
 		}
-		tflog.Debug(ctx, "[ProjectAccessToken] State is not populated, or the expires_at value is nil. Creating the token for the first time.", map[string]interface{}{
+		tflog.Debug(ctx, "[ProjectAccessToken] State is not populated, or the expires_at value is nil. Creating the token for the first time.", map[string]any{
 			"is_state_nil": stateData == nil,
 			"expires_at":   expiresAt,
 		})
@@ -322,7 +322,7 @@ func (r *gitlabProjectAccessTokenResource) ModifyPlan(ctx context.Context, req r
 		}
 
 		// Logs for assisting with support
-		tflog.Debug(ctx, "[ProjectAccessToken] State is populated, and a rotation configuration is detected. Determining if token should be rotated.", map[string]interface{}{
+		tflog.Debug(ctx, "[ProjectAccessToken] State is populated, and a rotation configuration is detected. Determining if token should be rotated.", map[string]any{
 			"expires_at":             rotateBefore,
 			"detected_current_time":  api.CurrentTime(),
 			"detected_rotation_date": gapTime,
@@ -355,7 +355,7 @@ func (r *gitlabProjectAccessTokenResource) ModifyPlan(ctx context.Context, req r
 			planData.CreatedAt = types.StringUnknown()
 
 			// Logs for assisting with support
-			tflog.Debug(ctx, "[ProjectAccessToken] Rotation is required, settings plan data", map[string]interface{}{
+			tflog.Debug(ctx, "[ProjectAccessToken] Rotation is required, settings plan data", map[string]any{
 				"new_expires_at": expiryDate.String(),
 				"expires_at":     stateData.ExpiresAt.ValueString(),
 				"project":        planData.Project.ValueString(),

@@ -148,7 +148,7 @@ func (r *gitlabIntegrationCustomIssueTrackerResource) Read(ctx context.Context, 
 	service, _, err := r.client.Services.GetCustomIssueTrackerService(projectId, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			tflog.Debug(ctx, "custom issue tracker integration doesn't exist, removing from state", map[string]interface{}{
+			tflog.Debug(ctx, "custom issue tracker integration doesn't exist, removing from state", map[string]any{
 				"project": data.Project,
 			})
 			resp.State.RemoveResource(ctx)
@@ -192,7 +192,7 @@ func (r *gitlabIntegrationCustomIssueTrackerResource) update(ctx context.Context
 	service, _, err := r.client.Services.GetCustomIssueTrackerService(projectId, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			tflog.Debug(ctx, "custom issue tracker integration doesn't exist right after creation, removing from state", map[string]interface{}{
+			tflog.Debug(ctx, "custom issue tracker integration doesn't exist right after creation, removing from state", map[string]any{
 				"project": data.Project,
 			})
 			state.RemoveResource(ctx)
@@ -219,7 +219,7 @@ func (r *gitlabIntegrationCustomIssueTrackerResource) Delete(ctx context.Context
 
 	if _, err := r.client.Services.DeleteCustomIssueTrackerService(projectId, gitlab.WithContext(ctx)); err != nil {
 		if api.Is404(err) {
-			tflog.Debug(ctx, "custom issue tracker integration doesn't exist, removing from state", map[string]interface{}{
+			tflog.Debug(ctx, "custom issue tracker integration doesn't exist, removing from state", map[string]any{
 				"project": data.Project,
 			})
 			return

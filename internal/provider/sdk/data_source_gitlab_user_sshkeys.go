@@ -49,7 +49,7 @@ var _ = registerDataSource("gitlab_user_sshkeys", func() *schema.Resource {
 	}
 })
 
-func dataSourceGitlabUserKeysRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceGitlabUserKeysRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	tflog.Info(ctx, "[INFO] Reading Gitlab user")
 
@@ -61,7 +61,7 @@ func dataSourceGitlabUserKeysRead(ctx context.Context, d *schema.ResourceData, m
 
 	userIDData, userIDOk := d.GetOk("user_id")
 	usernameData, usernameOk := d.GetOk("username")
-	var uid interface{}
+	var uid any
 	if userIDOk {
 		uid = userIDData.(int)
 	} else if usernameOk {
@@ -86,7 +86,7 @@ func dataSourceGitlabUserKeysRead(ctx context.Context, d *schema.ResourceData, m
 	return nil
 }
 
-func flattenSSHKeysForState(keys []*gitlab.SSHKey) (values []map[string]interface{}) {
+func flattenSSHKeysForState(keys []*gitlab.SSHKey) (values []map[string]any) {
 	for _, key := range keys {
 		values = append(values, gitlabUserKeyToStateMap(key))
 	}

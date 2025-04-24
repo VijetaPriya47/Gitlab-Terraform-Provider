@@ -19,7 +19,7 @@ var _ = registerDataSource("gitlab_release_link", func() *schema.Resource {
 	}
 })
 
-func dataSourceGitlabReleaseLinkRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceGitlabReleaseLinkRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Get("project").(string)
 	tagName := d.Get("tag_name").(string)

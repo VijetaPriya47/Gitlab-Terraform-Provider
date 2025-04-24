@@ -343,7 +343,7 @@ func (r *gitlabBranchProtectionResource) Create(ctx context.Context, req resourc
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 
 	// Log the creation of the resource
-	tflog.Debug(ctx, "Created a protected branch", map[string]interface{}{
+	tflog.Debug(ctx, "Created a protected branch", map[string]any{
 		"project_id": data.Project.ValueString(), "branch": data.Branch.ValueString(),
 	})
 }
@@ -372,7 +372,7 @@ func (r *gitlabBranchProtectionResource) Read(ctx context.Context, req resource.
 	protectedBranch, _, err := r.client.ProtectedBranches.GetProtectedBranch(projectID, branch, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			tflog.Debug(ctx, "protected branch does not exist, removing from state", map[string]interface{}{
+			tflog.Debug(ctx, "protected branch does not exist, removing from state", map[string]any{
 				"project_id": projectID, "branch": branch,
 			})
 			resp.State.RemoveResource(ctx)
@@ -408,7 +408,7 @@ func (r *gitlabBranchProtectionResource) Update(ctx context.Context, req resourc
 	protectedBranch, _, err := r.client.ProtectedBranches.GetProtectedBranch(projectID, branch, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			tflog.Debug(ctx, "protected branch does not exist, removing from state", map[string]interface{}{
+			tflog.Debug(ctx, "protected branch does not exist, removing from state", map[string]any{
 				"project_id": projectID, "branch": branch,
 			})
 			resp.State.RemoveResource(ctx)
@@ -454,7 +454,7 @@ func (r *gitlabBranchProtectionResource) Update(ctx context.Context, req resourc
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 
 	// Log the update of the resource
-	tflog.Debug(ctx, "Updated a protected branch", map[string]interface{}{
+	tflog.Debug(ctx, "Updated a protected branch", map[string]any{
 		"project_id": projectID, "branch": branch,
 	})
 }
@@ -477,7 +477,7 @@ func (r *gitlabBranchProtectionResource) Delete(ctx context.Context, req resourc
 		return
 	}
 
-	tflog.Debug(ctx, "Delete gitlab protected branch", map[string]interface{}{
+	tflog.Debug(ctx, "Delete gitlab protected branch", map[string]any{
 		"project_id": data.Project.ValueString(), "branch": data.Branch.ValueString(),
 	})
 }
@@ -526,7 +526,7 @@ func (d *gitlabBranchProtectionResource) UpgradeState(context.Context) map[int64
 
 				resp.Diagnostics.Append(resp.State.Set(ctx, &newData)...)
 
-				tflog.Debug(ctx, "Upgraded gitlab_branch_protection resource from v0 to v1 verion", map[string]interface{}{
+				tflog.Debug(ctx, "Upgraded gitlab_branch_protection resource from v0 to v1 verion", map[string]any{
 					"project_id": data.Project.ValueString(), "branch": data.Branch.ValueString(),
 				})
 			},

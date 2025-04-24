@@ -97,7 +97,7 @@ var _ = registerResource("gitlab_integration_emails_on_push", func() *schema.Res
 	}
 })
 
-func resourceGitlabIntegrationEmailsOnPushCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabIntegrationEmailsOnPushCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	options := &gitlab.SetEmailsOnPushServiceOptions{
@@ -131,7 +131,7 @@ func resourceGitlabIntegrationEmailsOnPushCreate(ctx context.Context, d *schema.
 	return resourceGitlabIntegrationEmailsOnPushRead(ctx, d, meta)
 }
 
-func resourceGitlabIntegrationEmailsOnPushRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabIntegrationEmailsOnPushRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Id()
 
@@ -165,7 +165,7 @@ func resourceGitlabIntegrationEmailsOnPushRead(ctx context.Context, d *schema.Re
 	return nil
 }
 
-func resourceGitlabIntegrationEmailsOnPushDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabIntegrationEmailsOnPushDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Id()
 

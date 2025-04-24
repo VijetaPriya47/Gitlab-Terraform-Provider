@@ -124,7 +124,7 @@ func (r *gitlabProjectComplianceFrameworksResource) Read(ctx context.Context, re
 	project, _, err := r.client.Projects.GetProject(data.Id.ValueString(), nil, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			tflog.Debug(ctx, "project does not exist, removing resource from state", map[string]interface{}{
+			tflog.Debug(ctx, "project does not exist, removing resource from state", map[string]any{
 				"project": data.Id.ValueString(),
 			})
 			resp.State.RemoveResource(ctx)
@@ -149,14 +149,14 @@ func (r *gitlabProjectComplianceFrameworksResource) Read(ctx context.Context, re
 				}
 			}`, project.PathWithNamespace),
 	}
-	tflog.Debug(ctx, "executing GraphQL Query to retrieve current compliance frameworks on project", map[string]interface{}{
+	tflog.Debug(ctx, "executing GraphQL Query to retrieve current compliance frameworks on project", map[string]any{
 		"query": query.Query,
 	})
 
 	var response projectResponse
 	if _, err = api.SendGraphQLRequest(ctx, r.client, query, &response); err != nil {
 		if api.Is404(err) {
-			tflog.Debug(ctx, "compliance frameworks do not exist on project, removing from state", map[string]interface{}{
+			tflog.Debug(ctx, "compliance frameworks do not exist on project, removing from state", map[string]any{
 				"project_path_with_namespace": project.PathWithNamespace,
 			})
 			resp.State.RemoveResource(ctx)
@@ -168,7 +168,7 @@ func (r *gitlabProjectComplianceFrameworksResource) Read(ctx context.Context, re
 
 	// remove from state if no project compliance frameworks were returned, as they will get added via a create
 	if len(response.Data.Project.ComplianceFrameworks.Nodes) == 0 {
-		tflog.Debug(ctx, "compliance frameworks do not exist on project, removing from state", map[string]interface{}{
+		tflog.Debug(ctx, "compliance frameworks do not exist on project, removing from state", map[string]any{
 			"project_path_with_namespace": project.PathWithNamespace,
 		})
 		resp.State.RemoveResource(ctx)
@@ -207,7 +207,7 @@ func (r *gitlabProjectComplianceFrameworksResource) Create(ctx context.Context, 
 	project, _, err := r.client.Projects.GetProject(data.Project.ValueString(), nil, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			tflog.Debug(ctx, "project does not exist, removing resource from state", map[string]interface{}{
+			tflog.Debug(ctx, "project does not exist, removing resource from state", map[string]any{
 				"project": data.Project.ValueString(),
 			})
 			return
@@ -238,7 +238,7 @@ func (r *gitlabProjectComplianceFrameworksResource) Create(ctx context.Context, 
 				}
 			}`, project.ID, frameworksStr),
 	}
-	tflog.Debug(ctx, "executing GraphQL Query to update project compliance frameworks", map[string]interface{}{
+	tflog.Debug(ctx, "executing GraphQL Query to update project compliance frameworks", map[string]any{
 		"query": query.Query,
 	})
 
@@ -262,7 +262,7 @@ func (r *gitlabProjectComplianceFrameworksResource) Create(ctx context.Context, 
 	r.projectComplianceFrameworksToStateModel(&response.Data.ProjectUpdateComplianceFrameworks.Project, data)
 
 	// Log the creation of the resource
-	tflog.Debug(ctx, "update project compliance frameworks", map[string]interface{}{
+	tflog.Debug(ctx, "update project compliance frameworks", map[string]any{
 		"id": data.Id.ValueString(), "project": data.Project.ValueString(), "compliance_framework_ids": frameworksStr,
 	})
 
@@ -292,7 +292,7 @@ func (r *gitlabProjectComplianceFrameworksResource) Delete(ctx context.Context, 
 	project, _, err := r.client.Projects.GetProject(data.Id.ValueString(), nil, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			tflog.Debug(ctx, "project does not exist, removing resource from state", map[string]interface{}{
+			tflog.Debug(ctx, "project does not exist, removing resource from state", map[string]any{
 				"project": data.Id.ValueString(),
 			})
 			resp.State.RemoveResource(ctx)
@@ -324,7 +324,7 @@ func (r *gitlabProjectComplianceFrameworksResource) Delete(ctx context.Context, 
 			}`, project.ID),
 	}
 
-	tflog.Debug(ctx, "executing GraphQL Query to update project compliance frameworks", map[string]interface{}{
+	tflog.Debug(ctx, "executing GraphQL Query to update project compliance frameworks", map[string]any{
 		"query": query.Query,
 	})
 

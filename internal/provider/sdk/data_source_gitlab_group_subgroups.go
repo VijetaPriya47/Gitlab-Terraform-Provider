@@ -90,7 +90,7 @@ var _ = registerDataSource("gitlab_group_subgroups", func() *schema.Resource {
 	}
 })
 
-func dataSourceGitlabGroupSubgroupsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceGitlabGroupSubgroupsRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	tflog.Info(ctx, "Gitlab group subgroups")
@@ -107,7 +107,7 @@ func dataSourceGitlabGroupSubgroupsRead(ctx context.Context, d *schema.ResourceD
 		},
 	}
 	if data, ok := d.GetOk("skip_groups"); ok {
-		skipGroups := intListToIntSlice(data.([]interface{}))
+		skipGroups := intListToIntSlice(data.([]any))
 		options.SkipGroups = skipGroups
 	}
 
@@ -131,7 +131,7 @@ func dataSourceGitlabGroupSubgroupsRead(ctx context.Context, d *schema.ResourceD
 	return nil
 }
 
-func flattenSubgroupsForState(subgroups []*gitlab.Group) (values []map[string]interface{}) {
+func flattenSubgroupsForState(subgroups []*gitlab.Group) (values []map[string]any) {
 	for _, group := range subgroups {
 		values = append(values, gitlabGroupToStateMap(group))
 	}

@@ -2260,8 +2260,8 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 	}
 }
 
-func gitlabApplicationSettingsToStateMap(settings *api.Settings) map[string]interface{} {
-	stateMap := make(map[string]interface{})
+func gitlabApplicationSettingsToStateMap(settings *api.Settings) map[string]any {
+	stateMap := make(map[string]any)
 	stateMap["admin_mode"] = settings.AdminMode
 	stateMap["abuse_notification_email"] = settings.AbuseNotificationEmail
 	stateMap["after_sign_out_path"] = settings.AfterSignOutPath
@@ -2575,8 +2575,8 @@ func gitlabApplicationSettingsToStateMap(settings *api.Settings) map[string]inte
 }
 
 // Flattens the default branch protection into a statement for easier storage.
-func flattenDefaultBranchProtectionDefaults(input api.DefaultBranchProtectionDefaultsStruct) (values []map[string]interface{}) {
-	v := map[string]interface{}{}
+func flattenDefaultBranchProtectionDefaults(input api.DefaultBranchProtectionDefaultsStruct) (values []map[string]any) {
+	v := map[string]any{}
 	v["allow_force_push"] = input.AllowForcePush
 	v["developer_can_initial_push"] = input.DeveloperCanInitialPush
 	if len(input.AllowedToMerge) > 0 {
@@ -2673,7 +2673,7 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("asset_proxy_allowlist") {
-		options.AssetProxyAllowlist = stringListToStringSlice(d.Get("asset_proxy_allowlist").([]interface{}))
+		options.AssetProxyAllowlist = stringListToStringSlice(d.Get("asset_proxy_allowlist").([]any))
 	}
 
 	if d.HasChange("authorized_keys_enabled") {
@@ -2794,10 +2794,10 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 
 	if d.HasChange("default_branch_protection_defaults") {
 		// only one struct is allowed here, so retrieve the first one.
-		values := d.Get("default_branch_protection_defaults.0").(map[string]interface{})
+		values := d.Get("default_branch_protection_defaults.0").(map[string]any)
 
 		// Read the allowed to push and convert to []*gitlab.GroupAccessLevel
-		allowedToPushList := values["allowed_to_push"].([]interface{})
+		allowedToPushList := values["allowed_to_push"].([]any)
 		allowedToPush := make([]*gitlab.GroupAccessLevel, len(allowedToPushList))
 		for k, v := range allowedToPushList {
 			allowedToPush[k] = &gitlab.GroupAccessLevel{
@@ -2806,7 +2806,7 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 		}
 
 		// Read the allowed to merge and convert to []*gitlab.GroupAccessLevel
-		allowedToMergeList := values["allowed_to_merge"].([]interface{})
+		allowedToMergeList := values["allowed_to_merge"].([]any)
 		allowedToMerge := make([]*gitlab.GroupAccessLevel, len(allowedToMergeList))
 		for k, v := range allowedToMergeList {
 			allowedToMerge[k] = &gitlab.GroupAccessLevel{
@@ -2900,7 +2900,7 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("disabled_oauth_sign_in_sources") {
-		options.DisabledOauthSignInSources = stringListToStringSlice(d.Get("disabled_oauth_sign_in_sources").([]interface{}))
+		options.DisabledOauthSignInSources = stringListToStringSlice(d.Get("disabled_oauth_sign_in_sources").([]any))
 	}
 
 	if d.HasChange("dns_rebinding_protection_enabled") {
@@ -2912,11 +2912,11 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("domain_denylist") {
-		options.DomainDenylist = stringListToStringSlice(d.Get("domain_denylist").([]interface{}))
+		options.DomainDenylist = stringListToStringSlice(d.Get("domain_denylist").([]any))
 	}
 
 	if d.HasChange("domain_allowlist") {
-		options.DomainAllowlist = stringListToStringSlice(d.Get("domain_allowlist").([]interface{}))
+		options.DomainAllowlist = stringListToStringSlice(d.Get("domain_allowlist").([]any))
 	}
 
 	if d.HasChange("downstream_pipeline_trigger_limit_per_project_user_sha") {
@@ -3004,11 +3004,11 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("elasticsearch_namespace_ids") {
-		options.ElasticsearchNamespaceIDs = intListToIntSlice(d.Get("elasticsearch_namespace_ids").([]interface{}))
+		options.ElasticsearchNamespaceIDs = intListToIntSlice(d.Get("elasticsearch_namespace_ids").([]any))
 	}
 
 	if d.HasChange("elasticsearch_project_ids") {
-		options.ElasticsearchProjectIDs = intListToIntSlice(d.Get("elasticsearch_project_ids").([]interface{}))
+		options.ElasticsearchProjectIDs = intListToIntSlice(d.Get("elasticsearch_project_ids").([]any))
 	}
 
 	if d.HasChange("elasticsearch_search") {
@@ -3016,7 +3016,7 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("elasticsearch_url") {
-		options.ElasticsearchURL = stringListToCommaSeparatedString(d.Get("elasticsearch_url").([]interface{}))
+		options.ElasticsearchURL = stringListToCommaSeparatedString(d.Get("elasticsearch_url").([]any))
 	}
 
 	if d.HasChange("elasticsearch_username") {
@@ -3173,7 +3173,7 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("import_sources") {
-		options.ImportSources = stringListToStringSlice(d.Get("import_sources").([]interface{}))
+		options.ImportSources = stringListToStringSlice(d.Get("import_sources").([]any))
 	}
 
 	if d.HasChange("in_product_marketing_emails_enabled") {
@@ -3273,7 +3273,7 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("git_rate_limit_users_allowlist") {
-		options.GitRateLimitUsersAllowlist = stringListToStringSlice(d.Get("git_rate_limit_users_allowlist").([]interface{}))
+		options.GitRateLimitUsersAllowlist = stringListToStringSlice(d.Get("git_rate_limit_users_allowlist").([]any))
 	}
 
 	if d.HasChange("mirror_available") {
@@ -3301,7 +3301,7 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("outbound_local_requests_whitelist") {
-		options.OutboundLocalRequestsWhitelist = stringListToStringSlice(d.Get("outbound_local_requests_whitelist").([]interface{}))
+		options.OutboundLocalRequestsWhitelist = stringListToStringSlice(d.Get("outbound_local_requests_whitelist").([]any))
 	}
 
 	if d.HasChange("pages_domain_verification_enabled") {
@@ -3459,7 +3459,7 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("restricted_visibility_levels") {
-		options.RestrictedVisibilityLevels = stringListToVisibilityLevelSlice(d.Get("restricted_visibility_levels").([]interface{}))
+		options.RestrictedVisibilityLevels = stringListToVisibilityLevelSlice(d.Get("restricted_visibility_levels").([]any))
 	}
 
 	if d.HasChange("rsa_key_restriction") {
@@ -3751,7 +3751,7 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("valid_runner_registrars") {
-		v := d.Get("valid_runner_registrars").([]interface{})
+		v := d.Get("valid_runner_registrars").([]any)
 		registrars := make([]string, len(v))
 		for i, reg := range v {
 			registrars[i] = reg.(string)

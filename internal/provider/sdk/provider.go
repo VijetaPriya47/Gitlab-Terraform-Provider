@@ -107,8 +107,8 @@ func New(version string) func() *schema.Provider {
 
 }
 
-func configure(version string, p *schema.Provider) func(context.Context, *schema.ResourceData) (interface{}, diag.Diagnostics) {
-	return func(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
+func configure(version string, p *schema.Provider) func(context.Context, *schema.ResourceData) (any, diag.Diagnostics) {
+	return func(ctx context.Context, d *schema.ResourceData) (any, diag.Diagnostics) {
 		config := api.Config{
 			Token:         d.Get("token").(string),
 			BaseURL:       d.Get("base_url").(string),
@@ -151,9 +151,9 @@ func configure(version string, p *schema.Provider) func(context.Context, *schema
 	}
 }
 
-func makeRegisterResourceFunc(factories map[string]func() *schema.Resource, resourceType string) func(name string, fn func() *schema.Resource) interface{} {
+func makeRegisterResourceFunc(factories map[string]func() *schema.Resource, resourceType string) func(name string, fn func() *schema.Resource) any {
 	// lintignore: R009 // panic() during package initialization is ok
-	return func(name string, fn func() *schema.Resource) interface{} {
+	return func(name string, fn func() *schema.Resource) any {
 		if strings.ToLower(name) != name {
 			panic(fmt.Sprintf("cannot register %s %q: name must be lowercase", resourceType, name))
 		}

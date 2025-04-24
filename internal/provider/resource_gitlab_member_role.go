@@ -231,14 +231,14 @@ func (r *gitlabMemberRoleResource) Read(ctx context.Context, req resource.ReadRe
 				}
 			}`, id),
 	}
-	tflog.Debug(ctx, "executing GraphQL Query to retrieve current custom member role", map[string]interface{}{
+	tflog.Debug(ctx, "executing GraphQL Query to retrieve current custom member role", map[string]any{
 		"query": query.Query,
 	})
 
 	var response MemberRoleResponse
 	if _, err := api.SendGraphQLRequest(ctx, r.client, query, &response); err != nil {
 		if response.Data.MemberRole.ID == "" {
-			tflog.Debug(ctx, "member role does not exist, removing from state", map[string]interface{}{
+			tflog.Debug(ctx, "member role does not exist, removing from state", map[string]any{
 				"id": id,
 			})
 			resp.State.RemoveResource(ctx)
@@ -314,7 +314,7 @@ func (r *gitlabMemberRoleResource) Create(ctx context.Context, req resource.Crea
 			}`, groupPathQuery, name, description, baseAccessLevel, permissions),
 	}
 
-	tflog.Debug(ctx, "executing GraphQL Query to create custom member role", map[string]interface{}{
+	tflog.Debug(ctx, "executing GraphQL Query to create custom member role", map[string]any{
 		"query": query.Query,
 	})
 
@@ -345,7 +345,7 @@ func (r *gitlabMemberRoleResource) Create(ctx context.Context, req resource.Crea
 	r.memberRoleToStateModel(&response.Data.MemberRoleCreate.MemberRole, groupPath, data)
 
 	// Log the creation of the resource
-	tflog.Debug(ctx, "created a custom member role", map[string]interface{}{
+	tflog.Debug(ctx, "created a custom member role", map[string]any{
 		"id": data.Id.ValueString(), "name": data.Name.ValueString(), "description": data.Description.ValueString(), "group_path": data.GroupPath.ValueString(),
 	})
 
@@ -378,7 +378,7 @@ func (r *gitlabMemberRoleResource) Delete(ctx context.Context, req resource.Dele
 				}
 			}`, id),
 	}
-	tflog.Debug(ctx, "executing GraphQL Query to delete custom member role", map[string]interface{}{
+	tflog.Debug(ctx, "executing GraphQL Query to delete custom member role", map[string]any{
 		"query": query.Query,
 	})
 
@@ -456,7 +456,7 @@ func (r *gitlabMemberRoleResource) Update(ctx context.Context, req resource.Upda
 				}
 			}`, id, name, description, permissions),
 	}
-	tflog.Debug(ctx, "executing GraphQL Query to update custom member role", map[string]interface{}{
+	tflog.Debug(ctx, "executing GraphQL Query to update custom member role", map[string]any{
 		"query": query.Query,
 	})
 
@@ -487,7 +487,7 @@ func (r *gitlabMemberRoleResource) Update(ctx context.Context, req resource.Upda
 	r.memberRoleToStateModel(&response.Data.MemberRoleUpdate.MemberRole, groupPath, data)
 
 	// Log the update of the resource
-	tflog.Debug(ctx, "updated a custom member role", map[string]interface{}{
+	tflog.Debug(ctx, "updated a custom member role", map[string]any{
 		"id": data.Id.ValueString(), "name": data.Name.ValueString(), "description": data.Description.ValueString(), "group_path": data.GroupPath.ValueString(),
 	})
 

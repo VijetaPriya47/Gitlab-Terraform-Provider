@@ -33,7 +33,7 @@ func avatarableSchema() map[string]*schema.Schema {
 }
 
 // avatarableDiff must be used to properly support the `avatarSchema` attributes in a resource Schema.
-func avatarableDiff(ctx context.Context, rd *schema.ResourceDiff, i interface{}) error {
+func avatarableDiff(ctx context.Context, rd *schema.ResourceDiff, i any) error {
 	if _, ok := rd.GetOk("avatar"); ok {
 		if v, ok := rd.GetOk("avatar_hash"); !ok || v.(string) == "" {
 			if err := rd.SetNewComputed("avatar_hash"); err != nil {

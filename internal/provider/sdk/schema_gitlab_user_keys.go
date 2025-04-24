@@ -66,8 +66,8 @@ func gitlabUserSSHKeySchema() map[string]*schema.Schema {
 	}
 }
 
-func gitlabUserKeyToStateMap(key *gitlab.SSHKey) map[string]interface{} {
-	stateMap := make(map[string]interface{})
+func gitlabUserKeyToStateMap(key *gitlab.SSHKey) map[string]any {
+	stateMap := make(map[string]any)
 	stateMap["title"] = key.Title
 	stateMap["key"] = key.Key
 	stateMap["key_id"] = key.ID

@@ -159,7 +159,7 @@ var commitSchema = &schema.Resource{
 	},
 }
 
-func resourceGitlabBranchCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabBranchCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	name := d.Get("name").(string)
 	project := d.Get("project").(string)
@@ -179,7 +179,7 @@ func resourceGitlabBranchCreate(ctx context.Context, d *schema.ResourceData, met
 	return resourceGitlabBranchRead(ctx, d, meta)
 }
 
-func resourceGitlabBranchRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabBranchRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project, name, err := utils.ParseTwoPartID(d.Id())
 	if err != nil {
@@ -214,13 +214,13 @@ func resourceGitlabBranchRead(ctx context.Context, d *schema.ResourceData, meta 
 	return nil
 }
 
-func resourceGitlabBranchUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabBranchUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	// This function exists only to update the `keep_on_destroy` in state. No action is necessary, because all important attributes
 	// force re-creation of the resource.
 	return resourceGitlabBranchRead(ctx, d, meta)
 }
 
-func resourceGitlabBranchDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabBranchDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project, name, err := utils.ParseTwoPartID(d.Id())
 	if err != nil {
@@ -241,11 +241,11 @@ func resourceGitlabBranchDelete(ctx context.Context, d *schema.ResourceData, met
 	return nil
 }
 
-func flattenCommit(commit *gitlab.Commit) (values []map[string]interface{}) {
+func flattenCommit(commit *gitlab.Commit) (values []map[string]any) {
 	if commit == nil {
-		return []map[string]interface{}{}
+		return []map[string]any{}
 	}
-	return []map[string]interface{}{
+	return []map[string]any{
 		{
 			"id":              commit.ID,
 			"short_id":        commit.ShortID,

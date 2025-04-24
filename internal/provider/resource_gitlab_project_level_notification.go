@@ -234,7 +234,7 @@ func (d *gitlabProjectLevelNotificationsResource) Create(ctx context.Context, re
 		return
 	}
 
-	tflog.Debug(ctx, "[DEBUG] Creating gitlab project level notification settings", map[string]interface{}{
+	tflog.Debug(ctx, "[DEBUG] Creating gitlab project level notification settings", map[string]any{
 		"data": data,
 	})
 
@@ -256,7 +256,7 @@ func (d *gitlabProjectLevelNotificationsResource) Read(ctx context.Context, req 
 	}
 
 	project := data.ID.ValueString()
-	tflog.Debug(ctx, "[DEBUG] Reading gitlab project level notification settings", map[string]interface{}{
+	tflog.Debug(ctx, "[DEBUG] Reading gitlab project level notification settings", map[string]any{
 		"project": project,
 	})
 
@@ -266,7 +266,7 @@ func (d *gitlabProjectLevelNotificationsResource) Read(ctx context.Context, req 
 			"Error reading gitlab project level notification settings",
 			err.Error(),
 		)
-		tflog.Error(ctx, "[ERROR] Error reading gitlab project level notification settings", map[string]interface{}{
+		tflog.Error(ctx, "[ERROR] Error reading gitlab project level notification settings", map[string]any{
 			"project": project,
 			"error":   err,
 		})
@@ -284,12 +284,12 @@ func (d *gitlabProjectLevelNotificationsResource) Update(ctx context.Context, re
 		return
 	}
 	project := data.ID.ValueString()
-	tflog.Debug(ctx, "[DEBUG] Updating gitlab project level notification settings", map[string]interface{}{
+	tflog.Debug(ctx, "[DEBUG] Updating gitlab project level notification settings", map[string]any{
 		"project": project,
 	})
 
 	// Call the update API
-	tflog.Debug(ctx, "[DEBUG] Calling Update Project Settings API with project and data", map[string]interface{}{
+	tflog.Debug(ctx, "[DEBUG] Calling Update Project Settings API with project and data", map[string]any{
 		"project": project,
 		"data":    data,
 	})
@@ -317,7 +317,7 @@ func (d *gitlabProjectLevelNotificationsResource) Delete(ctx context.Context, re
 	_, _, err := d.client.NotificationSettings.UpdateSettingsForProject(data.Project.ValueString(), options, gitlab.WithContext(ctx))
 	if err != nil {
 		resp.Diagnostics.AddError(fmt.Sprintf("Error encountered when updating settings back to global for project %s", data.Project.ValueString()), err.Error())
-		tflog.Error(ctx, "Error encountered when updating settings back to global", map[string]interface{}{
+		tflog.Error(ctx, "Error encountered when updating settings back to global", map[string]any{
 			"error":   err,
 			"project": data.Project.ValueString(),
 		})
@@ -474,7 +474,7 @@ func (d *gitlabProjectLevelNotificationsResource) updateProjectNotifications(ctx
 
 	settings, _, err := d.client.NotificationSettings.UpdateSettingsForProject(data.Project.ValueString(), opts, gitlab.WithContext(ctx))
 	if err != nil {
-		tflog.Error(ctx, "Error setting project notifications", map[string]interface{}{
+		tflog.Error(ctx, "Error setting project notifications", map[string]any{
 			"data":  data,
 			"error": err,
 		})

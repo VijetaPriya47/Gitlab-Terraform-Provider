@@ -122,7 +122,7 @@ var _ = registerResource("gitlab_instance_cluster", func() *schema.Resource {
 	}
 })
 
-func resourceGitlabInstanceClusterCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabInstanceClusterCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	pk := gitlab.AddPlatformKubernetesOptions{
@@ -171,7 +171,7 @@ func resourceGitlabInstanceClusterCreate(ctx context.Context, d *schema.Resource
 	return resourceGitlabInstanceClusterRead(ctx, d, meta)
 }
 
-func resourceGitlabInstanceClusterRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabInstanceClusterRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	clusterId, err := strconv.Atoi(d.Id())
@@ -213,7 +213,7 @@ func resourceGitlabInstanceClusterRead(ctx context.Context, d *schema.ResourceDa
 	return nil
 }
 
-func resourceGitlabInstanceClusterUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabInstanceClusterUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	clusterId, err := strconv.Atoi(d.Id())
@@ -272,7 +272,7 @@ func resourceGitlabInstanceClusterUpdate(ctx context.Context, d *schema.Resource
 	return resourceGitlabInstanceClusterRead(ctx, d, meta)
 }
 
-func resourceGitlabInstanceClusterDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabInstanceClusterDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	clusterId, err := strconv.Atoi(d.Id())
 	if err != nil {

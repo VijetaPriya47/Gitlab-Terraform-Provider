@@ -309,7 +309,7 @@ func (r *gitlabValueStreamAnalyticsResource) Read(ctx context.Context, req resou
 				}
 			}`, fullPathType, fullPath, id),
 	}
-	tflog.Debug(ctx, "executing GraphQL Query to retrieve current value stream analytics on project", map[string]interface{}{
+	tflog.Debug(ctx, "executing GraphQL Query to retrieve current value stream analytics on project", map[string]any{
 		"query": query.Query,
 	})
 
@@ -317,7 +317,7 @@ func (r *gitlabValueStreamAnalyticsResource) Read(ctx context.Context, req resou
 		var response groupValueStreamResponse
 		if _, err := api.SendGraphQLRequest(ctx, r.client, query, &response); err != nil {
 			if api.Is404(err) {
-				tflog.Debug(ctx, "value stream analytics does not exist, removing from state", map[string]interface{}{
+				tflog.Debug(ctx, "value stream analytics does not exist, removing from state", map[string]any{
 					"full_path": fullPath,
 				})
 				resp.State.RemoveResource(ctx)
@@ -337,7 +337,7 @@ func (r *gitlabValueStreamAnalyticsResource) Read(ctx context.Context, req resou
 		var response projectValueStreamResponse
 		if _, err := api.SendGraphQLRequest(ctx, r.client, query, &response); err != nil {
 			if api.Is404(err) {
-				tflog.Debug(ctx, "value stream analytics does not exist, removing from state", map[string]interface{}{
+				tflog.Debug(ctx, "value stream analytics does not exist, removing from state", map[string]any{
 					"full_path": fullPath,
 				})
 				resp.State.RemoveResource(ctx)
@@ -446,7 +446,7 @@ func (r *gitlabValueStreamAnalyticsResource) Create(ctx context.Context, req res
 	r.valueStreamToStateModel(&response.Data.ValueStreamCreate.ValueStream, data, fullPathIsGroupPath)
 
 	// Log the creation of the resource
-	tflog.Debug(ctx, "created a value stream analytics", map[string]interface{}{
+	tflog.Debug(ctx, "created a value stream analytics", map[string]any{
 		"id": data.Id.ValueString(), "fullPath": fullPath,
 	})
 
@@ -488,7 +488,7 @@ func (r *gitlabValueStreamAnalyticsResource) Delete(ctx context.Context, req res
 			}`, id),
 	}
 
-	tflog.Debug(ctx, "executing GraphQL Query to update value stream analytics", map[string]interface{}{
+	tflog.Debug(ctx, "executing GraphQL Query to update value stream analytics", map[string]any{
 		"query": query.Query,
 	})
 

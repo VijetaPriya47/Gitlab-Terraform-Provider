@@ -107,7 +107,7 @@ var _ = registerDataSource("gitlab_project_membership", func() *schema.Resource 
 	}
 })
 
-func dataSourceGitlabProjectMembershipRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceGitlabProjectMembershipRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	var project *gitlab.Project
@@ -115,7 +115,7 @@ func dataSourceGitlabProjectMembershipRead(ctx context.Context, d *schema.Resour
 
 	tflog.Info(ctx, "[INFO] Reading Gitlab project")
 
-	var pid interface{}
+	var pid any
 	if v, ok := d.GetOk("project_id"); ok {
 		pid = v.(int)
 	} else if v, ok := d.GetOk("full_path"); ok {
@@ -187,10 +187,10 @@ func dataSourceGitlabProjectMembershipRead(ctx context.Context, d *schema.Resour
 	return nil
 }
 
-func flattenGitlabProjectMembers(members []*gitlab.ProjectMember) []interface{} {
-	membersList := make([]interface{}, 0, len(members))
+func flattenGitlabProjectMembers(members []*gitlab.ProjectMember) []any {
+	membersList := make([]any, 0, len(members))
 	for _, member := range members {
-		values := map[string]interface{}{
+		values := map[string]any{
 			"id":           member.ID,
 			"username":     member.Username,
 			"name":         member.Name,

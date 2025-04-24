@@ -104,12 +104,12 @@ func resourceGitlabProjectLabelResourceV0() *schema.Resource {
 }
 
 // resourceGitlabProjectLabelStateUpgradeV0 performs the state migration from V0 to V1.
-func resourceGitlabProjectLabelStateUpgradeV0(ctx context.Context, rawState map[string]interface{}, meta interface{}) (map[string]interface{}, error) {
+func resourceGitlabProjectLabelStateUpgradeV0(ctx context.Context, rawState map[string]any, meta any) (map[string]any, error) {
 	project := rawState["project"].(string)
 	oldId := rawState["id"].(string)
-	tflog.Debug(ctx, "attempting state migration from V0 to V1 - changing the `id` attribute format", map[string]interface{}{"project": project, "v0-id": oldId})
+	tflog.Debug(ctx, "attempting state migration from V0 to V1 - changing the `id` attribute format", map[string]any{"project": project, "v0-id": oldId})
 	rawState["id"] = utils.BuildTwoPartID(&project, &oldId)
-	tflog.Debug(ctx, "migrated `id` attribute for V0 to V1", map[string]interface{}{"v0-id": oldId, "v1-id": rawState["id"]})
+	tflog.Debug(ctx, "migrated `id` attribute for V0 to V1", map[string]any{"v0-id": oldId, "v1-id": rawState["id"]})
 	return rawState, nil
 }
 
@@ -125,7 +125,7 @@ func resourceGitlabProjectLabelParseId(id string) (string, string, error) {
 	return project, labelName, nil
 }
 
-func resourceGitlabProjectLabelCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectLabelCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Get("project").(string)
 	options := &gitlab.CreateLabelOptions{
@@ -148,7 +148,7 @@ func resourceGitlabProjectLabelCreate(ctx context.Context, d *schema.ResourceDat
 	return resourceGitlabProjectLabelRead(ctx, d, meta)
 }
 
-func resourceGitlabProjectLabelRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectLabelRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project, labelName, err := resourceGitlabProjectLabelParseId(d.Id())
 	if err != nil {
@@ -174,7 +174,7 @@ func resourceGitlabProjectLabelRead(ctx context.Context, d *schema.ResourceData,
 	return nil
 }
 
-func resourceGitlabProjectLabelUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectLabelUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project, _, err := resourceGitlabProjectLabelParseId(d.Id())
 	if err != nil {
@@ -199,7 +199,7 @@ func resourceGitlabProjectLabelUpdate(ctx context.Context, d *schema.ResourceDat
 	return resourceGitlabProjectLabelRead(ctx, d, meta)
 }
 
-func resourceGitlabProjectLabelDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectLabelDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project, labelName, err := resourceGitlabProjectLabelParseId(d.Id())
 	if err != nil {

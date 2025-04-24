@@ -41,7 +41,7 @@ var _ = registerResource("gitlab_application_settings", func() *schema.Resource 
 	}
 })
 
-func resourceGitlabApplicationSettingsSet(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabApplicationSettingsSet(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	tflog.Debug(ctx, "[DEBUG] update GitLab Application Settings")
@@ -70,7 +70,7 @@ func resourceGitlabApplicationSettingsSet(ctx context.Context, d *schema.Resourc
 	return resourceGitlabApplicationSettingsRead(ctx, d, meta)
 }
 
-func resourceGitlabApplicationSettingsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabApplicationSettingsRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	if d.Id() != applicationSettingsID {
 		return diag.Errorf("The `gitlab_application_settings` resource can only exist once and requires the id to be `gitlab`")
 	}
@@ -89,7 +89,7 @@ func resourceGitlabApplicationSettingsRead(ctx context.Context, d *schema.Resour
 	return nil
 }
 
-func resourceGitlabApplicationSettingsDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabApplicationSettingsDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	tflog.Debug(ctx, "[DEBUG] destroying the application settings does not yet do anything.")
 	return nil
 }

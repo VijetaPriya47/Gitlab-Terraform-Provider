@@ -104,7 +104,7 @@ func resourceGitlabGroupLDAPLinkResourceV0() *schema.Resource {
 }
 
 // resourceGitlabProjectLabelStateUpgradeV0 performs the state migration from V0 to V1.
-func resourceGitlabGroupLDAPLinkStateUpgradeV0(ctx context.Context, rawState map[string]interface{}, meta interface{}) (map[string]interface{}, error) {
+func resourceGitlabGroupLDAPLinkStateUpgradeV0(ctx context.Context, rawState map[string]any, meta any) (map[string]any, error) {
 	group := ""
 	// check to determine if "group_id" is present. If it is, use that, otherwise use "group". This is because
 	// "group_id" changed to "group" in 16.0, so the previous state may use either.
@@ -129,10 +129,10 @@ func resourceGitlabGroupLDAPLinkStateUpgradeV0(ctx context.Context, rawState map
 	}
 
 	oldId := rawState["id"].(string)
-	tflog.Debug(ctx, "attempting state migration from V0 to V1 - changing the `id` attribute format to include the group", map[string]interface{}{"group_id": group, "v0-id": oldId})
+	tflog.Debug(ctx, "attempting state migration from V0 to V1 - changing the `id` attribute format to include the group", map[string]any{"group_id": group, "v0-id": oldId})
 	rawState["id"] = resourceGitLabGroupLDAPLinkBuildId(group, ldap, cn, filter)
 
-	tflog.Debug(ctx, "migrated `id` attribute for V0 to V1", map[string]interface{}{"v0-id": oldId, "v1-id": rawState["id"]})
+	tflog.Debug(ctx, "migrated `id` attribute for V0 to V1", map[string]any{"v0-id": oldId, "v1-id": rawState["id"]})
 	return rawState, nil
 }
 
@@ -150,7 +150,7 @@ func resourceGitLabGroupLDAPLinkParseId(id string) (string, string, string, stri
 	return parts[0], parts[1], parts[2], parts[3], nil
 }
 
-func resourceGitlabGroupLdapLinkCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabGroupLdapLinkCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	group := d.Get("group").(string)
@@ -193,7 +193,7 @@ func resourceGitlabGroupLdapLinkCreate(ctx context.Context, d *schema.ResourceDa
 	return resourceGitlabGroupLdapLinkRead(ctx, d, meta)
 }
 
-func resourceGitlabGroupLdapLinkRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabGroupLdapLinkRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	group, ldapProvider, cn, filter, err := resourceGitLabGroupLDAPLinkParseId(d.Id())
 	if err != nil {
@@ -249,7 +249,7 @@ func resourceGitlabGroupLdapLinkRead(ctx context.Context, d *schema.ResourceData
 	return nil
 }
 
-func resourceGitlabGroupLdapLinkDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabGroupLdapLinkDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	group, ldapProvider, cn, filter, err := resourceGitLabGroupLDAPLinkParseId(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
@@ -259,7 +259,7 @@ func resourceGitlabGroupLdapLinkDelete(ctx context.Context, d *schema.ResourceDa
 }
 
 // Used to destroy an LDAP link with primary keys. Used in both `Create` (when force == true) and in the delete function.
-func resourceGitlabGroupLdapLinkDeleteWithID(ctx context.Context, group, ldapProvider, cn, filter string, meta interface{}) diag.Diagnostics {
+func resourceGitlabGroupLdapLinkDeleteWithID(ctx context.Context, group, ldapProvider, cn, filter string, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Delete GitLab group LdapLink %s:%s:%s:%s", group, ldapProvider, cn, filter))
@@ -276,7 +276,7 @@ func resourceGitlabGroupLdapLinkDeleteWithID(ctx context.Context, group, ldapPro
 	if _, err := client.Groups.DeleteGroupLDAPLinkWithCNOrFilter(group, &options, gitlab.WithContext(ctx)); err != nil {
 		// Ignore LDAP links that don't exist
 		if api.Is404(err) || api.Is403(err) {
-			tflog.Warn(ctx, "Linked LDAP group not found. Was the LDAP link or its group deleted outside TF?", map[string]interface{}{
+			tflog.Warn(ctx, "Linked LDAP group not found. Was the LDAP link or its group deleted outside TF?", map[string]any{
 				"group":         group,
 				"ldap_provider": ldapProvider,
 				"cn":            cn,

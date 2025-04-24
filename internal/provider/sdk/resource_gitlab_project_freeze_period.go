@@ -95,7 +95,7 @@ func resourceGitlabProjectFreezePeriodResourceV0() *schema.Resource {
 }
 
 // resourceGitlabProjectFreezePeriodStateUpgradeV0 performs the state migration from V0 to V1.
-func resourceGitlabProjectFreezePeriodStateUpgradeV0(ctx context.Context, rawState map[string]interface{}, meta interface{}) (map[string]interface{}, error) {
+func resourceGitlabProjectFreezePeriodStateUpgradeV0(ctx context.Context, rawState map[string]any, meta any) (map[string]any, error) {
 	if rawState["project_id"] != nil {
 		projectId, ok := rawState["project_id"].(string)
 		if !ok {
@@ -103,12 +103,12 @@ func resourceGitlabProjectFreezePeriodStateUpgradeV0(ctx context.Context, rawSta
 		}
 		rawState["project"] = projectId
 		delete(rawState, "project_id")
-		tflog.Debug(ctx, "attempting state migration from V0 to V1 - changing the `project_id` attribute to `project`", map[string]interface{}{"project_id": projectId})
+		tflog.Debug(ctx, "attempting state migration from V0 to V1 - changing the `project_id` attribute to `project`", map[string]any{"project_id": projectId})
 	}
 	return rawState, nil
 }
 
-func resourceGitlabProjectFreezePeriodCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectFreezePeriodCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	project := d.Get("project").(string)
 
 	options := gitlab.CreateFreezePeriodOptions{
@@ -131,7 +131,7 @@ func resourceGitlabProjectFreezePeriodCreate(ctx context.Context, d *schema.Reso
 	return resourceGitlabProjectFreezePeriodRead(ctx, d, meta)
 }
 
-func resourceGitlabProjectFreezePeriodRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectFreezePeriodRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project, freezePeriodID, err := projectAndFreezePeriodIDFromID(d.Id())
 	if err != nil {
@@ -158,7 +158,7 @@ func resourceGitlabProjectFreezePeriodRead(ctx context.Context, d *schema.Resour
 	return nil
 }
 
-func resourceGitlabProjectFreezePeriodUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectFreezePeriodUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project, freezePeriodID, err := projectAndFreezePeriodIDFromID(d.Id())
 	options := &gitlab.UpdateFreezePeriodOptions{}
@@ -189,7 +189,7 @@ func resourceGitlabProjectFreezePeriodUpdate(ctx context.Context, d *schema.Reso
 	return resourceGitlabProjectFreezePeriodRead(ctx, d, meta)
 }
 
-func resourceGitlabProjectFreezePeriodDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabProjectFreezePeriodDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project, freezePeriodID, err := projectAndFreezePeriodIDFromID(d.Id())
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Delete gitlab FreezePeriod %s", d.Id()))

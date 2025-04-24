@@ -29,7 +29,7 @@ var _ = registerResource("gitlab_instance_variable", func() *schema.Resource {
 	}
 })
 
-func resourceGitlabInstanceVariableCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabInstanceVariableCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	key := d.Get("key").(string)
@@ -60,7 +60,7 @@ func resourceGitlabInstanceVariableCreate(ctx context.Context, d *schema.Resourc
 	return resourceGitlabInstanceVariableRead(ctx, d, meta)
 }
 
-func resourceGitlabInstanceVariableRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabInstanceVariableRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	key := d.Id()
@@ -92,7 +92,7 @@ func resourceGitlabInstanceVariableRead(ctx context.Context, d *schema.ResourceD
 	return nil
 }
 
-func resourceGitlabInstanceVariableUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabInstanceVariableUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	key := d.Get("key").(string)
@@ -120,7 +120,7 @@ func resourceGitlabInstanceVariableUpdate(ctx context.Context, d *schema.Resourc
 	return resourceGitlabInstanceVariableRead(ctx, d, meta)
 }
 
-func resourceGitlabInstanceVariableDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabInstanceVariableDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	key := d.Get("key").(string)
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Delete gitlab instance level CI variable %s", key))

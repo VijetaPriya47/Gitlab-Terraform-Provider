@@ -65,8 +65,8 @@ func gitlabReleaseLinkGetSchema() map[string]*schema.Schema {
 	}
 }
 
-func gitlabReleaseLinkToStateMap(project string, tagName string, releaseLink *gitlab.ReleaseLink) map[string]interface{} {
-	stateMap := make(map[string]interface{})
+func gitlabReleaseLinkToStateMap(project string, tagName string, releaseLink *gitlab.ReleaseLink) map[string]any {
+	stateMap := make(map[string]any)
 	stateMap["project"] = project
 	stateMap["tag_name"] = tagName
 	stateMap["name"] = releaseLink.Name

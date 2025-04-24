@@ -20,7 +20,7 @@ var _ = registerDataSource("gitlab_cluster_agent", func() *schema.Resource {
 	}
 })
 
-func dataSourceGitlabClusterAgentRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceGitlabClusterAgentRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	project := d.Get("project").(string)

@@ -76,7 +76,7 @@ var _ = registerDataSource("gitlab_repository_tree", func() *schema.Resource {
 	}
 })
 
-func dataSourceGitlabRepositoryTreeRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceGitlabRepositoryTreeRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Get("project").(string)
 
@@ -116,12 +116,12 @@ func dataSourceGitlabRepositoryTreeRead(ctx context.Context, d *schema.ResourceD
 	return nil
 }
 
-func flattenGitlabRepositoryTree(project string, treeNodes []*gitlab.TreeNode) []interface{} {
-	treeNodeList := []interface{}{}
+func flattenGitlabRepositoryTree(project string, treeNodes []*gitlab.TreeNode) []any {
+	treeNodeList := []any{}
 
 	for _, node := range treeNodes {
 
-		values := map[string]interface{}{
+		values := map[string]any{
 			"id":   project,
 			"name": node.Name,
 			"type": node.Type,

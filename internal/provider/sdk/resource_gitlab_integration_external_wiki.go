@@ -70,7 +70,7 @@ var _ = registerResource("gitlab_integration_external_wiki", func() *schema.Reso
 	}
 })
 
-func resourceGitlabIntegrationExternalWikiCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabIntegrationExternalWikiCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Get("project").(string)
 	d.SetId(project)
@@ -89,7 +89,7 @@ func resourceGitlabIntegrationExternalWikiCreate(ctx context.Context, d *schema.
 	return resourceGitlabIntegrationExternalWikiRead(ctx, d, meta)
 }
 
-func resourceGitlabIntegrationExternalWikiRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabIntegrationExternalWikiRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Id()
 
@@ -118,7 +118,7 @@ func resourceGitlabIntegrationExternalWikiRead(ctx context.Context, d *schema.Re
 	return nil
 }
 
-func resourceGitlabIntegrationExternalWikiDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGitlabIntegrationExternalWikiDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Id()
 
