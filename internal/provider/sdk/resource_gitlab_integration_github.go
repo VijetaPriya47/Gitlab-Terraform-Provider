@@ -12,29 +12,12 @@ import (
 )
 
 var _ = registerResource("gitlab_integration_github", func() *schema.Resource {
-	return resourceGitlabIntegrationGithubResource(`The ` + "`gitlab_integration_github`" + ` resource allows to manage the lifecycle of a project integration with GitHub.
+	return &schema.Resource{
+		Description: `The ` + "`gitlab_integration_github`" + ` resource allows to manage the lifecycle of a project integration with GitHub.
 
 -> This resource requires a GitLab Enterprise instance.
-	
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#github)`)
-})
-
-var _ = registerResource("gitlab_service_github", func() *schema.Resource {
-	resource := resourceGitlabIntegrationGithubResource(`The ` + "`gitlab_service_github`" + ` resource allows to manage the lifecycle of a project integration with GitHub.
-
--> This resource requires a GitLab Enterprise instance.
-
-~> This resource is deprecated. use ` + "`gitlab_integration_github`" + `instead!
 	
 **Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#github)`,
-	)
-	resource.DeprecationMessage = `This resource is deprecated. use ` + "`gitlab_integration_github`" + `instead!`
-	return resource
-})
-
-func resourceGitlabIntegrationGithubResource(description string) *schema.Resource {
-	return &schema.Resource{
-		Description: description,
 
 		CreateContext: resourceGitlabIntegrationGithubCreate,
 		ReadContext:   resourceGitlabIntegrationGithubRead,
@@ -92,7 +75,7 @@ func resourceGitlabIntegrationGithubResource(description string) *schema.Resourc
 			},
 		},
 	}
-}
+})
 
 func resourceGitlabIntegrationGithubSetToState(d *schema.ResourceData, service *gitlab.GithubService) {
 	d.SetId(fmt.Sprintf("%d", service.ID))

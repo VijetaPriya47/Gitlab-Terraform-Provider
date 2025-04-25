@@ -15,45 +15,6 @@ import (
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
-func TestAccGitlabIntegrationGithub_backwardsCompatibleToService(t *testing.T) {
-	testutil.SkipIfCE(t)
-
-	var githubService gitlab.GithubService
-	testProject := testutil.CreateProject(t)
-
-	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
-		CheckDestroy:             testAccCheckGitlabIntegrationGithubDestroy,
-		Steps: []resource.TestStep{
-			// Create a project and a github service
-			{
-				Config: fmt.Sprintf(`
-					resource "gitlab_service_github" "github" {
-						project        = "%d"
-						token          = "test"
-						repository_url = "https://github.com/gitlabhq/terraform-provider-gitlab"
-					}
-				`, testProject.ID),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckGitlabIntegrationGithubExists("gitlab_service_github.github", &githubService),
-					resource.TestCheckResourceAttr("gitlab_service_github.github", "repository_url", "https://github.com/gitlabhq/terraform-provider-gitlab"),
-					resource.TestCheckResourceAttr("gitlab_service_github.github", "static_context", "true"),
-				),
-			},
-			// Verify Import
-			{
-				ResourceName:      "gitlab_service_github.github",
-				ImportStateIdFunc: getGithubProjectID("gitlab_service_github.github"),
-				ImportState:       true,
-				ImportStateVerify: true,
-				ImportStateVerifyIgnore: []string{
-					"token",
-				},
-			},
-		},
-	})
-}
-
 func TestAccGitlabIntegrationGithub_basic(t *testing.T) {
 	testutil.SkipIfCE(t)
 
