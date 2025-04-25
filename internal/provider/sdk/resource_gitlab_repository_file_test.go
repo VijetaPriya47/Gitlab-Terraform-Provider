@@ -388,7 +388,7 @@ func TestAccGitlabRepositoryFile_createSameFileDifferentRepository(t *testing.T)
 						author_name    = "Meow Meowington"
 						commit_message = "feature: add launch codes"
 					}
-					
+
 					resource "gitlab_repository_file" "bar_file" {
 						project        = %d
 						file_path      = "meow.txt"
@@ -433,7 +433,7 @@ func TestAccGitlabRepositoryFile_concurrentResources(t *testing.T) {
 						branch         = "main"
 						content        = base64encode("content-${count.index}")
 						commit_message = "Add file ${count.index}"
-						
+
 						count = 50
 					}
 				`, testProject.ID),
@@ -446,7 +446,7 @@ func TestAccGitlabRepositoryFile_concurrentResources(t *testing.T) {
 						branch         = "main"
 						content        = base64encode("updated-content-${count.index}")
 						commit_message = "Add file ${count.index}"
-						
+
 						count = 50
 					}
 				`, testProject.ID),
@@ -459,7 +459,7 @@ func TestAccGitlabRepositoryFile_concurrentResources(t *testing.T) {
 						branch         = "main"
 						content        = base64encode("updated-content-${count.index}")
 						commit_message = "Add file ${count.index}"
-						
+
 						count = 50
 					}
 				`, testProject.ID),
@@ -558,7 +558,7 @@ func TestAccGitlabRepositoryFile_base64EncodingWithTextContent(t *testing.T) {
 
 						encoding = "text"
 						content  = "Hello World, meow"
-						
+
 						author_email   = "meow@catnip.com"
 						author_name    = "Meow Meowington"
 						commit_message = "feature: add launch codes"
@@ -795,7 +795,7 @@ func testAccCheckGitlabRepositoryFileDestroy(s *terraform.State) error {
 		gotRepo, resp, err := testutil.TestGitlabClient.Projects.GetProject(rs.Primary.ID, nil)
 		if err == nil {
 			if gotRepo != nil && fmt.Sprintf("%d", gotRepo.ID) == rs.Primary.ID {
-				if gotRepo.MarkedForDeletionAt == nil {
+				if gotRepo.MarkedForDeletionOn == nil {
 					return fmt.Errorf("Repository still exists")
 				}
 			}

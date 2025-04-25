@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
-	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
@@ -219,7 +219,7 @@ func TestProjectValueStreamAnalytics_EnsureErrorOnInvalidLabelEvent(t *testing.T
 								hidden = false
 								start_event_identifier = "ISSUE_CREATED"
 								end_event_identifier = "ISSUE_LABEL_REMOVED"
-							}						
+							}
 						]
 					}
 					`, testProject.PathWithNamespace),
@@ -648,7 +648,7 @@ func testAcc_GitlabProjectValueStreamAnalytics_CheckDestroy(s *terraform.State) 
 				return fmt.Errorf("Failed to parse value stream id %q: %w", rs.Primary.ID, err)
 			}
 
-			query := api.GraphQLQuery{
+			query := gitlab.GraphQLQuery{
 				Query: fmt.Sprintf(`
 						query {
 							project(fullPath: "%s") {
@@ -663,7 +663,7 @@ func testAcc_GitlabProjectValueStreamAnalytics_CheckDestroy(s *terraform.State) 
 			}
 
 			var response projectValueStreamResponse
-			if _, err := api.SendGraphQLRequest(context.Background(), testutil.TestGitlabClient, query, &response); err != nil {
+			if _, err := testutil.TestGitlabClient.GraphQL.Do(context.Background(), query, &response); err != nil {
 				return err
 			}
 
@@ -686,7 +686,7 @@ func testAcc_GitlabGroupValueStreamAnalytics_CheckDestroy(s *terraform.State) er
 				return fmt.Errorf("Failed to parse value stream id %q: %w", rs.Primary.ID, err)
 			}
 
-			query := api.GraphQLQuery{
+			query := gitlab.GraphQLQuery{
 				Query: fmt.Sprintf(`
 						query {
 							group(fullPath: "%s") {
@@ -701,7 +701,7 @@ func testAcc_GitlabGroupValueStreamAnalytics_CheckDestroy(s *terraform.State) er
 			}
 
 			var response groupValueStreamResponse
-			if _, err := api.SendGraphQLRequest(context.Background(), testutil.TestGitlabClient, query, &response); err != nil {
+			if _, err := testutil.TestGitlabClient.GraphQL.Do(context.Background(), query, &response); err != nil {
 				return err
 			}
 

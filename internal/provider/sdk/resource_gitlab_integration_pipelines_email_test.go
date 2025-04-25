@@ -33,7 +33,7 @@ func TestAccGitlabIntegrationPipelinesEmail_basic(t *testing.T) {
 						name         = "foo-%d"
 						description  = "Terraform acceptance tests"
 					}
-					
+
 					resource "gitlab_integration_pipelines_email" "email" {
 						project    = gitlab_project.foo.id
 						recipients = ["test@example.com"]
@@ -59,7 +59,7 @@ func TestAccGitlabIntegrationPipelinesEmail_basic(t *testing.T) {
 						name         = "foo-%d"
 						description  = "Terraform acceptance tests"
 					}
-					
+
 					resource "gitlab_integration_pipelines_email" "email" {
 						project                      = gitlab_project.foo.id
 						recipients                   = ["test@example.com", "test2@example.com"]
@@ -87,7 +87,7 @@ func TestAccGitlabIntegrationPipelinesEmail_basic(t *testing.T) {
 						name         = "foo-%d"
 						description  = "Terraform acceptance tests"
 					}
-					
+
 					resource "gitlab_integration_pipelines_email" "email" {
 						project    = gitlab_project.foo.id
 						recipients = ["test@example.com"]
@@ -160,7 +160,7 @@ func testAccCheckGitlabIntegrationPipelinesEmailDestroy(s *terraform.State) erro
 		gotRepo, resp, err := testutil.TestGitlabClient.Projects.GetProject(rs.Primary.ID, nil)
 		if err == nil {
 			if gotRepo != nil && fmt.Sprintf("%d", gotRepo.ID) == rs.Primary.ID {
-				if gotRepo.MarkedForDeletionAt == nil {
+				if gotRepo.MarkedForDeletionOn == nil {
 					return fmt.Errorf("Repository still exists")
 				}
 			}

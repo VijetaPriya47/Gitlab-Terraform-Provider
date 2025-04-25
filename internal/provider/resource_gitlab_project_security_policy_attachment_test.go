@@ -16,6 +16,7 @@ import (
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 func TestAcc_GitlabProjectSecurityPolicyAttachment_basic(t *testing.T) {
@@ -102,7 +103,7 @@ func testAcc_GitlabProjectSecurityPolicyAttachment_CheckDestroy(s *terraform.Sta
 				`, projectIds.ProjectFullPath)
 
 			var response GetSecurityPolicyProjectResponse
-			_, err = api.SendGraphQLRequest(context.Background(), testutil.TestGitlabClient, api.GraphQLQuery{Query: query}, &response)
+			_, err = testutil.TestGitlabClient.GraphQL.Do(context.Background(), gitlab.GraphQLQuery{Query: query}, &response)
 			if err != nil {
 				return err
 			}

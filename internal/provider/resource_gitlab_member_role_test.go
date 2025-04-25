@@ -14,8 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
-	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
@@ -393,7 +392,7 @@ func testAcc_GitlabMemberRole_CheckDestroy(s *terraform.State) error {
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type == "gitlab_member_role" {
 
-			query := api.GraphQLQuery{
+			query := gitlab.GraphQLQuery{
 				Query: fmt.Sprintf(`
 					query {
 						memberRole(id: "%s") {
@@ -403,7 +402,7 @@ func testAcc_GitlabMemberRole_CheckDestroy(s *terraform.State) error {
 			}
 
 			var response MemberRoleResponse
-			if _, err := api.SendGraphQLRequest(context.Background(), testutil.TestGitlabClient, query, &response); err != nil {
+			if _, err := testutil.TestGitlabClient.GraphQL.Do(context.Background(), query, &response); err != nil {
 				return err
 			}
 

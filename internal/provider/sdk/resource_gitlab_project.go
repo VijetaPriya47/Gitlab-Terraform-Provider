@@ -900,13 +900,13 @@ func resourceGitlabProjectSetToState(ctx context.Context, client *gitlab.Client,
 	d.Set("description", project.Description)
 	d.Set("default_branch", project.DefaultBranch)
 	d.Set("request_access_enabled", project.RequestAccessEnabled)
-	d.Set("issues_enabled", project.IssuesEnabled)
-	d.Set("merge_requests_enabled", project.MergeRequestsEnabled)
-	d.Set("pipelines_enabled", project.JobsEnabled)
-	d.Set("approvals_before_merge", project.ApprovalsBeforeMerge)
-	d.Set("wiki_enabled", project.WikiEnabled)
-	d.Set("snippets_enabled", project.SnippetsEnabled)
-	d.Set("container_registry_enabled", project.ContainerRegistryEnabled)
+	d.Set("issues_enabled", project.IssuesEnabled)                        //nolint:staticcheck
+	d.Set("merge_requests_enabled", project.MergeRequestsEnabled)         //nolint:staticcheck
+	d.Set("pipelines_enabled", project.JobsEnabled)                       //nolint:staticcheck
+	d.Set("approvals_before_merge", project.ApprovalsBeforeMerge)         //nolint:staticcheck
+	d.Set("wiki_enabled", project.WikiEnabled)                            //nolint:staticcheck
+	d.Set("snippets_enabled", project.SnippetsEnabled)                    //nolint:staticcheck
+	d.Set("container_registry_enabled", project.ContainerRegistryEnabled) //nolint:staticcheck
 	d.Set("lfs_enabled", project.LFSEnabled)
 	d.Set("visibility_level", string(project.Visibility))
 	d.Set("merge_method", string(project.MergeMethod))
@@ -914,7 +914,7 @@ func resourceGitlabProjectSetToState(ctx context.Context, client *gitlab.Client,
 	d.Set("only_allow_merge_if_all_discussions_are_resolved", project.OnlyAllowMergeIfAllDiscussionsAreResolved)
 	d.Set("allow_merge_on_skipped_pipeline", project.AllowMergeOnSkippedPipeline)
 	d.Set("allow_pipeline_trigger_approve_deployment", project.AllowPipelineTriggerApproveDeployment)
-	d.Set("restrict_user_defined_variables", project.RestrictUserDefinedVariables)
+	d.Set("restrict_user_defined_variables", project.RestrictUserDefinedVariables) //nolint:staticcheck
 	d.Set("namespace_id", project.Namespace.ID)
 	d.Set("ssh_url_to_repo", project.SSHURLToRepo)
 	d.Set("http_url_to_repo", project.HTTPURLToRepo)
@@ -922,7 +922,7 @@ func resourceGitlabProjectSetToState(ctx context.Context, client *gitlab.Client,
 	d.Set("runners_token", project.RunnersToken)
 	d.Set("shared_runners_enabled", project.SharedRunnersEnabled)
 	d.Set("group_runners_enabled", project.GroupRunnersEnabled)
-	if err := d.Set("tags", project.TagList); err != nil {
+	if err := d.Set("tags", project.TagList); err != nil { //nolint:staticcheck
 		return err
 	}
 	d.Set("empty_repo", project.EmptyRepo)
@@ -1203,7 +1203,7 @@ func resourceGitlabProjectRead(ctx context.Context, d *schema.ResourceData, meta
 		}
 		return diag.FromErr(err)
 	}
-	if project.MarkedForDeletionAt != nil {
+	if project.MarkedForDeletionOn != nil {
 		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab project %s is marked for deletion, removing from state", d.Id()))
 		d.SetId("")
 		return nil
@@ -1285,7 +1285,7 @@ func resourceGitlabProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	if d.HasChange("restrict_user_defined_variables") {
-		options.RestrictUserDefinedVariables = gitlab.Ptr(d.Get("restrict_user_defined_variables").(bool))
+		options.RestrictUserDefinedVariables = gitlab.Ptr(d.Get("restrict_user_defined_variables").(bool)) //nolint:staticcheck
 	}
 
 	if d.HasChange("request_access_enabled") {
@@ -1312,12 +1312,12 @@ func resourceGitlabProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	if d.HasChange("approvals_before_merge") {
-		options.ApprovalsBeforeMerge = gitlab.Ptr(d.Get("approvals_before_merge").(int))
+		options.ApprovalsBeforeMerge = gitlab.Ptr(d.Get("approvals_before_merge").(int)) //nolint:staticcheck
 	}
 
 	if d.HasChange("wiki_enabled") {
 		// nolint:staticcheck // SA1019
-		options.WikiEnabled = gitlab.Ptr(d.Get("wiki_enabled").(bool))
+		options.WikiEnabled = gitlab.Ptr(d.Get("wiki_enabled").(bool)) //nolint:staticcheck
 	}
 
 	if d.HasChange("snippets_enabled") {
@@ -1513,9 +1513,9 @@ func resourceGitlabProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 
 	// Ignore deprecated public_builds in favor of public_jobs.
 	if d.HasChange("public_jobs") {
-		options.PublicBuilds = gitlab.Ptr(d.Get("public_jobs").(bool))
+		options.PublicBuilds = gitlab.Ptr(d.Get("public_jobs").(bool)) //nolint:staticcheck
 	} else if d.HasChange("public_builds") {
-		options.PublicBuilds = gitlab.Ptr(d.Get("public_builds").(bool))
+		options.PublicBuilds = gitlab.Ptr(d.Get("public_builds").(bool)) //nolint:staticcheck
 	}
 
 	if d.HasChange("repository_access_level") {
@@ -1759,7 +1759,7 @@ func resourceGitlabProjectDelete(ctx context.Context, d *schema.ResourceData, me
 					tflog.Debug(ctx, fmt.Sprintf("[ERROR] Received error: %#v", err))
 					return out, "Error", err
 				}
-				if out.MarkedForDeletionAt != nil {
+				if out.MarkedForDeletionOn != nil {
 					// Represents a Gitlab EE soft-delete
 					return out, "Deleted", nil
 				}
@@ -1970,7 +1970,7 @@ func flattenContainerExpirationPolicy(policy *gitlab.ContainerExpirationPolicy) 
 			"cadence":           policy.Cadence,
 			"keep_n":            policy.KeepN,
 			"older_than":        policy.OlderThan,
-			"name_regex_delete": policy.NameRegex,
+			"name_regex_delete": policy.NameRegex, //nolint:staticcheck
 			"name_regex_keep":   policy.NameRegexKeep,
 			"enabled":           policy.Enabled,
 		},
@@ -2297,7 +2297,7 @@ func createProject(ctx context.Context, d *schema.ResourceData, client *gitlab.C
 	}
 
 	if v, ok := d.GetOk("approvals_before_merge"); ok {
-		options.ApprovalsBeforeMerge = gitlab.Ptr(v.(int))
+		options.ApprovalsBeforeMerge = gitlab.Ptr(v.(int)) //nolint:staticcheck
 	}
 
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
@@ -2625,7 +2625,7 @@ func updatePostCreateEditOptions(ctx context.Context, editProjectOptions *gitlab
 		}
 
 		if v, ok := d.GetOk("approvals_before_merge"); ok {
-			editProjectOptions.ApprovalsBeforeMerge = gitlab.Ptr(v.(int))
+			editProjectOptions.ApprovalsBeforeMerge = gitlab.Ptr(v.(int)) //nolint:staticcheck
 		}
 
 		// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
@@ -2898,7 +2898,7 @@ func updateProjectSecretDetectionValue(ctx context.Context, client *gitlab.Clien
 	})
 
 	// Create the query for enabling secrets detection via GraphQL
-	query := api.GraphQLQuery{
+	query := gitlab.GraphQLQuery{
 		Query: fmt.Sprintf(`
 		mutation {
 			setPreReceiveSecretDetection(
@@ -2913,7 +2913,7 @@ func updateProjectSecretDetectionValue(ctx context.Context, client *gitlab.Clien
 	}
 
 	var response *updateSecretDetectionGraphQLResponse
-	_, err := api.SendGraphQLRequest(ctx, client, query, &response)
+	_, err := client.GraphQL.Do(ctx, query, &response)
 	if err != nil {
 		return err
 	}

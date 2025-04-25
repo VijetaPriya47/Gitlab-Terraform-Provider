@@ -32,7 +32,7 @@ func TestAccGitlabServiceMicrosoftTeams_basic(t *testing.T) {
 						description      = "Terraform acceptance tests"
 						visibility_level = "public"
 					}
-					
+
 					resource "gitlab_integration_microsoft_teams" "teams" {
 						project                      = "${gitlab_project.foo.id}"
 						webhook                      = "https://test.com/?token=4"
@@ -73,7 +73,7 @@ func TestAccGitlabServiceMicrosoftTeams_basic(t *testing.T) {
 						description      = "Terraform acceptance tests"
 						visibility_level = "public"
 					}
-					
+
 					resource "gitlab_integration_microsoft_teams" "teams" {
 						project                      = "${gitlab_project.foo.id}"
 						webhook                      = "https://testurl.com/?token=5"
@@ -114,7 +114,7 @@ func TestAccGitlabServiceMicrosoftTeams_basic(t *testing.T) {
 						description      = "Terraform acceptance tests"
 						visibility_level = "public"
 					}
-					
+
 					resource "gitlab_integration_microsoft_teams" "teams" {
 						project                      = "${gitlab_project.foo.id}"
 						webhook                      = "https://test.com/?token=4"
@@ -189,7 +189,7 @@ func testAccCheckGitlabIntegrationMicrosoftTeamsDestroy(s *terraform.State) erro
 		gotRepo, resp, err := testutil.TestGitlabClient.Projects.GetProject(rs.Primary.ID, nil)
 		if err == nil {
 			if gotRepo != nil && fmt.Sprintf("%d", gotRepo.ID) == rs.Primary.ID {
-				if gotRepo.MarkedForDeletionAt == nil {
+				if gotRepo.MarkedForDeletionOn == nil {
 					return fmt.Errorf("Repository still exists")
 				}
 			}

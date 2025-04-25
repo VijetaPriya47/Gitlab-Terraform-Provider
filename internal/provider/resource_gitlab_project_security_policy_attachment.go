@@ -283,7 +283,7 @@ func (d *gitlabProjectSecurityPolicyAttachmentResource) Delete(ctx context.Conte
 		}
 	`, projectIds.ProjectFullPath)
 	var response SecurityProjectUnassignResponse
-	_, err = api.SendGraphQLRequest(ctx, d.client, api.GraphQLQuery{Query: query}, &response)
+	_, err = d.client.GraphQL.Do(ctx, gitlab.GraphQLQuery{Query: query}, &response)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to delete the project security policy attachment - generic GraphQL error", err.Error())
 		return
@@ -319,7 +319,7 @@ func (d *gitlabProjectSecurityPolicyAttachmentResource) readPolicy(ctx context.C
 		}
 	}
 	`, ids.ProjectFullPath)
-	_, err := api.SendGraphQLRequest(ctx, d.client, api.GraphQLQuery{Query: query}, &response)
+	_, err := d.client.GraphQL.Do(ctx, gitlab.GraphQLQuery{Query: query}, &response)
 	if err != nil {
 		return nil, fmt.Errorf("generic GraphQL error: %s", err.Error())
 	}
@@ -339,14 +339,14 @@ func (d *gitlabProjectSecurityPolicyAttachmentResource) updatePolicy(ctx context
 		mutation {
 			securityPolicyProjectAssign( input: {
 				fullPath:"%s",
-				securityPolicyProjectId: "%s" 
+				securityPolicyProjectId: "%s"
 			}) {
 				errors
 			}
 		}
 	`, ids.ProjectFullPath, data.PolicyProjectGraphQLId.ValueString())
 	var response SecurityProjectAssignResponse
-	_, err := api.SendGraphQLRequest(ctx, d.client, api.GraphQLQuery{Query: query}, &response)
+	_, err := d.client.GraphQL.Do(ctx, gitlab.GraphQLQuery{Query: query}, &response)
 	if err != nil {
 		return err
 	}

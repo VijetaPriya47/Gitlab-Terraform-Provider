@@ -577,11 +577,11 @@ func dataSourceGitlabProjectRead(ctx context.Context, d *schema.ResourceData, me
 	d.Set("description", found.Description)
 	d.Set("default_branch", found.DefaultBranch)
 	d.Set("request_access_enabled", found.RequestAccessEnabled)
-	d.Set("issues_enabled", found.IssuesEnabled)
-	d.Set("merge_requests_enabled", found.MergeRequestsEnabled)
-	d.Set("pipelines_enabled", found.JobsEnabled)
-	d.Set("wiki_enabled", found.WikiEnabled)
-	d.Set("snippets_enabled", found.SnippetsEnabled)
+	d.Set("issues_enabled", found.IssuesEnabled)                //nolint:staticcheck
+	d.Set("merge_requests_enabled", found.MergeRequestsEnabled) //nolint:staticcheck
+	d.Set("pipelines_enabled", found.JobsEnabled)               //nolint:staticcheck
+	d.Set("wiki_enabled", found.WikiEnabled)                    //nolint:staticcheck
+	d.Set("snippets_enabled", found.SnippetsEnabled)            //nolint:staticcheck
 	d.Set("visibility_level", string(found.Visibility))
 	d.Set("namespace_id", found.Namespace.ID)
 	d.Set("ssh_url_to_repo", found.SSHURLToRepo)
@@ -591,7 +591,7 @@ func dataSourceGitlabProjectRead(ctx context.Context, d *schema.ResourceData, me
 	d.Set("empty_repo", found.EmptyRepo)
 	d.Set("archived", found.Archived)
 	d.Set("remove_source_branch_after_merge", found.RemoveSourceBranchAfterMerge)
-	d.Set("restrict_user_defined_variables", found.RestrictUserDefinedVariables)
+	d.Set("restrict_user_defined_variables", found.RestrictUserDefinedVariables) //nolint:staticcheck
 	d.Set("merge_pipelines_enabled", found.MergePipelinesEnabled)
 	d.Set("merge_trains_enabled", found.MergeTrainsEnabled)
 	d.Set("resolve_outdated_diff_discussions", found.ResolveOutdatedDiffDiscussions)

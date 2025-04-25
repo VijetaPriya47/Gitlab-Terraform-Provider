@@ -266,7 +266,7 @@ func (r *gitlabGroupEpicBoardResource) Update(ctx context.Context, req resource.
 	}
 	labels_str := fmt.Sprintf(`["%s"]`, strings.Join(labels, `","`))
 
-	query := api.GraphQLQuery{
+	query := gitlab.GraphQLQuery{
 		Query: fmt.Sprintf(`
 			mutation {
 				epicBoardUpdate(
@@ -293,7 +293,7 @@ func (r *gitlabGroupEpicBoardResource) Update(ctx context.Context, req resource.
 	})
 
 	var response EpicBoardUpdateResponse
-	if _, err = api.SendGraphQLRequest(ctx, r.client, query, &response); err != nil {
+	if _, err = r.client.GraphQL.Do(ctx, query, &response); err != nil {
 		resp.Diagnostics.AddError("GitLab GraphQL error occurred", fmt.Sprintf("Unable to update epic board: %s from query %s", err.Error(), query.Query))
 		return
 	}
@@ -368,7 +368,7 @@ func (r *gitlabGroupEpicBoardResource) Delete(ctx context.Context, req resource.
 		return
 	}
 
-	query := api.GraphQLQuery{
+	query := gitlab.GraphQLQuery{
 		Query: fmt.Sprintf(`
 			mutation {
 				destroyEpicBoard(
@@ -395,7 +395,7 @@ func (r *gitlabGroupEpicBoardResource) Delete(ctx context.Context, req resource.
 	})
 
 	var destroyResp map[string]any
-	if _, err = api.SendGraphQLRequest(ctx, r.client, query, &destroyResp); err != nil {
+	if _, err = r.client.GraphQL.Do(ctx, query, &destroyResp); err != nil {
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to delete epic board: %s from query %s", err.Error(), query.Query))
 		return
 	}
@@ -448,20 +448,20 @@ func (r *gitlabGroupEpicBoardResource) Create(ctx context.Context, req resource.
 		labels[i].ID = fmt.Sprintf("gid://gitlab/GroupLabel/%s", v.LabelId.String())
 	}
 
-	query := api.GraphQLQuery{
+	query := gitlab.GraphQLQuery{
 		Query: fmt.Sprintf(`
 			mutation {
 				epicBoardCreate(
 					input: {
 						groupPath: "%s",
-						name: "%s" 
+						name: "%s"
 					}
 				) {
 					epicBoard {
 						id,
 						name,
 						labels {
-							nodes { 
+							nodes {
 								id
 							}
 						}
@@ -474,7 +474,7 @@ func (r *gitlabGroupEpicBoardResource) Create(ctx context.Context, req resource.
 	})
 
 	var response EpicBoardCreateResponse
-	if _, err = api.SendGraphQLRequest(ctx, r.client, query, &response); err != nil {
+	if _, err = r.client.GraphQL.Do(ctx, query, &response); err != nil {
 		resp.Diagnostics.AddError("GitLab GraphQL error occurred", fmt.Sprintf("Unable to create epic board: %s from query %s", err.Error(), query.Query))
 		return
 	}
@@ -505,11 +505,11 @@ func (r *gitlabGroupEpicBoardResource) Create(ctx context.Context, req resource.
 	boardID := fmt.Sprintf("%d", EpicBoardId)
 
 	for _, v := range labels {
-		query = api.GraphQLQuery{
+		query = gitlab.GraphQLQuery{
 			Query: fmt.Sprintf(`mutation {
 				epicBoardListCreate(
 				  input: {
-					boardId: "gid://gitlab/Boards::EpicBoard/%s", 
+					boardId: "gid://gitlab/Boards::EpicBoard/%s",
 					labelId: "%s"
 				  }
 				) {
@@ -518,14 +518,14 @@ func (r *gitlabGroupEpicBoardResource) Create(ctx context.Context, req resource.
   					position
 					label {
 						id
-					} 
+					}
 				  }
 				  errors
 				}
 			}`, boardID, v.ID),
 		}
 		var listResp map[string]any
-		if _, err = api.SendGraphQLRequest(ctx, r.client, query, &listResp); err != nil {
+		if _, err = r.client.GraphQL.Do(ctx, query, &listResp); err != nil {
 			resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to create epic board list: %s from query %s", err.Error(), query.Query))
 		}
 		if listResp["errors"] != nil {

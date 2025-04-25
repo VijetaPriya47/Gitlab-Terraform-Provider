@@ -120,7 +120,7 @@ func (d *gitLabComplianceFrameworkDataSource) Read(ctx context.Context, req data
 		return
 	}
 
-	query := api.GraphQLQuery{
+	query := gitlab.GraphQLQuery{
 		Query: fmt.Sprintf(`
 			query {
 				namespace(fullPath: "%s") {
@@ -140,7 +140,7 @@ func (d *gitLabComplianceFrameworkDataSource) Read(ctx context.Context, req data
 	}
 
 	var response ComplianceFrameworkResponse
-	if _, err := api.SendGraphQLRequest(ctx, d.client, query, &response); err != nil {
+	if _, err := d.client.GraphQL.Do(ctx, query, &response); err != nil {
 		resp.Diagnostics.AddError("GitLab API error occured", fmt.Sprintf("Unable to read compliance framework details: %s", err.Error()))
 		return
 	}

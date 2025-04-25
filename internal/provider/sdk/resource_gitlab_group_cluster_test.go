@@ -33,17 +33,17 @@ func TestAccGitlabGroupCluster_basic(t *testing.T) {
 %s
 EOF
 					}
-					
+
 					resource "gitlab_group" "foo" {
 						name = "foo-group-%d"
 						path = "foo-group-%d"
 						description = "Terraform acceptance tests"
-						
+
 						# So that acceptance tests can be run in a gitlab organization
 						# with no billing
 						visibility_level = "public"
 					}
-					
+
 					resource gitlab_group_cluster "foo" {
 						group                       = "${gitlab_group.foo.id}"
 						name                          = "foo-cluster-%d"
@@ -75,17 +75,17 @@ EOF
 %s
 EOF
 					}
-					
+
 					resource "gitlab_group" "foo" {
 						name = "foo-group-%d"
 						path = "foo-group-%d"
 						description = "Terraform acceptance tests"
-						
+
 						# So that acceptance tests can be run in a gitlab organization
 						# with no billing
 						visibility_level = "public"
 					}
-					
+
 					resource gitlab_group_cluster "foo" {
 						group                       = "${gitlab_group.foo.id}"
 						name                          = "foo-cluster-%d"
@@ -117,17 +117,17 @@ EOF
 %s
 EOF
 					}
-					
+
 					resource "gitlab_group" "foo" {
 						name = "foo-group-%d"
 						path = "foo-group-%d"
 						description = "Terraform acceptance tests"
-						
+
 						# So that acceptance tests can be run in a gitlab organization
 						# with no billing
 						visibility_level = "public"
 					}
-					
+
 					resource gitlab_group_cluster "foo" {
 						group                         = "${gitlab_group.foo.id}"
 						name                          = "foo-cluster-%d"
@@ -158,17 +158,17 @@ EOF
 %s
 EOF
 					}
-					
+
 					resource "gitlab_group" "foo" {
 						name = "foo-group-%d"
 						path = "foo-group-%d"
 						description = "Terraform acceptance tests"
-						
+
 						# So that acceptance tests can be run in a gitlab organization
 						# with no billing
 						visibility_level = "public"
 					}
-					
+
 					resource gitlab_group_cluster "foo" {
 						group                         = "${gitlab_group.foo.id}"
 						name                          = "foo-cluster-%d"
@@ -199,22 +199,22 @@ EOF
 %s
 EOF
 					}
-					
+
 					resource "gitlab_group" "foo" {
 						name = "foo-group-%d"
 						path = "foo-group-%d"
 						description = "Terraform acceptance tests"
-						
+
 						# So that acceptance tests can be run in a gitlab organization
 						# with no billing
 						visibility_level = "public"
 					}
-					
+
 					resource "gitlab_project" "cluster-management" {
 						name                   = "cluster-management"
 						namespace_id           = gitlab_group.foo.id
 					}
-					
+
 					resource gitlab_group_cluster "foo" {
 						group                       = "${gitlab_group.foo.id}"
 						name                          = "foo-cluster-%d"
@@ -272,7 +272,7 @@ func testAccCheckGitlabGroupClusterExists(n string, cluster *gitlab.GroupCluster
 			return err
 		}
 
-		gotCluster, _, err := testutil.TestGitlabClient.GroupCluster.GetCluster(group, clusterID)
+		gotCluster, _, err := testutil.TestGitlabClient.GroupCluster.GetCluster(group, clusterID) //nolint:staticcheck
 		if err != nil {
 			return err
 		}
@@ -294,7 +294,7 @@ func testAccCheckGitlabGroupClusterDestroy(s *terraform.State) error {
 			return err
 		}
 
-		gotCluster, _, err := testutil.TestGitlabClient.GroupCluster.GetCluster(group, clusterID)
+		gotCluster, _, err := testutil.TestGitlabClient.GroupCluster.GetCluster(group, clusterID) //nolint:staticcheck
 		if err == nil {
 			if gotCluster != nil && fmt.Sprintf("%d", gotCluster.ID) == group {
 				return fmt.Errorf("group cluster still exists")
