@@ -12,7 +12,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
-	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
@@ -104,7 +103,7 @@ func testAccGitlabProjectTargetBranchRuleDestroy(s *terraform.State) error {
 			return err
 		}
 
-		query := api.GraphQLQuery{
+		query := gitlab.GraphQLQuery{
 			Query: fmt.Sprintf(`
 			query {
 				project(fullPath:"%s") {
@@ -120,7 +119,7 @@ func testAccGitlabProjectTargetBranchRuleDestroy(s *terraform.State) error {
 		}
 
 		var response getProjectTargetBranchRuleReadResponse
-		_, err = api.SendGraphQLRequest(ctx, testutil.TestGitlabClient, query, &response)
+		_, err = testutil.TestGitlabClient.GraphQL.Do(ctx, query, &response)
 		if err != nil {
 			return err
 		}

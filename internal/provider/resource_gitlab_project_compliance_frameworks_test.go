@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
-	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
@@ -352,7 +352,7 @@ func testAcc_GitlabProjectComplianceFrameworks_CheckDestroy(s *terraform.State) 
 		if rs.Type == "gitlab_project_compliance_frameworks" {
 			projectPathWithNamespace := rs.Primary.Attributes["project_path"]
 
-			query := api.GraphQLQuery{
+			query := gitlab.GraphQLQuery{
 				Query: fmt.Sprintf(`
 					query {
 						project(fullPath: "%s") {
@@ -367,7 +367,7 @@ func testAcc_GitlabProjectComplianceFrameworks_CheckDestroy(s *terraform.State) 
 			}
 
 			var response projectResponse
-			if _, err := api.SendGraphQLRequest(context.Background(), testutil.TestGitlabClient, query, &response); err != nil {
+			if _, err := testutil.TestGitlabClient.GraphQL.Do(context.Background(), query, &response); err != nil {
 				return err
 			}
 

@@ -71,13 +71,13 @@ var _ = registerDataSource("gitlab_current_user", func() *schema.Resource {
 func dataSourceGitlabCurrentUserRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
-	query := api.GraphQLQuery{
+	query := gitlab.GraphQLQuery{
 		Query: `query {currentUser {name, bot, groupCount, id, namespace{id}, publicEmail, username}}`,
 	}
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] executing GraphQL Query %s to retrieve current user", query.Query))
 
 	var response CurrentUserResponse
-	if _, err := api.SendGraphQLRequest(ctx, client, query, &response); err != nil {
+	if _, err := client.GraphQL.Do(ctx, query, &response); err != nil {
 		return diag.FromErr(err)
 	}
 

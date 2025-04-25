@@ -162,7 +162,7 @@ func resourceGitlabGroupClusterCreate(ctx context.Context, d *schema.ResourceDat
 
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab group cluster %q/%q", group, *options.Name))
 
-	cluster, _, err := client.GroupCluster.AddCluster(group, options, gitlab.WithContext(ctx))
+	cluster, _, err := client.GroupCluster.AddCluster(group, options, gitlab.WithContext(ctx)) //nolint:staticcheck
 
 	if err != nil {
 		return diag.FromErr(err)
@@ -184,7 +184,7 @@ func resourceGitlabGroupClusterRead(ctx context.Context, d *schema.ResourceData,
 
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab group cluster %q/%d", group, clusterId))
 
-	cluster, _, err := client.GroupCluster.GetCluster(group, clusterId, gitlab.WithContext(ctx))
+	cluster, _, err := client.GroupCluster.GetCluster(group, clusterId, gitlab.WithContext(ctx)) //nolint:staticcheck
 	if err != nil {
 		if api.Is404(err) {
 			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab group cluster not found %s/%d", group, clusterId))
@@ -262,7 +262,7 @@ func resourceGitlabGroupClusterUpdate(ctx context.Context, d *schema.ResourceDat
 
 	if *options != (gitlab.EditGroupClusterOptions{}) {
 		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab group cluster %q/%d", group, clusterId))
-		_, _, err := client.GroupCluster.EditCluster(group, clusterId, options, gitlab.WithContext(ctx))
+		_, _, err := client.GroupCluster.EditCluster(group, clusterId, options, gitlab.WithContext(ctx)) //nolint:staticcheck
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -280,7 +280,7 @@ func resourceGitlabGroupClusterDelete(ctx context.Context, d *schema.ResourceDat
 
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] delete gitlab group cluster %q/%d", group, clusterId))
 
-	_, err = client.GroupCluster.DeleteCluster(group, clusterId, gitlab.WithContext(ctx))
+	_, err = client.GroupCluster.DeleteCluster(group, clusterId, gitlab.WithContext(ctx)) //nolint:staticcheck
 	if err != nil {
 		return diag.FromErr(err)
 	}

@@ -108,7 +108,7 @@ func (r *gitlabProjectTargetBranchRule) Create(ctx context.Context, req resource
 		"project": gitlab.Stringify(projectGID),
 	})
 
-	query := api.GraphQLQuery{
+	query := gitlab.GraphQLQuery{
 		Query: fmt.Sprintf(`
 			mutation {
 				projectTargetBranchRuleCreate(input:{projectId:"%s", name:"%s", targetBranch:"%s"}) {
@@ -125,7 +125,7 @@ func (r *gitlabProjectTargetBranchRule) Create(ctx context.Context, req resource
 		"query": query.Query,
 	})
 	var response getProjectTargetBranchRuleCreateResponse
-	_, err = api.SendGraphQLRequest(ctx, r.client, query, &response)
+	_, err = r.client.GraphQL.Do(ctx, query, &response)
 	if err != nil {
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to create gitlab_project_target_branch_rule: %s", err.Error()))
 		return
@@ -177,7 +177,7 @@ func (r *gitlabProjectTargetBranchRule) Read(ctx context.Context, req resource.R
 		return
 	}
 
-	query := api.GraphQLQuery{
+	query := gitlab.GraphQLQuery{
 		Query: fmt.Sprintf(`
 			query {
 				project(fullPath:"%s") {
@@ -197,7 +197,7 @@ func (r *gitlabProjectTargetBranchRule) Read(ctx context.Context, req resource.R
 	})
 
 	var response getProjectTargetBranchRuleReadResponse
-	_, err = api.SendGraphQLRequest(ctx, r.client, query, &response)
+	_, err = r.client.GraphQL.Do(ctx, query, &response)
 	if err != nil {
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to read gitlab_project_target_branch_rule: %s", err.Error()))
 		return
@@ -254,7 +254,7 @@ func (r *gitlabProjectTargetBranchRule) Delete(ctx context.Context, req resource
 		return
 	}
 
-	query := api.GraphQLQuery{
+	query := gitlab.GraphQLQuery{
 		Query: fmt.Sprintf(`
 			mutation {
 				projectTargetBranchRuleDestroy(
@@ -270,7 +270,7 @@ func (r *gitlabProjectTargetBranchRule) Delete(ctx context.Context, req resource
 	})
 
 	var response getProjectTargetBranchRuleDeleteResponse
-	_, err = api.SendGraphQLRequest(ctx, r.client, query, &response)
+	_, err = r.client.GraphQL.Do(ctx, query, &response)
 	if err != nil {
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to delete gitlab_project_target_branch_rule: %s", err.Error()))
 		return

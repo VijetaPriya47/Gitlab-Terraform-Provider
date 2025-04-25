@@ -709,7 +709,7 @@ func CreateProjectIssues(t *testing.T, pid interface{}, n int) []*gitlab.Issue {
 
 func CreateGroupEpicBoard(t *testing.T, path string) {
 	t.Helper()
-	query := api.GraphQLQuery{
+	query := gitlab.GraphQLQuery{
 		Query: fmt.Sprintf(`
 			mutation {
 				epicBoardCreate(
@@ -729,7 +729,7 @@ func CreateGroupEpicBoard(t *testing.T, path string) {
 
 	ctx := context.Background()
 	var pid interface{}
-	if _, err := api.SendGraphQLRequest(ctx, TestGitlabClient, query, &pid); err != nil {
+	if _, err := TestGitlabClient.GraphQL.Do(ctx, query, &pid); err != nil {
 		t.Fatalf("Unable to create epic board: %s", err.Error())
 	}
 }
@@ -1066,7 +1066,7 @@ func CopyFile(src, dst string) error {
 func CreateComplianceFramework(t *testing.T, group *gitlab.Group) *api.GraphQLComplianceFramework {
 	t.Helper()
 
-	query := api.GraphQLQuery{
+	query := gitlab.GraphQLQuery{
 		Query: fmt.Sprintf(`
 			mutation {
 				createComplianceFramework(
@@ -1102,12 +1102,12 @@ func CreateComplianceFramework(t *testing.T, group *gitlab.Group) *api.GraphQLCo
 	}
 
 	var response createComplianceFrameworkResponse
-	if _, err := api.SendGraphQLRequest(context.Background(), TestGitlabClient, query, &response); err != nil {
+	if _, err := TestGitlabClient.GraphQL.Do(context.Background(), query, &response); err != nil {
 		t.Fatalf("Unable to create compliance framework: %s", err.Error())
 	}
 
 	t.Cleanup(func() {
-		query := api.GraphQLQuery{
+		query := gitlab.GraphQLQuery{
 			Query: fmt.Sprintf(`
 				mutation {
 					destroyComplianceFramework(
@@ -1120,7 +1120,7 @@ func CreateComplianceFramework(t *testing.T, group *gitlab.Group) *api.GraphQLCo
 				}`, response.Data.CreateComplianceFramework.Framework.ID),
 		}
 
-		if _, err := api.SendGraphQLRequest(context.Background(), TestGitlabClient, query, nil); err != nil {
+		if _, err := TestGitlabClient.GraphQL.Do(context.Background(), query, nil); err != nil {
 			t.Fatalf("Unable to delete compliance framework: %s", err.Error())
 		}
 	})
@@ -1131,7 +1131,7 @@ func CreateComplianceFramework(t *testing.T, group *gitlab.Group) *api.GraphQLCo
 func DeleteProjectComplianceFrameworks(t *testing.T, project *gitlab.Project) {
 	t.Helper()
 
-	query := api.GraphQLQuery{
+	query := gitlab.GraphQLQuery{
 		Query: fmt.Sprintf(`
 			mutation {
 				projectUpdateComplianceFrameworks(
@@ -1153,7 +1153,7 @@ func DeleteProjectComplianceFrameworks(t *testing.T, project *gitlab.Project) {
 			}`, project.ID),
 	}
 
-	if _, err := api.SendGraphQLRequest(context.Background(), TestGitlabClient, query, nil); err != nil {
+	if _, err := TestGitlabClient.GraphQL.Do(context.Background(), query, nil); err != nil {
 		t.Fatalf("Unable to delete project compliance frameworks: %s", err.Error())
 	}
 }

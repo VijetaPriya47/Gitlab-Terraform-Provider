@@ -33,7 +33,7 @@ func TestAccGitlabInstanceCluster_basic(t *testing.T) {
 %s
 EOF
 					}
-					
+
 					resource gitlab_instance_cluster "foo" {
 						name                          = "foo-cluster-%d"
 						domain                        = "example.com"
@@ -64,7 +64,7 @@ EOF
 %s
 EOF
 					}
-					
+
 					resource gitlab_instance_cluster "foo" {
 						name                          = "foo-cluster-%d"
 						domain                        = "example.com"
@@ -96,7 +96,7 @@ EOF
 %s
 EOF
 					}
-					
+
 					resource gitlab_instance_cluster "foo" {
 						name                          = "foo-cluster-%d"
 						domain                        = "example-new.com"
@@ -126,7 +126,7 @@ EOF
 %s
 EOF
 					}
-					
+
 					resource gitlab_instance_cluster "foo" {
 						name                          = "foo-cluster-%d"
 						domain                        = "example-new.com"
@@ -156,7 +156,7 @@ EOF
 %s
 EOF
 					}
-					
+
 					resource gitlab_instance_cluster "foo" {
 						name                          = "foo-cluster-%d"
 						domain                        = "example.com"
@@ -213,7 +213,7 @@ func testAccCheckGitlabInstanceClusterExists(n string, cluster *gitlab.InstanceC
 			return err
 		}
 
-		gotCluster, _, err := testutil.TestGitlabClient.InstanceCluster.GetCluster(instanceClusterID)
+		gotCluster, _, err := testutil.TestGitlabClient.InstanceCluster.GetCluster(instanceClusterID) //nolint:staticcheck
 		if err != nil {
 			return err
 		}
@@ -235,7 +235,7 @@ func testAccCheckGitlabInstanceClusterDestroy(s *terraform.State) error {
 			return err
 		}
 
-		gotCluster, resp, err := testutil.TestGitlabClient.InstanceCluster.GetCluster(instanceClusterID)
+		gotCluster, resp, err := testutil.TestGitlabClient.InstanceCluster.GetCluster(instanceClusterID) //nolint:staticcheck
 
 		if err == nil {
 			if gotCluster != nil && gotCluster.ID == instanceClusterID {

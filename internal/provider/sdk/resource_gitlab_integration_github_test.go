@@ -174,7 +174,7 @@ func testAccCheckGitlabIntegrationGithubDestroy(s *terraform.State) error {
 		gotRepo, _, err := testutil.TestGitlabClient.Projects.GetProject(rs.Primary.ID, nil)
 		if err == nil {
 			if gotRepo != nil && fmt.Sprintf("%d", gotRepo.ID) == rs.Primary.ID {
-				if gotRepo.MarkedForDeletionAt == nil {
+				if gotRepo.MarkedForDeletionOn == nil {
 					return fmt.Errorf("Repository still exists")
 				}
 			}

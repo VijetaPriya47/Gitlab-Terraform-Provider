@@ -2789,7 +2789,7 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("default_branch_protection") {
-		options.DefaultBranchProtection = gitlab.Ptr(d.Get("default_branch_protection").(int))
+		options.DefaultBranchProtection = gitlab.Ptr(d.Get("default_branch_protection").(int)) //nolint:staticcheck
 	}
 
 	if d.HasChange("default_branch_protection_defaults") {

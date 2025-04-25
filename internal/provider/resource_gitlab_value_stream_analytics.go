@@ -279,7 +279,7 @@ func (r *gitlabValueStreamAnalyticsResource) Read(ctx context.Context, req resou
 	}
 
 	// read all information for refresh from resource id
-	query := api.GraphQLQuery{
+	query := gitlab.GraphQLQuery{
 		Query: fmt.Sprintf(`
 			query {
 				%s(fullPath: "%s") {
@@ -315,7 +315,7 @@ func (r *gitlabValueStreamAnalyticsResource) Read(ctx context.Context, req resou
 
 	if fullPathType == "group" {
 		var response groupValueStreamResponse
-		if _, err := api.SendGraphQLRequest(ctx, r.client, query, &response); err != nil {
+		if _, err := r.client.GraphQL.Do(ctx, query, &response); err != nil {
 			if api.Is404(err) {
 				tflog.Debug(ctx, "value stream analytics does not exist, removing from state", map[string]any{
 					"full_path": fullPath,
@@ -335,7 +335,7 @@ func (r *gitlabValueStreamAnalyticsResource) Read(ctx context.Context, req resou
 
 	} else {
 		var response projectValueStreamResponse
-		if _, err := api.SendGraphQLRequest(ctx, r.client, query, &response); err != nil {
+		if _, err := r.client.GraphQL.Do(ctx, query, &response); err != nil {
 			if api.Is404(err) {
 				tflog.Debug(ctx, "value stream analytics does not exist, removing from state", map[string]any{
 					"full_path": fullPath,
@@ -382,7 +382,7 @@ func (r *gitlabValueStreamAnalyticsResource) Create(ctx context.Context, req res
 		fullPathIsGroupPath = false
 	}
 
-	query := api.GraphQLQuery{
+	query := gitlab.GraphQLQuery{
 		Query: fmt.Sprintf(`
 			mutation {
 				valueStreamCreate(
@@ -420,7 +420,7 @@ func (r *gitlabValueStreamAnalyticsResource) Create(ctx context.Context, req res
 	}
 
 	var response createValueStreamResponse
-	if _, err := api.SendGraphQLRequest(ctx, r.client, query, &response); err != nil {
+	if _, err := r.client.GraphQL.Do(ctx, query, &response); err != nil {
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to create value stream analytics: %s", err.Error()))
 		return
 	}
@@ -474,7 +474,7 @@ func (r *gitlabValueStreamAnalyticsResource) Delete(ctx context.Context, req res
 		return
 	}
 
-	query := api.GraphQLQuery{
+	query := gitlab.GraphQLQuery{
 		Query: fmt.Sprintf(`
 			mutation {
 				valueStreamDestroy(
@@ -492,7 +492,7 @@ func (r *gitlabValueStreamAnalyticsResource) Delete(ctx context.Context, req res
 		"query": query.Query,
 	})
 
-	if _, err := api.SendGraphQLRequest(ctx, r.client, query, nil); err != nil {
+	if _, err := r.client.GraphQL.Do(ctx, query, nil); err != nil {
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to delete value stream analytics: %s", err.Error()))
 		return
 	}

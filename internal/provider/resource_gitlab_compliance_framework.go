@@ -160,7 +160,7 @@ func (r *gitlabComplianceFrameworkResource) Read(ctx context.Context, req resour
 		return
 	}
 
-	query := api.GraphQLQuery{
+	query := gitlab.GraphQLQuery{
 		Query: fmt.Sprintf(`
 			query {
 				namespace(fullPath: "%s") {
@@ -183,7 +183,7 @@ func (r *gitlabComplianceFrameworkResource) Read(ctx context.Context, req resour
 	})
 
 	var response ComplianceFrameworkResponse
-	if _, err := api.SendGraphQLRequest(ctx, r.client, query, &response); err != nil {
+	if _, err := r.client.GraphQL.Do(ctx, query, &response); err != nil {
 		if api.Is404(err) {
 			tflog.Debug(ctx, "compliance framework does not exist, removing from state", map[string]any{
 				"namespace_path": namespacePath, "framework_id": frameworkID,
@@ -230,7 +230,7 @@ func (r *gitlabComplianceFrameworkResource) Create(ctx context.Context, req reso
 		pipelineConfigurationFullPath = data.PipelineConfigurationFullPath.ValueString()
 	}
 
-	query := api.GraphQLQuery{
+	query := gitlab.GraphQLQuery{
 		Query: fmt.Sprintf(`
 			mutation {
 				createComplianceFramework(
@@ -262,7 +262,7 @@ func (r *gitlabComplianceFrameworkResource) Create(ctx context.Context, req reso
 	})
 
 	var response createComplianceFrameworkResponse
-	if _, err := api.SendGraphQLRequest(ctx, r.client, query, &response); err != nil {
+	if _, err := r.client.GraphQL.Do(ctx, query, &response); err != nil {
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to create compliance framework: %s", err.Error()))
 		return
 	}
@@ -351,7 +351,7 @@ func (r *gitlabComplianceFrameworkResource) Delete(ctx context.Context, req reso
 		}
 	}
 
-	query := api.GraphQLQuery{
+	query := gitlab.GraphQLQuery{
 		Query: fmt.Sprintf(`
 			mutation {
 				destroyComplianceFramework(
@@ -367,7 +367,7 @@ func (r *gitlabComplianceFrameworkResource) Delete(ctx context.Context, req reso
 		"query": query.Query,
 	})
 
-	if _, err := api.SendGraphQLRequest(ctx, r.client, query, nil); err != nil {
+	if _, err := r.client.GraphQL.Do(ctx, query, nil); err != nil {
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to delete compliance framework: %s", err.Error()))
 		return
 	}
@@ -393,7 +393,7 @@ func (r *gitlabComplianceFrameworkResource) update(ctx context.Context, data *gi
 		pipelineConfigurationFullPath = data.PipelineConfigurationFullPath.ValueString()
 	}
 
-	query := api.GraphQLQuery{
+	query := gitlab.GraphQLQuery{
 		Query: fmt.Sprintf(`
 			mutation {
 				updateComplianceFramework(
@@ -425,7 +425,7 @@ func (r *gitlabComplianceFrameworkResource) update(ctx context.Context, data *gi
 	})
 
 	var response updateComplianceFrameworkResponse
-	if _, err := api.SendGraphQLRequest(ctx, r.client, query, &response); err != nil {
+	if _, err := r.client.GraphQL.Do(ctx, query, &response); err != nil {
 		diags.AddError("GitLab API error occurred", fmt.Sprintf("Unable to update compliance framework: %s", err.Error()))
 		return err
 	}

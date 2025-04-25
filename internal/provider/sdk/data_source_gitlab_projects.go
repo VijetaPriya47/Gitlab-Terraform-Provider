@@ -115,21 +115,21 @@ func flattenProjects(projects []*gitlab.Project) (values []map[string]any) {
 			"http_url_to_repo":                  project.HTTPURLToRepo,
 			"web_url":                           project.WebURL,
 			"readme_url":                        project.ReadmeURL,
-			"tag_list":                          project.TagList,
+			"tag_list":                          project.TagList, //nolint:staticcheck
 			"owner":                             flattenGitlabBasicUser(project.Owner),
 			"name":                              project.Name,
 			"name_with_namespace":               project.NameWithNamespace,
 			"path":                              project.Path,
 			"path_with_namespace":               project.PathWithNamespace,
-			"issues_enabled":                    project.IssuesEnabled,
+			"issues_enabled":                    project.IssuesEnabled, //nolint:staticcheck
 			"open_issues_count":                 project.OpenIssuesCount,
-			"merge_requests_enabled":            project.MergeRequestsEnabled,
-			"approvals_before_merge":            project.ApprovalsBeforeMerge,
-			"jobs_enabled":                      project.JobsEnabled,
-			"wiki_enabled":                      project.WikiEnabled,
-			"snippets_enabled":                  project.SnippetsEnabled,
+			"merge_requests_enabled":            project.MergeRequestsEnabled, //nolint:staticcheck
+			"approvals_before_merge":            project.ApprovalsBeforeMerge, //nolint:staticcheck
+			"jobs_enabled":                      project.JobsEnabled,          //nolint:staticcheck
+			"wiki_enabled":                      project.WikiEnabled,          //nolint:staticcheck
+			"snippets_enabled":                  project.SnippetsEnabled,      //nolint:staticcheck
 			"resolve_outdated_diff_discussions": project.ResolveOutdatedDiffDiscussions,
-			"container_registry_enabled":        project.ContainerRegistryEnabled,
+			"container_registry_enabled":        project.ContainerRegistryEnabled, //nolint:staticcheck
 			"created_at":                        project.CreatedAt.String(),
 			"last_activity_at":                  project.LastActivityAt.String(),
 			"creator_id":                        project.CreatorID,
@@ -152,7 +152,7 @@ func flattenProjects(projects []*gitlab.Project) (values []map[string]any) {
 			"only_allow_merge_if_all_discussions_are_resolved": project.OnlyAllowMergeIfAllDiscussionsAreResolved,
 			"allow_merge_on_skipped_pipeline":                  project.AllowMergeOnSkippedPipeline,
 			"allow_pipeline_trigger_approve_deployment":        project.AllowPipelineTriggerApproveDeployment,
-			"restrict_user_defined_variables":                  project.RestrictUserDefinedVariables,
+			"restrict_user_defined_variables":                  project.RestrictUserDefinedVariables, //nolint:staticcheck
 			"lfs_enabled":                                      project.LFSEnabled,
 			"request_access_enabled":                           project.RequestAccessEnabled,
 			"merge_method":                                     project.MergeMethod,

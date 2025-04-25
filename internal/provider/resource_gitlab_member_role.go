@@ -211,7 +211,7 @@ func (r *gitlabMemberRoleResource) Read(ctx context.Context, req resource.ReadRe
 	id := data.Id.ValueString()
 	groupPath := data.GroupPath.ValueString()
 
-	query := api.GraphQLQuery{
+	query := gitlab.GraphQLQuery{
 		Query: fmt.Sprintf(`
 			query {
 				memberRole(id: "%s") {
@@ -236,7 +236,7 @@ func (r *gitlabMemberRoleResource) Read(ctx context.Context, req resource.ReadRe
 	})
 
 	var response MemberRoleResponse
-	if _, err := api.SendGraphQLRequest(ctx, r.client, query, &response); err != nil {
+	if _, err := r.client.GraphQL.Do(ctx, query, &response); err != nil {
 		if response.Data.MemberRole.ID == "" {
 			tflog.Debug(ctx, "member role does not exist, removing from state", map[string]any{
 				"id": id,
@@ -282,7 +282,7 @@ func (r *gitlabMemberRoleResource) Create(ctx context.Context, req resource.Crea
 		groupPathQuery = fmt.Sprintf(`groupPath: "%s",`, groupPath)
 	}
 
-	query := api.GraphQLQuery{
+	query := gitlab.GraphQLQuery{
 		Query: fmt.Sprintf(`
 			mutation {
 				memberRoleCreate(
@@ -319,7 +319,7 @@ func (r *gitlabMemberRoleResource) Create(ctx context.Context, req resource.Crea
 	})
 
 	var response createMemberRoleResponse
-	if _, err := api.SendGraphQLRequest(ctx, r.client, query, &response); err != nil {
+	if _, err := r.client.GraphQL.Do(ctx, query, &response); err != nil {
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to create custom member role: %s", err.Error()))
 		return
 	}
@@ -366,7 +366,7 @@ func (r *gitlabMemberRoleResource) Delete(ctx context.Context, req resource.Dele
 
 	id := data.Id.ValueString()
 
-	query := api.GraphQLQuery{
+	query := gitlab.GraphQLQuery{
 		Query: fmt.Sprintf(`
 			mutation {
 				memberRoleDelete(
@@ -383,7 +383,7 @@ func (r *gitlabMemberRoleResource) Delete(ctx context.Context, req resource.Dele
 	})
 
 	var response deleteMemberRoleResponse
-	if _, err := api.SendGraphQLRequest(ctx, r.client, query, &response); err != nil {
+	if _, err := r.client.GraphQL.Do(ctx, query, &response); err != nil {
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to delete custom member role: %s", err.Error()))
 		return
 	}
@@ -426,7 +426,7 @@ func (r *gitlabMemberRoleResource) Update(ctx context.Context, req resource.Upda
 		permissions = append(permissions, v.ValueString())
 	}
 
-	query := api.GraphQLQuery{
+	query := gitlab.GraphQLQuery{
 		Query: fmt.Sprintf(`
 			mutation {
 				memberRoleUpdate(
@@ -461,7 +461,7 @@ func (r *gitlabMemberRoleResource) Update(ctx context.Context, req resource.Upda
 	})
 
 	var response updateMemberRoleResponse
-	if _, err := api.SendGraphQLRequest(ctx, r.client, query, &response); err != nil {
+	if _, err := r.client.GraphQL.Do(ctx, query, &response); err != nil {
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to update custom member role: %s", err.Error()))
 		return
 	}

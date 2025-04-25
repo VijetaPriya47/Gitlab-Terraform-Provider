@@ -11,9 +11,8 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
 
-	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
@@ -327,7 +326,7 @@ func testAcc_GitlabComplianceFramework_CheckDestroy(s *terraform.State) error {
 				return fmt.Errorf("Failed to parse compliance framework id %q: %w", rs.Primary.ID, err)
 			}
 
-			query := api.GraphQLQuery{
+			query := gitlab.GraphQLQuery{
 				Query: fmt.Sprintf(`
 						query {
 							namespace(fullPath: "%s") {
@@ -342,7 +341,7 @@ func testAcc_GitlabComplianceFramework_CheckDestroy(s *terraform.State) error {
 			}
 
 			var response ComplianceFrameworkResponse
-			if _, err := api.SendGraphQLRequest(context.Background(), testutil.TestGitlabClient, query, &response); err != nil {
+			if _, err := testutil.TestGitlabClient.GraphQL.Do(context.Background(), query, &response); err != nil {
 				return err
 			}
 

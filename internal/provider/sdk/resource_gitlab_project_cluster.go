@@ -171,7 +171,7 @@ func resourceGitlabProjectClusterCreate(ctx context.Context, d *schema.ResourceD
 
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab project cluster %q/%q", project, *options.Name))
 
-	cluster, _, err := client.ProjectCluster.AddCluster(project, options, gitlab.WithContext(ctx))
+	cluster, _, err := client.ProjectCluster.AddCluster(project, options, gitlab.WithContext(ctx)) //nolint:staticcheck
 
 	if err != nil {
 		return diag.FromErr(err)
@@ -193,7 +193,7 @@ func resourceGitlabProjectClusterRead(ctx context.Context, d *schema.ResourceDat
 
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab project cluster %q/%d", project, clusterId))
 
-	cluster, _, err := client.ProjectCluster.GetCluster(project, clusterId, gitlab.WithContext(ctx))
+	cluster, _, err := client.ProjectCluster.GetCluster(project, clusterId, gitlab.WithContext(ctx)) //nolint:staticcheck
 	if err != nil {
 		if api.Is404(err) {
 			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab project cluster not found %s/%d", project, clusterId))
@@ -276,7 +276,7 @@ func resourceGitlabProjectClusterUpdate(ctx context.Context, d *schema.ResourceD
 
 	if *options != (gitlab.EditClusterOptions{}) {
 		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab project cluster %q/%d", project, clusterId))
-		_, _, err := client.ProjectCluster.EditCluster(project, clusterId, options, gitlab.WithContext(ctx))
+		_, _, err := client.ProjectCluster.EditCluster(project, clusterId, options, gitlab.WithContext(ctx)) //nolint:staticcheck
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -294,7 +294,7 @@ func resourceGitlabProjectClusterDelete(ctx context.Context, d *schema.ResourceD
 
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] delete gitlab project cluster %q/%d", project, clusterId))
 
-	_, err = client.ProjectCluster.DeleteCluster(project, clusterId, gitlab.WithContext(ctx))
+	_, err = client.ProjectCluster.DeleteCluster(project, clusterId, gitlab.WithContext(ctx)) //nolint:staticcheck
 	if err != nil {
 		return diag.FromErr(err)
 	}

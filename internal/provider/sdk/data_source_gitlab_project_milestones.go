@@ -95,7 +95,7 @@ func dataSourceGitlabProjectMilestonesRead(ctx context.Context, d *schema.Resour
 	}
 
 	if v, ok := d.GetOk("include_parent_milestones"); ok {
-		options.IncludeParentMilestones = gitlab.Ptr(v.(bool))
+		options.IncludeParentMilestones = gitlab.Ptr(v.(bool)) //nolint:staticcheck
 	}
 
 	optionsHash, err := hashstructure.Hash(&options, hashstructure.FormatV1, nil)

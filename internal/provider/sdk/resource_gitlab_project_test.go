@@ -78,12 +78,12 @@ func TestAccGitlabProject_basic(t *testing.T) {
 					name = "foo-%d"
 					path = "foo.%d"
 					description = "Terraform acceptance tests"
-					
+
 					# NOTE: replaces by topics
 					# tags = [
 					# "tag1",
 					# ]
-					
+
 					# So that acceptance tests can be run in a gitlab organization
 					# with no billing
 					visibility_level = "public"
@@ -103,7 +103,7 @@ func TestAccGitlabProject_basic(t *testing.T) {
 					build_git_strategy = "fetch"
 					build_timeout = 42 * 60
 					builds_access_level = "enabled"
-					
+
 					emails_enabled = false
 					forking_access_level = "enabled"
 					issues_access_level = "enabled"
@@ -138,7 +138,7 @@ func TestAccGitlabProject_basic(t *testing.T) {
 				  name = "foo-%d"
 				  path = "foo.%d"
 				  description = "Terraform acceptance tests!"
-				
+
 				  # So that acceptance tests can be run in a gitlab organization
 				  # with no billing
 				  visibility_level = "public"
@@ -263,12 +263,12 @@ func TestAccGitlabProject_basic(t *testing.T) {
 					name = "foo-%d"
 					path = "foo.%d"
 					description = "Terraform acceptance tests"
-					
+
 					# NOTE: replaces by topics
 					# tags = [
 					# "tag1",
 					# ]
-					
+
 					# So that acceptance tests can be run in a gitlab organization
 					# with no billing
 					visibility_level = "public"
@@ -288,7 +288,7 @@ func TestAccGitlabProject_basic(t *testing.T) {
 					build_git_strategy = "fetch"
 					build_timeout = 42 * 60
 					builds_access_level = "enabled"
-					
+
 					emails_enabled = false
 					forking_access_level = "enabled"
 					issues_access_level = "enabled"
@@ -325,14 +325,14 @@ func TestAccGitlabProject_basic(t *testing.T) {
 					name = "foo-%d"
 					path = "foo.%d"
 					description = "Terraform acceptance tests"
-					
+
 					default_branch = "main"
-					
+
 					# NOTE: replaces by topics
 					# tags = [
 					# "tag1",
 					# ]
-					
+
 					# So that acceptance tests can be run in a gitlab organization
 					# with no billing
 					visibility_level = "public"
@@ -352,7 +352,7 @@ func TestAccGitlabProject_basic(t *testing.T) {
 					build_git_strategy = "fetch"
 					build_timeout = 42 * 60
 					builds_access_level = "enabled"
-					
+
 					emails_enabled = false
 					forking_access_level = "enabled"
 					issues_access_level = "enabled"
@@ -394,7 +394,7 @@ func TestAccGitlabProject_basic(t *testing.T) {
 				  name = "foo-%[1]d"
 				  path = "foo.%[1]d"
 				  description = "Terraform acceptance tests"
-				
+
 				  push_rules {
 					author_email_regex = "foo_author"
 					branch_name_regex = "foo_branch"
@@ -410,7 +410,7 @@ func TestAccGitlabProject_basic(t *testing.T) {
 					reject_non_dco_commits = true
 					max_file_size = 123
 				  }
-				
+
 				  resolve_outdated_diff_discussions = true
 				  analytics_access_level = "enabled"
 				  auto_cancel_pending_pipelines = "enabled"
@@ -438,7 +438,7 @@ func TestAccGitlabProject_basic(t *testing.T) {
 				  feature_flags_access_level = "enabled"
 				  infrastructure_access_level = "enabled"
 				  monitor_access_level = "enabled"
-				
+
 				  # So that acceptance tests can be run in a gitlab organization with no billing.
 				  visibility_level = "public"
 				}
@@ -474,7 +474,7 @@ func TestAccGitlabProject_basic(t *testing.T) {
 				  name = "foo-%[1]d"
 				  path = "foo.%[1]d"
 				  description = "Terraform acceptance tests"
-				
+
 				  push_rules {
 					author_email_regex = "foo_author"
 					branch_name_regex = "foo_branch"
@@ -490,7 +490,7 @@ func TestAccGitlabProject_basic(t *testing.T) {
 					reject_non_dco_commits = true
 					max_file_size = 1234
 				  }
-				
+
 				  resolve_outdated_diff_discussions = true
 				  analytics_access_level = "enabled"
 				  auto_cancel_pending_pipelines = "enabled"
@@ -518,7 +518,7 @@ func TestAccGitlabProject_basic(t *testing.T) {
 				  feature_flags_access_level = "enabled"
 				  infrastructure_access_level = "enabled"
 				  monitor_access_level = "enabled"
-				
+
 				  # So that acceptance tests can be run in a gitlab organization with no billing.
 				  visibility_level = "public"
 				}
@@ -547,11 +547,11 @@ func TestAccGitlabProject_basic(t *testing.T) {
 				  name = "foo-%[1]d"
 				  path = "foo.%[1]d"
 				  description = "Terraform acceptance tests"
-				
+
 				  push_rules {
 					author_email_regex = "foo_author"
 				  }
-				
+
 				  resolve_outdated_diff_discussions = true
 				  analytics_access_level = "enabled"
 				  auto_cancel_pending_pipelines = "enabled"
@@ -579,7 +579,7 @@ func TestAccGitlabProject_basic(t *testing.T) {
 				  feature_flags_access_level = "enabled"
 				  infrastructure_access_level = "enabled"
 				  monitor_access_level = "enabled"
-				
+
 				  # So that acceptance tests can be run in a gitlab organization with no billing.
 				  visibility_level = "public"
 				}
@@ -594,11 +594,11 @@ func TestAccGitlabProject_basic(t *testing.T) {
 				  name = "foo-%[1]d"
 				  path = "foo.%[1]d"
 				  description = "Terraform acceptance tests"
-				
+
 				  push_rules {
 					author_email_regex = "foo_author"
 				  }
-				
+
 				  resolve_outdated_diff_discussions = true
 				  analytics_access_level = "enabled"
 				  auto_cancel_pending_pipelines = "enabled"
@@ -626,7 +626,7 @@ func TestAccGitlabProject_basic(t *testing.T) {
 				  feature_flags_access_level = "enabled"
 				  infrastructure_access_level = "enabled"
 				  monitor_access_level = "enabled"
-				
+
 				  # So that acceptance tests can be run in a gitlab organization with no billing.
 				  visibility_level = "public"
 				}
@@ -644,14 +644,14 @@ func TestAccGitlabProject_basic(t *testing.T) {
 					name = "foo-%d"
 					path = "foo.%d"
 					description = "Terraform acceptance tests"
-					
+
 					default_branch = "main"
-					
+
 					# NOTE: replaces by topics
 					# tags = [
 					# "tag1",
 					# ]
-					
+
 					# So that acceptance tests can be run in a gitlab organization
 					# with no billing
 					visibility_level = "public"
@@ -671,7 +671,7 @@ func TestAccGitlabProject_basic(t *testing.T) {
 					build_git_strategy = "fetch"
 					build_timeout = 42 * 60
 					builds_access_level = "enabled"
-					
+
 					emails_enabled = false
 					forking_access_level = "enabled"
 					issues_access_level = "enabled"
@@ -706,11 +706,11 @@ func TestAccGitlabProject_basic(t *testing.T) {
 				  name = "foo-%[1]d"
 				  path = "foo.%[1]d"
 				  description = "Terraform acceptance tests"
-				
+
 				  push_rules {
 					branch_name_regex = "(feature|hotfix)\\/*"
 				  }
-				
+
 				  resolve_outdated_diff_discussions = true
 				  analytics_access_level = "enabled"
 				  auto_cancel_pending_pipelines = "enabled"
@@ -738,7 +738,7 @@ func TestAccGitlabProject_basic(t *testing.T) {
 				  feature_flags_access_level = "enabled"
 				  infrastructure_access_level = "enabled"
 				  monitor_access_level = "enabled"
-				
+
 				  # So that acceptance tests can be run in a gitlab organization with no billing.
 				  visibility_level = "public"
 				}
@@ -779,7 +779,7 @@ func TestAccGitlabProject_templates(t *testing.T) {
 				  template_name = "%s"
 				  use_custom_template = true
 				  skip_wait_for_default_branch_protection = "false"
-				
+
 				  # So that acceptance tests can be run in a gitlab organization
 				  # with no billing
 				  visibility_level = "public"
@@ -810,7 +810,7 @@ func TestAccGitlabProject_templates(t *testing.T) {
 				  template_project_id = %d
 				  use_custom_template = true
 				  skip_wait_for_default_branch_protection = "false"
-				
+
 				  # So that acceptance tests can be run in a gitlab organization
 				  # with no billing
 				  visibility_level = "public"
@@ -851,12 +851,12 @@ func TestAccGitlabProject_PushRules(t *testing.T) {
 				  name = "foo-%[1]d"
 				  path = "foo.%[1]d"
 				  description = "Terraform acceptance tests"
-				
+
 				  push_rules {
 					author_email_regex = "foo_author"
 					max_file_size = 123
 				  }
-				
+
 				  resolve_outdated_diff_discussions = true
 				  analytics_access_level = "enabled"
 				  auto_cancel_pending_pipelines = "enabled"
@@ -884,7 +884,7 @@ func TestAccGitlabProject_PushRules(t *testing.T) {
 				  feature_flags_access_level = "enabled"
 				  infrastructure_access_level = "enabled"
 				  monitor_access_level = "enabled"
-				
+
 				  # So that acceptance tests can be run in a gitlab organization with no billing.
 				  visibility_level = "public"
 				}
@@ -909,12 +909,12 @@ func TestAccGitlabProject_PushRules(t *testing.T) {
 					name = "foo-%d"
 					path = "foo.%d"
 					description = "Terraform acceptance tests"
-					
+
 					# NOTE: replaces by topics
 					# tags = [
 					# "tag1",
 					# ]
-					
+
 					# So that acceptance tests can be run in a gitlab organization
 					# with no billing
 					visibility_level = "public"
@@ -934,7 +934,7 @@ func TestAccGitlabProject_PushRules(t *testing.T) {
 					build_git_strategy = "fetch"
 					build_timeout = 42 * 60
 					builds_access_level = "enabled"
-					
+
 					emails_enabled = false
 					forking_access_level = "enabled"
 					issues_access_level = "enabled"
@@ -973,11 +973,11 @@ func TestAccGitlabProject_PushRules(t *testing.T) {
 				  name = "foo-%[1]d"
 				  path = "foo.%[1]d"
 				  description = "Terraform acceptance tests"
-				
+
 				  push_rules {
 					author_email_regex = "foo_author"
 				  }
-				
+
 				  resolve_outdated_diff_discussions = true
 				  analytics_access_level = "enabled"
 				  auto_cancel_pending_pipelines = "enabled"
@@ -1005,7 +1005,7 @@ func TestAccGitlabProject_PushRules(t *testing.T) {
 				  feature_flags_access_level = "enabled"
 				  infrastructure_access_level = "enabled"
 				  monitor_access_level = "enabled"
-				
+
 				  # So that acceptance tests can be run in a gitlab organization with no billing.
 				  visibility_level = "public"
 				}
@@ -1031,10 +1031,10 @@ func TestAccGitlabProject_initializeWithReadme(t *testing.T) {
 				  path                   = "foo.%d"
 				  description            = "Terraform acceptance tests"
 				  initialize_with_readme = true
-				
+
 				  # Not required for the test, and makes it much more stable
 				  skip_wait_for_default_branch_protection = true
-				
+
 				  # So that acceptance tests can be run in a gitlab organization
 				  # with no billing
 				  visibility_level = "public"
@@ -1071,7 +1071,7 @@ func TestAccGitlabProject_initializeWithoutReadme(t *testing.T) {
 				  path                   = "foo.%d"
 				  description            = "Terraform acceptance tests"
 				  initialize_with_readme = false
-				
+
 				  # So that acceptance tests can be run in a gitlab organization
 				  # with no billing
 				  visibility_level = "public"
@@ -1112,7 +1112,7 @@ func TestAccGitlabProject_permanentlyDeleteOnDestroy(t *testing.T) {
 				  path                          = "foo.%d"
 				  description                   = "Terraform acceptance tests"
 				  permanently_delete_on_destroy = true
-				
+
 				  # So that acceptance tests can be run in a gitlab organization
 				  # with no billing
 				  visibility_level = "public"
@@ -1138,7 +1138,7 @@ func TestAccGitlabProject_archiveOnDestroy(t *testing.T) {
 				  description = "Terraform acceptance tests"
 				  archive_on_destroy = true
 				  archived = false
-				
+
 				  # So that acceptance tests can be run in a gitlab organization
 				  # with no billing
 				  visibility_level = "public"
@@ -1163,11 +1163,11 @@ func TestAccGitlabProject_setSinglePushRuleToDefault(t *testing.T) {
 				  name = "foo-%[1]d"
 				  path = "foo.%[1]d"
 				  description = "Terraform acceptance tests"
-				
+
 				  push_rules {
 					member_check = false
 				  }
-				
+
 				  resolve_outdated_diff_discussions = true
 				  analytics_access_level = "enabled"
 				  auto_cancel_pending_pipelines = "enabled"
@@ -1195,7 +1195,7 @@ func TestAccGitlabProject_setSinglePushRuleToDefault(t *testing.T) {
 				  feature_flags_access_level = "enabled"
 				  infrastructure_access_level = "enabled"
 				  monitor_access_level = "enabled"
-				
+
 				  # So that acceptance tests can be run in a gitlab organization with no billing.
 				  visibility_level = "public"
 				}
@@ -1275,7 +1275,7 @@ func TestAccGitlabProject_IssueMergeRequestTemplates(t *testing.T) {
 				  description = "Terraform acceptance tests"
 				  issues_template = "foo"
 				  merge_requests_template = "bar"
-				
+
 				  # So that acceptance tests can be run in a gitlab organization
 				  # with no billing
 				  visibility_level = "public"
@@ -1316,7 +1316,7 @@ func TestAccGitlabProject_MergePipelines(t *testing.T) {
 				  path = "foo.%d"
 				  description = "Terraform acceptance tests"
 				  merge_pipelines_enabled = true
-				
+
 				  # So that acceptance tests can be run in a gitlab organization
 				  # with no billing
 				  visibility_level = "public"
@@ -1354,7 +1354,7 @@ func TestAccGitlabProject_MergeTrains(t *testing.T) {
 				  description = "Terraform acceptance tests"
 				  merge_pipelines_enabled = true
 				  merge_trains_enabled = true
-				
+
 				  # So that acceptance tests can be run in a gitlab organization
 				  # with no billing
 				  visibility_level = "public"
@@ -1438,12 +1438,12 @@ func TestAccGitlabProject_import(t *testing.T) {
 					name = "foo-%d"
 					path = "foo.%d"
 					description = "Terraform acceptance tests"
-					
+
 					# NOTE: replaces by topics
 					# tags = [
 					# "tag1",
 					# ]
-					
+
 					# So that acceptance tests can be run in a gitlab organization
 					# with no billing
 					visibility_level = "public"
@@ -1463,7 +1463,7 @@ func TestAccGitlabProject_import(t *testing.T) {
 					build_git_strategy = "fetch"
 					build_timeout = 42 * 60
 					builds_access_level = "enabled"
-					
+
 					emails_enabled = false
 					forking_access_level = "enabled"
 					issues_access_level = "enabled"
@@ -1495,12 +1495,12 @@ func TestAccGitlabProject_import(t *testing.T) {
 					path = "foo.%d"
 					description = "Terraform acceptance tests"
 					default_branch = "main"
-					
+
 					# NOTE: replaces by topics
 					# tags = [
 					# "tag1",
 					# ]
-					
+
 					# So that acceptance tests can be run in a gitlab organization
 					# with no billing
 					visibility_level = "public"
@@ -1540,7 +1540,7 @@ func TestAccGitlabProject_import(t *testing.T) {
 					feature_flags_access_level = "enabled"
 					infrastructure_access_level = "enabled"
 					monitor_access_level = "enabled"
-					
+
 					# EE features
 					approvals_before_merge = 2
 					external_authorization_classification_label = "test"
@@ -1576,7 +1576,7 @@ func TestAccGitlabProject_nestedImport(t *testing.T) {
 				  name         = "foo-%d"
 				  description  = "Terraform acceptance tests"
 				  namespace_id = "%d"
-				
+
 				  # So that acceptance tests can be run in a gitlab organization
 				  # with no billing
 				  visibility_level = "public"
@@ -1643,7 +1643,7 @@ func TestAccGitlabProject_transfer(t *testing.T) {
 				  name = "foo-%d"
 				  description = "Terraform acceptance tests"
 				  namespace_id = "%d"
-				
+
 				  # So that acceptance tests can be run in a gitlab organization
 				  # with no billing
 				  visibility_level = "public"
@@ -1661,7 +1661,7 @@ func TestAccGitlabProject_transfer(t *testing.T) {
 				  name = "foo-%d"
 				  description = "Terraform acceptance tests"
 				  namespace_id = "%d"
-				
+
 				  # So that acceptance tests can be run in a gitlab organization
 				  # with no billing
 				  visibility_level = "public"
@@ -1712,7 +1712,7 @@ func TestAccGitlabProject_importURL(t *testing.T) {
 				  name      = "imported-%d"
 				  default_branch = "main"
 				  import_url     = "%s"
-				
+
 				  # So that acceptance tests can be run in a gitlab organization
 				  # with no billing
 				  visibility_level = "public"
@@ -2374,7 +2374,7 @@ func TestAccGitlabProject_ImportURLMirrored(t *testing.T) {
 				  mirror_trigger_builds               = true
 				  mirror_overwrites_diverged_branches = true
 				  only_mirror_protected_branches      = true
-				
+
 				  # So that acceptance tests can be run in a gitlab organization
 				  # with no billing
 				  visibility_level = "public"
@@ -2414,7 +2414,7 @@ func TestAccGitlabProject_ImportURLMirrored(t *testing.T) {
 				  mirror_trigger_builds               = false
 				  mirror_overwrites_diverged_branches = false
 				  only_mirror_protected_branches      = false
-				
+
 				  # So that acceptance tests can be run in a gitlab organization
 				  # with no billing
 				  visibility_level = "public"
@@ -2455,7 +2455,7 @@ func TestAccGitlabProject_ImportURLMirrored(t *testing.T) {
 				  mirror_trigger_builds               = false
 				  mirror_overwrites_diverged_branches = false
 				  only_mirror_protected_branches      = false
-				
+
 				  # So that acceptance tests can be run in a gitlab organization
 				  # with no billing
 				  visibility_level = "public"
@@ -2506,7 +2506,7 @@ func TestAccGitlabProject_templateMutualExclusiveNameAndID(t *testing.T) {
 				  template_project_id = 999
 				  use_custom_template = true
 				  default_branch = "master"
-				
+
 				  # So that acceptance tests can be run in a gitlab organization
 				  # with no billing
 				  visibility_level = "public"
@@ -3399,7 +3399,7 @@ func testAccCheckGitlabProjectDestroy(s *terraform.State) error {
 		gotRepo, resp, err := testutil.TestGitlabClient.Projects.GetProject(rs.Primary.ID, nil)
 		if err == nil {
 			if gotRepo != nil && fmt.Sprintf("%d", gotRepo.ID) == rs.Primary.ID {
-				if gotRepo.MarkedForDeletionAt == nil {
+				if gotRepo.MarkedForDeletionOn == nil {
 					return fmt.Errorf("Repository still exists")
 				}
 			}

@@ -3,38 +3,9 @@ package api
 import (
 	"context"
 	"fmt"
-	"io"
 
-	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
-
-// Helper method for modifying client requests appropriately for sending a GraphQL call instead of a REST call.
-func SendGraphQLRequest(ctx context.Context, client *gitlab.Client, query GraphQLQuery, response any) (any, error) {
-	request, err := client.NewRequest("POST", "", query, nil)
-	if err != nil {
-		return nil, err
-	}
-	// Overwrite the path of the existing request, as otherwise client-go appends /api/v4 instead.
-	request.URL.Path = "/api/graphql"
-	resp, err := client.Do(request, response)
-	if err != nil {
-		// Read the body of the request so we can log it
-		body, _ := io.ReadAll(resp.Body)
-		defer resp.Body.Close()
-		tflog.Debug(ctx, "GraphQL request failed", map[string]any{
-			"status_code": resp.StatusCode,
-			"body":        string(body),
-		})
-		return nil, err
-	}
-	return response, nil
-}
-
-// Represents a GraphQL call to the API. All GraphQL calls are a string passed to the "query" parameter, so they should be included here.
-type GraphQLQuery struct {
-	Query string `json:"query"`
-}
 
 // Returns a GraphQL ID from the project ID or Path
 func GetProjectGIDFromID(ctx context.Context, client *gitlab.Client, projectId string) (*ProjectIdentifiers, error) {
@@ -47,7 +18,7 @@ func GetProjectGIDFromID(ctx context.Context, client *gitlab.Client, projectId s
 
 	// Call the GraphQL Project API to get the GID
 	var response getProjectIDStruct
-	_, err = SendGraphQLRequest(ctx, client, GraphQLQuery{Query: fmt.Sprintf(`query { project(fullPath: "%s") { id } }`, project.PathWithNamespace)}, &response)
+	_, err = client.GraphQL.Do(ctx, gitlab.GraphQLQuery{Query: fmt.Sprintf(`query { project(fullPath: "%s") { id } }`, project.PathWithNamespace)}, &response)
 
 	return &ProjectIdentifiers{
 		ProjectID:       project.ID,
@@ -82,7 +53,7 @@ func GetGroupGIDFromID(ctx context.Context, client *gitlab.Client, groupId strin
 
 	// Call the GraphQL Project API to get the GID
 	var response getGroupIDStruct
-	_, err = SendGraphQLRequest(ctx, client, GraphQLQuery{Query: fmt.Sprintf(`query { group(fullPath: "%s") { id } }`, group.FullPath)}, &response)
+	_, err = client.GraphQL.Do(ctx, gitlab.GraphQLQuery{Query: fmt.Sprintf(`query { group(fullPath: "%s") { id } }`, group.FullPath)}, &response)
 
 	return &GroupIdentifiers{
 		GroupID:       group.ID,

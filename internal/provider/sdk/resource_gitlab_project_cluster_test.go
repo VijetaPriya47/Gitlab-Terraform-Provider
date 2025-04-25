@@ -33,16 +33,16 @@ func TestAccGitlabProjectCluster_basic(t *testing.T) {
 %s
 EOF
 					}
-					
+
 					resource "gitlab_project" "foo" {
 						name        = "foo-project-%d"
 						description = "Terraform acceptance tests"
-						
+
 						# So that acceptance tests can be run in a gitlab organization
 						# with no billing
 						visibility_level = "public"
 					}
-					
+
 					resource gitlab_project_cluster "foo" {
 						project                       = "${gitlab_project.foo.id}"
 						name                          = "foo-cluster-%d"
@@ -74,16 +74,16 @@ EOF
 %s
 EOF
 					}
-					
+
 					resource "gitlab_project" "foo" {
 						name        = "foo-project-%d"
 						description = "Terraform acceptance tests"
-						
+
 						# So that acceptance tests can be run in a gitlab organization
 						# with no billing
 						visibility_level = "public"
 					}
-					
+
 					resource gitlab_project_cluster "foo" {
 						project                       = "${gitlab_project.foo.id}"
 						name                          = "foo-cluster-%d"
@@ -115,16 +115,16 @@ EOF
 %s
 EOF
 					}
-					
+
 					resource "gitlab_project" "foo" {
 						name        = "foo-project-%d"
 						description = "Terraform acceptance tests"
-						
+
 						# So that acceptance tests can be run in a gitlab organization
 						# with no billing
 						visibility_level = "public"
 					}
-					
+
 					resource gitlab_project_cluster "foo" {
 						project                       = "${gitlab_project.foo.id}"
 						name                          = "foo-cluster-%d"
@@ -157,16 +157,16 @@ EOF
 %s
 EOF
 					}
-					
+
 					resource "gitlab_project" "foo" {
 						name        = "foo-project-%d"
 						description = "Terraform acceptance tests"
-						
+
 						# So that acceptance tests can be run in a gitlab organization
 						# with no billing
 						visibility_level = "public"
 					}
-					
+
 					resource gitlab_project_cluster "foo" {
 						project                       = "${gitlab_project.foo.id}"
 						name                          = "foo-cluster-%d"
@@ -199,21 +199,21 @@ EOF
 %s
 EOF
 					}
-					
+
 					resource "gitlab_project" "foo" {
 						name        = "foo-project-%d"
 						description = "Terraform acceptance tests"
-						
+
 						# So that acceptance tests can be run in a gitlab organization
 						# with no billing
 						visibility_level = "public"
 					}
-					
+
 					resource "gitlab_project" "cluster-management" {
 						name                   = "cluster-management-%d"
 						visibility_level       = "public"
 					}
-					
+
 					resource gitlab_project_cluster "foo" {
 						project                       = "${gitlab_project.foo.id}"
 						name                          = "foo-cluster-%d"
@@ -272,7 +272,7 @@ func testAccCheckGitlabProjectClusterExists(n string, cluster *gitlab.ProjectClu
 			return err
 		}
 
-		gotCluster, _, err := testutil.TestGitlabClient.ProjectCluster.GetCluster(project, clusterID)
+		gotCluster, _, err := testutil.TestGitlabClient.ProjectCluster.GetCluster(project, clusterID) //nolint:staticcheck
 		if err != nil {
 			return err
 		}
@@ -294,7 +294,7 @@ func testAccCheckGitlabProjectClusterDestroy(s *terraform.State) error {
 			return err
 		}
 
-		gotCluster, _, err := testutil.TestGitlabClient.ProjectCluster.GetCluster(project, clusterID)
+		gotCluster, _, err := testutil.TestGitlabClient.ProjectCluster.GetCluster(project, clusterID) //nolint:staticcheck
 		if err == nil {
 			if gotCluster != nil && fmt.Sprintf("%d", gotCluster.ID) == project {
 				return fmt.Errorf("project cluster still exists")
