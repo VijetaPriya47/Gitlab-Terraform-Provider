@@ -97,7 +97,7 @@ var _ = registerResource("gitlab_group", func() *schema.Resource {
 				Optional:     true,
 				Computed:     true,
 				ValidateFunc: validation.IntInSlice(defaultBranchProtectionValues),
-				Deprecated:   "Deprecated in GitLab 17.0. Use default_branch_protection_defaults instead.",
+				Deprecated:   "Deprecated in GitLab 17.0, due for removal in v5 of the API. Use default_branch_protection_defaults instead.",
 				ConflictsWith: []string{
 					"default_branch_protection_defaults",
 				},
