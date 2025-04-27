@@ -44,7 +44,8 @@ func NewGitLabPersonalAccessTokenResource() resource.Resource {
 }
 
 type gitlabPersonalAccessTokenResource struct {
-	client *gitlab.Client
+	client          *gitlab.Client
+	newGitLabClient GitLabClientFactory
 }
 
 // The base Resource implementation struct
@@ -204,6 +205,7 @@ func (r *gitlabPersonalAccessTokenResource) Configure(ctx context.Context, req r
 
 	resourceData := req.ProviderData.(*GitLabResourceData)
 	r.client = resourceData.Client
+	r.newGitLabClient = resourceData.NewGitLabClient
 }
 
 func (r *gitlabPersonalAccessTokenResource) personalAccessTokenToStateModel(data *gitlabPersonalAccessTokenResourceModel, token *gitlab.PersonalAccessToken, userId int) diag.Diagnostics {
@@ -541,16 +543,43 @@ func (r *gitlabPersonalAccessTokenResource) Update(ctx context.Context, req reso
 		return
 	}
 
-	// update with a personal access token means rotate it
-	token, _, err := r.client.PersonalAccessTokens.RotatePersonalAccessTokenByID(patIdInt, &gitlab.RotatePersonalAccessTokenOptions{
-		ExpiresAt: &expiresAt,
-	}, gitlab.WithContext(ctx))
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error rotating GitLab PersonalAccessToken",
-			fmt.Sprintf("Could not rotate GitLab PersonalAccessToken, unexpected error: %v", err),
-		)
-		return
+	// find out whether self_rotate is one of the scopes
+	var selfRotate bool
+	for _, v := range data.Scopes {
+		if v.ValueString() == "self_rotate" {
+			selfRotate = true
+			break
+		}
+	}
+
+	// update with a service account access token means rotate it
+	var token *gitlab.PersonalAccessToken
+	if selfRotate {
+		tflog.Debug(ctx, "Found `self_rotate` in scopes; attempting to use the self-rotate method to update the token", map[string]interface{}{
+			"user":           userId,
+			"new_expires_at": expiresAt,
+			"scopes":         data.Scopes,
+		})
+
+		token, err = r.rotateTokenSelf(ctx, state.Token.ValueString(), expiresAt)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Error self rotating GitLab PersonalAccessToken",
+				fmt.Sprintf("Could not self rotate GitLab PersonalAccessToken, unexpected error: %v", err),
+			)
+			return
+		}
+	} else {
+		token, _, err = r.client.PersonalAccessTokens.RotatePersonalAccessTokenByID(patIdInt, &gitlab.RotatePersonalAccessTokenOptions{
+			ExpiresAt: &expiresAt,
+		}, gitlab.WithContext(ctx))
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Error rotating GitLab PersonalAccessToken",
+				fmt.Sprintf("Could not rotate GitLab PersonalAccessToken, unexpected error: %v", err),
+			)
+			return
+		}
 	}
 
 	// Updating an access token changes the primary key, so we need to re-set the ID of the resource
@@ -620,4 +649,23 @@ func (r *gitlabPersonalAccessTokenResource) determineExpiryDate(data *gitlabPers
 	}
 
 	return nil, nil
+}
+
+// Rotates the token using the token itself. Only works if the token has the `self_rotate` scope.
+func (r *gitlabPersonalAccessTokenResource) rotateTokenSelf(ctx context.Context, originalToken string, expiresAt gitlab.ISOTime) (*gitlab.PersonalAccessToken, error) {
+	tokenClient, err := r.newGitLabClient(ctx, WithToken(originalToken), WithEarlyAuth(false))
+	if err != nil {
+		return nil, fmt.Errorf("Could not create a new client with the token that exists in state. The provider's token can't rotate the personal access token: %v", err)
+	}
+
+	opt := &gitlab.RotatePersonalAccessTokenOptions{
+		ExpiresAt: &expiresAt,
+	}
+
+	token, _, err := tokenClient.PersonalAccessTokens.RotatePersonalAccessTokenSelf(opt, gitlab.WithContext(ctx))
+	if err != nil {
+		return nil, fmt.Errorf("Could not rotate GitLab PersonalAccessToken, unexpected error: %v", err)
+	}
+
+	return token, nil
 }

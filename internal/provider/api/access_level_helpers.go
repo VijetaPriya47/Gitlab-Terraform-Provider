@@ -110,10 +110,9 @@ func AccessControlLevelValueToName(input string) gitlab.AccessControlValue {
 	return values[input]
 }
 
-// Valid scopes for project and group access tokens
+// Valid scopes for project access tokens
 // See: https://docs.gitlab.com/user/project/settings/project_access_tokens/#scopes-for-a-project-access-token
-// See: https://docs.gitlab.com/user/group/settings/group_access_tokens/#scopes-for-a-group-access-token
-var ValidAccessTokenScopes = []string{
+var ValidProjectAccessTokenScopes = []string{
 	"api",
 	"read_api",
 	"read_registry",
@@ -126,6 +125,27 @@ var ValidAccessTokenScopes = []string{
 	"k8s_proxy",
 	"read_observability",
 	"write_observability",
+	"self_rotate",
+}
+
+// Valid scopes for group access tokens
+// See: https://docs.gitlab.com/user/group/settings/group_access_tokens/#scopes-for-a-group-access-token
+var ValidGroupAccessTokenScopes = []string{
+	"api",
+	"read_api",
+	"read_registry",
+	"write_registry",
+	"read_virtual_registry",
+	"write_virtual_registry",
+	"read_repository",
+	"write_repository",
+	"create_runner",
+	"manage_runner",
+	"ai_features",
+	"k8s_proxy",
+	"read_observability",
+	"write_observability",
+	"self_rotate",
 }
 
 // Valid scopes for personal access tokens
@@ -138,11 +158,14 @@ var ValidPersonalAccessTokenScopes = []string{
 	"write_repository",
 	"read_registry",
 	"write_registry",
+	"read_virtual_registry",
+	"write_virtual_registry",
 	"sudo",
 	"admin_mode",
 	"create_runner",
 	"manage_runner",
 	"ai_features",
 	"k8s_proxy",
+	"self_rotate",
 	"read_service_ping",
 }

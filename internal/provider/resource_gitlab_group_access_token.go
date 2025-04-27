@@ -46,7 +46,8 @@ func NewGitLabGroupAccessTokenResource() resource.Resource {
 }
 
 type gitlabGroupAccessTokenResource struct {
-	client *gitlab.Client
+	client          *gitlab.Client
+	newGitLabClient GitLabClientFactory
 }
 
 // The base Resource implementation struct
@@ -118,7 +119,7 @@ func (r *gitlabGroupAccessTokenResource) Schema(ctx context.Context, req resourc
 				Optional: true,
 			},
 			"scopes": schema.SetAttribute{
-				MarkdownDescription: fmt.Sprintf("The scopes of the group access token. Valid values are: %s", utils.RenderValueListForDocs(api.ValidAccessTokenScopes)),
+				MarkdownDescription: fmt.Sprintf("The scopes of the group access token. Valid values are: %s", utils.RenderValueListForDocs(api.ValidGroupAccessTokenScopes)),
 				Required:            true,
 				ElementType:         types.StringType,
 				PlanModifiers: []planmodifier.Set{
@@ -127,7 +128,7 @@ func (r *gitlabGroupAccessTokenResource) Schema(ctx context.Context, req resourc
 				},
 				Validators: []validator.Set{
 					setvalidator.ValueStringsAre(
-						stringvalidator.OneOfCaseInsensitive(api.ValidAccessTokenScopes...),
+						stringvalidator.OneOfCaseInsensitive(api.ValidGroupAccessTokenScopes...),
 					),
 				},
 			},
@@ -220,10 +221,10 @@ func (r *gitlabGroupAccessTokenResource) Configure(ctx context.Context, req reso
 
 	resourceData := req.ProviderData.(*GitLabResourceData)
 	r.client = resourceData.Client
+	r.newGitLabClient = resourceData.NewGitLabClient
 }
 
 func (r *gitlabGroupAccessTokenResource) groupAccessTokenToStateModel(data *gitlabGroupAccessTokenResourceModel, token *gitlab.GroupAccessToken, group string) diag.Diagnostics {
-
 	data.Group = types.StringValue(group)
 	data.Name = types.StringValue(token.Name)
 	data.Description = types.StringValue(token.Description)
@@ -258,7 +259,6 @@ func (r *gitlabGroupAccessTokenResource) ImportState(ctx context.Context, req re
 // resource, by checking the date that's set in the `expires_at` field is less than the `rotate_before_days`
 // value.
 func (r *gitlabGroupAccessTokenResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
-
 	// Retrieve the plan data to start with
 	var planData, stateData *gitlabGroupAccessTokenResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &planData)...)
@@ -548,16 +548,45 @@ func (r *gitlabGroupAccessTokenResource) Update(ctx context.Context, req resourc
 		return
 	}
 
+	// find out whether self_rotate is one of the scopes
+	var selfRotate bool
+	for _, v := range data.Scopes {
+		if v.ValueString() == "self_rotate" {
+			selfRotate = true
+			break
+		}
+	}
+
 	// update with a group access token means rotate it
-	token, _, err := r.client.GroupAccessTokens.RotateGroupAccessToken(group, intPatId, &gitlab.RotateGroupAccessTokenOptions{
-		ExpiresAt: &expiresAt,
-	}, gitlab.WithContext(ctx))
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error rotating GitLab GroupAccessTokens",
-			fmt.Sprintf("Could not rotate GitLab GroupAccessTokens, unexpected error: %v", err),
-		)
-		return
+	var token *gitlab.GroupAccessToken
+	if selfRotate {
+
+		tflog.Debug(ctx, "Found `self_rotate` in scopes; attempting to use the self-rotate method to update the token", map[string]interface{}{
+			"group":          group,
+			"new_expires_at": expiresAt,
+			"scopes":         data.Scopes,
+		})
+
+		token, err = r.rotateTokenSelf(ctx, state.Token.ValueString(), expiresAt, group)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Error self rotating GitLab GroupAccessToken",
+				fmt.Sprintf("Could not self rotate GitLab GroupAccessToken, unexpected error: %v", err),
+			)
+			return
+		}
+
+	} else {
+		token, _, err = r.client.GroupAccessTokens.RotateGroupAccessToken(group, intPatId, &gitlab.RotateGroupAccessTokenOptions{
+			ExpiresAt: &expiresAt,
+		}, gitlab.WithContext(ctx))
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Error rotating GitLab GroupAccessTokens",
+				fmt.Sprintf("Could not rotate GitLab GroupAccessTokens, unexpected error: %v", err),
+			)
+			return
+		}
 	}
 
 	// Updating an access token changes the primary key, so we need to re-set the ID of the resource
@@ -620,7 +649,6 @@ func (r *gitlabGroupAccessTokenResource) Delete(ctx context.Context, req resourc
 
 		return retry.RetryableError(errors.New("group access token was not deleted"))
 	})
-
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error deleting group access token",
@@ -633,7 +661,6 @@ func (r *gitlabGroupAccessTokenResource) Delete(ctx context.Context, req resourc
 // value should be set into the `expiry_date` field for the options.
 // Returns a gitlab.ISOTime object of what should be set into the `expiry_date` field.
 func (r *gitlabGroupAccessTokenResource) determineExpiryDate(data *gitlabGroupAccessTokenResourceModel) (*gitlab.ISOTime, error) {
-
 	// If `expires_at` is set, then attempt to parse the time, and return the isoTime value if it
 	// successfully parses
 	if !data.ExpiresAt.IsNull() && !data.ExpiresAt.IsUnknown() && data.RotationConfiguration == nil {
@@ -656,4 +683,23 @@ func (r *gitlabGroupAccessTokenResource) determineExpiryDate(data *gitlabGroupAc
 	}
 
 	return nil, nil
+}
+
+// Rotates the token using the token itself. Only works if the token has the `self_rotate` scope.
+func (r *gitlabGroupAccessTokenResource) rotateTokenSelf(ctx context.Context, originalToken string, expiresAt gitlab.ISOTime, group string) (*gitlab.GroupAccessToken, error) {
+	tokenClient, err := r.newGitLabClient(ctx, WithToken(originalToken), WithEarlyAuth(false))
+	if err != nil {
+		return nil, fmt.Errorf("Could not create a new client with the token that exists in state. The provider's token can't rotate the group access token: %v", err)
+	}
+
+	opt := &gitlab.RotateGroupAccessTokenOptions{
+		ExpiresAt: &expiresAt,
+	}
+
+	token, _, err := tokenClient.GroupAccessTokens.RotateGroupAccessTokenSelf(group, opt, gitlab.WithContext(ctx))
+	if err != nil {
+		return nil, fmt.Errorf("Could not rotate GitLab GroupAccessToken, unexpected error: %v", err)
+	}
+
+	return token, nil
 }
