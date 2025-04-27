@@ -4,9 +4,11 @@
 package provider
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"regexp"
+	"strings"
 	"testing"
 	"time"
 
@@ -383,6 +385,124 @@ func TestAccGitlabProjectAccessToken_rotationUsingDate(t *testing.T) {
 
 						return nil
 					}),
+				),
+			},
+			// Verify upstream resource with an import.
+			{
+				ResourceName:      "gitlab_project_access_token.this",
+				ImportState:       true,
+				ImportStateVerify: true,
+				// The token is only known during creating. We explicitly mention this limitation in the docs.
+				ImportStateVerifyIgnore: []string{"token", "rotation_configuration"},
+			},
+		},
+	})
+}
+
+// This test ensures that the `self_rotate` logic works properly in the `update`
+// function. It does this by checking the logs for the `DEBUG` level log which which
+// is emitted when `self_rotate` is run. Since the use of self_rotate is entirely
+// transparent to the end user, this is the only way to integration test the functionality.
+func TestAccGitlabProjectAccessToken_rotationUsingSelfRotate(t *testing.T) {
+	testutil.RunIfAtLeast(t, "17.9")
+	project := testutil.CreateProject(t)
+
+	// Ensure that the provider is configured to log to a specific location at "DEBUG" level
+	// logs
+	logPath := fmt.Sprintf("/tmp/tf-log%v.log", time.Now())
+	os.Setenv("TF_LOG", "DEBUG")
+	os.Setenv("TF_LOG_PATH", logPath)
+	t.Cleanup(func() {
+		os.Remove(logPath)
+		os.Unsetenv("TF_LOG")
+		os.Unsetenv("TF_LOG_PATH")
+	})
+
+	futureDate := testutil.GetCurrentTimestampPlusDays(t, 10).Format(time.RFC3339)
+	tokenToCheck := ""
+
+	// Not parallel since "os.Setenv" leaks test state otherwise.
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		CheckDestroy:             testAccCheckGitlabProjectAccessTokenDestroy,
+		Steps: []resource.TestStep{
+			// Create a Project Access Token
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_access_token" "this" {
+				  name = "my project token"
+				  project = %d
+				  access_level = "developer"
+				  scopes = ["api", "self_rotate"]
+
+				  // Create a token good for 3 days, that rotates after 1 days
+				  rotation_configuration = {
+					  expiration_days = 3
+					  rotate_before_days = 1
+				  }
+				}
+					`, project.ID),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project_access_token.this", "rotation_configuration.expiration_days", "3"),
+					resource.TestCheckResourceAttrWith("gitlab_project_access_token.this", "token", func(value string) error {
+						// Set the token that we have in state
+						tokenToCheck = value
+						return nil
+					}),
+				),
+			},
+			// Mock the date to ensure that the token properly rotates in the future
+			{
+				PreConfig: func() {
+					os.Setenv("GITLAB_TESTING_TIME", futureDate)
+					t.Cleanup(func() {
+						os.Unsetenv("GITLAB_TESTING_TIME")
+					})
+				},
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_access_token" "this" {
+				  name = "my project token"
+				  project = %d
+				  access_level = "developer"
+				  scopes = ["api", "self_rotate"]
+
+				  // Create a token good for 3 days, that rotates after 1 days
+				  rotation_configuration = {
+					  expiration_days = 3
+					  rotate_before_days = 1
+				  }
+				}
+					`, project.ID),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project_access_token.this", "rotation_configuration.expiration_days", "3"),
+					resource.TestCheckResourceAttrWith("gitlab_project_access_token.this", "token", func(value string) error {
+						// The token shouldn't match what we have from the previous apply. It should have been rotated
+						if value == tokenToCheck {
+							return fmt.Errorf("token did not rotate")
+						}
+
+						return nil
+					}),
+					func(*terraform.State) error {
+						logLineToCheck := "attempting to use the self-rotate method to update the token"
+
+						// Read the log file to check for the self_rotate debug message
+						logFile, err := os.Open(logPath)
+						if err != nil {
+							return fmt.Errorf("failed to read log file: %v", err)
+						}
+						defer logFile.Close()
+
+						// read the file line-by-line to reduce memory usage
+						scanner := bufio.NewScanner(logFile)
+						for scanner.Scan() {
+							if strings.Contains(scanner.Text(), logLineToCheck) {
+								return nil
+							}
+						}
+
+						return fmt.Errorf("Unable to find self rotate log entry %q", logLineToCheck)
+					},
 				),
 			},
 			// Verify upstream resource with an import.

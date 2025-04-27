@@ -122,7 +122,7 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Schema(ctx context.Contex
 				Required: true,
 			},
 			"scopes": schema.SetAttribute{
-				MarkdownDescription: fmt.Sprintf("The scopes of the group service account access token. valid values are: %s", utils.RenderValueListForDocs(api.ValidAccessTokenScopes)),
+				MarkdownDescription: fmt.Sprintf("The scopes of the group service account access token. valid values are: %s", utils.RenderValueListForDocs(api.ValidPersonalAccessTokenScopes)),
 				Required:            true,
 				ElementType:         types.StringType,
 				PlanModifiers: []planmodifier.Set{
@@ -588,15 +588,45 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Update(ctx context.Contex
 		return
 	}
 
-	token, _, err := r.client.Groups.RotateServiceAccountPersonalAccessToken(group, userIDInt, accessTokenIDInt, &gitlab.RotateServiceAccountPersonalAccessTokenOptions{
-		ExpiresAt: &expiresAt,
-	}, gitlab.WithContext(ctx))
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error rotating GitLab GroupServiceAccountAccessToken",
-			fmt.Sprintf("Could not rotate GitLab GroupServiceAccountAccessToken, unexpected error: %v", err),
-		)
-		return
+	// find out whether self_rotate is one of the scopes
+	var selfRotate bool
+	for _, v := range planData.Scopes {
+		s := v.ValueString()
+		if s == "self_rotate" {
+			selfRotate = true
+			break
+		}
+	}
+
+	// update with a service account access token means rotate it
+	var token *gitlab.PersonalAccessToken
+	if selfRotate {
+		tflog.Debug(ctx, "Found `self_rotate` in scopes; attempting to use the self-rotate method to update the token", map[string]interface{}{
+			"group":          group,
+			"user":           userID,
+			"new_expires_at": expiresAt,
+			"scopes":         planData.Scopes,
+		})
+
+		token, err = r.rotateTokenSelf(ctx, stateData.Token.ValueString(), expiresAt)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Error self rotating GitLab Service Account PersonalAccessToken",
+				fmt.Sprintf("Could not self rotate GitLab Service Account PersonalAccessToken, unexpected error: %v", err),
+			)
+			return
+		}
+	} else {
+		token, _, err = r.client.Groups.RotateServiceAccountPersonalAccessToken(group, userIDInt, accessTokenIDInt, &gitlab.RotateServiceAccountPersonalAccessTokenOptions{
+			ExpiresAt: &expiresAt,
+		}, gitlab.WithContext(ctx))
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Error rotating GitLab GroupServiceAccountAccessToken",
+				fmt.Sprintf("Could not rotate GitLab GroupServiceAccountAccessToken, unexpected error: %v", err),
+			)
+			return
+		}
 	}
 
 	r.groupServiceAccountAccessTokenToStateModel(planData, token, planData.Group.ValueString())
@@ -731,4 +761,23 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) determineExpiryDate(data 
 	}
 
 	return nil, nil
+}
+
+// Rotates the token using the token itself. Only works if the token has the `self_rotate` scope.
+func (r *gitlabGroupServiceAccountAccessTokenResource) rotateTokenSelf(ctx context.Context, originalToken string, expiresAt gitlab.ISOTime) (*gitlab.PersonalAccessToken, error) {
+	tokenClient, err := r.newGitLabClient(ctx, WithToken(originalToken), WithEarlyAuth(false))
+	if err != nil {
+		return nil, fmt.Errorf("Could not create a new client with the token that exists in state. The provider's token can't rotate the group service account access token: %v", err)
+	}
+
+	opt := &gitlab.RotatePersonalAccessTokenOptions{
+		ExpiresAt: &expiresAt,
+	}
+
+	token, _, err := tokenClient.PersonalAccessTokens.RotatePersonalAccessTokenSelf(opt, gitlab.WithContext(ctx))
+	if err != nil {
+		return nil, fmt.Errorf("Could not rotate GitLab GroupAccessToken, unexpected error: %v", err)
+	}
+
+	return token, nil
 }

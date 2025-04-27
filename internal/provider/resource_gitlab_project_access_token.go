@@ -46,7 +46,8 @@ func NewGitLabProjectAccessTokenResource() resource.Resource {
 }
 
 type gitlabProjectAccessTokenResource struct {
-	client *gitlab.Client
+	client          *gitlab.Client
+	newGitLabClient GitLabClientFactory
 }
 
 // The base Resource implementation struct
@@ -124,7 +125,7 @@ func (r *gitlabProjectAccessTokenResource) Schema(ctx context.Context, req resou
 				Computed: true,
 			},
 			"scopes": schema.SetAttribute{
-				MarkdownDescription: fmt.Sprintf("The scopes of the project access token. valid values are: %s", utils.RenderValueListForDocs(api.ValidAccessTokenScopes)),
+				MarkdownDescription: fmt.Sprintf("The scopes of the project access token. valid values are: %s", utils.RenderValueListForDocs(api.ValidProjectAccessTokenScopes)),
 				Required:            true,
 				ElementType:         types.StringType,
 				PlanModifiers: []planmodifier.Set{
@@ -133,7 +134,7 @@ func (r *gitlabProjectAccessTokenResource) Schema(ctx context.Context, req resou
 				},
 				Validators: []validator.Set{
 					setvalidator.ValueStringsAre(
-						stringvalidator.OneOfCaseInsensitive(api.ValidAccessTokenScopes...),
+						stringvalidator.OneOfCaseInsensitive(api.ValidProjectAccessTokenScopes...),
 					),
 				},
 			},
@@ -226,6 +227,7 @@ func (r *gitlabProjectAccessTokenResource) Configure(ctx context.Context, req re
 
 	resourceData := req.ProviderData.(*GitLabResourceData)
 	r.client = resourceData.Client
+	r.newGitLabClient = resourceData.NewGitLabClient
 }
 
 func (r *gitlabProjectAccessTokenResource) projectAccessTokenToStateModel(data *gitlabProjectAccessTokenResourceModel, token *gitlab.ProjectAccessToken, project string) diag.Diagnostics {
@@ -553,16 +555,43 @@ func (r *gitlabProjectAccessTokenResource) Update(ctx context.Context, req resou
 		return
 	}
 
+	// find out whether self_rotate is one of the scopes
+	var selfRotate bool
+	for _, v := range data.Scopes {
+		if v.ValueString() == "self_rotate" {
+			selfRotate = true
+			break
+		}
+	}
+
 	// update with a project access token means rotate it
-	token, _, err := r.client.ProjectAccessTokens.RotateProjectAccessToken(project, intPatId, &gitlab.RotateProjectAccessTokenOptions{
-		ExpiresAt: &expiresAt,
-	}, gitlab.WithContext(ctx))
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error rotating GitLab ProjectAccessToken",
-			fmt.Sprintf("Could not rotate GitLab ProjectAccessToken, unexpected error: %v", err),
-		)
-		return
+	var token *gitlab.ProjectAccessToken
+	if selfRotate {
+		tflog.Debug(ctx, "Found `self_rotate` in scopes; attempting to use the self-rotate method to update the token", map[string]interface{}{
+			"project":        project,
+			"new_expires_at": expiresAt,
+			"scopes":         data.Scopes,
+		})
+
+		token, err = r.rotateTokenSelf(ctx, state.Token.ValueString(), expiresAt, project)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Error self rotating GitLab ProjectAccessToken",
+				fmt.Sprintf("Could not self rotate GitLab ProjectAccessToken, unexpected error: %v", err),
+			)
+			return
+		}
+	} else {
+		token, _, err = r.client.ProjectAccessTokens.RotateProjectAccessToken(project, intPatId, &gitlab.RotateProjectAccessTokenOptions{
+			ExpiresAt: &expiresAt,
+		}, gitlab.WithContext(ctx))
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Error rotating GitLab ProjectAccessToken",
+				fmt.Sprintf("Could not rotate GitLab ProjectAccessToken, unexpected error: %v", err),
+			)
+			return
+		}
 	}
 
 	// Updating an access token changes the primary key, so we need to re-set the ID of the resource
@@ -659,4 +688,23 @@ func (r *gitlabProjectAccessTokenResource) determineExpiryDate(data *gitlabProje
 	}
 
 	return nil, nil
+}
+
+// Rotates the token using the token itself. Only works if the token has the `self_rotate` scope.
+func (r *gitlabProjectAccessTokenResource) rotateTokenSelf(ctx context.Context, originalToken string, expiresAt gitlab.ISOTime, project string) (*gitlab.ProjectAccessToken, error) {
+	tokenClient, err := r.newGitLabClient(ctx, WithToken(originalToken), WithEarlyAuth(false))
+	if err != nil {
+		return nil, fmt.Errorf("Could not create a new client with the token that exists in state. The provider's token can't rotate the project access token: %v", err)
+	}
+
+	opt := &gitlab.RotateProjectAccessTokenOptions{
+		ExpiresAt: &expiresAt,
+	}
+
+	token, _, err := tokenClient.ProjectAccessTokens.RotateProjectAccessTokenSelf(project, opt, gitlab.WithContext(ctx))
+	if err != nil {
+		return nil, fmt.Errorf("Could not rotate GitLab ProjectAccessToken, unexpected error: %v", err)
+	}
+
+	return token, nil
 }
