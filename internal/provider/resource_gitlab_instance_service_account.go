@@ -3,15 +3,18 @@ package provider
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strconv"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
@@ -47,6 +50,7 @@ type gitlabInstanceServiceAccountResourceModel struct {
 	ServiceAccountID types.String   `tfsdk:"service_account_id"`
 	Name             types.String   `tfsdk:"name"`
 	Username         types.String   `tfsdk:"username"`
+	Email            types.String   `tfsdk:"email"`
 	Timeouts         timeouts.Value `tfsdk:"timeouts"`
 }
 
@@ -70,13 +74,23 @@ func (r *gitlabInstanceServiceAccountResource) Schema(ctx context.Context, _ res
 			},
 			"name": schema.StringAttribute{
 				Optional:            true,
-				MarkdownDescription: "The name of the user. If not specified, the default Service account user name is used.",
+				MarkdownDescription: "The name of the user. If not set, uses Service account user.",
 				PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace(), stringplanmodifier.UseStateForUnknown()},
 			},
 			"username": schema.StringAttribute{
 				Optional:            true,
-				MarkdownDescription: "The username of the user. If not specified, it’s automatically generated.",
+				MarkdownDescription: "The username of the user account. If not set, generates a name prepended with service_account_.",
 				PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace(), stringplanmodifier.UseStateForUnknown()},
+			},
+			"email": schema.StringAttribute{
+				Optional:            true,
+				Computed:            true,
+				MarkdownDescription: "The email of the user account. If not set, generates a no-reply email address.",
+				PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace(), stringplanmodifier.UseStateForUnknown()},
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+					stringvalidator.RegexMatches(regexp.MustCompile("@"), `Email must contain a "@" character`),
+				},
 			},
 			"timeouts": timeouts.Attributes(ctx, timeouts.Opts{
 				Delete: true,
@@ -107,10 +121,17 @@ func (r *gitlabInstanceServiceAccountResource) Create(ctx context.Context, req r
 	}
 
 	// Create service account
-	serviceAccount, _, err := r.client.Users.CreateServiceAccountUser(&gitlab.CreateServiceAccountUserOptions{
-		Name:     gitlab.Ptr(data.Name.ValueString()),
-		Username: gitlab.Ptr(data.Username.ValueString()),
-	})
+	options := &gitlab.CreateServiceAccountUserOptions{
+		Name:     data.Name.ValueStringPointer(),
+		Username: data.Username.ValueStringPointer(),
+	}
+
+	if !data.Email.IsNull() && !data.Email.IsUnknown() {
+		options.Email = data.Email.ValueStringPointer()
+	}
+
+	serviceAccount, _, err := r.client.Users.CreateServiceAccountUser(options)
+
 	if err != nil {
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to create service account: %s", err.Error()))
 		return
@@ -122,6 +143,7 @@ func (r *gitlabInstanceServiceAccountResource) Create(ctx context.Context, req r
 		"id":       data.ServiceAccountID.ValueString(),
 		"name":     data.Name.ValueString(),
 		"username": data.Username.ValueString(),
+		"email":    data.Email.ValueString(),
 	})
 
 	// Save data into Terraform state
@@ -250,4 +272,5 @@ func (r *gitlabInstanceServiceAccountResourceModel) userToStateModel(serviceAcco
 	r.ServiceAccountID = types.StringValue(serviceAccountIDStr)
 	r.Name = types.StringValue(serviceAccount.Name)
 	r.Username = types.StringValue(serviceAccount.Username)
+	r.Email = types.StringValue(serviceAccount.Email)
 }

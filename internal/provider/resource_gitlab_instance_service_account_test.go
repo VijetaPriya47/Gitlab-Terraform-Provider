@@ -6,12 +6,13 @@ package provider
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
@@ -82,6 +83,87 @@ func TestAcc_GitlabInstanceServiceAccount_EnsureRecreate(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("gitlab_instance_service_account.this", "name", name2),
 				),
+			},
+		},
+	})
+}
+
+func TestAcc_GitlabInstanceServiceAccount_WithEmail(t *testing.T) {
+	testutil.SkipIfCE(t)
+
+	name := acctest.RandString(10)
+	username := acctest.RandString(10)
+	email := fmt.Sprintf("%s@example.com", acctest.RandString(10))
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		CheckDestroy:             testAcc_GitlabInstanceServiceAccount_CheckDestroy(),
+		Steps: []resource.TestStep{
+			// Create a service account with an email.
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_instance_service_account" "this" {
+					name     = "%s"
+					username = "%s"
+					email    = "%s"
+				}
+				`, name, username, email),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_instance_service_account.this", "name", name),
+					resource.TestCheckResourceAttr("gitlab_instance_service_account.this", "username", username),
+					resource.TestCheckResourceAttr("gitlab_instance_service_account.this", "email", email),
+				),
+			},
+			// Verify upstream attributes with an import.
+			{
+				ResourceName:      "gitlab_instance_service_account.this",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAcc_GitlabInstanceServiceAccount_CreateWithoutEmail(t *testing.T) {
+	testutil.SkipIfCE(t)
+
+	name := acctest.RandString(10)
+	username := acctest.RandString(10)
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		CheckDestroy:             testAcc_GitlabInstanceServiceAccount_CheckDestroy(),
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_instance_service_account" "this" {
+					name     = "%s"
+					username = "%s"
+				}
+				`, name, username),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_instance_service_account.this", "name", name),
+					resource.TestCheckResourceAttr("gitlab_instance_service_account.this", "username", username),
+					// Check that email is set and matches the expected pattern for generated emails
+					func(s *terraform.State) error {
+						rs, ok := s.RootModule().Resources["gitlab_instance_service_account.this"]
+						if !ok {
+							return fmt.Errorf("Not found: gitlab_instance_service_account.this")
+						}
+						email := rs.Primary.Attributes["email"]
+						if email == "" {
+							return fmt.Errorf("Expected generated email, got empty string")
+						}
+						// Check for noreply pattern
+						if !strings.Contains(email, "@noreply.") {
+							return fmt.Errorf("Expected generated noreply email, got: %s", email)
+						}
+						return nil
+					},
+				),
+			},
+			{
+				ResourceName:      "gitlab_instance_service_account.this",
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 	})
