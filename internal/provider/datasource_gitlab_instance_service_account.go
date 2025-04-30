@@ -37,6 +37,7 @@ type gitlabInstanceServiceAccountDataSourceModel struct {
 	ServiceAccountID types.String `tfsdk:"service_account_id"`
 	Name             types.String `tfsdk:"name"`
 	Username         types.String `tfsdk:"username"`
+	Email            types.String `tfsdk:"email"`
 }
 
 // Metadata returns the data source type name.
@@ -67,6 +68,10 @@ func (d *gitlabInstanceServiceAccountDataSource) Schema(_ context.Context, _ dat
 			},
 			"username": schema.StringAttribute{
 				MarkdownDescription: "The username of the user.",
+				Computed:            true,
+			},
+			"email": schema.StringAttribute{
+				MarkdownDescription: "The email of the user.",
 				Computed:            true,
 			},
 		},
@@ -112,6 +117,7 @@ func (d *gitlabInstanceServiceAccountDataSource) Read(ctx context.Context, req d
 	state.ServiceAccountID = types.StringValue(serviceAccountIDStr)
 	state.Name = types.StringValue(serviceAccount.Name)
 	state.Username = types.StringValue(serviceAccount.Username)
+	state.Email = types.StringValue(serviceAccount.Email)
 
 	diags := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
