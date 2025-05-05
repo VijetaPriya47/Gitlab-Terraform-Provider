@@ -67,13 +67,6 @@ var _ = registerResource("gitlab_integration_jira", func() *schema.Resource {
 				Computed:     true,
 				ValidateFunc: validateURLFunc,
 			},
-			"project_key": {
-				Description: "The short identifier for your JIRA project. Must be all uppercase. For example, `PROJ`.",
-				Deprecated:  "`project_key` is deprecated. Use `project_keys` instead.",
-				Type:        schema.TypeString,
-				Optional:    true,
-				Default:     "",
-			},
 			"username": {
 				Description: "The email or username to be used with Jira. For Jira Cloud use an email, for Jira Data Center and Jira Server use a username. Required when using Basic authentication (jira_auth_type is 0).",
 				Type:        schema.TypeString,
@@ -155,9 +148,7 @@ func resourceGitlabIntegrationJiraCreate(ctx context.Context, d *schema.Resource
 	project := d.Get("project").(string)
 
 	opts := &gitlab.SetJiraServiceOptions{}
-
-	jiraProjectKey := d.Get("project_key").(string)
-	opts.ProjectKeys = &[]string{jiraProjectKey}
+	opts.ProjectKeys = stringListToStringSlice(d.Get("project_keys").([]any))
 
 	jiraAuthType := gitlab.Ptr(d.Get("jira_auth_type").(int))
 	if *jiraAuthType == 0 {
@@ -228,20 +219,8 @@ func resourceGitlabIntegrationJiraRead(ctx context.Context, d *schema.ResourceDa
 	d.Set("use_inherited_settings", jiraService.Inherited)
 	d.Set("active", jiraService.Active)
 
-	// Match pre-existing behavior of a single key until we support the new multi-key approach.
-	// If we're running before 17.0, we have to use the deprecated ProjectKey (singular)
-	isVersionAtLeast17, err := api.IsGitLabVersionAtLeast(ctx, client, "17.0")()
-	if err != nil {
-		return diag.FromErr(fmt.Errorf("unable to determine version of GitLab. Cannot determine which API property to read from. Error: %v", err))
-	}
-	if isVersionAtLeast17 {
-		if len(jiraService.Properties.ProjectKeys) > 0 {
-			d.Set("project_key", jiraService.Properties.ProjectKeys[0])
-		}
-	} else {
-		// While technically the TF provider seemed to support project_key pre 17, it's not documented in the 16.11
-		// API documentation, and even when passed into the API it returns blank from the read API, so it causes issues.
-		tflog.Debug(ctx, "Skipping setting JIRA Project Key since it isn't supported pre-GitLab 17.0")
+	if err := d.Set("project_keys", jiraService.Properties.ProjectKeys); err != nil {
+		return diag.FromErr(err)
 	}
 
 	return nil

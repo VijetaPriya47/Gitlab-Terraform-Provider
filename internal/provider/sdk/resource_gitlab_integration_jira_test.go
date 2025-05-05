@@ -154,13 +154,13 @@ func TestAcc_GitlabIntegrationJira_projectKey(t *testing.T) {
 			{
 				Config: fmt.Sprintf(
 					`resource "gitlab_integration_jira" "jira" {
-					  project  = "%d"
-					  url      = "https://test.com"
-					  username = "user1"
-					  password = "mypass"
-					  project_key = "TEST"
-					  commit_events = true
-					  merge_requests_events    = false
+					  project               = "%d"
+					  url                   = "https://test.com"
+					  username              = "user1"
+					  password              = "mypass"
+					  project_keys          = ["TEST"]
+					  commit_events         = true
+					  merge_requests_events = false
 					}`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabIntegrationJiraExists("gitlab_integration_jira.jira", &jiraService),
@@ -192,13 +192,13 @@ func TestAcc_GitlabIntegrationJira_authType_basicAuth(t *testing.T) {
 			{
 				Config: fmt.Sprintf(`
 				resource "gitlab_integration_jira" "jira" {
-				  project  = "%d"
-				  url      = "https://test.com"
-					jira_auth_type = 0
-				  username = "user1"
-				  password = "mypass"
-				  commit_events = true
-				  merge_requests_events    = false
+				  project               = "%d"
+				  url                   = "https://test.com"
+				  jira_auth_type        = 0
+				  username              = "user1"
+				  password              = "mypass"
+				  commit_events         = true
+				  merge_requests_events = false
 				}
 				`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
@@ -237,10 +237,10 @@ func TestAcc_GitlabIntegrationJira_authType_tokenAuth(t *testing.T) {
 			{
 				Config: fmt.Sprintf(`
 				resource "gitlab_integration_jira" "jira" {
-				  project  = "%d"
-				  url      = "https://test.com"
-				  jira_auth_type = 1
-				  password = "mypass"
+				  project                = "%d"
+				  url                    = "https://test.com"
+				  jira_auth_type         = 1
+				  password               = "mypass"
                   use_inherited_settings = false
 				}
 				`, project.ID),
