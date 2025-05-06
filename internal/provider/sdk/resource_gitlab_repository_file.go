@@ -119,10 +119,9 @@ var _ = registerResource("gitlab_repository_file", func() *schema.Resource {
 					Optional:    true,
 				},
 				"encoding": {
-					Description:  fmt.Sprintf("The file content encoding. Default value is `base64`. Valid values are: %s.", utils.RenderValueListForDocs(validEncodingValues)),
+					Description:  fmt.Sprintf("The file content encoding. Valid values are: %s.", utils.RenderValueListForDocs(validEncodingValues)),
 					Type:         schema.TypeString,
-					Optional:     true,
-					Default:      "base64", //for backwards compatibility purposes
+					Required:     true,
 					ValidateFunc: validation.StringInSlice(validEncodingValues, false),
 				},
 			},
@@ -149,6 +148,7 @@ func resourceGitlabRepositoryFileCreate(ctx context.Context, d *schema.ResourceD
 		Branch:      gitlab.Ptr(d.Get("branch").(string)),
 		AuthorEmail: gitlab.Ptr(d.Get("author_email").(string)),
 		AuthorName:  gitlab.Ptr(d.Get("author_name").(string)),
+		Encoding:    gitlab.Ptr(d.Get("encoding").(string)),
 		Content:     gitlab.Ptr(content),
 	}
 	if startBranch, ok := d.GetOk("start_branch"); ok {
@@ -161,11 +161,6 @@ func resourceGitlabRepositoryFileCreate(ctx context.Context, d *schema.ResourceD
 		options.CommitMessage = gitlab.Ptr(commitMessage.(string))
 	} else {
 		options.CommitMessage = gitlab.Ptr(d.Get("create_commit_message").(string))
-	}
-
-	// check if the encoding value is provided
-	if encoding, ok := d.GetOk("encoding"); ok {
-		options.Encoding = gitlab.Ptr(encoding.(string))
 	}
 
 	if overwriteOnCreate, ok := d.GetOk("overwrite_on_create"); ok && overwriteOnCreate.(bool) {
@@ -193,12 +188,8 @@ func resourceGitlabRepositoryFileCreate(ctx context.Context, d *schema.ResourceD
 					Branch:      gitlab.Ptr(*options.Branch),
 					AuthorEmail: gitlab.Ptr(d.Get("author_email").(string)),
 					AuthorName:  gitlab.Ptr(d.Get("author_name").(string)),
+					Encoding:    gitlab.Ptr(d.Get("encoding").(string)),
 					Content:     gitlab.Ptr(content),
-				}
-
-				// check if the encoding value is provided
-				if encoding, ok := d.GetOk("encoding"); ok {
-					updateOptions.Encoding = gitlab.Ptr(encoding.(string))
 				}
 
 				if startBranch, ok := d.GetOk("start_branch"); ok {
@@ -225,7 +216,6 @@ func resourceGitlabRepositoryFileCreate(ctx context.Context, d *schema.ResourceD
 			}
 			return nil
 		})
-
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -280,13 +270,10 @@ func resourceGitlabRepositoryFileRead(ctx context.Context, d *schema.ResourceDat
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab_repository_file: comparing content of %s with %s", repositoryFile.Content, configContent))
 
 	// check what our encoding is to determine if we need to decode the content for checking.
-	var configEncoding *string
-	if encoding, ok := d.GetOk("encoding"); ok {
-		configEncoding = gitlab.Ptr(encoding.(string))
-	}
+	configEncoding := d.Get("encoding").(string)
 
 	// If we are storing the value in plaintext, we need to decode the response from the API to store in the config
-	if configEncoding != nil && *configEncoding == "text" {
+	if configEncoding == "text" {
 		if decodedContent, err := base64.StdEncoding.DecodeString(repositoryFile.Content); err == nil {
 			repositoryFile.Content = string(decodedContent)
 			repositoryFile.Encoding = "text"
@@ -327,12 +314,8 @@ func resourceGitlabRepositoryFileUpdate(ctx context.Context, d *schema.ResourceD
 		Branch:      gitlab.Ptr(branch),
 		AuthorEmail: gitlab.Ptr(d.Get("author_email").(string)),
 		AuthorName:  gitlab.Ptr(d.Get("author_name").(string)),
+		Encoding:    gitlab.Ptr(d.Get("encoding").(string)),
 		Content:     gitlab.Ptr(content),
-	}
-
-	// check if the encoding value is provided
-	if encoding, ok := d.GetOk("encoding"); ok {
-		updateOptions.Encoding = gitlab.Ptr(encoding.(string))
 	}
 
 	if startBranch, ok := d.GetOk("start_branch"); ok {

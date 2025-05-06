@@ -33,6 +33,7 @@ func TestAccGitlabRepositoryFile_basic(t *testing.T) {
 						author_email   = "meow@catnip.com"
 						author_name    = "Meow Meowington"
 						commit_message = "feature: add launch codes"
+						encoding       = "base64"
 					}
 				`, testProject.ID),
 				Check: resource.ComposeTestCheckFunc(
@@ -60,6 +61,7 @@ func TestAccGitlabRepositoryFile_basic(t *testing.T) {
 						author_email   = "meow@catnip.com"
 						author_name    = "Meow Meowington"
 						commit_message = "feature: change launch codes"
+						encoding       = "base64"
 					}
 				`, testProject.ID),
 				Check: resource.ComposeTestCheckFunc(
@@ -101,6 +103,7 @@ func TestAccGitlabRepositoryFile_SeparateCreateUpdateCommitMessages(t *testing.T
 				  create_commit_message = "feature: add launch codes"
 				  update_commit_message = "update: updated launch codes"
 				  delete_commit_message = "delete: deleted launch codes"
+				  encoding              = "base64"
 				}
 				`, testProject.ID),
 				Check: resource.ComposeTestCheckFunc(
@@ -131,6 +134,7 @@ func TestAccGitlabRepositoryFile_SeparateCreateUpdateCommitMessages(t *testing.T
 				  create_commit_message = "feature: add launch codes"
 				  update_commit_message = "update: updated launch codes"
 				  delete_commit_message = "delete: deleted launch codes"
+				  encoding              = "base64"
 				}
 				`, testProject.ID),
 				Check: resource.ComposeTestCheckFunc(
@@ -161,6 +165,7 @@ func TestAccGitlabRepositoryFile_SeparateCreateUpdateCommitMessages(t *testing.T
 						create_commit_message = "feature: add launch codes"
 						update_commit_message = "update: updated launch codes"
 						delete_commit_message = "delete: deleted launch codes"
+						encoding              = "base64"
 					}
 				`, testProject.ID),
 				Destroy: true,
@@ -202,6 +207,7 @@ func TestAccGitlabRepositoryFile_EnsureErrorsWithCommitMessage(t *testing.T) {
 				  create_commit_message = "feature: add launch codes"
 				  update_commit_message = "update: updated launch codes"
 				  delete_commit_message = "delete: deleted launch codes"
+				  encoding              = "base64"
 				}
 				`, testProject.ID),
 				ExpectError: err_incompatable_commit_messages,
@@ -217,6 +223,7 @@ func TestAccGitlabRepositoryFile_EnsureErrorsWithCommitMessage(t *testing.T) {
 				  author_name           = "Meow Meowington"
 				  create_commit_message = "feature: add launch codes"
 				  delete_commit_message = "delete: deleted launch codes"
+				  encoding              = "base64"
 				}
 				`, testProject.ID),
 				ExpectError: err_missing_update_commit_message,
@@ -308,6 +315,7 @@ func TestAccGitlabRepositoryFile_overwriteOnCreate(t *testing.T) {
 				  author_name         = "Bark Woofman"
 				  commit_message      = "feature: dog"
 				  overwrite_on_create = true
+				  encoding            = "base64"
 				}
 				`, testProject.ID),
 				Check: resource.ComposeTestCheckFunc(
@@ -347,6 +355,7 @@ func TestAccGitlabRepositoryFile_overwriteOnCreateNewFile(t *testing.T) {
 				  author_name         = "Bark Woofman"
 				  commit_message      = "feature: dog"
 				  overwrite_on_create = true
+				  encoding            = "base64"
 				}
 				`, testProject.ID),
 				Check: resource.ComposeTestCheckFunc(
@@ -387,6 +396,7 @@ func TestAccGitlabRepositoryFile_createSameFileDifferentRepository(t *testing.T)
 						author_email   = "meow@catnip.com"
 						author_name    = "Meow Meowington"
 						commit_message = "feature: add launch codes"
+						encoding       = "base64"
 					}
 
 					resource "gitlab_repository_file" "bar_file" {
@@ -397,6 +407,7 @@ func TestAccGitlabRepositoryFile_createSameFileDifferentRepository(t *testing.T)
 						author_email   = "meow@catnip.com"
 						author_name    = "Meow Meowington"
 						commit_message = "feature: add launch codes"
+						encoding       = "base64"
 					}
 				`, firstTestProject.ID, secondTestProject.ID),
 				Check: resource.ComposeTestCheckFunc(
@@ -433,6 +444,7 @@ func TestAccGitlabRepositoryFile_concurrentResources(t *testing.T) {
 						branch         = "main"
 						content        = base64encode("content-${count.index}")
 						commit_message = "Add file ${count.index}"
+						encoding       = "base64"
 
 						count = 50
 					}
@@ -446,6 +458,7 @@ func TestAccGitlabRepositoryFile_concurrentResources(t *testing.T) {
 						branch         = "main"
 						content        = base64encode("updated-content-${count.index}")
 						commit_message = "Add file ${count.index}"
+						encoding       = "base64"
 
 						count = 50
 					}
@@ -459,6 +472,7 @@ func TestAccGitlabRepositoryFile_concurrentResources(t *testing.T) {
 						branch         = "main"
 						content        = base64encode("updated-content-${count.index}")
 						commit_message = "Add file ${count.index}"
+						encoding       = "base64"
 
 						count = 50
 					}
@@ -488,6 +502,7 @@ func TestAccGitlabRepositoryFile_createOnNewBranch(t *testing.T) {
 						author_email   = "meow@catnip.com"
 						author_name    = "Meow Meowington"
 						commit_message = "feature: add launch codes"
+						encoding       = "base64"
 					}
 				`, testProject.ID),
 				Check: resource.ComposeTestCheckFunc(
@@ -521,6 +536,7 @@ func TestAccGitlabRepositoryFile_validationFuncOnfilePath(t *testing.T) {
 					author_email   = "meow@catnip.com"
 					author_name    = "Meow Meowington"
 					commit_message = "feature: add launch codes"
+					encoding       = "base64"
 				}`, testProject.ID),
 				ExpectError: regexp.MustCompile("`file_path` cannot start with a `/` or `./`. See https://gitlab.com/gitlab-org/gitlab/-/issues/363112 for more information."),
 			},
@@ -534,6 +550,7 @@ func TestAccGitlabRepositoryFile_validationFuncOnfilePath(t *testing.T) {
 					author_email   = "meow@catnip.com"
 					author_name    = "Meow Meowington"
 					commit_message = "feature: add launch codes"
+					encoding       = "base64"
 				}`, testProject.ID),
 				ExpectError: regexp.MustCompile("`file_path` cannot start with a `/` or `./`. See https://gitlab.com/gitlab-org/gitlab/-/issues/363112 for more information."),
 			},
@@ -620,6 +637,7 @@ func TestAccGitlabRepositoryFile_createWithExecuteFilemode(t *testing.T) {
 						author_name      = "Meow Meowington"
 						commit_message   = "feature: change launch codes"
 						execute_filemode = false
+						encoding         = "base64"
 					}
 				`, testProject.ID),
 			},
@@ -641,6 +659,7 @@ func TestAccGitlabRepositoryFile_createWithExecuteFilemode(t *testing.T) {
 						author_name      = "Meow Meowington"
 						commit_message   = "feature: change launch codes"
 						execute_filemode = true
+						encoding         = "base64"
 					}
 				`, testProject.ID),
 			},
