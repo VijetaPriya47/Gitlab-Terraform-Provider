@@ -3,6 +3,7 @@ package sdk
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -1730,19 +1731,80 @@ func resourceGitlabProjectDelete(ctx context.Context, d *schema.ResourceData, me
 	if !d.Get("archive_on_destroy").(bool) {
 		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Delete gitlab project %s", d.Id()))
 
-		var options gitlab.DeleteProjectOptions
-		if d.Get("permanently_delete_on_destroy").(bool) {
-			options = gitlab.DeleteProjectOptions{
-				PermanentlyRemove: gitlab.Ptr(true),
-			}
-			if v, ok := d.GetOk("path_with_namespace"); ok {
-				options.FullPath = gitlab.Ptr(v.(string))
-			}
-		}
-
-		_, err := client.Projects.DeleteProject(d.Id(), &options, gitlab.WithContext(ctx))
+		// The behavior for permanently delete is different in pre and post 18.0, so
+		// a version check is required. See comments in each `if` block for more details.
+		isVersionAtLeast18, err := api.IsGitLabVersionAtLeast(ctx, client, "18.0")()
 		if err != nil {
-			return diag.FromErr(err)
+			return diag.FromErr(errors.Join(errors.New("unable to fetch version of gitlab to determine proper deletion priority"), err))
+		}
+		if isVersionAtLeast18 {
+
+			tflog.Debug(ctx, "[DELETE] Working with gitlab 18.0+ - flagging project for soft delete.", map[string]any{
+				"project_id": d.Id(),
+			})
+
+			// in 18.0+, an initial delete call needs to be made before permanent delete can
+			// be made.
+			_, err := client.Projects.DeleteProject(d.Id(), nil, gitlab.WithContext(ctx))
+			if err != nil {
+				return diag.FromErr(errors.Join(errors.New("error encountered while calling the GitLab API to delete project"), err))
+			}
+
+			// Once the project is marked for deletion, check if permanent delete is required, then
+			// re-retrieve the path (marking it for deletion changes the path), then permanently delete.
+			if d.Get("permanently_delete_on_destroy").(bool) {
+
+				tflog.Debug(ctx, "[DELETE] Working with gitlab 18.0+ - project needs to be hard deleted because `permanently_delete_on_destroy` is set", map[string]any{
+					"project_id": d.Id(),
+				})
+
+				softDeletedProject, _, err := client.Projects.GetProject(d.Id(), nil, gitlab.WithContext(ctx))
+				if err != nil {
+					return diag.FromErr(errors.Join(errors.New("error encountered when reading the soft deleted project to get the new namespace; this is needed to permanently delete a project"), err))
+				}
+				options := gitlab.DeleteProjectOptions{
+					PermanentlyRemove: gitlab.Ptr(true),
+					FullPath:          &softDeletedProject.PathWithNamespace,
+				}
+
+				tflog.Debug(ctx, "[DELETE] permanently_delete_on_destroy is set, calling a second time to permanently delete", map[string]any{})
+				_, err = client.Projects.DeleteProject(d.Id(), &options, gitlab.WithContext(ctx))
+				if err != nil {
+					// Ensure the error clearly states the project is still flagged in case the user wants to stop the deletion.
+					return diag.FromErr(errors.Join(errors.New("error encountered when permanently deleting the project; Project is still flagged for deletion"), err))
+				}
+				tflog.Debug(ctx, "[DELETE] project permanently destroyed successfully", map[string]any{})
+			}
+
+		} else {
+
+			permanentlyDelete := d.Get("permanently_delete_on_destroy").(bool)
+
+			var options gitlab.DeleteProjectOptions
+			tflog.Debug(ctx, "[DELETE] Working with gitlab 17.11 or before; deleting project.", map[string]any{
+				"project_id":         d.Id(),
+				"permanently_delete": permanentlyDelete,
+			})
+
+			// If the permanent delete option is set pre-18.0, the options need to be passed with
+			// the initial delete call, so set them here.
+			if permanentlyDelete {
+				options = gitlab.DeleteProjectOptions{
+					PermanentlyRemove: gitlab.Ptr(true),
+				}
+				if v, ok := d.GetOk("path_with_namespace"); ok {
+					options.FullPath = gitlab.Ptr(v.(string))
+				}
+			}
+
+			_, err := client.Projects.DeleteProject(d.Id(), &options, gitlab.WithContext(ctx))
+			if err != nil {
+				return diag.FromErr(errors.Join(errors.New("error encountered while calling the GitLab API to delete project"), err))
+			}
+			tflog.Debug(ctx, "[DELETE] project deleted successfully. If `permanently_delete` is true, project is permanently destroyed.", map[string]any{
+				"project_id":         d.Id(),
+				"permanently_delete": permanentlyDelete,
+			})
 		}
 
 		// Wait for the project to be deleted.
