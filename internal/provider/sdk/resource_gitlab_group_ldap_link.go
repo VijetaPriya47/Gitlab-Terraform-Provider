@@ -72,7 +72,7 @@ func gitlabGroupLDAPLinkSchema() map[string]*schema.Schema {
 			ForceNew:         true,
 		},
 		"member_role_id": {
-			Description: "The ID of a custom member role. Only available for Ultimate instances. When using a custom role, the `group_access` must match the base role used to create the custom role.",
+			Description: "The ID of a custom member role. Only available for Ultimate instances. When using a custom role, the `group_access` must match the base role used to create the custom role. To remove a custom role and revert to a base role, set this value to `0`.",
 			Type:        schema.TypeInt,
 			Optional:    true,
 			Computed:    true,

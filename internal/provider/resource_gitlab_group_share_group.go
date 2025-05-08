@@ -83,9 +83,8 @@ func (r *gitlabGroupShareGroupResource) Schema(ctx context.Context, req resource
 				PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 			},
 			"member_role_id": schema.Int64Attribute{
-				MarkdownDescription: "The ID of a custom member role. Only available for Ultimate instances.",
+				MarkdownDescription: "The ID of a custom member role. Only available for Ultimate instances. If `member_role_id` is removed from the config, the group share will revert to a base role.",
 				Optional:            true,
-				Computed:            true,
 				PlanModifiers:       []planmodifier.Int64{int64planmodifier.RequiresReplace()},
 			},
 		},

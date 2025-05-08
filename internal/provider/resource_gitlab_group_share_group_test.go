@@ -5,9 +5,11 @@ package provider
 
 import (
 	"fmt"
+
 	// "os"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
@@ -74,21 +76,16 @@ func TestAccGitlabGroupShareGroup_basic(t *testing.T) {
 }
 
 func TestAccGitlabGroupShareGroup_customRoles(t *testing.T) {
-	// Group level custom roles don't work on self managed, so we can't test them without a SaaS project.
-	// See https://gitlab.com/gitlab-org/gitlab/-/issues/439284 for more details
-	t.Skip()
-
 	testutil.SkipIfCE(t)
 	testutil.RunIfAtLeast(t, "17.9")
 
+	rInt := acctest.RandInt()
 	groups := testutil.CreateGroups(t, 2)
 	mainGroup := groups[0]
 	sharedGroup := groups[1]
 
-	// Create a custom role on that group - we don't need to clean this up, since it's bound to the group
-	// which will be deleted when the test finishes.
-	customRole, _, err := testutil.TestGitlabClient.MemberRolesService.CreateMemberRole(mainGroup.ID, &gitlab.CreateMemberRoleOptions{
-		Name:              gitlab.Ptr("test-role"),
+	customRole, _, err := testutil.TestGitlabClient.MemberRolesService.CreateInstanceMemberRole(&gitlab.CreateMemberRoleOptions{
+		Name:              gitlab.Ptr(fmt.Sprintf("test-role-%d", rInt)),
 		BaseAccessLevel:   gitlab.Ptr(gitlab.MaintainerPermissions),
 		ReadVulnerability: gitlab.Ptr(true),
 	})
@@ -115,7 +112,7 @@ func TestAccGitlabGroupShareGroup_customRoles(t *testing.T) {
 					resource.TestCheckResourceAttr("gitlab_group_share_group.test", "id", fmt.Sprintf("%d:%d", mainGroup.ID, sharedGroup.ID)),
 					resource.TestCheckResourceAttr("gitlab_group_share_group.test", "group_id", fmt.Sprintf("%d", mainGroup.ID)),
 					resource.TestCheckResourceAttr("gitlab_group_share_group.test", "share_group_id", fmt.Sprintf("%d", sharedGroup.ID)),
-					resource.TestCheckResourceAttr("gitlab_group_share_group.test", "group_access", "guest"),
+					resource.TestCheckResourceAttr("gitlab_group_share_group.test", "group_access", "maintainer"),
 					resource.TestCheckResourceAttr("gitlab_group_share_group.test", "expires_at", "2099-01-01"),
 					resource.TestCheckResourceAttr("gitlab_group_share_group.test", "member_role_id", fmt.Sprintf("%d", customRole.ID)),
 				),
@@ -125,6 +122,51 @@ func TestAccGitlabGroupShareGroup_customRoles(t *testing.T) {
 				ResourceName:      "gitlab_group_share_group.test",
 				ImportState:       true,
 				ImportStateVerify: true,
+			},
+			// Remove the custom role from the group share and revert to a base role
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_group_share_group" "test" {
+						group_id       = %d
+						share_group_id = %d
+						group_access   = "maintainer"
+						expires_at     = "2099-01-01"
+					}
+				`, mainGroup.ID, sharedGroup.ID),
+				Check: resource.ComposeTestCheckFunc(
+					// read the group share from API and ensure that `member_role_id` is set to null or 0
+					func(s *terraform.State) error {
+						// Get the resource
+						rs, ok := s.RootModule().Resources["gitlab_group_share_group.test"]
+						if !ok {
+							return fmt.Errorf("gitlab_group_share_group.test not found")
+						}
+
+						groupId, sharedGroupId, err := groupIdsFromId(rs.Primary.ID)
+						if err != nil {
+							return fmt.Errorf("[ERROR] cannot get Group ID and ShareGroupId from input: %v", rs.Primary.ID)
+						}
+
+						// Get the group from GitLab API
+						group, _, err := testutil.TestGitlabClient.Groups.GetGroup(groupId, nil)
+						if err != nil {
+							return err
+						}
+
+						// Find the shared group in the SharedWithGroups list
+						for _, sharedGroup := range group.SharedWithGroups {
+							if sharedGroupId == sharedGroup.GroupID {
+								// Verify that member_role_id is 0 (null in API response)
+								if sharedGroup.MemberRoleID != 0 {
+									return fmt.Errorf("Expected member_role_id to be 0, but got %d", sharedGroup.MemberRoleID)
+								}
+								return nil
+							}
+						}
+
+						return fmt.Errorf("Could not find shared group %d in group %s", sharedGroupId, groupId)
+					},
+				),
 			},
 		},
 	})
