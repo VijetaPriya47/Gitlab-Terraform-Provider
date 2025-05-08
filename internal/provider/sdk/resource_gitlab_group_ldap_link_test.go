@@ -230,6 +230,29 @@ func TestAccGitlabGroupLdapLink_customRole(t *testing.T) {
 					"force",
 				},
 			},
+			// Remove the custom role to revert to a base role.
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group_ldap_link" "foo" {
+					group 	      = "%d"
+					member_role_id = 0
+
+					// needs to match maintainer permissions in the role
+					group_access  = "maintainer" 
+					ldap_provider = "default"
+					filter        = "(&(objectClass=person)(objectClass=user))"
+				}`, group.ID),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testAccCheckGitlabGroupLdapLinkExists("gitlab_group_ldap_link.foo", &ldapLink),
+					// check that member_role_id has been removed from the API object returned from GitLab.
+					func(s *terraform.State) error {
+						if ldapLink.MemberRoleID != 0 {
+							return fmt.Errorf("expected member_role_id to be removed, but got %d", ldapLink.MemberRoleID)
+						}
+						return nil
+					},
+				),
+			},
 		},
 	})
 }

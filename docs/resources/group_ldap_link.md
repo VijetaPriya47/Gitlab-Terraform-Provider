@@ -38,7 +38,7 @@ resource "gitlab_group_ldap_link" "test" {
 - `cn` (String) The CN of the LDAP group to link with. Required if `filter` is not provided.
 - `filter` (String) The LDAP filter for the group. Required if `cn` is not provided. Requires GitLab Premium or above.
 - `force` (Boolean) If true, then delete and replace an existing LDAP link if one exists. Will also remove an LDAP link if the parent group is not found.
-- `member_role_id` (Number) The ID of a custom member role. Only available for Ultimate instances. When using a custom role, the `group_access` must match the base role used to create the custom role.
+- `member_role_id` (Number) The ID of a custom member role. Only available for Ultimate instances. When using a custom role, the `group_access` must match the base role used to create the custom role. To remove a custom role and revert to a base role, set this value to `0`.
 
 ### Read-Only
 
