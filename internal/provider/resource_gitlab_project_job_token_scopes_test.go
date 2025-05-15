@@ -166,6 +166,8 @@ func TestAcc_GitlabProjectJobTokenScopes_basic(t *testing.T) {
 }
 
 func TestAcc_GitlabProjectJobTokenScopes_destroyRestoresEnabledFlagToTrue(t *testing.T) {
+	testutil.RunIfLessThan(t, "18.0")
+
 	// Set up project environment.
 	project := testutil.CreateProject(t)
 
