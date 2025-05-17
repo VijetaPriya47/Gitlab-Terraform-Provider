@@ -328,7 +328,6 @@ func TestAccGitlabGroupAccessToken_rotationUsingDate(t *testing.T) {
 // is emitted when `self_rotate` is run. Since the use of self_rotate is entirely
 // transparent to the end user, this is the only way to integration test the functionality.
 func TestAccGitlabGroupAccessToken_rotationUsingSelfRotate(t *testing.T) {
-	testutil.RunIfAtLeast(t, "17.9")
 	group := testutil.CreateGroups(t, 1)[0]
 
 	// Ensure that the provider is configured to log to a specific location at "DEBUG" level
@@ -403,7 +402,6 @@ func TestAccGitlabGroupAccessToken_rotationUsingSelfRotate(t *testing.T) {
 					resource.TestCheckResourceAttr("gitlab_group_access_token.this", "rotation_configuration.expiration_days", "3"),
 					// Check that self-rotate was used
 					func(*terraform.State) error {
-
 						logLineToCheck := "attempting to use the self-rotate method to update the token"
 
 						// Read the log file to check for the self_rotate debug message

@@ -77,7 +77,6 @@ func TestAccGitlabGroupShareGroup_basic(t *testing.T) {
 
 func TestAccGitlabGroupShareGroup_customRoles(t *testing.T) {
 	testutil.SkipIfCE(t)
-	testutil.RunIfAtLeast(t, "17.9")
 
 	rInt := acctest.RandInt()
 	groups := testutil.CreateGroups(t, 2)

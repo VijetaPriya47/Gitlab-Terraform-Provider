@@ -5,7 +5,6 @@ package provider
 
 import (
 	"bufio"
-	"context"
 	"fmt"
 	"os"
 	"regexp"
@@ -111,7 +110,6 @@ func TestAccGitlabGroupServiceAccountAccessToken_basic(t *testing.T) {
 
 func TestAccGitlabGroupServiceAccountAccessToken_rotationConfigurationWithExpiration(t *testing.T) {
 	testutil.SkipIfCE(t)
-	testutil.RunIfAtLeast(t, "17.9")
 
 	group := testutil.CreateGroups(t, 1)[0]
 	groupID := strconv.Itoa(group.ID)
@@ -207,51 +205,6 @@ func TestAccGitlabGroupServiceAccountAccessToken_rotationConfigurationWithExpira
 	})
 }
 
-func TestAccGitlabGroupServiceAccountAccessToken_rotationConfigurationWithoutExpiration(t *testing.T) {
-	testutil.SkipIfCE(t)
-	testutil.RunIfLessThan(t, "17.9")
-
-	group := testutil.CreateGroups(t, 1)[0]
-	groupID := strconv.Itoa(group.ID)
-
-	serviceAccount := testutil.CreateGroupServiceAccounts(t, 1, groupID)[0]
-
-	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		CheckDestroy:             testAccCheckGitlabGroupServiceAccountAccessTokenDestroy,
-		Steps: []resource.TestStep{
-			// Create a basic access token.
-			{
-				Config: fmt.Sprintf(`
-				resource "gitlab_group_service_account_access_token" "this" {
-					name = "sa token"
-					group = %s
-					user_id = %d
-					scopes = ["api"]
-
-					// Create a token good for 7 days, that rotates after 1 day
-					rotation_configuration = {
-						rotate_before_days = 1
-					}
-				}
-				`, groupID, serviceAccount.ID),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("gitlab_group_service_account_access_token.this", "active", "true"),
-					resource.TestCheckResourceAttr("gitlab_group_service_account_access_token.this", "expires_at", testutil.GetCurrentTimePlusDays(t, 7).String()),
-				),
-			},
-			// Verify upstream resource with an import.
-			{
-				ResourceName:      "gitlab_group_service_account_access_token.this",
-				ImportState:       true,
-				ImportStateVerify: true,
-				// The token is only known during creating. We explicitly mention this limitation in the docs.
-				ImportStateVerifyIgnore: []string{"token", "rotation_configuration"},
-			},
-		},
-	})
-}
-
 func TestAccGitlabGroupServiceAccountAccessToken_attributeValidation(t *testing.T) {
 	testutil.SkipIfCE(t)
 
@@ -333,25 +286,6 @@ func TestAccGitlabGroupServiceAccountAccessToken_attributeValidation(t *testing.
 				`, groupID, serviceAccount.ID),
 				ExpectError: regexp.MustCompile("Attribute rotation_configuration.rotate_before_days value must be at least 1"),
 			},
-			// Validate you can't use `expiration_days` before 17.9
-			{
-				SkipFunc: api.IsGitLabVersionAtLeast(context.Background(), testutil.TestGitlabClient, "17.9"),
-				Config: fmt.Sprintf(`
-				resource "gitlab_group_service_account_access_token" "this" {
-					group = %s 
-					user_id  = %d
-					name     = "foo"
-					scopes   = ["api"]
-
-					rotation_configuration = {
-						expiration_days = 10
-						rotate_before_days = 1
-					}
-
-				}
-				`, groupID, serviceAccount.ID),
-				ExpectError: regexp.MustCompile("Cannot use `expiration_days` with GitLab version < 17.9"),
-			},
 		},
 	})
 }
@@ -362,7 +296,6 @@ func TestAccGitlabGroupServiceAccountAccessToken_attributeValidation(t *testing.
 // `api.CurrentTime()`, which the resource uses instead of time.Now()
 func TestAccGitlabGroupServiceAccountAccessToken_rotationUsingDate(t *testing.T) {
 	testutil.SkipIfCE(t)
-	testutil.RunIfAtLeast(t, "17.9")
 
 	group := testutil.CreateGroups(t, 1)[0]
 	groupID := strconv.Itoa(group.ID)
@@ -454,7 +387,6 @@ func TestAccGitlabGroupServiceAccountAccessToken_rotationUsingDate(t *testing.T)
 // transparent to the end user, this is the only way to integration test the functionality.
 func TestAccGitlabGroupServiceAccountAccessToken_rotationUsingSelfRotate(t *testing.T) {
 	testutil.SkipIfCE(t)
-	testutil.RunIfAtLeast(t, "17.9")
 
 	group := testutil.CreateGroups(t, 1)[0]
 	groupID := strconv.Itoa(group.ID)

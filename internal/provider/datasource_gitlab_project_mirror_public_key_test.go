@@ -15,8 +15,6 @@ import (
 )
 
 func TestAccDataGitlabProjectMirrorPublicKey_SSH(t *testing.T) {
-	testutil.RunIfAtLeast(t, "17.9")
-
 	// Create a project and configure the SSH mirror
 	project := testutil.CreateProject(t)
 	projectMirror := testutil.CreateProjectMirrorWithOptions(t, project, &gitlab.AddProjectMirrorOptions{
@@ -24,7 +22,7 @@ func TestAccDataGitlabProjectMirrorPublicKey_SSH(t *testing.T) {
 		AuthMethod: gitlab.Ptr("ssh_public_key"),
 	})
 
-	//lintignore:AT001 // Data sources don't need check destroy in their tests
+	// lintignore:AT001 // Data sources don't need check destroy in their tests
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		Steps: []resource.TestStep{
@@ -45,8 +43,6 @@ func TestAccDataGitlabProjectMirrorPublicKey_SSH(t *testing.T) {
 }
 
 func TestAccDataGitlabProjectMirrorPublicKey_ErrorWithHTTP(t *testing.T) {
-	testutil.RunIfAtLeast(t, "17.9")
-
 	// Create a project and configure the HTTP mirror
 	project := testutil.CreateProject(t)
 	projectMirror := testutil.CreateProjectMirrorWithOptions(t, project, &gitlab.AddProjectMirrorOptions{
@@ -54,7 +50,7 @@ func TestAccDataGitlabProjectMirrorPublicKey_ErrorWithHTTP(t *testing.T) {
 		AuthMethod: gitlab.Ptr("password"),
 	})
 
-	//lintignore:AT001 // Data sources don't need check destroy in their tests
+	// lintignore:AT001 // Data sources don't need check destroy in their tests
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		Steps: []resource.TestStep{
