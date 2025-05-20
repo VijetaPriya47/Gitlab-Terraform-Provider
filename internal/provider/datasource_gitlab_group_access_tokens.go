@@ -113,10 +113,9 @@ func (d *gitlabGroupAccessTokensDataSource) Read(ctx context.Context, req dataso
 	}
 
 	group := state.Group.ValueString()
-	options := &gitlab.ListGroupAccessTokensOptions{
-		Page:    1,
-		PerPage: 20,
-	}
+	options := &gitlab.ListGroupAccessTokensOptions{}
+	options.Page = 1
+	options.PerPage = 20
 
 	var accessTokens []*gitlab.GroupAccessToken
 	for options.Page != 0 {
