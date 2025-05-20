@@ -55,7 +55,6 @@ func TestAcc_GitlabIntegrationJira_basic(t *testing.T) {
 				ImportStateVerifyIgnore: []string{
 					"password",
 					"jira_issue_transition_automatic",
-					"comment_on_event_enabled", // ignored due to a bug in GitLab 17.9
 				},
 			},
 			// Update the jira service
@@ -97,7 +96,6 @@ func TestAcc_GitlabIntegrationJira_basic(t *testing.T) {
 				ImportStateVerifyIgnore: []string{
 					"password",
 					"jira_issue_transition_automatic",
-					"comment_on_event_enabled", // ignored due to a bug in GitLab 17.9
 				},
 			},
 			// Update the jira service to get back to previous settings
@@ -135,7 +133,6 @@ func TestAcc_GitlabIntegrationJira_basic(t *testing.T) {
 				ImportStateVerifyIgnore: []string{
 					"password",
 					"jira_issue_transition_automatic",
-					"comment_on_event_enabled", // ignored due to a bug in GitLab 17.9
 				},
 			},
 		},
@@ -173,7 +170,6 @@ func TestAcc_GitlabIntegrationJira_projectKey(t *testing.T) {
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{
 					"password",
-					"comment_on_event_enabled", // ignored due to a bug in GitLab 17.9
 				},
 			},
 		},
@@ -218,7 +214,6 @@ func TestAcc_GitlabIntegrationJira_authType_basicAuth(t *testing.T) {
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{
 					"password",
-					"comment_on_event_enabled", // ignored due to a bug in GitLab 17.9
 				},
 			},
 		},
@@ -259,7 +254,6 @@ func TestAcc_GitlabIntegrationJira_authType_tokenAuth(t *testing.T) {
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{
 					"password",
-					"comment_on_event_enabled", // ignored due to a bug in GitLab 17.9
 				},
 			},
 		},

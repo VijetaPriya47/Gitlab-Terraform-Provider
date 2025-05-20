@@ -404,7 +404,6 @@ func TestAccGitlabProjectAccessToken_rotationUsingDate(t *testing.T) {
 // is emitted when `self_rotate` is run. Since the use of self_rotate is entirely
 // transparent to the end user, this is the only way to integration test the functionality.
 func TestAccGitlabProjectAccessToken_rotationUsingSelfRotate(t *testing.T) {
-	testutil.RunIfAtLeast(t, "17.9")
 	project := testutil.CreateProject(t)
 
 	// Ensure that the provider is configured to log to a specific location at "DEBUG" level
