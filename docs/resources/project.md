@@ -147,6 +147,7 @@ resource "gitlab_project" "import_private" {
 - `autoclose_referenced_issues` (Boolean) Set whether auto-closing referenced issues on default branch.
 - `avatar` (String) A local path to the avatar image to upload. **Note**: not available for imported resources.
 - `avatar_hash` (String) The hash of the avatar image. Use `filesha256("path/to/avatar.png")` whenever possible. **Note**: this is used to trigger an update of the avatar. If it's not given, but an avatar is given, the avatar will be updated each time.
+- `branches` (String) Branches to fork (empty for all branches).
 - `build_git_strategy` (String) The Git strategy. Defaults to fetch. Valid values are `clone`, `fetch`.
 - `build_timeout` (Number) The maximum amount of time, in seconds, that a job can run.
 - `builds_access_level` (String) Set the builds access level. Valid values are `disabled`, `private`, `enabled`.
