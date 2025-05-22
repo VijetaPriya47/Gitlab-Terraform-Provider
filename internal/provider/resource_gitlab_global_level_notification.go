@@ -80,6 +80,9 @@ func (d *gitlabGlobalLevelNotificationsResource) Schema(_ context.Context, _ res
 			"id": schema.StringAttribute{
 				Computed:            true,
 				MarkdownDescription: "The ID of the resource.This is a static value named gitlab",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"level": schema.StringAttribute{
 				MarkdownDescription: fmt.Sprintf("The level of the notification. Valid values are: %s.", utils.RenderValueListForDocs(allowedNotificationLevels)),
@@ -210,7 +213,7 @@ func (d *gitlabGlobalLevelNotificationsResource) ImportState(ctx context.Context
 }
 
 func (d *gitlabGlobalLevelNotificationsResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var data gitlabGlobalLevelNotificationsModel
+	var data *gitlabGlobalLevelNotificationsModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -234,7 +237,7 @@ func (d *gitlabGlobalLevelNotificationsResource) Create(ctx context.Context, req
 }
 
 func (d *gitlabGlobalLevelNotificationsResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var data gitlabGlobalLevelNotificationsModel
+	var data *gitlabGlobalLevelNotificationsModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -263,7 +266,7 @@ func (d *gitlabGlobalLevelNotificationsResource) Read(ctx context.Context, req r
 }
 
 func (d *gitlabGlobalLevelNotificationsResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var data gitlabGlobalLevelNotificationsModel
+	var data *gitlabGlobalLevelNotificationsModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -391,7 +394,7 @@ func (d *gitlabGlobalLevelNotificationsModel) globalNotificationModelToState(id 
 
 // Both update and create essentially do the same thing; there is no resource to create in GitLab,
 // we just update the global notification settings either way.
-func (d *gitlabGlobalLevelNotificationsResource) updateGlobalNotifications(ctx context.Context, data gitlabGlobalLevelNotificationsModel) (*gitlab.NotificationSettings, error) {
+func (d *gitlabGlobalLevelNotificationsResource) updateGlobalNotifications(ctx context.Context, data *gitlabGlobalLevelNotificationsModel) (*gitlab.NotificationSettings, error) {
 
 	opts := &gitlab.NotificationSettingsOptions{}
 	if !data.Level.IsNull() {
