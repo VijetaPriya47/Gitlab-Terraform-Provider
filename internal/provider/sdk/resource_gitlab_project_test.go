@@ -2925,6 +2925,56 @@ func TestAccGitlabProject_ForkProjectAndConfigurePullMirror(t *testing.T) {
 	})
 }
 
+func TestAccGitlabProject_forkWithSpecificBranch(t *testing.T) {
+	// Create project to fork
+	testProjectToFork := testutil.CreateProject(t)
+	testBranchToFork := testutil.CreateBranches(t, testProjectToFork, 3)[0].Name
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabProjectDestroy,
+		Steps: []resource.TestStep{
+			// Create a new `gitlab_project` resource by forking an existing project and configuring the pull mirror
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project" "test" {
+					  name                   = "Fork"
+						path                   = "forked-%[1]d"
+						description            = "Fork with specific branches"
+						forked_from_project_id = %[1]d
+						branches               = "%[2]s"
+				  }
+				`, testProjectToFork.ID, testBranchToFork),
+				// Verify single branch
+				Check: func(s *terraform.State) error {
+					rs, ok := s.RootModule().Resources["gitlab_project.test"]
+					if !ok {
+						return fmt.Errorf("Resource Not Found")
+					}
+
+					branches, _, err := testutil.TestGitlabClient.Branches.ListBranches(rs.Primary.ID, nil)
+					if err != nil && !api.Is404(err) {
+						return err
+					}
+
+					if len(branches) != 1 || branches[0].Name != testBranchToFork {
+						return fmt.Errorf("expected exactly one branch '%s', found %d branches %v", testBranchToFork, len(branches), branches)
+					}
+
+					return nil
+				},
+			},
+			// Verify import
+			{
+				ResourceName:            "gitlab_project.test",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"branches"},
+			},
+		},
+	})
+}
+
 func TestAccGitlabProject_SetBuildsAccessLevel(t *testing.T) {
 	var received gitlab.Project
 	rInt := acctest.RandInt()

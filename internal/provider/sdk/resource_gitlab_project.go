@@ -720,6 +720,11 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 		Optional:      true,
 		ConflictsWith: []string{"initialize_with_readme"},
 	},
+	"branches": {
+		Description: "Branches to fork (empty for all branches).",
+		Type:        schema.TypeString,
+		Optional:    true,
+	},
 	"mr_default_target_self": {
 		Description:  "For forked projects, target merge requests to this project. If false, the target will be the upstream project.",
 		Type:         schema.TypeBool,
@@ -2508,6 +2513,9 @@ func createForkedProject(ctx context.Context, forkedFromProjectID int, d *schema
 	}
 	if v, ok := d.GetOk("visibility_level"); ok {
 		options.Visibility = stringToVisibilityLevel(v.(string))
+	}
+	if v, ok := d.GetOk("branches"); ok {
+		options.Branches = gitlab.Ptr(v.(string))
 	}
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
