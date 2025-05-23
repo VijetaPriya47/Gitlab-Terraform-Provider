@@ -7,7 +7,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
-	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
 
@@ -2260,7 +2259,7 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 	}
 }
 
-func gitlabApplicationSettingsToStateMap(settings *api.Settings) map[string]any {
+func gitlabApplicationSettingsToStateMap(settings *gitlab.Settings) map[string]any {
 	stateMap := make(map[string]any)
 	stateMap["admin_mode"] = settings.AdminMode
 	stateMap["abuse_notification_email"] = settings.AbuseNotificationEmail
@@ -2275,7 +2274,7 @@ func gitlabApplicationSettingsToStateMap(settings *api.Settings) map[string]any 
 	stateMap["allow_project_creation_for_guest_and_below"] = settings.AllowProjectCreationForGuestAndBelow
 	stateMap["allow_runner_registration_token"] = settings.AllowRunnerRegistrationToken
 	stateMap["archive_builds_in_human_readable"] = settings.ArchiveBuildsInHumanReadable
-	stateMap["asciidoc_max_includes"] = settings.AsciidocMaxIncludes
+	stateMap["asciidoc_max_includes"] = settings.ASCIIDocMaxIncludes
 	stateMap["asset_proxy_enabled"] = settings.AssetProxyEnabled
 	stateMap["asset_proxy_secret_key"] = settings.AssetProxySecretKey
 	stateMap["asset_proxy_url"] = settings.AssetProxyURL
@@ -2294,7 +2293,7 @@ func gitlabApplicationSettingsToStateMap(settings *api.Settings) map[string]any 
 	stateMap["commit_email_hostname"] = settings.CommitEmailHostname
 	stateMap["concurrent_bitbucket_import_jobs_limit"] = settings.ConcurrentBitbucketImportJobsLimit
 	stateMap["concurrent_bitbucket_server_import_jobs_limit"] = settings.ConcurrentBitbucketServerImportJobsLimit
-	stateMap["concurrent_github_import_jobs_limit"] = settings.ConcurrentGithubImportJobsLimit
+	stateMap["concurrent_github_import_jobs_limit"] = settings.ConcurrentGitHubImportJobsLimit
 	stateMap["container_expiration_policies_enable_historic_entries"] = settings.ContainerExpirationPoliciesEnableHistoricEntries
 	stateMap["container_registry_cleanup_tags_service_max_list_size"] = settings.ContainerRegistryCleanupTagsServiceMaxListSize
 	stateMap["container_registry_delete_tags_service_timeout"] = settings.ContainerRegistryDeleteTagsServiceTimeout
@@ -2307,6 +2306,7 @@ func gitlabApplicationSettingsToStateMap(settings *api.Settings) map[string]any 
 	stateMap["decompress_archive_file_timeout"] = settings.DecompressArchiveFileTimeout
 	stateMap["default_artifacts_expire_in"] = settings.DefaultArtifactsExpireIn
 	stateMap["default_branch_name"] = settings.DefaultBranchName
+	// nolint:staticcheck // SA1019 ignore deprecated DefaultBranchProtection
 	stateMap["default_branch_protection"] = settings.DefaultBranchProtection
 	stateMap["default_ci_config_path"] = settings.DefaultCiConfigPath
 	stateMap["default_group_visibility"] = settings.DefaultGroupVisibility
@@ -2324,7 +2324,7 @@ func gitlabApplicationSettingsToStateMap(settings *api.Settings) map[string]any 
 	stateMap["diff_max_patch_bytes"] = settings.DiffMaxPatchBytes
 	stateMap["diff_max_files"] = settings.DiffMaxFiles
 	stateMap["diff_max_lines"] = settings.DiffMaxLines
-	stateMap["disable_admin_oauth_scopes"] = settings.DisableAdminOauthScopes
+	stateMap["disable_admin_oauth_scopes"] = settings.DisableAdminOAuthScopes
 	stateMap["disable_feed_token"] = settings.DisableFeedToken
 	stateMap["disable_personal_access_tokens"] = settings.DisablePersonalAccessTokens
 	stateMap["disabled_oauth_sign_in_sources"] = settings.DisabledOauthSignInSources
@@ -2395,7 +2395,7 @@ func gitlabApplicationSettingsToStateMap(settings *api.Settings) map[string]any 
 	stateMap["gitlab_shell_operation_limit"] = settings.GitlabShellOperationLimit
 	stateMap["gitpod_enabled"] = settings.GitpodEnabled
 	stateMap["gitpod_url"] = settings.GitpodURL
-	stateMap["globally_allowed_ips"] = settings.GloballyAllowedIps
+	stateMap["globally_allowed_ips"] = settings.GloballyAllowedIPs
 	stateMap["grafana_enabled"] = settings.GrafanaEnabled
 	stateMap["grafana_url"] = settings.GrafanaURL
 	stateMap["gravatar_enabled"] = settings.GravatarEnabled
@@ -2450,7 +2450,7 @@ func gitlabApplicationSettingsToStateMap(settings *api.Settings) map[string]any 
 	stateMap["npm_package_requests_forwarding"] = settings.NPMPackageRequestsForwarding
 	stateMap["nuget_skip_metadata_url_validation"] = settings.NugetSkipMetadataURLValidation
 	stateMap["outbound_local_requests_whitelist"] = settings.OutboundLocalRequestsWhitelist
-	stateMap["package_metadata_purl_types"] = settings.PackageMetadataPurlTypes
+	stateMap["package_metadata_purl_types"] = settings.PackageMetadataPURLTypes
 	stateMap["package_registry_allow_anyone_to_pull_option"] = settings.PackageRegistryAllowAnyoneToPullOption
 	stateMap["pages_domain_verification_enabled"] = settings.PagesDomainVerificationEnabled
 	stateMap["password_authentication_enabled_for_git"] = settings.PasswordAuthenticationEnabledForGit
@@ -2575,7 +2575,7 @@ func gitlabApplicationSettingsToStateMap(settings *api.Settings) map[string]any 
 }
 
 // Flattens the default branch protection into a statement for easier storage.
-func flattenDefaultBranchProtectionDefaults(input api.DefaultBranchProtectionDefaultsStruct) (values []map[string]any) {
+func flattenDefaultBranchProtectionDefaults(input *gitlab.BranchProtectionDefaults) (values []map[string]any) {
 	v := map[string]any{}
 	v["allow_force_push"] = input.AllowForcePush
 	v["developer_can_initial_push"] = input.DeveloperCanInitialPush

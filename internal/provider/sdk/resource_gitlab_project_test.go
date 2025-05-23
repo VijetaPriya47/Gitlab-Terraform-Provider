@@ -2180,17 +2180,18 @@ func TestAccGitlabProject_InstanceBranchProtectionDisabled(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				PreConfig: func() {
-					settings, _, err := api.GetSettings(testutil.TestGitlabClient)
+					settings, _, err := testutil.TestGitlabClient.Settings.GetSettings()
 					if err != nil {
 						t.Fatalf("failed to get settings: %v", err)
 					}
 					t.Cleanup(func() {
-						if _, _, err := api.UpdateSettings(testutil.TestGitlabClient, &gitlab.UpdateSettingsOptions{DefaultBranchProtection: gitlab.Ptr(settings.DefaultBranchProtection)}); err != nil {
+						// nolint:staticcheck // SA1019 ignore deprecated DefaultBranchProtection
+						if _, _, err := testutil.TestGitlabClient.Settings.UpdateSettings(&gitlab.UpdateSettingsOptions{DefaultBranchProtection: gitlab.Ptr(settings.DefaultBranchProtection)}); err != nil {
 							t.Fatalf("failed to update instance-wide default branch protection setting to default: %v", err)
 						}
 					})
 
-					if _, _, err := api.UpdateSettings(testutil.TestGitlabClient, &gitlab.UpdateSettingsOptions{DefaultBranchProtection: gitlab.Ptr(0)}); err != nil {
+					if _, _, err := testutil.TestGitlabClient.Settings.UpdateSettings(&gitlab.UpdateSettingsOptions{DefaultBranchProtection: gitlab.Ptr(0)}); err != nil {
 						t.Fatalf("failed to update instance-wide default branch protection setting: %v", err)
 					}
 				},
@@ -3521,11 +3522,11 @@ func testAccCheckAggregateGitlabProject(expected, received *gitlab.Project) reso
 				}
 			}
 
-			if err := resourceGitlabProjectSetToState(context.Background(), testutil.TestGitlabClient, expectedData, expected); err != nil {
+			if err := resourceGitlabProjectSetToState(expectedData, expected); err != nil {
 				return err
 			}
 
-			if err := resourceGitlabProjectSetToState(context.Background(), testutil.TestGitlabClient, receivedData, received); err != nil {
+			if err := resourceGitlabProjectSetToState(receivedData, received); err != nil {
 				return err
 			}
 

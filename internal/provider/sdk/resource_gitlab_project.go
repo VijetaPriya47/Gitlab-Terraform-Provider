@@ -898,7 +898,7 @@ This attribute is only used during resource creation, thus changes are suppresse
 	}
 })
 
-func resourceGitlabProjectSetToState(ctx context.Context, client *gitlab.Client, d *schema.ResourceData, project *gitlab.Project) error {
+func resourceGitlabProjectSetToState(d *schema.ResourceData, project *gitlab.Project) error {
 	d.SetId(fmt.Sprintf("%d", project.ID))
 	d.Set("name", project.Name)
 	d.Set("path", project.Path)
@@ -1215,7 +1215,7 @@ func resourceGitlabProjectRead(ctx context.Context, d *schema.ResourceData, meta
 		return nil
 	}
 
-	if err := resourceGitlabProjectSetToState(ctx, client, d, project); err != nil {
+	if err := resourceGitlabProjectSetToState(d, project); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -2104,11 +2104,12 @@ func expectDefaultBranchProtection(ctx context.Context, client *gitlab.Client, p
 
 	if isAdmin {
 		// If the project is not part of a group it may have default branch protection disabled because of the instance-wide application settings
-		settings, _, err := api.GetSettings(client, gitlab.WithContext(ctx))
+		settings, _, err := client.Settings.GetSettings(gitlab.WithContext(ctx))
 		if err != nil {
 			return false, err
 		}
 
+		// nolint:staticcheck // SA1019 ignore deprecated DefaultBranchProtection
 		return settings.DefaultBranchProtection != 0, nil
 	}
 
