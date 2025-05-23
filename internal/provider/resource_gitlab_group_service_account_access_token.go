@@ -17,6 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -30,9 +31,10 @@ import (
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ resource.Resource                = &gitlabGroupServiceAccountAccessTokenResource{}
-	_ resource.ResourceWithConfigure   = &gitlabGroupServiceAccountAccessTokenResource{}
-	_ resource.ResourceWithImportState = &gitlabGroupServiceAccountAccessTokenResource{}
+	_ resource.Resource                   = &gitlabGroupServiceAccountAccessTokenResource{}
+	_ resource.ResourceWithConfigure      = &gitlabGroupServiceAccountAccessTokenResource{}
+	_ resource.ResourceWithImportState    = &gitlabGroupServiceAccountAccessTokenResource{}
+	_ resource.ResourceWithValidateConfig = &gitlabGroupServiceAccountAccessTokenResource{}
 )
 
 func init() {
@@ -122,7 +124,7 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Schema(ctx context.Contex
 				Required: true,
 			},
 			"scopes": schema.SetAttribute{
-				MarkdownDescription: fmt.Sprintf("The scopes of the group service account access token. valid values are: %s", utils.RenderValueListForDocs(api.ValidPersonalAccessTokenScopes)),
+				MarkdownDescription: fmt.Sprintf("The scopes of the group service account access token. Valid values are: %s. If `self_rotate` is included, you must also provide either `expires_at` or `rotation_configuration`.", utils.RenderValueListForDocs(api.ValidPersonalAccessTokenScopes)),
 				Required:            true,
 				ElementType:         types.StringType,
 				PlanModifiers: []planmodifier.Set{
@@ -142,7 +144,7 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Schema(ctx context.Contex
 					stringplanmodifier.UseStateForUnknown(),
 				},
 				Validators: []validator.String{
-					stringvalidator.ExactlyOneOf(path.MatchRoot("rotation_configuration")),
+					stringvalidator.ConflictsWith(path.MatchRoot("rotation_configuration")),
 				},
 				Optional: true,
 				Computed: true,
@@ -167,8 +169,11 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Schema(ctx context.Contex
 			"rotation_configuration": schema.SingleNestedAttribute{
 				MarkdownDescription: "The configuration for when to rotate a token automatically. Will not rotate a token until `terraform apply` is run.",
 				Optional:            true,
+				PlanModifiers: []planmodifier.Object{
+					objectplanmodifier.RequiresReplace(),
+				},
 				Validators: []validator.Object{
-					objectvalidator.ExactlyOneOf(path.MatchRoot("expires_at")),
+					objectvalidator.ConflictsWith(path.MatchRoot("expires_at")),
 				},
 
 				// Rotation attributes
@@ -212,6 +217,34 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Configure(ctx context.Con
 	r.newGitLabClient = rd.NewGitLabClient
 }
 
+// ValidateConfig checks for if they have included self_rotate in the scopes, but no
+// expires_at or rotation_configuration.
+func (r *gitlabGroupServiceAccountAccessTokenResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	var data gitlabGroupServiceAccountAccessTokenResourceModel
+	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+
+	if !data.ExpiresAt.IsNull() || data.RotationConfiguration != nil {
+		// Token will expire and therefore can be rotated.
+		return
+	}
+
+	// find out whether self_rotate is one of the scopes
+	var selfRotate bool
+	for _, v := range data.Scopes {
+		s := v.ValueString()
+		if s == "self_rotate" {
+			selfRotate = true
+			break
+		}
+	}
+
+	if selfRotate {
+		resp.Diagnostics.AddAttributeError(path.Root("scopes"),
+			`Invalid token scopes`,
+			`The token scopes include "self_rotate" but "expires_at" and "rotation_configuration" have not been set. Therefore the token will never expire and cannot be rotated.`)
+	}
+}
+
 func (r *gitlabGroupServiceAccountAccessTokenResource) groupServiceAccountAccessTokenToStateModel(data *gitlabGroupServiceAccountAccessTokenResourceModel, token *gitlab.PersonalAccessToken, group string) diag.Diagnostics {
 	data.ID = types.StringValue(fmt.Sprintf("%s:%d:%d", group, token.UserID, token.ID))
 	data.Group = types.StringValue(group)
@@ -229,6 +262,10 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) groupServiceAccountAccess
 	}
 	if token.ExpiresAt != nil {
 		data.ExpiresAt = types.StringValue(token.ExpiresAt.String())
+	} else {
+		// This explicit null is required when token expiration is allowed to be null
+		// which can happen in self-hosted instances
+		data.ExpiresAt = types.StringNull()
 	}
 
 	// parse Scopes into []types.String
@@ -250,8 +287,9 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) ImportState(ctx context.C
 // resource, by checking the date that's set in the `expires_at` field is less than the `rotate_before_days`
 // value.
 func (r *gitlabGroupServiceAccountAccessTokenResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
-	var planData, stateData *gitlabGroupServiceAccountAccessTokenResourceModel
+	var planData, stateData, configData *gitlabGroupServiceAccountAccessTokenResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &planData)...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &configData)...)
 	resp.Diagnostics.Append(req.State.Get(ctx, &stateData)...)
 
 	if planData == nil {
@@ -275,9 +313,17 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) ModifyPlan(ctx context.Co
 	// Check to determine if we need to rotate the expiry date
 	shouldSetExpiration := false
 
-	// If expiration (or ANY state) has never been set yet (we're in a "Create" plan), ensure we calculate and set the first time.
-	// This should also run if the expiration date has changed between plan and state, to ensure the ID is set to unknown.
-	if stateData == nil || stateData.ExpiresAt.IsNull() || stateData.ExpiresAt.IsUnknown() || stateData.ExpiresAt != planData.ExpiresAt {
+	if configData.ExpiresAt.IsNull() && planData.RotationConfiguration == nil && stateData != nil && !stateData.ExpiresAt.IsNull() {
+		// The token already exists, but we want no expiry on it anymore, so need to set the expiry to null
+		shouldSetExpiration = true
+
+		tflog.Debug(ctx, "[ServiceAccountAccessToken] Plan says to remove expiry as expires_at and rotation_configuration are not set.", map[string]any{
+			"is_state_nil": stateData == nil,
+			"expires_at":   stateData.ExpiresAt.String(),
+		})
+	} else if stateData == nil || stateData.ExpiresAt.IsNull() || stateData.ExpiresAt.IsUnknown() || stateData.ExpiresAt != planData.ExpiresAt {
+		// If expiration (or ANY state) has never been set yet (we're in a "Create" plan), ensure we calculate and set the first time.
+		// This should also run if the expiration date has changed between plan and state, to ensure the ID is set to unknown.
 		// Log some information for debugging later.
 		expiresAt := ""
 		if stateData != nil {
@@ -293,7 +339,6 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) ModifyPlan(ctx context.Co
 
 		// Otherwise, execute the logic if rotation configuration is present
 	} else if stateData.RotationConfiguration != nil {
-
 		// We're in an "Update" plan that already has expiration set, calculate if we need to rotate
 		rotateBefore := stateData.ExpiresAt.ValueString()
 		rotateBeforeTime, err := time.Parse(api.Iso8601, rotateBefore)
@@ -336,9 +381,14 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) ModifyPlan(ctx context.Co
 		// If the newly calculated expiryDate is different than what's in state, modify the plan
 		// This check is required to prevent the ID being unknown on every apply with rotation_configuration even
 		// if the calculated date is exactly the same as it currently is
-		if stateData != nil && expiryDate != nil && expiryDate.String() != stateData.ExpiresAt.ValueString() {
+		if stateData != nil && ((expiryDate != nil && expiryDate.String() != stateData.ExpiresAt.ValueString()) || (expiryDate == nil && !stateData.ExpiresAt.IsNull())) {
 			// Set the new expiration date in the plan
-			planData.ExpiresAt = types.StringValue(expiryDate.String())
+			if expiryDate == nil {
+				planData.ExpiresAt = types.StringNull()
+			} else {
+				planData.ExpiresAt = types.StringValue(expiryDate.String())
+			}
+			// We need to re-create the token on apply because the expiration date has changed
 			// Set several attributes to unknown since they will change as part of rotation
 			planData.ID = types.StringUnknown()
 			planData.Token = types.StringUnknown()
@@ -346,7 +396,7 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) ModifyPlan(ctx context.Co
 
 			// Logs for assisting with support
 			tflog.Debug(ctx, "[ServiceAccountAccessToken] Rotation is required, settings plan data", map[string]any{
-				"new_expires_at": expiryDate.String(),
+				"new_expires_at": planData.ExpiresAt,
 				"expires_at":     stateData.ExpiresAt.ValueString(),
 				"group":          planData.Group.ValueString(),
 				"name":           planData.Name.ValueString(),
@@ -393,7 +443,11 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) modifyPlanRevoked(ctx con
 	}
 
 	// Set the planned values
-	planData.ExpiresAt = types.StringValue(expiryDate.String())
+	if expiryDate == nil {
+		planData.ExpiresAt = types.StringNull()
+	} else {
+		planData.ExpiresAt = types.StringValue(expiryDate.String())
+	}
 	planData.Revoked = types.BoolValue(false) // Expect the new token to be not revoked
 
 	resp.Diagnostics.Append(resp.Plan.Set(ctx, planData)...)
@@ -523,7 +577,9 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Create(ctx context.Contex
 		)
 		return
 	}
-	options.ExpiresAt = expiryDate
+	if expiryDate != nil {
+		options.ExpiresAt = expiryDate
+	}
 
 	token, _, err := r.client.Groups.CreateServiceAccountPersonalAccessToken(data.Group.ValueString(), int(data.UserID.ValueInt64()), options, gitlab.WithContext(ctx))
 	if err != nil {
@@ -726,10 +782,15 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Delete(ctx context.Contex
 	}
 }
 
-// Takes in a resource model, and checks with the `expiry_date` or the `rotation_configuration` to determine what
-// value should be set into the `expiry_date` field for the options.
-// Returns a gitlab.ISOTime object of what should be set into the `expiry_date` field.
+// Takes in a resource model, and checks with the `expires_at` or the `rotation_configuration` to determine what
+// value should be set into the `expires_at` field for the options.
+// Returns a gitlab.ISOTime object of what should be set into the `expires_at` field.
 func (r *gitlabGroupServiceAccountAccessTokenResource) determineExpiryDate(data *gitlabGroupServiceAccountAccessTokenResourceModel) (*gitlab.ISOTime, error) {
+	// If the plan doesn't have either of these, we don't want an expiry
+	if data.ExpiresAt.IsNull() && data.RotationConfiguration == nil {
+		return nil, nil
+	}
+
 	// If `expires_at` is set, then attempt to parse the time, and return the isoTime value if it
 	// successfully parses
 	if !data.ExpiresAt.IsNull() && !data.ExpiresAt.IsUnknown() && data.RotationConfiguration == nil {
