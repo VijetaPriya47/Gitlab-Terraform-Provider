@@ -10,7 +10,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
-	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 )
 
 const applicationSettingsID = "gitlab"
@@ -60,7 +59,7 @@ func resourceGitlabApplicationSettingsSet(ctx context.Context, d *schema.Resourc
 	}
 
 	if (gitlab.UpdateSettingsOptions{}) != *options {
-		_, _, err := api.UpdateSettings(client, options, gitlab.WithContext(ctx))
+		_, _, err := client.Settings.UpdateSettings(options, gitlab.WithContext(ctx))
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -77,7 +76,7 @@ func resourceGitlabApplicationSettingsRead(ctx context.Context, d *schema.Resour
 
 	client := meta.(*gitlab.Client)
 	tflog.Debug(ctx, "[DEBUG] read GitLab Application settings")
-	settings, _, err := api.GetSettings(client, gitlab.WithContext(ctx))
+	settings, _, err := client.Settings.GetSettings(gitlab.WithContext(ctx))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -100,7 +99,7 @@ func updateNilGitAccessSetting(client *gitlab.Client) error {
 	options := &gitlab.UpdateSettingsOptions{}
 
 	// Call with an overwritten http body.
-	_, _, err := api.UpdateSettings(client, options, func(request *retryablehttp.Request) error {
+	_, _, err := client.Settings.UpdateSettings(options, func(request *retryablehttp.Request) error {
 		optionsStruct := struct {
 			EnabledGitAccessProtocol *string `url:"enabled_git_access_protocol" json:"enabled_git_access_protocol"`
 		}{
