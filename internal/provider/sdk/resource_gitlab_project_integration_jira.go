@@ -13,15 +13,28 @@ import (
 )
 
 var _ = registerResource("gitlab_integration_jira", func() *schema.Resource {
+	return getProjectIntegrationJiraResourceSchema(`The ` + "`gitlab_integration_jira`" + ` resource manages the lifecycle of a project integration with Jira.
+
+~> This resource is deprecated and will be removed in 19.0. Use ` + "`gitlab_project_integration_jira`" + `instead!
+
+
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#jira-issues)`)
+})
+
+var _ = registerResource("gitlab_project_integration_jira", func() *schema.Resource {
+	return getProjectIntegrationJiraResourceSchema(`The ` + "`gitlab_project_integration_jira`" + ` resource manages the lifecycle of a project integration with Jira.
+
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#jira-issues)`)
+})
+
+func getProjectIntegrationJiraResourceSchema(description string) *schema.Resource {
 	return &schema.Resource{
-		Description: `The ` + "`gitlab_integration_jira`" + ` resource allows to manage the lifecycle of a project integration with Jira.
+		Description: description,
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#jira-issues)`,
-
-		CreateContext: resourceGitlabIntegrationJiraCreate,
-		ReadContext:   resourceGitlabIntegrationJiraRead,
-		UpdateContext: resourceGitlabIntegrationJiraUpdate,
-		DeleteContext: resourceGitlabIntegrationJiraDelete,
+		CreateContext: resourceGitlabProjectIntegrationJiraCreate,
+		ReadContext:   resourceGitlabProjectIntegrationJiraRead,
+		UpdateContext: resourceGitlabProjectIntegrationJiraUpdate,
+		DeleteContext: resourceGitlabProjectIntegrationJiraDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -140,9 +153,9 @@ var _ = registerResource("gitlab_integration_jira", func() *schema.Resource {
 			},
 		},
 	}
-})
+}
 
-func resourceGitlabIntegrationJiraCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+func resourceGitlabProjectIntegrationJiraCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	project := d.Get("project").(string)
@@ -178,10 +191,10 @@ func resourceGitlabIntegrationJiraCreate(ctx context.Context, d *schema.Resource
 
 	d.SetId(project)
 
-	return resourceGitlabIntegrationJiraRead(ctx, d, meta)
+	return resourceGitlabProjectIntegrationJiraRead(ctx, d, meta)
 }
 
-func resourceGitlabIntegrationJiraRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+func resourceGitlabProjectIntegrationJiraRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Id()
 
@@ -226,11 +239,11 @@ func resourceGitlabIntegrationJiraRead(ctx context.Context, d *schema.ResourceDa
 	return nil
 }
 
-func resourceGitlabIntegrationJiraUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
-	return resourceGitlabIntegrationJiraCreate(ctx, d, meta)
+func resourceGitlabProjectIntegrationJiraUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	return resourceGitlabProjectIntegrationJiraCreate(ctx, d, meta)
 }
 
-func resourceGitlabIntegrationJiraDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+func resourceGitlabProjectIntegrationJiraDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	project := d.Get("project").(string)
