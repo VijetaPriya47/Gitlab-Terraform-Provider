@@ -22,20 +22,32 @@ import (
 )
 
 var (
-	_ resource.Resource                = &gitlabIntegrationTelegramResource{}
-	_ resource.ResourceWithConfigure   = &gitlabIntegrationTelegramResource{}
-	_ resource.ResourceWithImportState = &gitlabIntegrationTelegramResource{}
+	_ resource.Resource                = &gitlabProjectIntegrationTelegramResource{}
+	_ resource.ResourceWithConfigure   = &gitlabProjectIntegrationTelegramResource{}
+	_ resource.ResourceWithImportState = &gitlabProjectIntegrationTelegramResource{}
 )
 
 func init() {
+	registerResource(NewGitlabProjectIntegrationTelegramResource)
+
+	// Remove in 19.0
 	registerResource(NewGitlabIntegrationTelegramResource)
 }
 
-func NewGitlabIntegrationTelegramResource() resource.Resource {
-	return &gitlabIntegrationTelegramResource{}
+func NewGitlabProjectIntegrationTelegramResource() resource.Resource {
+	return &gitlabProjectIntegrationTelegramResource{
+		ResourceName: "_project_integration_telegram",
+	}
 }
 
-type gitlabIntegrationTelegramResourceModel struct {
+func NewGitlabIntegrationTelegramResource() resource.Resource {
+	return &gitlabProjectIntegrationTelegramResource{
+		ResourceName:       "_integration_telegram",
+		DeprecationMessage: "This resource is deprecated and will be removed in 19.0. Use `gitlab_project_integration_telegram` instead.",
+	}
+}
+
+type gitlabProjectIntegrationTelegramResourceModel struct {
 	Id                        types.String `tfsdk:"id"`
 	Project                   types.String `tfsdk:"project"`
 	Token                     types.String `tfsdk:"token"`
@@ -53,7 +65,7 @@ type gitlabIntegrationTelegramResourceModel struct {
 	WikiPageEvents            types.Bool   `tfsdk:"wiki_page_events"`
 }
 
-func (r *gitlabIntegrationTelegramResourceModel) TelegramServiceToStateModel(service *gitlab.TelegramService, projectId string) {
+func (r *gitlabProjectIntegrationTelegramResourceModel) TelegramServiceToStateModel(service *gitlab.TelegramService, projectId string) {
 	r.Id = types.StringValue(projectId)
 	r.Project = types.StringValue(projectId)
 	r.Room = types.StringValue(service.Properties.Room)
@@ -70,20 +82,26 @@ func (r *gitlabIntegrationTelegramResourceModel) TelegramServiceToStateModel(ser
 	r.WikiPageEvents = types.BoolValue(service.WikiPageEvents)
 }
 
-type gitlabIntegrationTelegramResource struct {
+type gitlabProjectIntegrationTelegramResource struct {
 	client *gitlab.Client
+
+	// Represents the name of the resource, since this resource uses both `gitlab_project_integration_telegram`
+	// and `gitlab_integration_telegram` for backwards compatibility reasons. Should be removed in 19.0.
+	ResourceName       string
+	DeprecationMessage string
 }
 
-func (r *gitlabIntegrationTelegramResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_integration_telegram"
+func (r *gitlabProjectIntegrationTelegramResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + r.ResourceName
 }
 
-func (r *gitlabIntegrationTelegramResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *gitlabProjectIntegrationTelegramResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `The ` + "`gitlab_integration_telegram`" + ` resource allows to manage the lifecycle of a project integration with Telegram.
+		MarkdownDescription: `The ` + "`" + fmt.Sprintf(`gitlab%s`, r.ResourceName) + "`" + ` resource manages the lifecycle of a project integration with Telegram.
 
 **Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#telegram)`,
 
+		DeprecationMessage: r.DeprecationMessage,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:            true,
@@ -159,7 +177,7 @@ func (r *gitlabIntegrationTelegramResource) Schema(_ context.Context, _ resource
 	}
 }
 
-func (r *gitlabIntegrationTelegramResource) Configure(_ context.Context, req resource.ConfigureRequest, _ *resource.ConfigureResponse) {
+func (r *gitlabProjectIntegrationTelegramResource) Configure(_ context.Context, req resource.ConfigureRequest, _ *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -168,15 +186,15 @@ func (r *gitlabIntegrationTelegramResource) Configure(_ context.Context, req res
 	r.client = resourceData.Client
 }
 
-func (r *gitlabIntegrationTelegramResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (r *gitlabProjectIntegrationTelegramResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	err := r.update(ctx, &req.Plan, &resp.State, &resp.Diagnostics)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to create telegram integration", err.Error())
 	}
 }
 
-func (r *gitlabIntegrationTelegramResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var data gitlabIntegrationTelegramResourceModel
+func (r *gitlabProjectIntegrationTelegramResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var data gitlabProjectIntegrationTelegramResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -201,15 +219,15 @@ func (r *gitlabIntegrationTelegramResource) Read(ctx context.Context, req resour
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *gitlabIntegrationTelegramResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r *gitlabProjectIntegrationTelegramResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	err := r.update(ctx, &req.Plan, &resp.State, &resp.Diagnostics)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to update telegram integration", err.Error())
 	}
 }
 
-func (r *gitlabIntegrationTelegramResource) update(ctx context.Context, plan *tfsdk.Plan, state *tfsdk.State, diags *diag.Diagnostics) error {
-	var data gitlabIntegrationTelegramResourceModel
+func (r *gitlabProjectIntegrationTelegramResource) update(ctx context.Context, plan *tfsdk.Plan, state *tfsdk.State, diags *diag.Diagnostics) error {
+	var data gitlabProjectIntegrationTelegramResourceModel
 	diags.Append(plan.Get(ctx, &data)...)
 	if diags.HasError() {
 		return nil
@@ -248,8 +266,8 @@ func (r *gitlabIntegrationTelegramResource) update(ctx context.Context, plan *tf
 	return nil
 }
 
-func (r *gitlabIntegrationTelegramResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var data gitlabIntegrationTelegramResourceModel
+func (r *gitlabProjectIntegrationTelegramResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var data gitlabProjectIntegrationTelegramResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -269,6 +287,6 @@ func (r *gitlabIntegrationTelegramResource) Delete(ctx context.Context, req reso
 	}
 }
 
-func (r *gitlabIntegrationTelegramResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *gitlabProjectIntegrationTelegramResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
