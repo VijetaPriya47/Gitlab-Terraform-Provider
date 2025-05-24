@@ -19,24 +19,42 @@ import (
 )
 
 var (
-	_ resource.Resource              = &gitlabIntegrationHarborResource{}
-	_ resource.ResourceWithConfigure = &gitlabIntegrationHarborResource{}
-	// _ resource.ResourceWithImportState = &gitlabIntegrationHarborResource{}
+	_ resource.Resource              = &gitlabProjectIntegrationHarborResource{}
+	_ resource.ResourceWithConfigure = &gitlabProjectIntegrationHarborResource{}
+	// _ resource.ResourceWithImportState = &gitlabProjectIntegrationHarborResource{}
 )
 
 func init() {
+	registerResource(NewGitLabProjectIntegrationHarborResource)
+
+	// Remove in 19.0
 	registerResource(NewGitLabIntegrationHarborResource)
 }
 
+func NewGitLabProjectIntegrationHarborResource() resource.Resource {
+	return &gitlabProjectIntegrationHarborResource{
+		ResourceName: "_project_integration_harbor",
+	}
+}
+
+// Remove in 19.0
 func NewGitLabIntegrationHarborResource() resource.Resource {
-	return &gitlabIntegrationHarborResource{}
+	return &gitlabProjectIntegrationHarborResource{
+		ResourceName:       "_integration_harbor",
+		DeprecationMessage: "This resource is deprecated and will be removed in 19.0. Use `gitlab_project_integration_harbor` instead.",
+	}
 }
 
-type gitlabIntegrationHarborResource struct {
+type gitlabProjectIntegrationHarborResource struct {
 	client *gitlab.Client
+
+	// Represents the name of the resource, since this resource uses both `gitlab_project_integration_harbor`
+	// and `gitlab_integration_harbor` for backwards compatibility reasons. Should be removed in %19.0
+	ResourceName       string
+	DeprecationMessage string
 }
 
-type gitlabIntegrationHarborResourceModel struct {
+type gitlabProjectIntegrationHarborResourceModel struct {
 	ID                   types.String `tfsdk:"id"`
 	Project              types.String `tfsdk:"project"`
 	URL                  types.String `tfsdk:"url"`
@@ -47,15 +65,16 @@ type gitlabIntegrationHarborResourceModel struct {
 	Active               types.Bool   `tfsdk:"active"`
 }
 
-func (r *gitlabIntegrationHarborResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_integration_harbor"
+func (r *gitlabProjectIntegrationHarborResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + r.ResourceName
 }
 
-func (r *gitlabIntegrationHarborResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *gitlabProjectIntegrationHarborResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `The ` + "`gitlab_integration_harbor`" + ` resource allows to manage the lifecycle of a project integration with Harbor.
+		MarkdownDescription: `The ` + "`" + fmt.Sprintf(`gitlab%s`, r.ResourceName) + "`" + ` resource manages the lifecycle of a project integration with Harbor.
 
 **Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#harbor)`,
+		DeprecationMessage: r.DeprecationMessage,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:            true,
@@ -102,7 +121,7 @@ func (r *gitlabIntegrationHarborResource) Schema(_ context.Context, _ resource.S
 	}
 }
 
-func (r *gitlabIntegrationHarborResource) Configure(_ context.Context, req resource.ConfigureRequest, _ *resource.ConfigureResponse) {
+func (r *gitlabProjectIntegrationHarborResource) Configure(_ context.Context, req resource.ConfigureRequest, _ *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -111,8 +130,8 @@ func (r *gitlabIntegrationHarborResource) Configure(_ context.Context, req resou
 	r.client = resourceData.Client
 }
 
-func (r *gitlabIntegrationHarborResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var data gitlabIntegrationHarborResourceModel
+func (r *gitlabProjectIntegrationHarborResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var data gitlabProjectIntegrationHarborResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -132,8 +151,8 @@ func (r *gitlabIntegrationHarborResource) Create(ctx context.Context, req resour
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *gitlabIntegrationHarborResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var data gitlabIntegrationHarborResourceModel
+func (r *gitlabProjectIntegrationHarborResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var data gitlabProjectIntegrationHarborResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -151,8 +170,8 @@ func (r *gitlabIntegrationHarborResource) Read(ctx context.Context, req resource
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *gitlabIntegrationHarborResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var data gitlabIntegrationHarborResourceModel
+func (r *gitlabProjectIntegrationHarborResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var data gitlabProjectIntegrationHarborResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -172,8 +191,8 @@ func (r *gitlabIntegrationHarborResource) Update(ctx context.Context, req resour
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *gitlabIntegrationHarborResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var data gitlabIntegrationHarborResourceModel
+func (r *gitlabProjectIntegrationHarborResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var data gitlabProjectIntegrationHarborResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -189,14 +208,14 @@ func (r *gitlabIntegrationHarborResource) Delete(ctx context.Context, req resour
 	}
 }
 
-func (r *gitlabIntegrationHarborResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *gitlabProjectIntegrationHarborResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
 // updateIntegration performs the API call and update the `data` object with the results
 // of the API call. The calling function should ensure that `state.Set` is called on the data
 // object to set the values into state.
-func (r *gitlabIntegrationHarborResource) updateIntegration(ctx context.Context, data *gitlabIntegrationHarborResourceModel) error {
+func (r *gitlabProjectIntegrationHarborResource) updateIntegration(ctx context.Context, data *gitlabProjectIntegrationHarborResourceModel) error {
 	options := &gitlab.SetHarborServiceOptions{
 		URL:                  data.URL.ValueStringPointer(),
 		ProjectName:          data.ProjectName.ValueStringPointer(),
@@ -214,7 +233,7 @@ func (r *gitlabIntegrationHarborResource) updateIntegration(ctx context.Context,
 	return nil
 }
 
-func (d *gitlabIntegrationHarborResourceModel) modelToStateModel(r *gitlab.HarborService, projectID string) {
+func (d *gitlabProjectIntegrationHarborResourceModel) modelToStateModel(r *gitlab.HarborService, projectID string) {
 	d.ID = types.StringValue(projectID)
 	d.Project = types.StringValue(projectID)
 	d.URL = types.StringValue(r.Properties.URL)
