@@ -14,12 +14,53 @@ import (
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
-func TestAccGitlabIntegrationRedmine_basic(t *testing.T) {
+func TestAccGitlabProjectIntegrationRedmine_basic(t *testing.T) {
 	testProject := testutil.CreateProject(t)
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		CheckDestroy:             testAccCheckGitlabIntegrationRedmineDestroy(testProject.ID),
+		CheckDestroy:             testAccCheckGitlabProjectIntegrationRedmineDestroy(testProject.ID),
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_integration_redmine" "this" {
+						project      	= "%d"
+						new_issue_url  	= "https://redmine.example.com/projects/gitlab-ci/issues/new"
+						project_url 	= "https://redmine.example.com/projects/gitlab-ci"
+						issues_url  	= "https://redmine.example.com/issues/:id"
+					}
+				`, testProject.ID),
+			},
+			{
+				ResourceName:      "gitlab_project_integration_redmine.this",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_integration_redmine" "this" {
+						project      = "%d"
+						new_issue_url  	= "https://redmine.example.com/projects/gitlab-ci/issues/new"
+						project_url 	= "https://redmine.example.com/projects/gitlab-ci-new"
+						issues_url  	= "https://redmine.example.com/issues/:id"
+					}
+				`, testProject.ID),
+			},
+			{
+				ResourceName:      "gitlab_project_integration_redmine.this",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccGitlabProjectIntegrationRedmine_basic_deprecated(t *testing.T) {
+	testProject := testutil.CreateProject(t)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabProjectIntegrationRedmineDestroy(testProject.ID),
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
@@ -55,7 +96,7 @@ func TestAccGitlabIntegrationRedmine_basic(t *testing.T) {
 	})
 }
 
-func TestAccGitlabIntegrationRedmine_validation(t *testing.T) {
+func TestAccGitlabProjectIntegrationRedmine_validation(t *testing.T) {
 	testProject := testutil.CreateProject(t)
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -63,7 +104,7 @@ func TestAccGitlabIntegrationRedmine_validation(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
-					resource "gitlab_integration_redmine" "this" {
+					resource "gitlab_project_integration_redmine" "this" {
 						project      	= "%d"
 						new_issue_url  	= "oh no! not an url"
 						project_url 	= "https://redmine.example.com/projects/gitlab-ci"
@@ -75,7 +116,7 @@ func TestAccGitlabIntegrationRedmine_validation(t *testing.T) {
 			},
 			{
 				Config: fmt.Sprintf(`
-					resource "gitlab_integration_redmine" "this" {
+					resource "gitlab_project_integration_redmine" "this" {
 						project      	= "%d"
 						new_issue_url  	= "https://redmine.example.com/projects/gitlab-ci/issues/new"
 						project_url 	= "oh no! not an url"
@@ -87,7 +128,7 @@ func TestAccGitlabIntegrationRedmine_validation(t *testing.T) {
 			},
 			{
 				Config: fmt.Sprintf(`
-					resource "gitlab_integration_redmine" "this" {
+					resource "gitlab_project_integration_redmine" "this" {
 						project      	= "%d"
 						new_issue_url  	= "https://redmine.example.com/projects/gitlab-ci/issues/new"
 						project_url 	= "https://redmine.example.com/projects/gitlab-ci"
@@ -99,7 +140,7 @@ func TestAccGitlabIntegrationRedmine_validation(t *testing.T) {
 			},
 			{
 				Config: fmt.Sprintf(`
-					resource "gitlab_integration_redmine" "this" {
+					resource "gitlab_project_integration_redmine" "this" {
 						project      	= "%d"
 						new_issue_url  	= "https://redmine.example.com/projects/gitlab-ci/issues/new"
 						project_url 	= "https://redmine.example.com/projects/gitlab-ci"
@@ -113,7 +154,7 @@ func TestAccGitlabIntegrationRedmine_validation(t *testing.T) {
 	})
 }
 
-func testAccCheckGitlabIntegrationRedmineDestroy(projectId int) resource.TestCheckFunc {
+func testAccCheckGitlabProjectIntegrationRedmineDestroy(projectId int) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		service, _, err := testutil.TestGitlabClient.Services.GetRedmineService(projectId)
 		if err != nil {
