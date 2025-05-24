@@ -14,12 +14,57 @@ import (
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
-func TestAccGitlabIntegrationHarbor_basic(t *testing.T) {
+func TestAccGitlabProjectIntegrationHarbor_basic(t *testing.T) {
 	testProject := testutil.CreateProject(t)
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		CheckDestroy:             testAccCheckGitlabIntegrationHarborDestroy(testProject.ID),
+		CheckDestroy:             testAccCheckGitlabProjectIntegrationHarborDestroy(testProject.ID),
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_integration_harbor" "this" {
+						project      = "%d"
+						url          = "http://harbor.example.com"
+						username     = "my_username"
+						password     = "my_password"
+						project_name = "my_project_name"
+					}
+				`, testProject.ID),
+			},
+			{
+				ResourceName:            "gitlab_project_integration_harbor.this",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"password"},
+			},
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_integration_harbor" "this" {
+						project      = "%d"
+						url          = "http://harbor.example.com"
+						username     = "my_username_new"
+						password     = "my_password_new"
+						project_name = "my_project_name_new"	
+					}
+				`, testProject.ID),
+			},
+			{
+				ResourceName:            "gitlab_project_integration_harbor.this",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"password"},
+			},
+		},
+	})
+}
+
+func TestAccGitlabProjectIntegrationHarbor_basic_deprecated(t *testing.T) {
+	testProject := testutil.CreateProject(t)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabProjectIntegrationHarborDestroy(testProject.ID),
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
@@ -59,7 +104,7 @@ func TestAccGitlabIntegrationHarbor_basic(t *testing.T) {
 	})
 }
 
-func TestAccGitlabIntegrationHarbor_validation(t *testing.T) {
+func TestAccGitlabProjectIntegrationHarbor_validation(t *testing.T) {
 	testProject := testutil.CreateProject(t)
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -67,7 +112,7 @@ func TestAccGitlabIntegrationHarbor_validation(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
-					resource "gitlab_integration_harbor" "this" {
+					resource "gitlab_project_integration_harbor" "this" {
 						project      = "%d"
 						url          = "invalid-url"
 						username     = "my_username"
@@ -80,7 +125,7 @@ func TestAccGitlabIntegrationHarbor_validation(t *testing.T) {
 			},
 			{
 				Config: fmt.Sprintf(`
-					resource "gitlab_integration_harbor" "this" {
+					resource "gitlab_project_integration_harbor" "this" {
 						project      = "%d"
 						url          = "http://harbor.example.com"
 						username     = "my_username"
@@ -92,7 +137,7 @@ func TestAccGitlabIntegrationHarbor_validation(t *testing.T) {
 			},
 			{
 				Config: fmt.Sprintf(`
-					resource "gitlab_integration_harbor" "this" {
+					resource "gitlab_project_integration_harbor" "this" {
 						project      = "%d"
 						url          = "http://harbor.example.com"
 						username     = ""
@@ -104,7 +149,7 @@ func TestAccGitlabIntegrationHarbor_validation(t *testing.T) {
 			},
 			{
 				Config: fmt.Sprintf(`
-					resource "gitlab_integration_harbor" "this" {
+					resource "gitlab_project_integration_harbor" "this" {
 						project      = "%d"
 						url          = "http://harbor.example.com"
 						username     = "my_username"
@@ -118,7 +163,7 @@ func TestAccGitlabIntegrationHarbor_validation(t *testing.T) {
 	})
 }
 
-func testAccCheckGitlabIntegrationHarborDestroy(projectId int) resource.TestCheckFunc {
+func testAccCheckGitlabProjectIntegrationHarborDestroy(projectId int) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		service, _, err := testutil.TestGitlabClient.Services.GetHarborService(projectId)
 		if err != nil {
