@@ -38,6 +38,7 @@ type gitlabGroupLabelResourceModel struct {
 	Group       types.String `tfsdk:"group"`
 	Name        types.String `tfsdk:"name"`
 	Color       types.String `tfsdk:"color"`
+	ColorHex    types.String `tfsdk:"color_hex"`
 	Description types.String `tfsdk:"description"`
 }
 
@@ -75,10 +76,11 @@ func (r *gitlabGroupLabelResource) Create(ctx context.Context, req resource.Crea
 	}
 
 	group := data.Group.ValueString()
+	color := data.Color.ValueString()
 
 	options := &gitlab.CreateGroupLabelOptions{
 		Name:  gitlab.Ptr(data.Name.ValueString()),
-		Color: gitlab.Ptr(data.Color.ValueString()),
+		Color: gitlab.Ptr(color),
 	}
 
 	if !data.Description.IsNull() && !data.Description.IsUnknown() {
@@ -93,7 +95,7 @@ func (r *gitlabGroupLabelResource) Create(ctx context.Context, req resource.Crea
 
 	labelID := strconv.Itoa(label.ID)
 	data.ID = types.StringValue(utils.BuildTwoPartID(&group, &labelID))
-	data.modelToStateModel(label, group)
+	data.modelToStateModel(label, color, group)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -103,6 +105,7 @@ func (r *gitlabGroupLabelResource) Read(ctx context.Context, req resource.ReadRe
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
 	group, labelID, err := data.ResourceGitlabGroupLabelParseID(data.ID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to read resource ID", fmt.Sprintf("Unable to parse resource ID: %s, %s", data.ID.ValueString(), err.Error()))
@@ -120,7 +123,7 @@ func (r *gitlabGroupLabelResource) Read(ctx context.Context, req resource.ReadRe
 		return
 	}
 
-	data.modelToStateModel(label, group)
+	data.modelToStateModel(label, data.Color.ValueString(), group)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -135,10 +138,11 @@ func (r *gitlabGroupLabelResource) Update(ctx context.Context, req resource.Upda
 		resp.Diagnostics.AddError("Failed to read resource ID", fmt.Sprintf("Unable to parse resource ID: %s, %s", data.ID.ValueString(), err.Error()))
 		return
 	}
+	color := data.Color.ValueString()
 
 	options := &gitlab.UpdateGroupLabelOptions{
 		NewName: gitlab.Ptr(data.Name.ValueString()),
-		Color:   gitlab.Ptr(data.Color.ValueString()),
+		Color:   gitlab.Ptr(color),
 	}
 
 	if !data.Description.IsNull() && !data.Description.IsUnknown() {
@@ -151,7 +155,7 @@ func (r *gitlabGroupLabelResource) Update(ctx context.Context, req resource.Upda
 		return
 	}
 
-	data.modelToStateModel(label, group)
+	data.modelToStateModel(label, color, group)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -223,7 +227,6 @@ func (r *gitlabGroupLabelResource) UpgradeState(context.Context) map[int64]resou
 
 // This function accepts an input state and will upgrde the "id" attribute to the new V2 ID that is <group_id>:<label_id>
 func (r *gitlabGroupLabelResource) upgradeIdToV2Id(ctx context.Context, input *gitlabGroupLabelResourceModel) error {
-
 	// Check if LabelId is in state, and retrieve the value from the API if it isn't.
 	if input.LabelID.IsNull() || input.LabelID.IsUnknown() {
 		tflog.Debug(ctx, "Retrieving label ID from API")
@@ -281,6 +284,10 @@ func (r *gitlabGroupLabelResource) getV0Schema() schema.Schema {
 				MarkdownDescription: "The color of the label given in 6-digit hex notation with leading '#' sign (e.g. #FFAABB) or one of the [CSS color names](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#Color_keywords).",
 				Required:            true,
 			},
+			"color_hex": schema.StringAttribute{
+				MarkdownDescription: "The color of the label given in 6-digit hex notation with leading '#' sign (e.g. #FFAABB).",
+				Computed:            true,
+			},
 			"description": schema.StringAttribute{
 				MarkdownDescription: "The description of the label.",
 				Optional:            true,
@@ -290,11 +297,16 @@ func (r *gitlabGroupLabelResource) getV0Schema() schema.Schema {
 	}
 }
 
-func (r *gitlabGroupLabelResourceModel) modelToStateModel(l *gitlab.GroupLabel, group string) {
+func (r *gitlabGroupLabelResourceModel) modelToStateModel(l *gitlab.GroupLabel, color string, group string) {
 	r.LabelID = types.Int64Value(int64(l.ID))
 	r.Group = types.StringValue(group)
 	r.Name = types.StringValue(l.Name)
-	r.Color = types.StringValue(l.Color)
+	if color == "" {
+		r.Color = types.StringValue(l.Color)
+	} else {
+		r.Color = types.StringValue(color)
+	}
+	r.ColorHex = types.StringValue(l.Color)
 	r.Description = types.StringValue(l.Description)
 }
 

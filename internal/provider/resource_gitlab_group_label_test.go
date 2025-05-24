@@ -35,6 +35,7 @@ func TestAccGitlabGroupLabel_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("gitlab_group_label.foo", "group", fmt.Sprintf("%d", group.ID)),
 					resource.TestCheckResourceAttr("gitlab_group_label.foo", "name", fmt.Sprintf("label-%d", rInt)),
 					resource.TestCheckResourceAttr("gitlab_group_label.foo", "color", "#FF0000"),
+					resource.TestCheckResourceAttr("gitlab_group_label.foo", "color_hex", "#FF0000"),
 				),
 			},
 			// Verify import
@@ -57,6 +58,7 @@ func TestAccGitlabGroupLabel_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("gitlab_group_label.foo", "group", fmt.Sprintf("%d", group.ID)),
 					resource.TestCheckResourceAttr("gitlab_group_label.foo", "name", fmt.Sprintf("label-%d-updated", rInt)),
 					resource.TestCheckResourceAttr("gitlab_group_label.foo", "color", "#00FF00"),
+					resource.TestCheckResourceAttr("gitlab_group_label.foo", "color_hex", "#00FF00"),
 					resource.TestCheckResourceAttr("gitlab_group_label.foo", "description", "Group label description"),
 				),
 			},
@@ -65,6 +67,24 @@ func TestAccGitlabGroupLabel_basic(t *testing.T) {
 				ResourceName:      "gitlab_group_label.foo",
 				ImportState:       true,
 				ImportStateVerify: true,
+			},
+			// Update the label to use a named color
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_group_label" "foo" {
+						group = "%d"
+						name = "label-%d-updated"
+						color = "forestgreen"
+						description = "Group label description"
+					}
+				`, group.ID, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_group_label.foo", "group", fmt.Sprintf("%d", group.ID)),
+					resource.TestCheckResourceAttr("gitlab_group_label.foo", "name", fmt.Sprintf("label-%d-updated", rInt)),
+					resource.TestCheckResourceAttr("gitlab_group_label.foo", "color", "forestgreen"),
+					resource.TestCheckResourceAttr("gitlab_group_label.foo", "color_hex", "#228B22"),
+					resource.TestCheckResourceAttr("gitlab_group_label.foo", "description", "Group label description"),
+				),
 			},
 		},
 	})
