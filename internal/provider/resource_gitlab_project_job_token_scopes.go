@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strconv"
 
 	"github.com/dcarbone/terraform-plugin-framework-utils/v3/conv"
@@ -21,7 +22,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
-	"slices"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces
@@ -99,7 +99,7 @@ which allows this resource to be used as an explicit deny.
 			},
 			"project_id": schema.Int64Attribute{
 				MarkdownDescription: "The ID of the project.",
-				DeprecationMessage:  "`project_id` has been deprecated. Use `project` instead.",
+				DeprecationMessage:  "`project_id` has been deprecated and will be removed in 19.0. Use `project` instead.",
 				Optional:            true,
 				Computed:            true,
 				PlanModifiers:       []planmodifier.Int64{int64planmodifier.RequiresReplace()},
