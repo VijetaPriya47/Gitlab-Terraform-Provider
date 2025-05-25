@@ -1,5 +1,9 @@
+resource "gitlab_project" "example" {
+  name = "project"
+}
+
 resource "gitlab_project_label" "fixme" {
-  project     = "example"
+  project     = gitlab_project.example.id
   name        = "fixme"
   description = "issue with failing tests"
   color       = "#ffcc00"

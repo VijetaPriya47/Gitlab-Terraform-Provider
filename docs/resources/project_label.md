@@ -3,21 +3,25 @@
 page_title: "gitlab_project_label Resource - terraform-provider-gitlab"
 subcategory: ""
 description: |-
-  The gitlab_project_label resource allows to manage the lifecycle of a project label.
+  The gitlab_project_label resource manages the lifecycle of a project label.
   Upstream API: GitLab REST API docs https://docs.gitlab.com/api/labels/#get-a-single-project-label
 ---
 
 # gitlab_project_label (Resource)
 
-The `gitlab_project_label` resource allows to manage the lifecycle of a project label.
+The `gitlab_project_label` resource manages the lifecycle of a project label.
 
 **Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/labels/#get-a-single-project-label)
 
 ## Example Usage
 
 ```terraform
+resource "gitlab_project" "example" {
+  name = "project"
+}
+
 resource "gitlab_project_label" "fixme" {
-  project     = "example"
+  project     = gitlab_project.example.id
   name        = "fixme"
   description = "issue with failing tests"
   color       = "#ffcc00"
@@ -47,7 +51,7 @@ resource "gitlab_project_label" "devops_create" {
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `id` (String) The ID of this Terraform resource. In the format of `<project-id>:<label-name>`.
 - `label_id` (Number) The id of the project label.
 
 ## Import
@@ -63,6 +67,6 @@ import {
 Import using the CLI is supported using the following syntax:
 
 ```shell
-# Gitlab Project labels can be imported using an id made up of `{project_id}:{group_label_id}`, e.g.
+# Gitlab Project labels can be imported using an id made up of `{project_id}:{label_name}`, e.g.
 terraform import gitlab_project_label.example 12345:fixme
 ```

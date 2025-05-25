@@ -3,16 +3,13 @@
 page_title: "gitlab_label Resource - terraform-provider-gitlab"
 subcategory: ""
 description: |-
-  The gitlab_label resource allows to manage the lifecycle of a project label.
-  ~> This resource is deprecated. use gitlab_project_labelinstead!
+  The gitlab_label resource manages the lifecycle of a project label.
   Upstream API: GitLab REST API docs https://docs.gitlab.com/api/labels/#get-a-single-project-label
 ---
 
 # gitlab_label (Resource)
 
-The `gitlab_label` resource allows to manage the lifecycle of a project label.
-
-~> This resource is deprecated. use `gitlab_project_label`instead!
+The `gitlab_label` resource manages the lifecycle of a project label.
 
 **Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/labels/#get-a-single-project-label)
 
@@ -33,5 +30,5 @@ The `gitlab_label` resource allows to manage the lifecycle of a project label.
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `id` (String) The ID of this Terraform resource. In the format of `<project-id>:<label-name>`.
 - `label_id` (Number) The id of the project label.
