@@ -79,7 +79,7 @@ func (d *gitlabGroupProvisionedUsersDataSource) Metadata(_ context.Context, req 
 
 func (d *gitlabGroupProvisionedUsersDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `The ` + "`gitlab_group_provisioned_users`" + ` data source allows details of the provisioned users of a given group.
+		MarkdownDescription: `The ` + "`gitlab_group_provisioned_users`" + ` data source retrieves details of the provisioned users in a given group.
 
 **Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/groups/#list-provisioned-users)`,
 		Attributes: map[string]schema.Attribute{
