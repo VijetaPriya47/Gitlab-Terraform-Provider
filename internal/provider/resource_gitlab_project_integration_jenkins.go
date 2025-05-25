@@ -20,24 +20,42 @@ import (
 )
 
 var (
-	_ resource.Resource                = &gitlabIntegrationJenkinsResource{}
-	_ resource.ResourceWithConfigure   = &gitlabIntegrationJenkinsResource{}
-	_ resource.ResourceWithImportState = &gitlabIntegrationJenkinsResource{}
+	_ resource.Resource                = &gitlabProjectIntegrationJenkinsResource{}
+	_ resource.ResourceWithConfigure   = &gitlabProjectIntegrationJenkinsResource{}
+	_ resource.ResourceWithImportState = &gitlabProjectIntegrationJenkinsResource{}
 )
 
 func init() {
+	registerResource(NewGitLabProjectIntegrationJenkinsResource)
+
+	// Remove in 19.0
 	registerResource(NewGitLabIntegrationJenkinsResource)
 }
 
+func NewGitLabProjectIntegrationJenkinsResource() resource.Resource {
+	return &gitlabProjectIntegrationJenkinsResource{
+		ResourceName: "_project_integration_jenkins",
+	}
+}
+
+// Remove in 19.0
 func NewGitLabIntegrationJenkinsResource() resource.Resource {
-	return &gitlabIntegrationJenkinsResource{}
+	return &gitlabProjectIntegrationJenkinsResource{
+		ResourceName:       "_integration_jenkins",
+		DeprecationMessage: "This resource is deprecated and will be removed in 19.0. Use `gitlab_project_integration_jenkins` instead.",
+	}
 }
 
-type gitlabIntegrationJenkinsResource struct {
+type gitlabProjectIntegrationJenkinsResource struct {
 	client *gitlab.Client
+
+	// Represents the name of the resource, since this resource uses both `gitlab_project_integration_jenkins`
+	// and `gitlab_integration_jenkins` for backwards compatibility reasons. Should be removed in 19.0.
+	ResourceName       string
+	DeprecationMessage string
 }
 
-type gitlabIntegrationJenkinsResourceModel struct {
+type gitlabProjectIntegrationJenkinsResourceModel struct {
 	ID                    types.String `tfsdk:"id"`
 	Project               types.String `tfsdk:"project"`
 	JenkinsURL            types.String `tfsdk:"jenkins_url"`
@@ -51,15 +69,16 @@ type gitlabIntegrationJenkinsResourceModel struct {
 	Active                types.Bool   `tfsdk:"active"`
 }
 
-func (r *gitlabIntegrationJenkinsResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_integration_jenkins"
+func (r *gitlabProjectIntegrationJenkinsResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + r.ResourceName
 }
 
-func (r *gitlabIntegrationJenkinsResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *gitlabProjectIntegrationJenkinsResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `The ` + "`gitlab_integration_jenkins`" + ` resource allows to manage the lifecycle of a project integration with Jenkins.
+		MarkdownDescription: `The ` + "`" + fmt.Sprintf(`gitlab%s`, r.ResourceName) + "`" + ` resource manages the lifecycle of a project integration with Jenkins.
 
 **Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#jenkins)`,
+		DeprecationMessage: r.DeprecationMessage,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:            true,
@@ -121,7 +140,7 @@ func (r *gitlabIntegrationJenkinsResource) Schema(_ context.Context, _ resource.
 	}
 }
 
-func (r *gitlabIntegrationJenkinsResource) Configure(_ context.Context, req resource.ConfigureRequest, _ *resource.ConfigureResponse) {
+func (r *gitlabProjectIntegrationJenkinsResource) Configure(_ context.Context, req resource.ConfigureRequest, _ *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -130,15 +149,15 @@ func (r *gitlabIntegrationJenkinsResource) Configure(_ context.Context, req reso
 	r.client = resourceData.Client
 }
 
-func (r *gitlabIntegrationJenkinsResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (r *gitlabProjectIntegrationJenkinsResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	err := r.update(ctx, &req.Plan, &resp.State, &resp.Diagnostics)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to create Jenkins integration", err.Error())
 	}
 }
 
-func (r *gitlabIntegrationJenkinsResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var data gitlabIntegrationJenkinsResourceModel
+func (r *gitlabProjectIntegrationJenkinsResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var data gitlabProjectIntegrationJenkinsResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -156,15 +175,15 @@ func (r *gitlabIntegrationJenkinsResource) Read(ctx context.Context, req resourc
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *gitlabIntegrationJenkinsResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r *gitlabProjectIntegrationJenkinsResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	err := r.update(ctx, &req.Plan, &resp.State, &resp.Diagnostics)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to update Jenkins integration", err.Error())
 	}
 }
 
-func (r *gitlabIntegrationJenkinsResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var data gitlabIntegrationJenkinsResourceModel
+func (r *gitlabProjectIntegrationJenkinsResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var data gitlabProjectIntegrationJenkinsResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -180,12 +199,12 @@ func (r *gitlabIntegrationJenkinsResource) Delete(ctx context.Context, req resou
 	}
 }
 
-func (r *gitlabIntegrationJenkinsResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *gitlabProjectIntegrationJenkinsResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
-func (r *gitlabIntegrationJenkinsResource) update(ctx context.Context, plan *tfsdk.Plan, state *tfsdk.State, diags *diag.Diagnostics) error {
-	var data gitlabIntegrationJenkinsResourceModel
+func (r *gitlabProjectIntegrationJenkinsResource) update(ctx context.Context, plan *tfsdk.Plan, state *tfsdk.State, diags *diag.Diagnostics) error {
+	var data gitlabProjectIntegrationJenkinsResourceModel
 	diags.Append(plan.Get(ctx, &data)...)
 	if diags.HasError() {
 		return nil
@@ -224,7 +243,7 @@ func (r *gitlabIntegrationJenkinsResource) update(ctx context.Context, plan *tfs
 	return nil
 }
 
-func (d *gitlabIntegrationJenkinsResourceModel) modelToStateModel(r *gitlab.JenkinsCIService, projectID string) {
+func (d *gitlabProjectIntegrationJenkinsResourceModel) modelToStateModel(r *gitlab.JenkinsCIService, projectID string) {
 	d.ID = types.StringValue(projectID)
 	d.Project = types.StringValue(projectID)
 	d.JenkinsURL = types.StringValue(r.Properties.URL)
