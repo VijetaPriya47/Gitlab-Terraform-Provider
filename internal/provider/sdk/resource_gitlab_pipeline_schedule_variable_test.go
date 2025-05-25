@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
@@ -21,18 +21,18 @@ func TestAccGitlabPipelineScheduleVariable_StateUpgradeV0(t *testing.T) {
 
 	testcases := []struct {
 		name            string
-		givenV0State    map[string]interface{}
-		expectedV1State map[string]interface{}
+		givenV0State    map[string]any
+		expectedV1State map[string]any
 	}{
 		{
 			name: "Project With ID",
-			givenV0State: map[string]interface{}{
+			givenV0State: map[string]any{
 				"project":              "99",
 				"pipeline_schedule_id": 42,
 				"key":                  "some-key",
 				"id":                   "42:some-key",
 			},
-			expectedV1State: map[string]interface{}{
+			expectedV1State: map[string]any{
 				"project":              "99",
 				"pipeline_schedule_id": 42,
 				"key":                  "some-key",
@@ -41,13 +41,13 @@ func TestAccGitlabPipelineScheduleVariable_StateUpgradeV0(t *testing.T) {
 		},
 		{
 			name: "Project With ID and pipeline schedule id as float",
-			givenV0State: map[string]interface{}{
+			givenV0State: map[string]any{
 				"project":              "99",
 				"pipeline_schedule_id": 42.0,
 				"key":                  "some-key",
 				"id":                   "42:some-key",
 			},
-			expectedV1State: map[string]interface{}{
+			expectedV1State: map[string]any{
 				"project":              "99",
 				"pipeline_schedule_id": 42.0,
 				"key":                  "some-key",
@@ -56,13 +56,13 @@ func TestAccGitlabPipelineScheduleVariable_StateUpgradeV0(t *testing.T) {
 		},
 		{
 			name: "Project With Namespace",
-			givenV0State: map[string]interface{}{
+			givenV0State: map[string]any{
 				"project":              "foo/bar",
 				"pipeline_schedule_id": 42,
 				"key":                  "some-key",
 				"id":                   "42:some-key",
 			},
-			expectedV1State: map[string]interface{}{
+			expectedV1State: map[string]any{
 				"project":              "foo/bar",
 				"pipeline_schedule_id": 42,
 				"key":                  "some-key",
@@ -73,7 +73,7 @@ func TestAccGitlabPipelineScheduleVariable_StateUpgradeV0(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			actualV1State, err := resourceGitlabProjectLabelStateUpgradeV0(context.Background(), tc.givenV0State, nil)
+			actualV1State, err := resourceGitlabPipelineScheduleVariableStateUpgradeV0(context.Background(), tc.givenV0State, nil)
 			if err != nil {
 				t.Fatalf("Error migrating state: %s", err)
 			}
