@@ -24,20 +24,33 @@ import (
 )
 
 var (
-	_ resource.Resource                = &gitlabIntegrationCustomIssueTrackerResource{}
-	_ resource.ResourceWithConfigure   = &gitlabIntegrationCustomIssueTrackerResource{}
-	_ resource.ResourceWithImportState = &gitlabIntegrationCustomIssueTrackerResource{}
+	_ resource.Resource                = &gitlabProjectIntegrationCustomIssueTrackerResource{}
+	_ resource.ResourceWithConfigure   = &gitlabProjectIntegrationCustomIssueTrackerResource{}
+	_ resource.ResourceWithImportState = &gitlabProjectIntegrationCustomIssueTrackerResource{}
 )
 
 func init() {
+	registerResource(NewGitlabProjectIntegrationCustomIssueTrackerResource)
+
+	// Remove in 19.0
 	registerResource(NewGitlabIntegrationCustomIssueTrackerResource)
 }
 
-func NewGitlabIntegrationCustomIssueTrackerResource() resource.Resource {
-	return &gitlabIntegrationCustomIssueTrackerResource{}
+func NewGitlabProjectIntegrationCustomIssueTrackerResource() resource.Resource {
+	return &gitlabProjectIntegrationCustomIssueTrackerResource{
+		ResourceName: "_project_integration_custom_issue_tracker",
+	}
 }
 
-type gitlabIntegrationCustomIssueTrackerResourceModel struct {
+// Remove in 19.0
+func NewGitlabIntegrationCustomIssueTrackerResource() resource.Resource {
+	return &gitlabProjectIntegrationCustomIssueTrackerResource{
+		ResourceName:       "_integration_custom_issue_tracker",
+		DeprecationMessage: "This resource is deprecated and will be removed in 19.0. Use `gitlab_project_integration_custom_issue_tracker` instead.",
+	}
+}
+
+type gitlabProjectIntegrationCustomIssueTrackerResourceModel struct {
 	Id         types.String `tfsdk:"id"`
 	Project    types.String `tfsdk:"project"`
 	ProjectURL types.String `tfsdk:"project_url"`
@@ -48,7 +61,7 @@ type gitlabIntegrationCustomIssueTrackerResourceModel struct {
 	Active     types.Bool   `tfsdk:"active"`
 }
 
-func (r *gitlabIntegrationCustomIssueTrackerResourceModel) customIssueTrackerServiceToStateModel(service *gitlab.CustomIssueTrackerService, projectId string) {
+func (r *gitlabProjectIntegrationCustomIssueTrackerResourceModel) customIssueTrackerServiceToStateModel(service *gitlab.CustomIssueTrackerService, projectId string) {
 	r.Id = types.StringValue(projectId)
 	r.Project = types.StringValue(projectId)
 	r.ProjectURL = types.StringValue(service.Properties.ProjectURL)
@@ -61,20 +74,26 @@ func (r *gitlabIntegrationCustomIssueTrackerResourceModel) customIssueTrackerSer
 	}
 }
 
-type gitlabIntegrationCustomIssueTrackerResource struct {
+type gitlabProjectIntegrationCustomIssueTrackerResource struct {
 	client *gitlab.Client
+
+	// Represents the name of the resource, since this resource uses both `gitlab_project_integration_custom_issue_tracker`
+	// and `gitlab_integration_custom_issue_tracker` for backwards compatibility reasons. Should be removed in %19.0
+	ResourceName       string
+	DeprecationMessage string
 }
 
-func (r *gitlabIntegrationCustomIssueTrackerResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_integration_custom_issue_tracker"
+func (r *gitlabProjectIntegrationCustomIssueTrackerResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + r.ResourceName
 }
 
-func (r *gitlabIntegrationCustomIssueTrackerResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *gitlabProjectIntegrationCustomIssueTrackerResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `The ` + "`gitlab_integration_custom_issue_tracker`" + ` resource allows to manage the lifecycle of a project integration with Custom Issue Tracker.
+		MarkdownDescription: `The ` + "`" + fmt.Sprintf(`gitlab%s`, r.ResourceName) + "`" + ` resource manages the lifecycle of a project integration with a Custom Issue Tracker.
 
 **Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#custom-issue-tracker)`,
 
+		DeprecationMessage: r.DeprecationMessage,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:            true,
@@ -120,7 +139,7 @@ func (r *gitlabIntegrationCustomIssueTrackerResource) Schema(_ context.Context, 
 	}
 }
 
-func (r *gitlabIntegrationCustomIssueTrackerResource) Configure(_ context.Context, req resource.ConfigureRequest, _ *resource.ConfigureResponse) {
+func (r *gitlabProjectIntegrationCustomIssueTrackerResource) Configure(_ context.Context, req resource.ConfigureRequest, _ *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -129,15 +148,15 @@ func (r *gitlabIntegrationCustomIssueTrackerResource) Configure(_ context.Contex
 	r.client = resourceData.Client
 }
 
-func (r *gitlabIntegrationCustomIssueTrackerResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (r *gitlabProjectIntegrationCustomIssueTrackerResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	err := r.update(ctx, &req.Plan, &resp.State, &resp.Diagnostics)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to create custom issue tracker service", err.Error())
 	}
 }
 
-func (r *gitlabIntegrationCustomIssueTrackerResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var data gitlabIntegrationCustomIssueTrackerResourceModel
+func (r *gitlabProjectIntegrationCustomIssueTrackerResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var data gitlabProjectIntegrationCustomIssueTrackerResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -162,15 +181,15 @@ func (r *gitlabIntegrationCustomIssueTrackerResource) Read(ctx context.Context, 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *gitlabIntegrationCustomIssueTrackerResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r *gitlabProjectIntegrationCustomIssueTrackerResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	err := r.update(ctx, &req.Plan, &resp.State, &resp.Diagnostics)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to update custom issue tracker integration", err.Error())
 	}
 }
 
-func (r *gitlabIntegrationCustomIssueTrackerResource) update(ctx context.Context, plan *tfsdk.Plan, state *tfsdk.State, diags *diag.Diagnostics) error {
-	var data gitlabIntegrationCustomIssueTrackerResourceModel
+func (r *gitlabProjectIntegrationCustomIssueTrackerResource) update(ctx context.Context, plan *tfsdk.Plan, state *tfsdk.State, diags *diag.Diagnostics) error {
+	var data gitlabProjectIntegrationCustomIssueTrackerResourceModel
 	diags.Append(plan.Get(ctx, &data)...)
 	if diags.HasError() {
 		return nil
@@ -208,8 +227,8 @@ func (r *gitlabIntegrationCustomIssueTrackerResource) update(ctx context.Context
 	return nil
 }
 
-func (r *gitlabIntegrationCustomIssueTrackerResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var data gitlabIntegrationCustomIssueTrackerResourceModel
+func (r *gitlabProjectIntegrationCustomIssueTrackerResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var data gitlabProjectIntegrationCustomIssueTrackerResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -229,6 +248,6 @@ func (r *gitlabIntegrationCustomIssueTrackerResource) Delete(ctx context.Context
 	}
 }
 
-func (r *gitlabIntegrationCustomIssueTrackerResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *gitlabProjectIntegrationCustomIssueTrackerResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
