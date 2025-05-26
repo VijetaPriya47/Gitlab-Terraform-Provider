@@ -49,7 +49,7 @@ type gitlabProjectTargetBranchRuleModel struct {
 
 func (r *gitlabProjectTargetBranchRule) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: fmt.Sprintf(`The ` + "`gitlab_project_target_branch_rule`" + ` resource allows to configure default target branch rules when creating a merge request.
+		MarkdownDescription: fmt.Sprintf(`The ` + "`gitlab_project_target_branch_rule`" + ` resource manages default target branch rules when creating merge requests.
 
 **Upstream API**: [GitLab GraphQL API docs](https://docs.gitlab.com/ee/api/graphql/reference/#mutationprojecttargetbranchrulecreate)`),
 

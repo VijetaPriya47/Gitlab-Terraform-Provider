@@ -60,7 +60,7 @@ func (r *gitlabGroupIssueBoardResource) Metadata(ctx context.Context, req resour
 
 func (r *gitlabGroupIssueBoardResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `The ` + "`gitlab_group_issue_board`" + ` resource allows to manage the lifecycle of a issue board in a group.
+		MarkdownDescription: `The ` + "`gitlab_group_issue_board`" + ` resource manages the lifecycle of an issue board in a group.
 
 ~> Multiple issue boards on one group requires a GitLab Premium or above License.
 

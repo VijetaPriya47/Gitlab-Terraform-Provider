@@ -76,7 +76,7 @@ func (d *gitlabProjectLevelNotificationsResource) Metadata(_ context.Context, re
 func (d *gitlabProjectLevelNotificationsResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Version: 1,
-		MarkdownDescription: `The ` + "`" + `gitlab_project_level_notifications` + "`" + ` resource allows to manage notifications for a project.
+		MarkdownDescription: `The ` + "`" + `gitlab_project_level_notifications` + "`" + ` resource manages notifications for a project.
 
 ~> While the API supports both groups and projects, this resource only supports projects currently.
 		
