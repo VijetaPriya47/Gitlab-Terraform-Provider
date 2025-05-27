@@ -14,15 +14,26 @@ import (
 )
 
 var _ = registerResource("gitlab_integration_pipelines_email", func() *schema.Resource {
+	return getProjectIntegrationPipelinesEmailResourceSchema(`The ` + "`gitlab_integration_pipelines_email`" + ` resource manages the lifecycle of a project integration with the Pipeline Emails Service.
+
+~> This resource is deprecated and will be removed in 19.0. Use ` + "`gitlab_project_integration_pipelines_email`" + `instead!
+
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#pipeline-status-emails)`)
+})
+
+var _ = registerResource("gitlab_project_integration_pipelines_email", func() *schema.Resource {
+	return getProjectIntegrationPipelinesEmailResourceSchema(`The ` + "`gitlab_project_integration_pipelines_email`" + ` resource manages the lifecycle of a project integration with the Pipeline Emails Service.
+
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#pipeline-status-emails)`)
+})
+
+func getProjectIntegrationPipelinesEmailResourceSchema(description string) *schema.Resource {
 	return &schema.Resource{
-		Description: `The ` + "`gitlab_integration_pipelines_email`" + ` resource allows to manage the lifecycle of a project integration with Pipeline Emails Service.
-
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#pipeline-status-emails)`,
-
-		CreateContext: resourceGitlabIntegrationPipelinesEmailCreate,
-		ReadContext:   resourceGitlabIntegrationPipelinesEmailRead,
-		UpdateContext: resourceGitlabIntegrationPipelinesEmailCreate,
-		DeleteContext: resourceGitlabIntegrationPipelinesEmailDelete,
+		Description:   description,
+		CreateContext: resourceGitlabProjectIntegrationPipelinesEmailCreate,
+		ReadContext:   resourceGitlabProjectIntegrationPipelinesEmailRead,
+		UpdateContext: resourceGitlabProjectIntegrationPipelinesEmailCreate,
+		DeleteContext: resourceGitlabProjectIntegrationPipelinesEmailDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -55,15 +66,15 @@ var _ = registerResource("gitlab_integration_pipelines_email", func() *schema.Re
 			},
 		},
 	}
-})
+}
 
-func resourceGitlabIntegrationPipelinesEmailSetToState(d *schema.ResourceData, service *gitlab.PipelinesEmailService) {
+func resourceGitlabProjectIntegrationPipelinesEmailSetToState(d *schema.ResourceData, service *gitlab.PipelinesEmailService) {
 	d.Set("recipients", strings.Split(service.Properties.Recipients, ",")) // lintignore: XR004 // TODO: Resolve this tfproviderlint issue
 	d.Set("notify_only_broken_pipelines", service.Properties.NotifyOnlyBrokenPipelines)
 	d.Set("branches_to_be_notified", service.Properties.BranchesToBeNotified)
 }
 
-func resourceGitlabIntegrationPipelinesEmailCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+func resourceGitlabProjectIntegrationPipelinesEmailCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Get("project").(string)
 	d.SetId(project)
@@ -80,10 +91,10 @@ func resourceGitlabIntegrationPipelinesEmailCreate(ctx context.Context, d *schem
 		return diag.FromErr(err)
 	}
 
-	return resourceGitlabIntegrationPipelinesEmailRead(ctx, d, meta)
+	return resourceGitlabProjectIntegrationPipelinesEmailRead(ctx, d, meta)
 }
 
-func resourceGitlabIntegrationPipelinesEmailRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+func resourceGitlabProjectIntegrationPipelinesEmailRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Id()
 
@@ -100,11 +111,11 @@ func resourceGitlabIntegrationPipelinesEmailRead(ctx context.Context, d *schema.
 	}
 
 	d.Set("project", project)
-	resourceGitlabIntegrationPipelinesEmailSetToState(d, service)
+	resourceGitlabProjectIntegrationPipelinesEmailSetToState(d, service)
 	return nil
 }
 
-func resourceGitlabIntegrationPipelinesEmailDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+func resourceGitlabProjectIntegrationPipelinesEmailDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Id()
 
