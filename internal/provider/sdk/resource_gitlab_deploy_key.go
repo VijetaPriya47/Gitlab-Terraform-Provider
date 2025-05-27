@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
@@ -16,7 +18,7 @@ import (
 
 var _ = registerResource("gitlab_deploy_key", func() *schema.Resource {
 	return &schema.Resource{
-		Description: `The ` + "`gitlab_deploy_key`" + ` resource allows to manage the lifecycle of a deploy key.
+		Description: `The ` + "`gitlab_deploy_key`" + ` resource manages the lifecycle of a project deploy key.
 
 -> To enable an already existing deploy key for another project use the ` + "`gitlab_deploy_key_enable`" + ` resource.
 
@@ -75,6 +77,13 @@ func gitlabProjectDeployKeySchema() map[string]*schema.Schema {
 			Default:     false,
 			ForceNew:    true,
 		},
+		"expires_at": {
+			Description:      "Expiration date for the deploy key. Does not expire if no value is provided. Expected in RFC3339 format `(2019-03-15T08:00:00Z)`",
+			Type:             schema.TypeString,
+			Optional:         true,
+			ForceNew:         true,
+			ValidateDiagFunc: validation.ToDiagFunc(validation.IsRFC3339Time),
+		},
 	}
 }
 
@@ -124,6 +133,14 @@ func resourceGitlabDeployKeyCreate(ctx context.Context, d *schema.ResourceData, 
 		CanPush: gitlab.Ptr(d.Get("can_push").(bool)),
 	}
 
+	if v, ok := d.GetOk("expires_at"); ok {
+		parsedExpiresAt, err := time.Parse(time.RFC3339, v.(string))
+		if err != nil {
+			return diag.Errorf("failed to parse expires_at: %s. It must be in valid RFC3339 format.", err)
+		}
+		options.ExpiresAt = gitlab.Ptr(parsedExpiresAt)
+	}
+
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab deployment key %s", *options.Title))
 
 	deployKey, _, err := client.DeployKeys.AddDeployKey(project, options, gitlab.WithContext(ctx))
@@ -162,6 +179,10 @@ func resourceGitlabDeployKeyRead(ctx context.Context, d *schema.ResourceData, me
 	d.Set("key", deployKey.Key)
 	d.Set("can_push", deployKey.CanPush)
 
+	if deployKey.ExpiresAt != nil {
+		d.Set("expires_at", deployKey.ExpiresAt.Format(time.RFC3339))
+	}
+
 	return nil
 }
 
@@ -176,7 +197,6 @@ func resourceGitlabDeployKeyDelete(ctx context.Context, d *schema.ResourceData, 
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Delete gitlab deploy key %s", d.Id()))
 
 	_, err = client.DeployKeys.DeleteDeployKey(project, deployKeyID, gitlab.WithContext(ctx))
-
 	if err != nil {
 		return diag.FromErr(err)
 	}

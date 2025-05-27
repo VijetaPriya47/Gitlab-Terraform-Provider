@@ -22,27 +22,27 @@ func TestAccGitlabDeployKey_StateUpgradeV0(t *testing.T) {
 
 	testcases := []struct {
 		name            string
-		givenV0State    map[string]interface{}
-		expectedV1State map[string]interface{}
+		givenV0State    map[string]any
+		expectedV1State map[string]any
 	}{
 		{
 			name: "Project With ID",
-			givenV0State: map[string]interface{}{
+			givenV0State: map[string]any{
 				"project": "99",
 				"id":      "42",
 			},
-			expectedV1State: map[string]interface{}{
+			expectedV1State: map[string]any{
 				"project": "99",
 				"id":      "99:42",
 			},
 		},
 		{
 			name: "Project With Namespace",
-			givenV0State: map[string]interface{}{
+			givenV0State: map[string]any{
 				"project": "foo/bar",
 				"id":      "42",
 			},
-			expectedV1State: map[string]interface{}{
+			expectedV1State: map[string]any{
 				"project": "foo/bar",
 				"id":      "foo/bar:42",
 			},
@@ -143,6 +143,23 @@ func TestAccGitlabDeployKey_basic(t *testing.T) {
 						project = %[3]d
 						title = "deployKey-%[1]d"
 						key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCj13ozEBZ0s4el4k6mYqoyIKKKMh9hHY0sAYqSPXs2zGuVFZss1P8TPuwmdXVjHR7TiRXwC49zDrkyWJgiufggYJ1VilOohcMOODwZEJz+E5q4GCfHuh90UEh0nl8B2R0Uoy0LPeg93uZzy0hlHApsxRf/XZJz/1ytkZvCtxdllxfImCVxJReMeRVEqFCTCvy3YuJn0bce7ulcTFRvtgWOpQsr6GDK8YkcCCv2eZthVlrEwy6DEpAKTRiRLGgUj4dPO0MmO4cE2qD4ualY01PhNORJ8Q++I+EtkGt/VALkecwFuBkl18/gy+yxNJHpKc/8WVVinDeFrd/HhiY9yU0d richardc@tamborine.example.1%[2]s"
+					}
+				`, rInt, "", testProject.ID),
+			},
+			// Verify import
+			{
+				ResourceName:      "gitlab_deploy_key.foo",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Add an expiry
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_deploy_key" "foo" {
+						project = %[3]d
+						title = "deployKey-%[1]d"
+						key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCj13ozEBZ0s4el4k6mYqoyIKKKMh9hHY0sAYqSPXs2zGuVFZss1P8TPuwmdXVjHR7TiRXwC49zDrkyWJgiufggYJ1VilOohcMOODwZEJz+E5q4GCfHuh90UEh0nl8B2R0Uoy0LPeg93uZzy0hlHApsxRf/XZJz/1ytkZvCtxdllxfImCVxJReMeRVEqFCTCvy3YuJn0bce7ulcTFRvtgWOpQsr6GDK8YkcCCv2eZthVlrEwy6DEpAKTRiRLGgUj4dPO0MmO4cE2qD4ualY01PhNORJ8Q++I+EtkGt/VALkecwFuBkl18/gy+yxNJHpKc/8WVVinDeFrd/HhiY9yU0d richardc@tamborine.example.1%[2]s"
+						expires_at = "3016-01-21T00:00:00Z"
 					}
 				`, rInt, "", testProject.ID),
 			},
