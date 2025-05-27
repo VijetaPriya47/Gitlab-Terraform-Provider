@@ -21,24 +21,41 @@ import (
 )
 
 var (
-	_ resource.Resource                = &gitlabIntegrationRedmineResource{}
-	_ resource.ResourceWithConfigure   = &gitlabIntegrationRedmineResource{}
-	_ resource.ResourceWithImportState = &gitlabIntegrationRedmineResource{}
+	_ resource.Resource                = &gitlabProjectIntegrationRedmineResource{}
+	_ resource.ResourceWithConfigure   = &gitlabProjectIntegrationRedmineResource{}
+	_ resource.ResourceWithImportState = &gitlabProjectIntegrationRedmineResource{}
 )
 
 func init() {
+	registerResource(NewGitLabProjectIntegrationRedmineResource)
+
+	// Remove in 19.0
 	registerResource(NewGitLabIntegrationRedmineResource)
 }
 
+func NewGitLabProjectIntegrationRedmineResource() resource.Resource {
+	return &gitlabProjectIntegrationRedmineResource{
+		ResourceName: "_project_integration_redmine",
+	}
+}
+
 func NewGitLabIntegrationRedmineResource() resource.Resource {
-	return &gitlabIntegrationRedmineResource{}
+	return &gitlabProjectIntegrationRedmineResource{
+		ResourceName:       "_integration_redmine",
+		DeprecationMessage: "This resource is deprecated and will be removed in 19.0. Use `gitlab_project_integration_redmine` instead.",
+	}
 }
 
-type gitlabIntegrationRedmineResource struct {
+type gitlabProjectIntegrationRedmineResource struct {
 	client *gitlab.Client
+
+	// Represents the name of the resource, since this resource uses both `gitlab_project_integration_redmine`
+	// and `gitlab_integration_redmine` for backwards compatibility reasons. Should be removed in 19.0.
+	ResourceName       string
+	DeprecationMessage string
 }
 
-type gitlabIntegrationRedmineResourceModel struct {
+type gitlabProjectIntegrationRedmineResourceModel struct {
 	ID                   types.String `tfsdk:"id"`
 	Project              types.String `tfsdk:"project"`
 	NewIssueURL          types.String `tfsdk:"new_issue_url"`
@@ -47,7 +64,7 @@ type gitlabIntegrationRedmineResourceModel struct {
 	UseInheritedSettings types.Bool   `tfsdk:"use_inherited_settings"`
 }
 
-func (r *gitlabIntegrationRedmineResourceModel) redmineServiceToStateModel(projectId string, service *gitlab.RedmineService) {
+func (r *gitlabProjectIntegrationRedmineResourceModel) redmineServiceToStateModel(projectId string, service *gitlab.RedmineService) {
 	r.ID = types.StringValue(projectId)
 	r.Project = types.StringValue(projectId)
 	r.NewIssueURL = types.StringValue(service.Properties.NewIssueURL)
@@ -56,17 +73,18 @@ func (r *gitlabIntegrationRedmineResourceModel) redmineServiceToStateModel(proje
 	r.UseInheritedSettings = types.BoolValue(bool(service.Properties.UseInheritedSettings))
 }
 
-func (r *gitlabIntegrationRedmineResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_integration_redmine"
+func (r *gitlabProjectIntegrationRedmineResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + r.ResourceName
 }
 
-func (r *gitlabIntegrationRedmineResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *gitlabProjectIntegrationRedmineResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `The ` + "`gitlab_integration_redmine`" + ` resource allows to manage the lifecycle of a project integration with Redmine.
+		MarkdownDescription: `The ` + "`" + fmt.Sprintf(`gitlab%s`, r.ResourceName) + "`" + ` resource manages the lifecycle of a project integration with Redmine.
 
 ~> Using Redmine requires that GitLab internal issue tracking is disabled for the project.
 
 **Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#redmine)`,
+		DeprecationMessage: r.DeprecationMessage,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:            true,
@@ -104,10 +122,9 @@ func (r *gitlabIntegrationRedmineResource) Schema(_ context.Context, _ resource.
 			},
 		},
 	}
-
 }
 
-func (r *gitlabIntegrationRedmineResource) Configure(_ context.Context, req resource.ConfigureRequest, _ *resource.ConfigureResponse) {
+func (r *gitlabProjectIntegrationRedmineResource) Configure(_ context.Context, req resource.ConfigureRequest, _ *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -116,12 +133,12 @@ func (r *gitlabIntegrationRedmineResource) Configure(_ context.Context, req reso
 	r.client = resourceData.Client
 }
 
-func (r *gitlabIntegrationRedmineResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *gitlabProjectIntegrationRedmineResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
-func (r *gitlabIntegrationRedmineResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var data gitlabIntegrationRedmineResourceModel
+func (r *gitlabProjectIntegrationRedmineResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var data gitlabProjectIntegrationRedmineResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -144,8 +161,8 @@ func (r *gitlabIntegrationRedmineResource) Create(ctx context.Context, req resou
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *gitlabIntegrationRedmineResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var data gitlabIntegrationRedmineResourceModel
+func (r *gitlabProjectIntegrationRedmineResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var data gitlabProjectIntegrationRedmineResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -170,8 +187,8 @@ func (r *gitlabIntegrationRedmineResource) Read(ctx context.Context, req resourc
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *gitlabIntegrationRedmineResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var data gitlabIntegrationRedmineResourceModel
+func (r *gitlabProjectIntegrationRedmineResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var data gitlabProjectIntegrationRedmineResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -194,8 +211,8 @@ func (r *gitlabIntegrationRedmineResource) Update(ctx context.Context, req resou
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *gitlabIntegrationRedmineResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var data gitlabIntegrationRedmineResourceModel
+func (r *gitlabProjectIntegrationRedmineResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var data gitlabProjectIntegrationRedmineResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -215,7 +232,7 @@ func (r *gitlabIntegrationRedmineResource) Delete(ctx context.Context, req resou
 	}
 }
 
-func (r *gitlabIntegrationRedmineResource) updateRedmineService(ctx context.Context, data *gitlabIntegrationRedmineResourceModel) error {
+func (r *gitlabProjectIntegrationRedmineResource) updateRedmineService(ctx context.Context, data *gitlabProjectIntegrationRedmineResourceModel) error {
 	options := &gitlab.SetRedmineServiceOptions{
 		NewIssueURL:          data.NewIssueURL.ValueStringPointer(),
 		ProjectURL:           data.ProjectURL.ValueStringPointer(),
