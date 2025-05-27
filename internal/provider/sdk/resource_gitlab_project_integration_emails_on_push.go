@@ -15,14 +15,26 @@ import (
 )
 
 var _ = registerResource("gitlab_integration_emails_on_push", func() *schema.Resource {
-	return &schema.Resource{
-		Description: `The ` + "`gitlab_integration_emails_on_push`" + ` resource allows to manage the lifecycle of a project integration with Emails on Push Service.
+	return getProjectIntegrationEmailsOnPushResourceSchema(`The ` + "`gitlab_integration_emails_on_push`" + ` resource manages the lifecycle of a project integration with the Emails on Push Service.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#emails-on-push)`,
-		CreateContext: resourceGitlabIntegrationEmailsOnPushCreate,
-		ReadContext:   resourceGitlabIntegrationEmailsOnPushRead,
-		UpdateContext: resourceGitlabIntegrationEmailsOnPushCreate,
-		DeleteContext: resourceGitlabIntegrationEmailsOnPushDelete,
+~> This resource is deprecated and will be removed in 19.0. Use ` + "`gitlab_project_integration_emails_on_push`" + `instead!
+
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#emails-on-push)`)
+})
+
+var _ = registerResource("gitlab_project_integration_emails_on_push", func() *schema.Resource {
+	return getProjectIntegrationEmailsOnPushResourceSchema(`The ` + "`gitlab_project_integration_emails_on_push`" + ` resource manages the lifecycle of a project integration with the Emails on Push Service.
+
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#emails-on-push)`)
+})
+
+func getProjectIntegrationEmailsOnPushResourceSchema(description string) *schema.Resource {
+	return &schema.Resource{
+		Description:   description,
+		CreateContext: resourceGitlabProjectIntegrationEmailsOnPushCreate,
+		ReadContext:   resourceGitlabProjectIntegrationEmailsOnPushRead,
+		UpdateContext: resourceGitlabProjectIntegrationEmailsOnPushCreate,
+		DeleteContext: resourceGitlabProjectIntegrationEmailsOnPushDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -95,9 +107,9 @@ var _ = registerResource("gitlab_integration_emails_on_push", func() *schema.Res
 			},
 		},
 	}
-})
+}
 
-func resourceGitlabIntegrationEmailsOnPushCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+func resourceGitlabProjectIntegrationEmailsOnPushCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
 	options := &gitlab.SetEmailsOnPushServiceOptions{
@@ -128,10 +140,10 @@ func resourceGitlabIntegrationEmailsOnPushCreate(ctx context.Context, d *schema.
 	}
 	d.SetId(project)
 
-	return resourceGitlabIntegrationEmailsOnPushRead(ctx, d, meta)
+	return resourceGitlabProjectIntegrationEmailsOnPushRead(ctx, d, meta)
 }
 
-func resourceGitlabIntegrationEmailsOnPushRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+func resourceGitlabProjectIntegrationEmailsOnPushRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Id()
 
@@ -165,7 +177,7 @@ func resourceGitlabIntegrationEmailsOnPushRead(ctx context.Context, d *schema.Re
 	return nil
 }
 
-func resourceGitlabIntegrationEmailsOnPushDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+func resourceGitlabProjectIntegrationEmailsOnPushDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Id()
 
