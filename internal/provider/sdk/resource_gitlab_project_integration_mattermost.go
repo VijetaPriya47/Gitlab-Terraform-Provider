@@ -12,15 +12,26 @@ import (
 )
 
 var _ = registerResource("gitlab_integration_mattermost", func() *schema.Resource {
+	return getProjectIntegrationMattermostResourceSchema(`The ` + "`gitlab_integration_mattermost`" + ` resource manages the lifecycle of a project integration with Mattermost.
+
+~> This resource is deprecated and will be removed in 19.0. Use ` + "`gitlab_project_integration_mattermost`" + `instead!
+
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#mattermost-notifications)`)
+})
+
+var _ = registerResource("gitlab_project_integration_mattermost", func() *schema.Resource {
+	return getProjectIntegrationMattermostResourceSchema(`The ` + "`gitlab_project_integration_mattermost`" + ` resource manages the lifecycle of a project integration with Mattermost.
+
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#mattermost-notifications)`)
+})
+
+func getProjectIntegrationMattermostResourceSchema(description string) *schema.Resource {
 	return &schema.Resource{
-		Description: `The ` + "`gitlab_integration_mattermost`" + ` resource allows to manage the lifecycle of a project integration with Mattermost.
-
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#mattermost-notifications)`,
-
-		CreateContext: resourceGitlabIntegrationMattermostCreate,
-		ReadContext:   resourceGitlabIntegrationMattermostRead,
-		UpdateContext: resourceGitlabIntegrationMattermostUpdate,
-		DeleteContext: resourceGitlabIntegrationMattermostDelete,
+		Description:   description,
+		CreateContext: resourceGitlabProjectIntegrationMattermostCreate,
+		ReadContext:   resourceGitlabProjectIntegrationMattermostRead,
+		UpdateContext: resourceGitlabProjectIntegrationMattermostUpdate,
+		DeleteContext: resourceGitlabProjectIntegrationMattermostDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -162,9 +173,9 @@ var _ = registerResource("gitlab_integration_mattermost", func() *schema.Resourc
 			},
 		},
 	}
-})
+}
 
-func resourceGitlabIntegrationMattermostCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+func resourceGitlabProjectIntegrationMattermostCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Get("project").(string)
 	d.SetId(project)
@@ -205,10 +216,10 @@ func resourceGitlabIntegrationMattermostCreate(ctx context.Context, d *schema.Re
 		return diag.FromErr(err)
 	}
 
-	return resourceGitlabIntegrationMattermostRead(ctx, d, meta)
+	return resourceGitlabProjectIntegrationMattermostRead(ctx, d, meta)
 }
 
-func resourceGitlabIntegrationMattermostRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+func resourceGitlabProjectIntegrationMattermostRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	var diags diag.Diagnostics
 	client := meta.(*gitlab.Client)
 	project := d.Id()
@@ -259,11 +270,11 @@ func resourceGitlabIntegrationMattermostRead(ctx context.Context, d *schema.Reso
 	return diags
 }
 
-func resourceGitlabIntegrationMattermostUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
-	return resourceGitlabIntegrationMattermostCreate(ctx, d, meta)
+func resourceGitlabProjectIntegrationMattermostUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	return resourceGitlabProjectIntegrationMattermostCreate(ctx, d, meta)
 }
 
-func resourceGitlabIntegrationMattermostDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+func resourceGitlabProjectIntegrationMattermostDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Id()
 
