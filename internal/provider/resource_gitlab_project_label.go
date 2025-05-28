@@ -50,6 +50,7 @@ type gitlabProjectLabelResourceModel struct {
 	Project     types.String `tfsdk:"project"`
 	Name        types.String `tfsdk:"name"`
 	Color       types.String `tfsdk:"color"`
+	ColorHex    types.String `tfsdk:"color_hex"`
 	Description types.String `tfsdk:"description"`
 }
 
@@ -115,6 +116,10 @@ func (r *gitlabProjectLabelResource) getV1Schema() schema.Schema {
 				MarkdownDescription: "The color of the label given in 6-digit hex notation with leading '#' sign (e.g. #FFAABB) or one of the [CSS color names](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#Color_keywords).",
 				Required:            true,
 			},
+			"color_hex": schema.StringAttribute{
+				MarkdownDescription: "Read-only, used by the provider to store the API response color. This is always in the 6-digit hex notation with leading '#' sign (e.g. #FFAABB). If `color` contains a color name, this attribute contains the hex notation equivalent. Otherwise, the value of this attribute is the same as `color`.",
+				Computed:            true,
+			},
 			"description": schema.StringAttribute{
 				MarkdownDescription: "The description of the label.",
 				Optional:            true,
@@ -133,9 +138,10 @@ func (r *gitlabProjectLabelResource) Create(ctx context.Context, req resource.Cr
 	}
 
 	project := data.Project.ValueString()
+	color := data.Color.ValueString()
 	options := &gitlab.CreateLabelOptions{
 		Name:  gitlab.Ptr(data.Name.ValueString()),
-		Color: gitlab.Ptr(data.Color.ValueString()),
+		Color: gitlab.Ptr(color),
 	}
 
 	if !data.Description.IsNull() && !data.Description.IsUnknown() {
@@ -151,7 +157,7 @@ func (r *gitlabProjectLabelResource) Create(ctx context.Context, req resource.Cr
 	}
 
 	data.ID = types.StringValue(utils.BuildTwoPartID(&project, data.Name.ValueStringPointer()))
-	data.modelToStateModel(label, project)
+	data.modelToStateModel(label, color, project)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -179,7 +185,7 @@ func (r *gitlabProjectLabelResource) Read(ctx context.Context, req resource.Read
 		return
 	}
 
-	data.modelToStateModel(label, project)
+	data.modelToStateModel(label, data.Color.ValueString(), project)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -195,9 +201,10 @@ func (r *gitlabProjectLabelResource) Update(ctx context.Context, req resource.Up
 		return
 	}
 
+	color := data.Color.ValueString()
 	options := &gitlab.UpdateLabelOptions{
 		Name:  gitlab.Ptr(data.Name.ValueString()),
-		Color: gitlab.Ptr(data.Color.ValueString()),
+		Color: gitlab.Ptr(color),
 	}
 
 	if !data.Description.IsNull() && !data.Description.IsUnknown() {
@@ -211,7 +218,7 @@ func (r *gitlabProjectLabelResource) Update(ctx context.Context, req resource.Up
 		return
 	}
 
-	data.modelToStateModel(label, project)
+	data.modelToStateModel(label, color, project)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -267,11 +274,16 @@ func resourceGitlabProjectLabelStateUpgradeV0(ctx context.Context, data *gitlabP
 	return data
 }
 
-func (data *gitlabProjectLabelResourceModel) modelToStateModel(label *gitlab.Label, project string) {
+func (data *gitlabProjectLabelResourceModel) modelToStateModel(label *gitlab.Label, color string, project string) {
 	data.LabelID = types.Int64Value(int64(label.ID))
 	data.Project = types.StringValue(project)
 	data.Description = types.StringValue(label.Description)
-	data.Color = types.StringValue(label.Color)
+	if color == "" {
+		data.Color = types.StringValue(label.Color)
+	} else {
+		data.Color = types.StringValue(color)
+	}
+	data.ColorHex = types.StringValue(label.Color)
 	data.Name = types.StringValue(label.Name)
 }
 

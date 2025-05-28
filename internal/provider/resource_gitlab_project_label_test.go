@@ -126,6 +126,24 @@ func TestAcc_GitlabProjectLabel_basic(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
+			// Update the label to use a named color
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_label" "fixme" {
+						project     = "%d"
+						name        = "FIXME-%d"
+						color       = "forestgreen"
+						description = "fix this test"
+					}
+				`, project.ID, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project_label.fixme", "project", fmt.Sprintf("%d", project.ID)),
+					resource.TestCheckResourceAttr("gitlab_project_label.fixme", "name", fmt.Sprintf("FIXME-%d", rInt)),
+					resource.TestCheckResourceAttr("gitlab_project_label.fixme", "color", "forestgreen"),
+					resource.TestCheckResourceAttr("gitlab_project_label.fixme", "color_hex", "#228B22"),
+					resource.TestCheckResourceAttr("gitlab_project_label.fixme", "description", "fix this test"),
+				),
+			},
 		},
 	})
 }
