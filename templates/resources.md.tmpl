@@ -32,7 +32,8 @@ description: |-
 
 ## Import
 
-Starting in Terraform v1.5.0 you can use an [import block](https://developer.hashicorp.com/terraform/language/import) to import `{{.Name}}`. For example:
+Starting in Terraform v1.5.0, you can use an [import block](https://developer.hashicorp.com/terraform/language/import) to import `{{.Name}}`. For example:
+
 ```terraform
 import {
   to = {{ .Name }}.example
@@ -40,7 +41,7 @@ import {
 }
 ```
 
-Import using the CLI is supported using the following syntax:
+Importing using the CLI is supported with the following syntax:
 
 {{ codefile "shell" (printf "%s%s%s" "examples/resources/" .Name "/import.sh") }}
 {{- end }}

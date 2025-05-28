@@ -73,7 +73,8 @@ resource "gitlab_project_level_notifications" "custom" {
 
 ## Import
 
-Starting in Terraform v1.5.0 you can use an [import block](https://developer.hashicorp.com/terraform/language/import) to import `gitlab_project_level_notifications`. For example:
+Starting in Terraform v1.5.0, you can use an [import block](https://developer.hashicorp.com/terraform/language/import) to import `gitlab_project_level_notifications`. For example:
+
 ```terraform
 import {
   to = gitlab_project_level_notifications.example
@@ -81,7 +82,7 @@ import {
 }
 ```
 
-Import using the CLI is supported using the following syntax:
+Importing using the CLI is supported with the following syntax:
 
 ```shell
 # A GitLab Project level notification can be imported using a key composed of `<project-id>`, for example:

@@ -49,7 +49,8 @@ resource "gitlab_project_integration_pipelines_email" "email" {
 
 ## Import
 
-Starting in Terraform v1.5.0 you can use an [import block](https://developer.hashicorp.com/terraform/language/import) to import `gitlab_project_integration_pipelines_email`. For example:
+Starting in Terraform v1.5.0, you can use an [import block](https://developer.hashicorp.com/terraform/language/import) to import `gitlab_project_integration_pipelines_email`. For example:
+
 ```terraform
 import {
   to = gitlab_project_integration_pipelines_email.example
@@ -57,7 +58,7 @@ import {
 }
 ```
 
-Import using the CLI is supported using the following syntax:
+Importing using the CLI is supported with the following syntax:
 
 ```shell
 # You can import a gitlab_project_integration_pipelines_email state using the project ID, e.g.

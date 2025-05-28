@@ -74,7 +74,8 @@ Read-Only:
 
 ## Import
 
-Starting in Terraform v1.5.0 you can use an [import block](https://developer.hashicorp.com/terraform/language/import) to import `gitlab_branch`. For example:
+Starting in Terraform v1.5.0, you can use an [import block](https://developer.hashicorp.com/terraform/language/import) to import `gitlab_branch`. For example:
+
 ```terraform
 import {
   to = gitlab_branch.example
@@ -82,7 +83,7 @@ import {
 }
 ```
 
-Import using the CLI is supported using the following syntax:
+Importing using the CLI is supported with the following syntax:
 
 ```shell
 # Gitlab branches can be imported with a key composed of `<project_id>:<branch_name>`, e.g.

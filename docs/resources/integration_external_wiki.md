@@ -50,7 +50,8 @@ resource "gitlab_integration_external_wiki" "wiki" {
 
 ## Import
 
-Starting in Terraform v1.5.0 you can use an [import block](https://developer.hashicorp.com/terraform/language/import) to import `gitlab_integration_external_wiki`. For example:
+Starting in Terraform v1.5.0, you can use an [import block](https://developer.hashicorp.com/terraform/language/import) to import `gitlab_integration_external_wiki`. For example:
+
 ```terraform
 import {
   to = gitlab_integration_external_wiki.example
@@ -58,7 +59,7 @@ import {
 }
 ```
 
-Import using the CLI is supported using the following syntax:
+Importing using the CLI is supported with the following syntax:
 
 ```shell
 # You can import a gitlab_integration_external_wiki state using the project ID, e.g.

@@ -69,7 +69,8 @@ resource "gitlab_integration_jira" "jira" {
 
 ## Import
 
-Starting in Terraform v1.5.0 you can use an [import block](https://developer.hashicorp.com/terraform/language/import) to import `gitlab_integration_jira`. For example:
+Starting in Terraform v1.5.0, you can use an [import block](https://developer.hashicorp.com/terraform/language/import) to import `gitlab_integration_jira`. For example:
+
 ```terraform
 import {
   to = gitlab_integration_jira.example
@@ -77,7 +78,7 @@ import {
 }
 ```
 
-Import using the CLI is supported using the following syntax:
+Importing using the CLI is supported with the following syntax:
 
 ```shell
 # You can import a gitlab_integration_jira state using the project ID, e.g.
