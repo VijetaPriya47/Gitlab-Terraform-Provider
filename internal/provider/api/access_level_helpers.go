@@ -29,6 +29,15 @@ var ValidGroupAccessLevelNames = []string{
 	"owner",
 }
 
+var ValidGroupSAMLLinkAccessLevelNames = []string{
+	"guest",
+	"planner",
+	"reporter",
+	"developer",
+	"maintainer",
+	"owner",
+}
+
 var ValidProjectAccessLevelNames = []string{
 	"no one",
 	"minimal",
