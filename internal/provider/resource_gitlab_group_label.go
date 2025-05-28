@@ -285,7 +285,7 @@ func (r *gitlabGroupLabelResource) getV0Schema() schema.Schema {
 				Required:            true,
 			},
 			"color_hex": schema.StringAttribute{
-				MarkdownDescription: "The color of the label given in 6-digit hex notation with leading '#' sign (e.g. #FFAABB).",
+				MarkdownDescription: "Read-only, used by the provider to store the API response color. This is always in the 6-digit hex notation with leading '#' sign (e.g. #FFAABB). If `color` contains a color name, this attribute contains the hex notation equivalent. Otherwise, the value of this attribute is the same as `color`.",
 				Computed:            true,
 			},
 			"description": schema.StringAttribute{

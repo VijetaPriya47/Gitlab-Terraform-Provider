@@ -39,7 +39,7 @@ resource "gitlab_group_label" "fixme" {
 
 ### Read-Only
 
-- `color_hex` (String) The color of the label given in 6-digit hex notation with leading '#' sign (e.g. #FFAABB).
+- `color_hex` (String) Read-only, used by the provider to store the API response color. This is always in the 6-digit hex notation with leading '#' sign (e.g. #FFAABB). If `color` contains a color name, this attribute contains the hex notation equivalent. Otherwise, the value of this attribute is the same as `color`.
 - `id` (String) The ID of this Terraform resource. In the format of `<group-id>:<label-id>`.
 - `label_id` (Number) The id of the group label.
 
