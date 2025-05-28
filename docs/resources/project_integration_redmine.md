@@ -53,7 +53,8 @@ resource "gitlab_project_integration_redmine" "redmine" {
 
 ## Import
 
-Starting in Terraform v1.5.0 you can use an [import block](https://developer.hashicorp.com/terraform/language/import) to import `gitlab_project_integration_redmine`. For example:
+Starting in Terraform v1.5.0, you can use an [import block](https://developer.hashicorp.com/terraform/language/import) to import `gitlab_project_integration_redmine`. For example:
+
 ```terraform
 import {
   to = gitlab_project_integration_redmine.example
@@ -61,7 +62,7 @@ import {
 }
 ```
 
-Import using the CLI is supported using the following syntax:
+Importing using the CLI is supported with the following syntax:
 
 ```shell
 # You can import a gitlab_project_integration_redmine state using `terraform import <resource> <project_id>`:

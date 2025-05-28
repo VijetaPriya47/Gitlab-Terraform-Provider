@@ -45,7 +45,8 @@ resource "gitlab_project_target_branch_rule" "rule" {
 
 ## Import
 
-Starting in Terraform v1.5.0 you can use an [import block](https://developer.hashicorp.com/terraform/language/import) to import `gitlab_project_target_branch_rule`. For example:
+Starting in Terraform v1.5.0, you can use an [import block](https://developer.hashicorp.com/terraform/language/import) to import `gitlab_project_target_branch_rule`. For example:
+
 ```terraform
 import {
   to = gitlab_project_target_branch_rule.example
@@ -53,7 +54,7 @@ import {
 }
 ```
 
-Import using the CLI is supported using the following syntax:
+Importing using the CLI is supported with the following syntax:
 
 ```shell
 # A GitLab Project targer branch rule can be imported using a key composed of `<project-id>:<target-branch-rule-id>`, for example:
