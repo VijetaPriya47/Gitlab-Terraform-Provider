@@ -14,14 +14,6 @@ import (
 )
 
 var _ = registerResource("gitlab_group_saml_link", func() *schema.Resource {
-	validGroupSamlLinkAccessLevelNames := []string{
-		"guest",
-		"reporter",
-		"developer",
-		"maintainer",
-		"owner",
-	}
-
 	return &schema.Resource{
 		Description: `The ` + "`gitlab_group_saml_link`" + ` resource allows to manage the lifecycle of an SAML integration with a group.
 
@@ -48,9 +40,9 @@ var _ = registerResource("gitlab_group_saml_link", func() *schema.Resource {
 				ForceNew:    true,
 			},
 			"access_level": {
-				Description:      fmt.Sprintf("Access level for members of the SAML group. Valid values are: %s.", utils.RenderValueListForDocs(validGroupSamlLinkAccessLevelNames)),
+				Description:      fmt.Sprintf("Access level for members of the SAML group. Valid values are: %s.", utils.RenderValueListForDocs(api.ValidGroupSAMLLinkAccessLevelNames)),
 				Type:             schema.TypeString,
-				ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(validGroupSamlLinkAccessLevelNames, false)),
+				ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(api.ValidGroupSAMLLinkAccessLevelNames, false)),
 				Required:         true,
 				ForceNew:         true,
 			},

@@ -52,6 +52,23 @@ func TestAccGitlabGroupSamlLink_basic(t *testing.T) {
 					}
 				`, testGroup.ID),
 			},
+			// Verify Import
+			{
+				ResourceName:      "gitlab_group_saml_link.this",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Update the group SAML link to change the access level to the newer type `planner`
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_group_saml_link" "this" {
+						group   		= "%d"
+						access_level 	= "planner"
+						saml_group_name = "test_saml_group"
+
+					}
+				`, testGroup.ID),
+			},
 		},
 	})
 }
