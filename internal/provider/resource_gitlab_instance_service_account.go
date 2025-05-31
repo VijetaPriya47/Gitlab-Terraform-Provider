@@ -131,7 +131,6 @@ func (r *gitlabInstanceServiceAccountResource) Create(ctx context.Context, req r
 	}
 
 	serviceAccount, _, err := r.client.Users.CreateServiceAccountUser(options)
-
 	if err != nil {
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to create service account: %s", err.Error()))
 		return
