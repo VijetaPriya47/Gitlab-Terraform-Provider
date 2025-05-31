@@ -21,7 +21,7 @@ func TestAcc_GitlabInstanceServiceAccount_basic(t *testing.T) {
 
 	name := acctest.RandString(10)
 	username := acctest.RandString(10)
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		CheckDestroy:             testAcc_GitlabInstanceServiceAccount_CheckDestroy(),
 		Steps: []resource.TestStep{
@@ -55,7 +55,7 @@ func TestAcc_GitlabInstanceServiceAccount_EnsureRecreate(t *testing.T) {
 	username := acctest.RandString(10)
 	name2 := acctest.RandString(10)
 	username2 := acctest.RandString(10)
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAcc_GitlabInstanceServiceAccount_CheckDestroy(),
 		Steps: []resource.TestStep{
@@ -94,7 +94,7 @@ func TestAcc_GitlabInstanceServiceAccount_WithEmail(t *testing.T) {
 	name := acctest.RandString(10)
 	username := acctest.RandString(10)
 	email := fmt.Sprintf("%s@example.com", acctest.RandString(10))
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		CheckDestroy:             testAcc_GitlabInstanceServiceAccount_CheckDestroy(),
 		Steps: []resource.TestStep{
@@ -128,7 +128,7 @@ func TestAcc_GitlabInstanceServiceAccount_CreateWithoutEmail(t *testing.T) {
 
 	name := acctest.RandString(10)
 	username := acctest.RandString(10)
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		CheckDestroy:             testAcc_GitlabInstanceServiceAccount_CheckDestroy(),
 		Steps: []resource.TestStep{
@@ -174,7 +174,6 @@ func testAcc_GitlabInstanceServiceAccount_CheckDestroy() resource.TestCheckFunc 
 		for _, rs := range s.RootModule().Resources {
 			if rs.Type == "gitlab_instance_service_account" {
 				serviceAccountID, err := strconv.Atoi(rs.Primary.ID)
-
 				if err != nil {
 					return fmt.Errorf("Could not convert id to int")
 				}
