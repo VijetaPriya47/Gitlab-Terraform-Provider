@@ -29,6 +29,7 @@ var (
 	_ resource.Resource                = &gitlabProjectJobTokenScopesResource{}
 	_ resource.ResourceWithConfigure   = &gitlabProjectJobTokenScopesResource{}
 	_ resource.ResourceWithImportState = &gitlabProjectJobTokenScopesResource{}
+	_ resource.ResourceWithModifyPlan  = &gitlabProjectJobTokenScopesResource{}
 )
 
 func init() {
@@ -144,6 +145,36 @@ func (r *gitlabProjectJobTokenScopesResource) Configure(ctx context.Context, req
 
 	resourceData := req.ProviderData.(*GitLabResourceData)
 	r.client = resourceData.Client
+}
+
+// We don't use the ModifyPlan normally in this resource, instead we use it to return AttributeError diagnostics based on the values
+// set into application settings in the system. While this logic _feels_ like it should be in ValidateConfig instead (because it should be),
+// the `gitlab.Client` is not initialized during Config Validation, so the logic must instead go here.
+func (r *gitlabProjectJobTokenScopesResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	var planData *gitlabProjectJobTokenScopesResourceModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &planData)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Determine if `enforce_ci_inbound_job_token_scope_enabled` is set to true; if so, we cannot set `enabled` to false, and an attribute
+	// error must be thrown if that's the value in the config.
+	settings, _, err := r.client.Settings.GetSettings(nil)
+	if err != nil {
+		// since we don't know if the attribute is set to `true` or not, we need to skip this check. We'll log a warning instead.
+		tflog.Warn(ctx, "failed to retrieve settings; skipping `enforce_ci_inbound_job_token_scope_enabled` validation. Proceeding with plan assuming the user knows they can configure it properly.", map[string]interface{}{
+			"error": err,
+		})
+	}
+
+	// If settings isn't null, the config setting to enforce is true, and the `enabled` attribute is false
+	if settings != nil && planData != nil && settings.EnforceCIInboundJobTokenScopeEnabled && !planData.Enabled.IsNull() && !planData.Enabled.IsUnknown() && !planData.Enabled.ValueBool() {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("enabled"),
+			"`enabled` may not be set to false when the setting for `enforce_ci_inbound_job_token_scope_enabled` is set to true.",
+			"Job Token Scope enforcement must be enabled on this GitLab instance due to application settings. Talk to a system administrator if you believe this error is inaccurate.")
+	}
+
 }
 
 // Create a new upstream resources and adds it into the Terraform state.
