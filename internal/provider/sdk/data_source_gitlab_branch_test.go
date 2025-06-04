@@ -21,7 +21,10 @@ func TestAccDataGitlabBranch_basic(t *testing.T) {
 	}
 
 	// Sometimes the branch hasn't been protected yet, so wait a bit and get it again
-	if !branch.Protected {
+	for range 5 {
+		if branch.Protected {
+			break
+		}
 		//nolint // R018 this is part of testing code, not the provider itself.
 		time.Sleep(10 * time.Second)
 		branch, _, err = testutil.TestGitlabClient.Branches.GetBranch(project.ID, "main")
