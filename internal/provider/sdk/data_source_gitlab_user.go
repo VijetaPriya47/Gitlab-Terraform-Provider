@@ -184,6 +184,16 @@ var _ = registerDataSource("gitlab_user", func() *schema.Resource {
 				Optional:    true,
 				Computed:    true,
 			},
+			"email_exact_match": {
+				Description: "(Experimental) If true, returns only an exact match. Otherwise, fuzzy matching might return the closest result. If no exact match is available, the data source returns an error.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+				ConflictsWith: []string{
+					"user_id",
+					"username",
+				},
+			},
 		},
 	}
 })
@@ -199,6 +209,7 @@ func dataSourceGitlabUserRead(ctx context.Context, d *schema.ResourceData, meta 
 	userIDData, userIDOk := d.GetOk("user_id")
 	usernameData, usernameOk := d.GetOk("username")
 	emailData, emailOk := d.GetOk("email")
+	emailExactMatch, emailExactMatchOk := d.GetOk("email_exact_match")
 
 	if userIDOk {
 		// Get user by id
@@ -228,16 +239,25 @@ func dataSourceGitlabUserRead(ctx context.Context, d *schema.ResourceData, meta 
 			return diag.FromErr(err)
 		}
 
-		if len(users) == 0 {
-			return diag.Errorf("couldn't find a user matching: %s%s", username, email)
-		} else {
-			if len(users) > 1 {
-				tflog.Info(ctx, "more than one user found matching. Will return the first user, since this can only happen when using `search`", map[string]any{
-					"username": username,
-					"email":    email,
-				})
+		if len(users) > 0 {
+			if emailOk && emailExactMatchOk && emailExactMatch.(bool) {
+				for _, v := range users {
+					if v.Email == email {
+						user = v
+						break
+					}
+				}
+			} else {
+				if len(users) > 1 {
+					tflog.Info(ctx, "more than one user found matching defined email. Will return the first user, since this can only happen when using `search`", map[string]interface{}{
+						"email": email,
+					})
+				}
+				user = users[0]
 			}
-			user = users[0]
+		}
+		if user == nil {
+			return diag.Errorf("couldn't find a user matching: %s%s", username, email)
 		}
 	} else {
 		return diag.Errorf("one and only one of user_id, username or email must be set")
