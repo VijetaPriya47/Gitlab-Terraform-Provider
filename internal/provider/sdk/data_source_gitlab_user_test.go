@@ -5,6 +5,7 @@ package sdk
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -66,6 +67,64 @@ func TestAccDataSourceGitlabUser_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("data.gitlab_user.foo", "can_create_group", fmt.Sprintf("%t", user1.CanCreateGroup)),
 					resource.TestCheckResourceAttr("data.gitlab_user.foo", "projects_limit", fmt.Sprintf("%d", user1.ProjectsLimit)),
 				),
+			},
+		},
+	})
+}
+
+func TestAccDataSourceGitlabUser_emailExactMatch(t *testing.T) {
+
+	// Create some users for the test. Ensure more than 1 so that
+	// the fuzzy test would return a non-exact match.
+	user := testutil.CreateUsers(t, 5)[1]
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		Steps: []resource.TestStep{
+			// Validate the `email_exact_match` conflicts with `username`
+			{
+				Config: `
+					data "gitlab_user" "test" {
+						username = "asdf"
+						email_exact_match = true
+					}
+				`,
+				ExpectError: regexp.MustCompile(`"email_exact_match": conflicts with username`),
+			},
+			// Validate the `email_exact_match` conflicts with `user_id`
+			{
+				Config: `
+					data "gitlab_user" "test" {
+						user_id = "1234"
+						email_exact_match = true
+					}
+				`,
+				ExpectError: regexp.MustCompile(`"email_exact_match": conflicts with user_id`),
+			},
+			// Validate that when we search with a valid email, we get the correct user back.
+			{
+				Config: fmt.Sprintf(`
+					data "gitlab_user" "test" {
+					  email = "%s"
+
+					  email_exact_match = true
+					}
+				`, user.Email),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("data.gitlab_user.test", "email", user.Email),
+				),
+			},
+			// Validate that when we search with a fuzzy match, we get an error instead of
+			// an invalid user (acctest-user is the prefix for all test created users with the helper)
+			{
+				Config: `
+					data "gitlab_user" "test" {
+					  email = "acctest-user@example.com"
+
+					  email_exact_match = true
+					}
+				`,
+				ExpectError: regexp.MustCompile("couldn't find a user matching: acctest-user@example.com"),
 			},
 		},
 	})
