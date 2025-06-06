@@ -1074,6 +1074,9 @@ func resourceGitlabProjectCreate(ctx context.Context, d *schema.ResourceData, me
 				if err != nil {
 					return nil, "", err
 				}
+				if status.ImportStatus == "failed" && status.ImportError != "" {
+					return nil, "", fmt.Errorf("%v", status.ImportError)
+				}
 
 				return status, status.ImportStatus, nil
 			},
