@@ -5,10 +5,12 @@ package sdk
 
 import (
 	"fmt"
+	"strconv"
 	"testing"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
@@ -21,15 +23,21 @@ func TestAccDataGitlabBranch_basic(t *testing.T) {
 	}
 
 	// Sometimes the branch hasn't been protected yet, so wait a bit and get it again
-	for range 5 {
-		if branch.Protected {
-			break
+	if !branch.Protected {
+		stateConf := &retry.StateChangeConf{
+			Pending: []string{"false"},
+			Target:  []string{"true"},
+			Timeout: 120 * time.Second,
+			Refresh: func() (any, string, error) {
+				branch, _, err = testutil.TestGitlabClient.Branches.GetBranch(project.ID, "main")
+				if err != nil {
+					return branch, "false", fmt.Errorf("failed to get branch: %w", err)
+				}
+				return branch, strconv.FormatBool(branch.Protected), nil
+			},
 		}
-		//nolint // R018 this is part of testing code, not the provider itself.
-		time.Sleep(10 * time.Second)
-		branch, _, err = testutil.TestGitlabClient.Branches.GetBranch(project.ID, "main")
-		if err != nil {
-			t.Fatalf("could not get branch: %v", err)
+		if _, err = stateConf.WaitForStateContext(t.Context()); err != nil {
+			t.Fatalf("could not create branch in protected state: %v", err)
 		}
 	}
 
