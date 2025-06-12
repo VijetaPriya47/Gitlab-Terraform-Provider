@@ -119,7 +119,7 @@ func testAccGitlabProjectTargetBranchRuleDestroy(s *terraform.State) error {
 		}
 
 		var response getProjectTargetBranchRuleReadResponse
-		_, err = testutil.TestGitlabClient.GraphQL.Do(ctx, query, &response)
+		_, err = testutil.TestGitlabClient.GraphQL.Do(query, &response)
 		if err != nil {
 			return err
 		}

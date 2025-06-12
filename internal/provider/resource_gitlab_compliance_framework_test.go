@@ -4,7 +4,6 @@
 package provider
 
 import (
-	"context"
 	"fmt"
 	"regexp"
 	"testing"
@@ -341,7 +340,7 @@ func testAcc_GitlabComplianceFramework_CheckDestroy(s *terraform.State) error {
 			}
 
 			var response ComplianceFrameworkResponse
-			if _, err := testutil.TestGitlabClient.GraphQL.Do(context.Background(), query, &response); err != nil {
+			if _, err := testutil.TestGitlabClient.GraphQL.Do(query, &response); err != nil {
 				return err
 			}
 

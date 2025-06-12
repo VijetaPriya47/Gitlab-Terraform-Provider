@@ -18,7 +18,7 @@ func GetProjectGIDFromID(ctx context.Context, client *gitlab.Client, projectId s
 
 	// Call the GraphQL Project API to get the GID
 	var response getProjectIDStruct
-	_, err = client.GraphQL.Do(ctx, gitlab.GraphQLQuery{Query: fmt.Sprintf(`query { project(fullPath: "%s") { id } }`, project.PathWithNamespace)}, &response)
+	_, err = client.GraphQL.Do(gitlab.GraphQLQuery{Query: fmt.Sprintf(`query { project(fullPath: "%s") { id } }`, project.PathWithNamespace)}, &response)
 
 	return &ProjectIdentifiers{
 		ProjectID:       project.ID,
@@ -53,7 +53,7 @@ func GetGroupGIDFromID(ctx context.Context, client *gitlab.Client, groupId strin
 
 	// Call the GraphQL Project API to get the GID
 	var response getGroupIDStruct
-	_, err = client.GraphQL.Do(ctx, gitlab.GraphQLQuery{Query: fmt.Sprintf(`query { group(fullPath: "%s") { id } }`, group.FullPath)}, &response)
+	_, err = client.GraphQL.Do(gitlab.GraphQLQuery{Query: fmt.Sprintf(`query { group(fullPath: "%s") { id } }`, group.FullPath)}, &response)
 
 	return &GroupIdentifiers{
 		GroupID:       group.ID,

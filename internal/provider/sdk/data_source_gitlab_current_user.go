@@ -77,7 +77,7 @@ func dataSourceGitlabCurrentUserRead(ctx context.Context, d *schema.ResourceData
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] executing GraphQL Query %s to retrieve current user", query.Query))
 
 	var response CurrentUserResponse
-	if _, err := client.GraphQL.Do(ctx, query, &response); err != nil {
+	if _, err := client.GraphQL.Do(query, &response); err != nil {
 		return diag.FromErr(err)
 	}
 

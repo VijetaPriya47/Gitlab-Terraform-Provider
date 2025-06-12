@@ -4,7 +4,6 @@
 package provider
 
 import (
-	"context"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -402,7 +401,7 @@ func testAcc_GitlabMemberRole_CheckDestroy(s *terraform.State) error {
 			}
 
 			var response MemberRoleResponse
-			if _, err := testutil.TestGitlabClient.GraphQL.Do(context.Background(), query, &response); err != nil {
+			if _, err := testutil.TestGitlabClient.GraphQL.Do(query, &response); err != nil {
 				return err
 			}
 

@@ -318,7 +318,7 @@ mutation {
 
 	// Make the GraphQL call
 	var response *updateGroupDependencyProxyGraphQLResponse
-	_, err := r.client.GraphQL.Do(ctx, gitlab.GraphQLQuery{Query: graphQLcall}, &response)
+	_, err := r.client.GraphQL.Do(gitlab.GraphQLQuery{Query: graphQLcall}, &response)
 	if err != nil {
 		return nil, err
 	}
@@ -348,7 +348,7 @@ query {
 
 	// Make the GraphQL call
 	var response *readGroupDependencyProxyGraphQLResponse
-	_, err := client.GraphQL.Do(ctx, gitlab.GraphQLQuery{Query: graphQLcall}, &response)
+	_, err := client.GraphQL.Do(gitlab.GraphQLQuery{Query: graphQLcall}, &response)
 	if err != nil {
 		return nil, err
 	}
