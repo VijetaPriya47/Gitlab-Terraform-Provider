@@ -104,7 +104,7 @@ func testAcc_GitlabGroupSecurityPolicyAttachment_CheckDestroy(s *terraform.State
 				`, groupGid.GroupFullPath)
 
 			var response GetGroupSecurityPolicyProjectResponse
-			_, err = testutil.TestGitlabClient.GraphQL.Do(context.Background(), gitlab.GraphQLQuery{Query: query}, &response)
+			_, err = testutil.TestGitlabClient.GraphQL.Do(gitlab.GraphQLQuery{Query: query}, &response)
 			if err != nil {
 				return err
 			}

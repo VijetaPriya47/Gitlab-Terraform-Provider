@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 )
 
@@ -154,7 +154,7 @@ func (r *gitlabProjectComplianceFrameworksResource) Read(ctx context.Context, re
 	})
 
 	var response projectResponse
-	if _, err = r.client.GraphQL.Do(ctx, query, &response); err != nil {
+	if _, err = r.client.GraphQL.Do(query, &response); err != nil {
 		if api.Is404(err) {
 			tflog.Debug(ctx, "compliance frameworks do not exist on project, removing from state", map[string]any{
 				"project_path_with_namespace": project.PathWithNamespace,
@@ -243,7 +243,7 @@ func (r *gitlabProjectComplianceFrameworksResource) Create(ctx context.Context, 
 	})
 
 	var response projectUpdateComplianceFrameworksResponse
-	if _, err = r.client.GraphQL.Do(ctx, query, &response); err != nil {
+	if _, err = r.client.GraphQL.Do(query, &response); err != nil {
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to update project compliance frameworks: %s", err.Error()))
 		return
 	}
@@ -328,7 +328,7 @@ func (r *gitlabProjectComplianceFrameworksResource) Delete(ctx context.Context, 
 		"query": query.Query,
 	})
 
-	if _, err = r.client.GraphQL.Do(ctx, query, nil); err != nil {
+	if _, err = r.client.GraphQL.Do(query, nil); err != nil {
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to delete project compliance frameworks: %s", err.Error()))
 		return
 	}

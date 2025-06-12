@@ -2987,7 +2987,7 @@ func updateProjectSecretDetectionValue(ctx context.Context, client *gitlab.Clien
 	}
 
 	var response *updateSecretDetectionGraphQLResponse
-	_, err := client.GraphQL.Do(ctx, query, &response)
+	_, err := client.GraphQL.Do(query, &response)
 	if err != nil {
 		return err
 	}

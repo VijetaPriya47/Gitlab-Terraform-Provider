@@ -727,9 +727,8 @@ func CreateGroupEpicBoard(t *testing.T, path string) {
 			}`, path, acctest.RandomWithPrefix("acctest")),
 	}
 
-	ctx := context.Background()
 	var pid interface{}
-	if _, err := TestGitlabClient.GraphQL.Do(ctx, query, &pid); err != nil {
+	if _, err := TestGitlabClient.GraphQL.Do(query, &pid); err != nil {
 		t.Fatalf("Unable to create epic board: %s", err.Error())
 	}
 }
@@ -1102,7 +1101,7 @@ func CreateComplianceFramework(t *testing.T, group *gitlab.Group) *api.GraphQLCo
 	}
 
 	var response createComplianceFrameworkResponse
-	if _, err := TestGitlabClient.GraphQL.Do(context.Background(), query, &response); err != nil {
+	if _, err := TestGitlabClient.GraphQL.Do(query, &response); err != nil {
 		t.Fatalf("Unable to create compliance framework: %s", err.Error())
 	}
 
@@ -1120,7 +1119,7 @@ func CreateComplianceFramework(t *testing.T, group *gitlab.Group) *api.GraphQLCo
 				}`, response.Data.CreateComplianceFramework.Framework.ID),
 		}
 
-		if _, err := TestGitlabClient.GraphQL.Do(context.Background(), query, nil); err != nil {
+		if _, err := TestGitlabClient.GraphQL.Do(query, nil); err != nil {
 			t.Fatalf("Unable to delete compliance framework: %s", err.Error())
 		}
 	})
@@ -1153,7 +1152,7 @@ func DeleteProjectComplianceFrameworks(t *testing.T, project *gitlab.Project) {
 			}`, project.ID),
 	}
 
-	if _, err := TestGitlabClient.GraphQL.Do(context.Background(), query, nil); err != nil {
+	if _, err := TestGitlabClient.GraphQL.Do(query, nil); err != nil {
 		t.Fatalf("Unable to delete project compliance frameworks: %s", err.Error())
 	}
 }

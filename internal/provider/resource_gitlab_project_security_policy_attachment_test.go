@@ -103,7 +103,7 @@ func testAcc_GitlabProjectSecurityPolicyAttachment_CheckDestroy(s *terraform.Sta
 				`, projectIds.ProjectFullPath)
 
 			var response GetSecurityPolicyProjectResponse
-			_, err = testutil.TestGitlabClient.GraphQL.Do(context.Background(), gitlab.GraphQLQuery{Query: query}, &response)
+			_, err = testutil.TestGitlabClient.GraphQL.Do(gitlab.GraphQLQuery{Query: query}, &response)
 			if err != nil {
 				return err
 			}

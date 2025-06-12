@@ -125,7 +125,7 @@ func (r *gitlabProjectTargetBranchRule) Create(ctx context.Context, req resource
 		"query": query.Query,
 	})
 	var response getProjectTargetBranchRuleCreateResponse
-	_, err = r.client.GraphQL.Do(ctx, query, &response)
+	_, err = r.client.GraphQL.Do(query, &response)
 	if err != nil {
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to create gitlab_project_target_branch_rule: %s", err.Error()))
 		return
@@ -197,7 +197,7 @@ func (r *gitlabProjectTargetBranchRule) Read(ctx context.Context, req resource.R
 	})
 
 	var response getProjectTargetBranchRuleReadResponse
-	_, err = r.client.GraphQL.Do(ctx, query, &response)
+	_, err = r.client.GraphQL.Do(query, &response)
 	if err != nil {
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to read gitlab_project_target_branch_rule: %s", err.Error()))
 		return
@@ -270,7 +270,7 @@ func (r *gitlabProjectTargetBranchRule) Delete(ctx context.Context, req resource
 	})
 
 	var response getProjectTargetBranchRuleDeleteResponse
-	_, err = r.client.GraphQL.Do(ctx, query, &response)
+	_, err = r.client.GraphQL.Do(query, &response)
 	if err != nil {
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to delete gitlab_project_target_branch_rule: %s", err.Error()))
 		return

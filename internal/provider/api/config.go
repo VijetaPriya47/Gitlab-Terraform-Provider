@@ -10,7 +10,8 @@ import (
 	"os"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/logging"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
+	"golang.org/x/oauth2"
 )
 
 // Config is per-provider, specifies where to connect to gitlab
@@ -92,7 +93,9 @@ func (c *Config) NewGitLabClient(ctx context.Context) (*gitlab.Client, error) {
 	// The OAuth method is also compatible with project/group/personal access and job tokens because they are all usable as Bearer tokens.
 	// Although the job token API access is very limited.
 	// see https://docs.gitlab.com/api/rest/authentication/
-	client, err := gitlab.NewOAuthClient(c.Token, opts...)
+	client, err := gitlab.NewAuthSourceClient(gitlab.OAuthTokenSource{
+		TokenSource: oauth2.StaticTokenSource(&oauth2.Token{AccessToken: c.Token}),
+	}, opts...)
 	if err != nil {
 		return nil, err
 	}

@@ -4,7 +4,6 @@
 package provider
 
 import (
-	"context"
 	"fmt"
 	"regexp"
 	"testing"
@@ -663,7 +662,7 @@ func testAcc_GitlabProjectValueStreamAnalytics_CheckDestroy(s *terraform.State) 
 			}
 
 			var response projectValueStreamResponse
-			if _, err := testutil.TestGitlabClient.GraphQL.Do(context.Background(), query, &response); err != nil {
+			if _, err := testutil.TestGitlabClient.GraphQL.Do(query, &response); err != nil {
 				return err
 			}
 
@@ -701,7 +700,7 @@ func testAcc_GitlabGroupValueStreamAnalytics_CheckDestroy(s *terraform.State) er
 			}
 
 			var response groupValueStreamResponse
-			if _, err := testutil.TestGitlabClient.GraphQL.Do(context.Background(), query, &response); err != nil {
+			if _, err := testutil.TestGitlabClient.GraphQL.Do(query, &response); err != nil {
 				return err
 			}
 
