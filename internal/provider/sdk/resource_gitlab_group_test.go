@@ -336,7 +336,7 @@ func TestAccGitlabGroup_defaultBranchProtectionDefaults(t *testing.T) {
 				  description = "Terraform acceptance tests"
 
 				  default_branch_protection_defaults {
-				        allowed_to_push = ["no one"]
+					allowed_to_push = ["no one"]
 					allow_force_push = false
 					allowed_to_merge = ["no one"]
 					developer_can_initial_push = true
@@ -1693,6 +1693,65 @@ func TestAccGitlabGroup_WithAvatar(t *testing.T) {
 	testCase := createAvatarableTestCase_WithAvatar(t, "gitlab_group.test", testConfig)
 	testCase.CheckDestroy = testAccCheckGitlabGroupDestroy
 	resource.Test(t, testCase)
+}
+
+func TestAccGitlabGroup_WithAvatarAndDefaultBranchProtection(t *testing.T) {
+	testConfig := fmt.Sprintf(`
+	resource "gitlab_group" "test" {
+		name             =  "%[1]s"
+		path             =  "%[1]s"
+		visibility_level = "public"
+
+		{{.AvatarableAttributeConfig}}
+
+		default_branch_protection_defaults {
+			allow_force_push           = true
+			allowed_to_merge           = ["developer"]
+			allowed_to_push            = ["developer"]
+			developer_can_initial_push = false
+		}
+	}
+	`, acctest.RandomWithPrefix("acctest"))
+
+	testCase := createAvatarableTestCase_WithAvatar(t, "gitlab_group.test", testConfig)
+	testCase.CheckDestroy = testAccCheckGitlabGroupDestroy
+	resource.Test(t, testCase)
+}
+
+// When passing multiple `allowed_to_merge` or `allowed_to_push` values
+// with an avatar, an error should be returned as this isn't allowed
+func TestAccGitlabGroup_WithAvatarAndDefaultBranchProtectionsError(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabGroupDestroy,
+		Steps: []resource.TestStep{
+			// Create a group
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_group" "test" {
+						name             =  "%[1]s"
+						path             =  "%[1]s"
+						visibility_level = "public"
+
+						avatar      = "${path.module}/testdata/avatarable/avatar.png"
+						avatar_hash = filesha256("${path.module}/testdata/avatarable/avatar.png")
+
+						default_branch_protection_defaults {
+						allow_force_push           = true
+						allowed_to_merge           = ["developer", "maintainer"]
+						allowed_to_push            = ["developer", "maintainer"]
+						developer_can_initial_push = false
+						}
+					}
+					`, acctest.RandomWithPrefix("acctest")),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("gitlab_group.test", "avatar_url"),
+					resource.TestCheckResourceAttr("gitlab_group.test", "avatar_hash", "8d29d9c393facb9d86314eb347a03fde503f2c0422bf55af7df086deb126107e"),
+				),
+				ExpectError: regexp.MustCompile("multiple access levels for allowed_to_merge or allowed_to_push are not permitted when an Avatar is also specified as it will result in unexpected behavior"),
+			},
+		},
+	})
 }
 
 func TestAccGitlabGroup_sharedRunnersSetting(t *testing.T) {
