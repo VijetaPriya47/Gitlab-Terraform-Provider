@@ -17,6 +17,8 @@ var _ = registerResource("gitlab_branch", func() *schema.Resource {
 	return &schema.Resource{
 		Description: `The ` + "`gitlab_branch`" + ` resource allows to manage the lifecycle of a repository branch.
 
+!> The ` + "`ref`" + ` attribute is only set in state on resource creation. Imports or divergent branches can lead Terraform to destroy and recreate the resource. Use the lifecycle meta-argument to ignore changes to avoid this behavior.
+
 **Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/branches/)`,
 
 		CreateContext: resourceGitlabBranchCreate,
