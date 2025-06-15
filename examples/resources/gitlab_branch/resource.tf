@@ -9,5 +9,11 @@ resource "gitlab_branch" "example" {
   name    = "example"
   ref     = "main"
   project = gitlab_project.example.id
+
+  # Recommended for imports and divergent branches
+  # to prevent resource destroy and recreate.
+  lifecycle {
+    ignore_changes = [ref]
+  }
 }
 
