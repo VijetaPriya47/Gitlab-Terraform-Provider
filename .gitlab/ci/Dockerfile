@@ -1,6 +1,6 @@
 # Use the docker container proxy so we don't hit docker hub limits
 ARG DOCKER_REGISTRY_IMAGE_PREFIX=""
-ARG GO_VERSION="1.23.3"
+ARG GO_VERSION="1.23.4"
 FROM ${DOCKER_REGISTRY_IMAGE_PREFIX}golang:${GO_VERSION}
 
 # Install docker and compose, as we need that for our CI/CD and image downloads
