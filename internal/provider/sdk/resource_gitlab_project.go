@@ -792,6 +792,12 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 		Optional:    true,
 		Computed:    true,
 	},
+	"auto_duo_code_review_enabled": {
+		Description: "Enable automatic reviews by GitLab Duo on merge requests. Ultimate only. Automatic reviews only work with the GitLab Duo Enterprise add-on.",
+		Type:        schema.TypeBool,
+		Optional:    true,
+		Computed:    true,
+	},
 }
 
 var validContainerExpirationPolicyAttributesCadenceValues = []string{
@@ -1018,6 +1024,7 @@ func resourceGitlabProjectSetToState(d *schema.ResourceData, project *gitlab.Pro
 	d.Set("model_experiments_access_level", string(project.ModelExperimentsAccessLevel))
 	d.Set("model_registry_access_level", string(project.ModelRegistryAccessLevel))
 	d.Set("prevent_merge_without_jira_issue", project.PreventMergeWithoutJiraIssue)
+	d.Set("auto_duo_code_review_enabled", project.AutoDuoCodeReviewEnabled)
 
 	return nil
 }
@@ -1625,6 +1632,10 @@ func resourceGitlabProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 
 	if d.HasChange("prevent_merge_without_jira_issue") {
 		options.PreventMergeWithoutJiraIssue = gitlab.Ptr(d.Get("prevent_merge_without_jira_issue").(bool))
+	}
+
+	if d.HasChange("auto_duo_code_review_enabled") {
+		options.AutoDuoCodeReviewEnabled = gitlab.Ptr(d.Get("auto_duo_code_review_enabled").(bool))
 	}
 
 	avatar, err := handleAvatarOnUpdate(d)
@@ -2641,6 +2652,10 @@ func updatePostCreateEditOptions(ctx context.Context, editProjectOptions *gitlab
 
 	if v, ok := d.GetOk("prevent_merge_without_jira_issue"); ok {
 		editProjectOptions.PreventMergeWithoutJiraIssue = gitlab.Ptr(v.(bool))
+	}
+
+	if v, ok := d.GetOk("auto_duo_code_review_enabled"); ok {
+		editProjectOptions.AutoDuoCodeReviewEnabled = gitlab.Ptr(v.(bool))
 	}
 
 	// If we forked the project we could apply lots of the attributes,

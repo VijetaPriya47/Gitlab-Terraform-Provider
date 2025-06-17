@@ -3396,6 +3396,56 @@ func TestAccGitlabProject_CIDeletePipelinesInSeconds(t *testing.T) {
 	})
 }
 
+func TestAccGitlabProject_DuoCodeReviewEnabled(t *testing.T) {
+	testutil.RunIfAtLeast(t, "18.0")
+	testutil.SkipIfCE(t)
+
+	projectName := acctest.RandomWithPrefix("acctest")
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabProjectDestroy,
+		Steps: []resource.TestStep{
+			// Create a project with auto_duo_code_review_enabled enabled
+			{
+				Config: fmt.Sprintf(`resource "gitlab_project" "test" {
+					name           = "%s"
+					default_branch = "main"
+
+					auto_duo_code_review_enabled = true
+				}`, projectName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project.test", "auto_duo_code_review_enabled", "true"),
+				),
+			},
+			// Verify import
+			{
+				ResourceName:      "gitlab_project.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Disable auto_duo_code_review_enabled
+			{
+				Config: fmt.Sprintf(`resource "gitlab_project" "test" {
+					name           = "%s"
+					default_branch = "main"
+
+					auto_duo_code_review_enabled = false
+				}`, projectName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project.test", "auto_duo_code_review_enabled", "false"),
+				),
+			},
+			// Verify import
+			{
+				ResourceName:      "gitlab_project.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 type testAccGitlabProjectMirroredExpectedAttributes struct {
 	Mirror                           bool
 	MirrorTriggerBuilds              bool
