@@ -144,6 +144,7 @@ resource "gitlab_project" "import_private" {
 - `auto_cancel_pending_pipelines` (String) Auto-cancel pending pipelines. This isn’t a boolean, but enabled/disabled.
 - `auto_devops_deploy_strategy` (String) Auto Deploy strategy. Valid values are `continuous`, `manual`, `timed_incremental`.
 - `auto_devops_enabled` (Boolean) Enable Auto DevOps for this project.
+- `auto_duo_code_review_enabled` (Boolean) Enable automatic reviews by GitLab Duo on merge requests. Ultimate only. Automatic reviews only work with the GitLab Duo Enterprise add-on.
 - `autoclose_referenced_issues` (Boolean) Set whether auto-closing referenced issues on default branch.
 - `avatar` (String) A local path to the avatar image to upload. **Note**: not available for imported resources.
 - `avatar_hash` (String) The hash of the avatar image. Use `filesha256("path/to/avatar.png")` whenever possible. **Note**: this is used to trigger an update of the avatar. If it's not given, but an avatar is given, the avatar will be updated each time.
