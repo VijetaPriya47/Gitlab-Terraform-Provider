@@ -474,6 +474,12 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 		Optional:    true,
 		Computed:    true,
 	},
+	"ci_forward_deployment_rollback_allowed": {
+		Description: "Allow job retries even if the deployment job is outdated.",
+		Type:        schema.TypeBool,
+		Optional:    true,
+		Computed:    true,
+	},
 	"ci_separated_caches": {
 		Description: "Use separate caches for protected branches.",
 		Type:        schema.TypeBool,
@@ -956,6 +962,7 @@ func resourceGitlabProjectSetToState(d *schema.ResourceData, project *gitlab.Pro
 		return fmt.Errorf("error setting ci_id_token_sub_claim_components: %v", err)
 	}
 	d.Set("ci_forward_deployment_enabled", project.CIForwardDeploymentEnabled)
+	d.Set("ci_forward_deployment_rollback_allowed", project.CIForwardDeploymentRollbackAllowed)
 	d.Set("ci_separated_caches", project.CISeperateCache)
 	d.Set("ci_restrict_pipeline_cancellation_role", project.CIRestrictPipelineCancellationRole)
 	d.Set("ci_pipeline_variables_minimum_override_role", project.CIPipelineVariablesMinimumOverrideRole)
@@ -1443,6 +1450,10 @@ func resourceGitlabProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 
 	if d.HasChange("ci_forward_deployment_enabled") {
 		options.CIForwardDeploymentEnabled = gitlab.Ptr(d.Get("ci_forward_deployment_enabled").(bool))
+	}
+
+	if d.HasChange("ci_forward_deployment_rollback_allowed") {
+		options.CIForwardDeploymentRollbackAllowed = gitlab.Ptr(d.Get("ci_forward_deployment_rollback_allowed").(bool))
 	}
 
 	if d.HasChange("ci_restrict_pipeline_cancellation_role") {
@@ -2617,6 +2628,12 @@ func updatePostCreateEditOptions(ctx context.Context, editProjectOptions *gitlab
 
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
+	if v, ok := d.GetOkExists("ci_forward_deployment_rollback_allowed"); ok {
+		editProjectOptions.CIForwardDeploymentRollbackAllowed = gitlab.Ptr(v.(bool))
+	}
+
+	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
+	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 	if v, ok := d.GetOkExists("ci_separated_caches"); ok {
 		editProjectOptions.CISeperateCache = gitlab.Ptr(v.(bool))
 	}
@@ -2789,12 +2806,6 @@ func updatePostCreateEditOptions(ctx context.Context, editProjectOptions *gitlab
 
 		if v, ok := d.GetOk("ci_config_path"); ok {
 			editProjectOptions.CIConfigPath = gitlab.Ptr(v.(string))
-		}
-
-		// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
-		// lintignore: XR001 // TODO: replace with alternative for GetOkExists
-		if v, ok := d.GetOkExists("ci_forward_deployment_enabled"); ok {
-			editProjectOptions.CIForwardDeploymentEnabled = gitlab.Ptr(v.(bool))
 		}
 
 		// nolint:staticcheck // SA1019 ignore deprecated GetOkExists

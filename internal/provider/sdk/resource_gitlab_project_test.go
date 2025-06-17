@@ -103,6 +103,8 @@ func TestAccGitlabProject_basic(t *testing.T) {
 					build_git_strategy = "fetch"
 					build_timeout = 42 * 60
 					builds_access_level = "enabled"
+					ci_forward_deployment_enabled = true
+					ci_forward_deployment_rollback_allowed = true
 
 					emails_enabled = false
 					forking_access_level = "enabled"
@@ -161,6 +163,7 @@ func TestAccGitlabProject_basic(t *testing.T) {
 				  packages_enabled = false
 				  pages_access_level = "disabled"
 				  ci_forward_deployment_enabled = false
+				  ci_forward_deployment_rollback_allowed = false
 				  ci_separated_caches = false
 				  keep_latest_artifact = false
 				  merge_pipelines_enabled = false
@@ -2699,16 +2702,17 @@ func TestAccGitlabProject_SetDefaultFalseBooleansOnCreate(t *testing.T) {
 						name             = "foo-%d"
 						visibility_level = "public"
 
-						initialize_with_readme              = false
-						resolve_outdated_diff_discussions   = false
-						auto_devops_enabled                 = false
-						autoclose_referenced_issues         = false
-						emails_enabled                      = true
-						public_jobs                         = false
-						merge_pipelines_enabled             = false
-						merge_trains_enabled                = false
-						ci_forward_deployment_enabled       = false
-						group_runners_enabled               = false
+						initialize_with_readme                 = false
+						resolve_outdated_diff_discussions      = false
+						auto_devops_enabled                    = false
+						autoclose_referenced_issues            = false
+						emails_enabled                         = true
+						public_jobs                            = false
+						merge_pipelines_enabled                = false
+						merge_trains_enabled                   = false
+						ci_forward_deployment_enabled          = false
+						ci_forward_deployment_rollback_allowed = false
+						group_runners_enabled                  = false
 					}`, rInt),
 			},
 			{
