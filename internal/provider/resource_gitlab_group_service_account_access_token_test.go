@@ -108,6 +108,83 @@ func TestAccGitlabGroupServiceAccountAccessToken_basic(t *testing.T) {
 	})
 }
 
+// See issue https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/issues/6537
+// bug introduced in 18.1.0
+func TestAccGitlabGroupServiceAccountAccessToken_regression6537(t *testing.T) {
+	testutil.SkipIfCE(t)
+	testutil.RunIfAtLeast(t, "18.1.0")
+
+	group := testutil.CreateGroups(t, 1)[0]
+	groupID := strconv.Itoa(group.ID)
+
+	serviceAccount := testutil.CreateGroupServiceAccounts(t, 1, groupID)[0]
+
+	resource.ParallelTest(t, resource.TestCase{
+		CheckDestroy: testAccCheckGitlabGroupServiceAccountAccessTokenDestroy,
+		Steps: []resource.TestStep{
+			// Fail to create a token with the value conversion error
+			{
+				ExternalProviders: map[string]resource.ExternalProvider{
+					"gitlab": {
+						VersionConstraint: "~> 18.1.0",
+						Source:            "gitlabhq/gitlab",
+					},
+				},
+				Config: fmt.Sprintf(`
+				variable "scopes" {
+					default = ["api"]
+				}
+
+				resource "gitlab_group_service_account_access_token" "service_account_token" {
+					group   = %s
+					user_id = %d
+					name    = "tests"
+					scopes  = toset(concat(tolist(var.scopes), ["read_api"]))
+
+
+					rotation_configuration = {
+						rotate_before_days = 30
+						expiration_days    = 365
+					}
+				}
+				`, groupID, serviceAccount.ID),
+				ExpectError: regexp.MustCompile("Error: Value Conversion Error"),
+			},
+			// Create the token with the same config with the fix
+			{
+				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+				Config: fmt.Sprintf(`
+				variable "scopes" {
+					default = ["api"]
+				}
+
+				resource "gitlab_group_service_account_access_token" "service_account_token" {
+					group   = %s
+					user_id = %d
+					name    = "tests"
+					scopes  = toset(concat(tolist(var.scopes), ["read_api"]))
+
+
+					rotation_configuration = {
+						rotate_before_days = 30
+						expiration_days    = 365
+					}
+				}
+				`, groupID, serviceAccount.ID),
+			},
+			// Verify upstream resource with an import.
+			{
+				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+				ResourceName:             "gitlab_group_service_account_access_token.service_account_token",
+				ImportState:              true,
+				ImportStateVerify:        true,
+				// The token is only known during creating. We explicitly mention this limitation in the docs.
+				ImportStateVerifyIgnore: []string{"token", "rotation_configuration"},
+			},
+		},
+	})
+}
+
 func TestAccGitlabGroupServiceAccountAccessToken_noExpiration(t *testing.T) {
 	testutil.SkipIfCE(t)
 

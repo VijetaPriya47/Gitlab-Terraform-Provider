@@ -59,7 +59,7 @@ type gitlabGroupServiceAccountAccessTokenResourceModel struct {
 	UserID types.Int64  `tfsdk:"user_id"`
 
 	// []string, or a set of types.String behind the scenes.
-	Scopes []types.String `tfsdk:"scopes"`
+	Scopes types.Set `tfsdk:"scopes"`
 
 	ExpiresAt types.String `tfsdk:"expires_at"`
 	CreatedAt types.String `tfsdk:"created_at"`
@@ -230,9 +230,13 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) ValidateConfig(ctx contex
 
 	// find out whether self_rotate is one of the scopes
 	var selfRotate bool
-	for _, v := range data.Scopes {
-		s := v.ValueString()
-		if s == "self_rotate" {
+	var scopes []string
+	resp.Diagnostics.Append(data.Scopes.ElementsAs(ctx, &scopes, true)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	for _, scope := range scopes {
+		if scope == "self_rotate" {
 			selfRotate = true
 			break
 		}
@@ -245,7 +249,7 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) ValidateConfig(ctx contex
 	}
 }
 
-func (r *gitlabGroupServiceAccountAccessTokenResource) groupServiceAccountAccessTokenToStateModel(data *gitlabGroupServiceAccountAccessTokenResourceModel, token *gitlab.PersonalAccessToken, group string) diag.Diagnostics {
+func (r *gitlabGroupServiceAccountAccessTokenResource) groupServiceAccountAccessTokenToStateModel(ctx context.Context, data *gitlabGroupServiceAccountAccessTokenResourceModel, token *gitlab.PersonalAccessToken, group string) diag.Diagnostics {
 	data.ID = types.StringValue(fmt.Sprintf("%s:%d:%d", group, token.UserID, token.ID))
 	data.Group = types.StringValue(group)
 	data.UserID = types.Int64Value(int64(token.UserID))
@@ -273,7 +277,11 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) groupServiceAccountAccess
 	for _, v := range token.Scopes {
 		scopes = append(scopes, types.StringValue(v))
 	}
-	data.Scopes = scopes
+	scopesSet, err := types.SetValueFrom(ctx, types.StringType, scopes)
+	if err != nil {
+		return diag.Diagnostics{diag.NewErrorDiagnostic("Error parsing scopes into Set", fmt.Sprintf("Could not parse scopes into Set: %s", err))}
+	}
+	data.Scopes = scopesSet
 
 	return nil
 }
@@ -539,7 +547,7 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Read(ctx context.Context,
 	}
 
 	// Set the token information into state
-	resp.Diagnostics.Append(r.groupServiceAccountAccessTokenToStateModel(data, accessToken, group)...)
+	resp.Diagnostics.Append(r.groupServiceAccountAccessTokenToStateModel(ctx, data, accessToken, group)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -553,11 +561,11 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Create(ctx context.Contex
 		return
 	}
 
-	// convert data.Scopes into []*string
+	// convert data.Scopes into []string
 	var scopes []string
-	for _, v := range data.Scopes {
-		s := v.ValueString()
-		scopes = append(scopes, s)
+	resp.Diagnostics.Append(data.Scopes.ElementsAs(ctx, &scopes, true)...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	// Create options struct
@@ -590,7 +598,7 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Create(ctx context.Contex
 		return
 	}
 
-	r.groupServiceAccountAccessTokenToStateModel(data, token, data.Group.ValueString())
+	r.groupServiceAccountAccessTokenToStateModel(ctx, data, token, data.Group.ValueString())
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -646,9 +654,13 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Update(ctx context.Contex
 
 	// find out whether self_rotate is one of the scopes
 	var selfRotate bool
-	for _, v := range planData.Scopes {
-		s := v.ValueString()
-		if s == "self_rotate" {
+	var scopes []string
+	resp.Diagnostics.Append(planData.Scopes.ElementsAs(ctx, &scopes, true)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	for _, scope := range scopes {
+		if scope == "self_rotate" {
 			selfRotate = true
 			break
 		}
@@ -685,7 +697,7 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Update(ctx context.Contex
 		}
 	}
 
-	r.groupServiceAccountAccessTokenToStateModel(planData, token, planData.Group.ValueString())
+	r.groupServiceAccountAccessTokenToStateModel(ctx, planData, token, planData.Group.ValueString())
 	resp.Diagnostics.Append(resp.State.Set(ctx, &planData)...)
 }
 
