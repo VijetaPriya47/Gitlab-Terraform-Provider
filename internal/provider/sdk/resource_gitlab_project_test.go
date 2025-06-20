@@ -1979,7 +1979,6 @@ resource "gitlab_project" "foo" {
 }
 
 func TestAccGitlabProject_restirctUserDefinedVariables(t *testing.T) {
-	t.Skip() // `restrict_user_defined_variables` is broken for GitLab 17.10.0
 	rInt := acctest.RandInt()
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -3259,7 +3258,6 @@ func TestAccGitlabProject_RequireJiraIssue(t *testing.T) {
 }
 
 func TestAccGitlabProject_CIIdTokenSubClaimComponents(t *testing.T) {
-	testutil.RunIfAtLeast(t, "17.10")
 	projectName := acctest.RandomWithPrefix("acctest")
 
 	resource.ParallelTest(t, resource.TestCase{

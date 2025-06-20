@@ -256,7 +256,6 @@ func TestAccDataGitlabProjects_CIRestrictPipeline(t *testing.T) {
 // Create a test that populates the CI Restrict Pipeline value using testUtil,
 // then uses a terraform `gitlab_projects` datasource to read and validate that it matches
 func TestAccDataGitlabProjects_CIIdTokenSubClaimComponents(t *testing.T) {
-	testutil.RunIfAtLeast(t, "17.10")
 	// Create a new project using testutil, and update it's pipelines cancellation
 	// to "developer"
 	client := testutil.TestGitlabClient

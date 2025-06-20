@@ -16,7 +16,6 @@ import (
 )
 
 func TestAccGitlabGroupDependencyProxy_basic(t *testing.T) {
-	testutil.RunIfAtLeast(t, "17.10")
 	group := testutil.CreateGroups(t, 1)[0]
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -69,7 +68,6 @@ func TestAccGitlabGroupDependencyProxy_basic(t *testing.T) {
 }
 
 func TestAccGitlabGroupDependencyProxy_validation(t *testing.T) {
-
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabGroupDependencyProxyDestroy,
