@@ -3404,6 +3404,10 @@ func TestAccGitlabProject_DuoCodeReviewEnabled(t *testing.T) {
 	testutil.RunIfAtLeast(t, "18.0")
 	testutil.SkipIfCE(t)
 
+	// Currently, activating Duo in a self-hosted setup requires a synchronized subscription,
+	// which we don't have in our CI/CD. Skipping for now.
+	t.Skip()
+
 	projectName := acctest.RandomWithPrefix("acctest")
 
 	resource.ParallelTest(t, resource.TestCase{
