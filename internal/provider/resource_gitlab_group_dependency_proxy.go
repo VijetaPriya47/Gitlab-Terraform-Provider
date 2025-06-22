@@ -89,7 +89,6 @@ func (d *gitlabGroupDependencyProxyResource) ValidateConfig(ctx context.Context,
 			resp.Diagnostics.AddAttributeError(path.Root("secret"), "Missing required attribute", "Secret must be set when proxy is enabled")
 		}
 	}
-
 }
 
 func (r *gitlabGroupDependencyProxyResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -163,7 +162,7 @@ func (r *gitlabGroupDependencyProxyResource) Create(ctx context.Context, req res
 	}
 
 	// Update the dependency proxy settings
-	response, err := r.updateDependencyProxySettings(ctx, r.client, group, data.Identity.ValueString(), data.Secret.ValueString(), data.Enabled.ValueBool())
+	response, err := r.updateDependencyProxySettings(group, data.Identity.ValueString(), data.Secret.ValueString(), data.Enabled.ValueBool())
 	if err != nil {
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to update dependency proxy settings: %s", err.Error()))
 		return
@@ -177,7 +176,6 @@ func (r *gitlabGroupDependencyProxyResource) Create(ctx context.Context, req res
 
 	// Save the resource state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
-
 }
 
 func (r *gitlabGroupDependencyProxyResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -201,7 +199,7 @@ func (r *gitlabGroupDependencyProxyResource) Read(ctx context.Context, req resou
 	}
 
 	// Read the dependency proxy settings
-	response, err := readGroupDependencyProxySettings(ctx, r.client, group)
+	response, err := readGroupDependencyProxySettings(r.client, group)
 	if err != nil {
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to read dependency proxy settings: %s", err.Error()))
 		return
@@ -220,7 +218,6 @@ func (r *gitlabGroupDependencyProxyResource) Read(ctx context.Context, req resou
 
 	// Save the resource state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
-
 }
 
 // Updates the resource using the same mutation as the "Create" operation, since they're essentially both updates
@@ -240,7 +237,7 @@ func (r *gitlabGroupDependencyProxyResource) Update(ctx context.Context, req res
 	}
 
 	// Update the dependency proxy settings
-	response, err := r.updateDependencyProxySettings(ctx, r.client, group, data.Identity.ValueString(), data.Secret.ValueString(), data.Enabled.ValueBool())
+	response, err := r.updateDependencyProxySettings(group, data.Identity.ValueString(), data.Secret.ValueString(), data.Enabled.ValueBool())
 	if err != nil {
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to update dependency proxy settings: %s", err.Error()))
 		return
@@ -256,7 +253,6 @@ func (r *gitlabGroupDependencyProxyResource) Update(ctx context.Context, req res
 // Delete is going to mutate the enabled value to "false" while setting identity and secret to empty strings to disable the proxy
 // and remove any potentially hanging data
 func (r *gitlabGroupDependencyProxyResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-
 	// Get the model from the request
 	var data *gitlabGroupDependencyProxyResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
@@ -277,7 +273,7 @@ func (r *gitlabGroupDependencyProxyResource) Delete(ctx context.Context, req res
 	}
 
 	// Disable the dependency proxy by setting enabled to false and clearing credentials
-	_, err = r.updateDependencyProxySettings(ctx, r.client, group, "", "", false)
+	_, err = r.updateDependencyProxySettings(group, "", "", false)
 	if err != nil {
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to disable dependency proxy settings: %s", err.Error()))
 		return
@@ -286,7 +282,6 @@ func (r *gitlabGroupDependencyProxyResource) Delete(ctx context.Context, req res
 	// log a debug message that we've disabled the proxy
 	tflog.Debug(ctx, fmt.Sprintf("Successfully disabled dependency proxy settings for group %s", group.FullPath))
 	resp.State.RemoveResource(ctx)
-
 }
 
 // Update the model with values from the API response
@@ -298,7 +293,7 @@ func (r *gitlabGroupDependencyProxyResource) modelToStateModel(data *gitlabGroup
 }
 
 // Uses the GraphQL API to update the dependency proxy settings for a group.
-func (r *gitlabGroupDependencyProxyResource) updateDependencyProxySettings(ctx context.Context, client *gitlab.Client, group *gitlab.Group, identity, secret string, enabled bool) (*updateGroupDependencyProxyGraphQLResponse, error) {
+func (r *gitlabGroupDependencyProxyResource) updateDependencyProxySettings(group *gitlab.Group, identity, secret string, enabled bool) (*updateGroupDependencyProxyGraphQLResponse, error) {
 	// The GraphQL Template for mutating the group's settings
 	graphQLcall := fmt.Sprintf(`
 mutation {
@@ -333,7 +328,7 @@ mutation {
 
 // Uses the GraphQL API to read the dependency proxy settings for a group
 // Note - this is not scoped to the resource because it's used in the test as well to confirm destroy
-func readGroupDependencyProxySettings(ctx context.Context, client *gitlab.Client, group *gitlab.Group) (*readGroupDependencyProxyGraphQLResponse, error) {
+func readGroupDependencyProxySettings(client *gitlab.Client, group *gitlab.Group) (*readGroupDependencyProxyGraphQLResponse, error) {
 	// The GraphQL Template for mutating the group's settings
 	graphQLcall := fmt.Sprintf(`
 query {
