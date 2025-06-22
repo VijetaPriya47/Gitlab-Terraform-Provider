@@ -17,7 +17,7 @@ func TestAccDataSourceGitlabGroup_basic(t *testing.T) {
 	subgroup := testutil.CreateSubGroups(t, groups[2], 1)[0]
 	withShare := testutil.GroupShareGroup(t, groups[0].ID, &groups[1].ID)
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
 		Steps: []resource.TestStep{
 			// Get group using its ID
