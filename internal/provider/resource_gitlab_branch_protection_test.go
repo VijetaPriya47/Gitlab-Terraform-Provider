@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 
@@ -21,7 +21,6 @@ import (
 )
 
 func TestAccGitlabBranchProtection_basic(t *testing.T) {
-
 	var pb gitlab.ProtectedBranch
 	rInt := acctest.RandInt()
 	project := testutil.CreateProject(t)
@@ -501,7 +500,6 @@ func TestAccGitlabBranchProtection_UpgradeFromSDKToFrameworkForEELicense(t *test
 		CheckDestroy: testAccCheckGitlabProjectLevelMRApprovalsDestroy,
 		Steps: []resource.TestStep{
 			{
-
 				ExternalProviders: map[string]resource.ExternalProvider{
 					"gitlab": {
 						VersionConstraint: "= 16.4.1",
@@ -590,7 +588,6 @@ func TestAccGitlabBranchProtection_UpgradeFromSDKToFrameworkForCELicense(t *test
 		CheckDestroy: testAccCheckGitlabProjectLevelMRApprovalsDestroy,
 		Steps: []resource.TestStep{
 			{
-
 				ExternalProviders: map[string]resource.ExternalProvider{
 					"gitlab": {
 						VersionConstraint: "= 16.4.1",
@@ -1032,9 +1029,10 @@ func testAccCheckGitlabBranchProtectionDestroy(s *terraform.State) error {
 	var project string
 	var branch string
 	for _, rs := range s.RootModule().Resources {
-		if rs.Type == "gitlab_project" {
+		switch rs.Type {
+		case "gitlab_project":
 			project = rs.Primary.ID
-		} else if rs.Type == "gitlab_branch_protection" {
+		case "gitlab_branch_protection":
 			branch = rs.Primary.ID
 		}
 	}
