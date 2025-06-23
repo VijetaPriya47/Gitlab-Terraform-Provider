@@ -51,7 +51,7 @@ func TestAccGitlabProjectShareGroup_basic(t *testing.T) {
 	group := testutil.CreateGroups(t, 1)[0]
 	project := testutil.CreateProject(t)
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
 		CheckDestroy:             testAccCheckGitlabProjectShareGroupDestroy,
 		Steps: []resource.TestStep{
@@ -91,7 +91,7 @@ func TestAccGitlabProjectShareGroup_modifiedOutsideTerraform(t *testing.T) {
 	project := testutil.CreateProject(t)
 	group := testutil.CreateGroups(t, 1)[0]
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
 		CheckDestroy:             testAccCheckGitlabProjectShareGroupDestroy,
 		Steps: []resource.TestStep{

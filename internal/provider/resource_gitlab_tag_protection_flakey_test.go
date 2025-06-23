@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 
@@ -24,7 +24,6 @@ import (
 // the test will still fail because the users getting added as allowed to create
 // aren't yet members of the project.
 func TestAccGitlabTagProtection_customAccessLevel(t *testing.T) {
-
 	// This test is VERY flakey, so we're going to skip it until we can figure out how
 	// to cache bust group membership. We're not sure how to do that via API right now.
 	t.Skip()
@@ -60,7 +59,7 @@ func TestAccGitlabTagProtection_customAccessLevel(t *testing.T) {
 	//nolint // R018 this is part of testing code, not the provider itself.
 	time.Sleep(60 * time.Second)
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		CheckDestroy:             testAccCheckGitlabTagProtectionDestroyFlakey,
 		Steps: []resource.TestStep{
@@ -340,9 +339,10 @@ func testAccCheckGitlabTagProtectionDestroyFlakey(s *terraform.State) error {
 	var project string
 	var tag string
 	for _, rs := range s.RootModule().Resources {
-		if rs.Type == "gitlab_project" {
+		switch rs.Type {
+		case "gitlab_project":
 			project = rs.Primary.ID
-		} else if rs.Type == "gitlab_tag_protection" {
+		case "gitlab_tag_protection":
 			tag = rs.Primary.ID
 		}
 	}

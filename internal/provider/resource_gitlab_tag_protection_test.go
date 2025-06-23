@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 
@@ -20,7 +20,6 @@ import (
 )
 
 func TestAccGitlabTagProtection_basic(t *testing.T) {
-
 	var pt gitlab.ProtectedTag
 	rInt := acctest.RandInt()
 	project := testutil.CreateProject(t)
@@ -238,7 +237,7 @@ func TestAccGitlabTagProtection_customAccessLevel_userIdAndGroupIdAreMutuallyExc
 	myGroup := testutil.CreateGroups(t, 1)
 	testutil.ProjectShareGroup(t, project.ID, myGroup[0].ID)
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		CheckDestroy:             testAccCheckGitlabTagProtectionDestroy,
 		Steps: []resource.TestStep{
@@ -407,9 +406,10 @@ func testAccCheckGitlabTagProtectionDestroy(s *terraform.State) error {
 	var project string
 	var tag string
 	for _, rs := range s.RootModule().Resources {
-		if rs.Type == "gitlab_project" {
+		switch rs.Type {
+		case "gitlab_project":
 			project = rs.Primary.ID
-		} else if rs.Type == "gitlab_tag_protection" {
+		case "gitlab_tag_protection":
 			tag = rs.Primary.ID
 		}
 	}

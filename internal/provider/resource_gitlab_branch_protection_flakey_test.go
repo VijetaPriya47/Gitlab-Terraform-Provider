@@ -222,7 +222,7 @@ func TestAccGitlabBranchProtection_createWithMultipleAccessLevels(t *testing.T) 
 
 	var pb gitlab.ProtectedBranch
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		CheckDestroy:             testAccCheckGitlabBranchProtectionDestroyFlakey,
 		Steps: []resource.TestStep{
@@ -605,12 +605,6 @@ func testAccCheckGitlabBranchProtectionExistsFlakey(n string, pb *gitlab.Protect
 	}
 }
 
-func testAccCheckGitlabBranchProtectionComputedAttributesFlakey(n string, pb *gitlab.ProtectedBranch) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		return resource.TestCheckResourceAttr(n, "branch_protection_id", strconv.Itoa(pb.ID))(s)
-	}
-}
-
 type testAccGitlabBranchProtectionExpectedAttributesFlakey struct {
 	Name                      string
 	PushAccessLevel           string
@@ -837,9 +831,10 @@ func testAccCheckGitlabBranchProtectionDestroyFlakey(s *terraform.State) error {
 	var project string
 	var branch string
 	for _, rs := range s.RootModule().Resources {
-		if rs.Type == "gitlab_project" {
+		switch rs.Type {
+		case "gitlab_project":
 			project = rs.Primary.ID
-		} else if rs.Type == "gitlab_branch_protection" {
+		case "gitlab_branch_protection":
 			branch = rs.Primary.ID
 		}
 	}

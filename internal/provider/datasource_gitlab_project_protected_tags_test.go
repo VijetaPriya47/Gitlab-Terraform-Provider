@@ -20,7 +20,7 @@ func TestAccDataGitlabProjectProtectedTags_basic(t *testing.T) {
 	// Create protected tag on the project
 	tags := testutil.CreateProtectedTags(t, project, 5)
 
-	//lintignore:AT001 // Data sources don't need check destroy in their tests
+	// lintignore:AT001 // Data sources don't need check destroy in their tests
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		Steps: []resource.TestStep{
@@ -88,8 +88,8 @@ func TestAccDataGitlabProjectProtectedTags_customAccessLevels(t *testing.T) {
 		},
 	})
 
-	//lintignore:AT001 // Data sources don't need check destroy in their tests
-	resource.ParallelTest(t, resource.TestCase{
+	// lintignore:AT001 // Data sources don't need check destroy in their tests
+	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		Steps: []resource.TestStep{
 			{

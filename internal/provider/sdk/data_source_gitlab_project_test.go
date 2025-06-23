@@ -124,7 +124,7 @@ func TestAccDataGitlabProject_sharedWithGroup(t *testing.T) {
 		t.Fatalf("could not refresh %v project's updated data, %v", testProject.PathWithNamespace, err)
 	}
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
 		Steps: []resource.TestStep{
 			{

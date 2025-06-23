@@ -21,7 +21,7 @@ func TestAccGitlabGroupShareGroup_basic(t *testing.T) {
 	mainGroup := groups[0]
 	sharedGroup := groups[1]
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabGroupShareGroupDestroy,
 		Steps: []resource.TestStep{
@@ -92,7 +92,7 @@ func TestAccGitlabGroupShareGroup_customRoles(t *testing.T) {
 		t.Fatalf("Failed to create test custom role. Error: %v", err)
 	}
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabGroupShareGroupDestroy,
 		Steps: []resource.TestStep{
@@ -176,7 +176,7 @@ func TestAccGitlabGroupShareGroup_migrateFromSDKToFramework(t *testing.T) {
 	mainGroup := groups[0]
 	sharedGroup := groups[1]
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		CheckDestroy: testAccCheckGitlabGroupShareGroupDestroy,
 		Steps: []resource.TestStep{
 			// Create the badge in the old provider version
