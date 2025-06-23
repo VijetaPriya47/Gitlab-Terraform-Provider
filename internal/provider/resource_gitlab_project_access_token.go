@@ -61,7 +61,7 @@ type gitlabProjectAccessTokenResourceModel struct {
 	AccessLevel types.String `tfsdk:"access_level"`
 
 	// []string, or a set of types.String behind the scenes.
-	Scopes []types.String `tfsdk:"scopes"`
+	Scopes types.Set `tfsdk:"scopes"`
 
 	ExpiresAt types.String `tfsdk:"expires_at"`
 	CreatedAt types.String `tfsdk:"created_at"`
@@ -136,6 +136,7 @@ func (r *gitlabProjectAccessTokenResource) Schema(ctx context.Context, req resou
 					setvalidator.ValueStringsAre(
 						stringvalidator.OneOfCaseInsensitive(api.ValidProjectAccessTokenScopes...),
 					),
+					setvalidator.SizeAtLeast(1),
 				},
 			},
 			"expires_at": schema.StringAttribute{
@@ -230,7 +231,7 @@ func (r *gitlabProjectAccessTokenResource) Configure(ctx context.Context, req re
 	r.newGitLabClient = resourceData.NewGitLabClient
 }
 
-func (r *gitlabProjectAccessTokenResource) projectAccessTokenToStateModel(data *gitlabProjectAccessTokenResourceModel, token *gitlab.ProjectAccessToken, project string) diag.Diagnostics {
+func (r *gitlabProjectAccessTokenResource) projectAccessTokenToStateModel(ctx context.Context, data *gitlabProjectAccessTokenResourceModel, token *gitlab.ProjectAccessToken, project string) diag.Diagnostics {
 	data.Project = types.StringValue(project)
 	data.Name = types.StringValue(token.Name)
 	data.Description = types.StringValue(token.Description)
@@ -246,12 +247,12 @@ func (r *gitlabProjectAccessTokenResource) projectAccessTokenToStateModel(data *
 		data.Token = types.StringValue(token.Token)
 	}
 
-	// parse Scopes into []types.String
-	var scopes []types.String
-	for _, v := range token.Scopes {
-		scopes = append(scopes, types.StringValue(v))
+	// parse Scopes into types.Set
+	scopesSet, diags := types.SetValueFrom(ctx, types.StringType, token.Scopes)
+	if diags.HasError() {
+		return diags
 	}
-	data.Scopes = scopes
+	data.Scopes = scopesSet
 
 	return nil
 }
@@ -459,7 +460,7 @@ func (r *gitlabProjectAccessTokenResource) Read(ctx context.Context, req resourc
 	}
 
 	// Set the token information into state
-	resp.Diagnostics.Append(r.projectAccessTokenToStateModel(data, projectAccessToken, project)...)
+	resp.Diagnostics.Append(r.projectAccessTokenToStateModel(ctx, data, projectAccessToken, project)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -473,11 +474,11 @@ func (r *gitlabProjectAccessTokenResource) Create(ctx context.Context, req resou
 		return
 	}
 
-	// convert data.Scopes into []*string
+	// convert data.Scopes into []string
 	var scopes []string
-	for _, v := range data.Scopes {
-		s := v.ValueString()
-		scopes = append(scopes, s)
+	resp.Diagnostics.Append(data.Scopes.ElementsAs(ctx, &scopes, true)...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	// Create options struct
@@ -521,7 +522,7 @@ func (r *gitlabProjectAccessTokenResource) Create(ctx context.Context, req resou
 	// Set the ID for the resource
 	data.ID = types.StringValue(utils.BuildTwoPartID(data.Project.ValueStringPointer(), gitlab.Ptr(strconv.Itoa(token.ID))))
 
-	r.projectAccessTokenToStateModel(data, token, data.Project.ValueString())
+	r.projectAccessTokenToStateModel(ctx, data, token, data.Project.ValueString())
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -557,8 +558,13 @@ func (r *gitlabProjectAccessTokenResource) Update(ctx context.Context, req resou
 
 	// find out whether self_rotate is one of the scopes
 	var selfRotate bool
-	for _, v := range data.Scopes {
-		if v.ValueString() == "self_rotate" {
+	var scopes []string
+	resp.Diagnostics.Append(data.Scopes.ElementsAs(ctx, &scopes, true)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	for _, scope := range scopes {
+		if scope == "self_rotate" {
 			selfRotate = true
 			break
 		}
@@ -597,7 +603,7 @@ func (r *gitlabProjectAccessTokenResource) Update(ctx context.Context, req resou
 	// Updating an access token changes the primary key, so we need to re-set the ID of the resource
 	data.ID = types.StringValue(utils.BuildTwoPartID(data.Project.ValueStringPointer(), gitlab.Ptr(strconv.Itoa(token.ID))))
 
-	r.projectAccessTokenToStateModel(data, token, data.Project.ValueString())
+	r.projectAccessTokenToStateModel(ctx, data, token, data.Project.ValueString())
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
