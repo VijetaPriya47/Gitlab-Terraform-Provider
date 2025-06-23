@@ -119,7 +119,7 @@ func (d *gitlabGroupSecurityPolicyAttachmentResource) Create(ctx context.Context
 		return
 	}
 
-	err = d.updatePolicy(ctx, data, groupIds)
+	err = d.updatePolicy(data, groupIds)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to update GraphQL ID", err.Error())
 		return
@@ -162,7 +162,7 @@ func (d *gitlabGroupSecurityPolicyAttachmentResource) Read(ctx context.Context, 
 		"policy_project": policyProject,
 	})
 
-	response, err := d.readPolicy(ctx, groupIds)
+	response, err := d.readPolicy(groupIds)
 	if err != nil {
 		tflog.Error(ctx, "Received an error when reading the policy. Exiting", map[string]any{
 			"grooup":         group,
@@ -224,12 +224,12 @@ func (d *gitlabGroupSecurityPolicyAttachmentResource) Update(ctx context.Context
 	// causing a situation where the `apply` is successful, then an immediate `plan` is generated.
 	// The retry will read after update until we get the policy project we expect.
 	err = retry.RetryContext(ctx, 1*time.Minute, func() *retry.RetryError {
-		err = d.updatePolicy(ctx, data, groupIds)
+		err = d.updatePolicy(data, groupIds)
 		if err != nil {
 			return retry.NonRetryableError(err)
 		}
 
-		response, err := d.readPolicy(ctx, groupIds)
+		response, err := d.readPolicy(groupIds)
 		if err != nil {
 			tflog.Error(ctx, "Received an error when reading the policy. Exiting", map[string]any{
 				"group":          data.Group.ValueString(),
@@ -309,7 +309,7 @@ func (d *gitlabGroupSecurityPolicyAttachmentResource) Delete(ctx context.Context
 }
 
 // Create a function that reads the security policy associated to the group
-func (d *gitlabGroupSecurityPolicyAttachmentResource) readPolicy(ctx context.Context, ids *api.GroupIdentifiers) (*GetGroupSecurityPolicyProjectResponse, error) {
+func (d *gitlabGroupSecurityPolicyAttachmentResource) readPolicy(ids *api.GroupIdentifiers) (*GetGroupSecurityPolicyProjectResponse, error) {
 	// Read the policy project
 	var response GetGroupSecurityPolicyProjectResponse
 	query := fmt.Sprintf(`
@@ -334,7 +334,7 @@ func (d *gitlabGroupSecurityPolicyAttachmentResource) readPolicy(ctx context.Con
 }
 
 // Update the security policy associated to the group
-func (d *gitlabGroupSecurityPolicyAttachmentResource) updatePolicy(ctx context.Context, data *gitlabGroupSecurityPolicyAttachmentResourceModel, ids *api.GroupIdentifiers) error {
+func (d *gitlabGroupSecurityPolicyAttachmentResource) updatePolicy(data *gitlabGroupSecurityPolicyAttachmentResourceModel, ids *api.GroupIdentifiers) error {
 	// Update the policy project - This uses the same mutation as assigning a project to a project, but passes in the group path instead.
 	query := fmt.Sprintf(`
 		mutation {

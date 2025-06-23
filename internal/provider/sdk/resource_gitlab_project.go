@@ -1202,7 +1202,7 @@ func resourceGitlabProjectCreate(ctx context.Context, d *schema.ResourceData, me
 
 	// Create our "EditProjectOptions" call using state and the existing project
 	var editProjectOptions gitlab.EditProjectOptions
-	updatePostCreateEditOptions(ctx, &editProjectOptions, d, client, project)
+	updatePostCreateEditOptions(&editProjectOptions, d, project)
 
 	if (editProjectOptions != gitlab.EditProjectOptions{}) {
 		if _, _, err := client.Projects.EditProject(d.Id(), &editProjectOptions, gitlab.WithContext(ctx)); err != nil {
@@ -2561,7 +2561,7 @@ func createForkedProject(ctx context.Context, forkedFromProjectID int, d *schema
 // There are options during the `resourceGitlabProjectCreate` operation that cannot be set because they're
 // only supported in the `Update` API. This function handles updating the `editPojectOptions` to include
 // those options.
-func updatePostCreateEditOptions(ctx context.Context, editProjectOptions *gitlab.EditProjectOptions, d *schema.ResourceData, client *gitlab.Client, project *gitlab.Project) diag.Diagnostics {
+func updatePostCreateEditOptions(editProjectOptions *gitlab.EditProjectOptions, d *schema.ResourceData, project *gitlab.Project) diag.Diagnostics {
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 	if v, ok := d.GetOkExists("mirror_overwrites_diverged_branches"); ok {

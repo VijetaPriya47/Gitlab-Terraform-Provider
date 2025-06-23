@@ -720,7 +720,7 @@ func resourceGitlabGroupRead(ctx context.Context, d *schema.ResourceData, meta a
 		} else if err != nil {
 			return diag.Errorf("Failed to get push rules for group %q: %s", d.Id(), err)
 		}
-		pushRuleValues, err := flattenGroupPushRules(ctx, client, pushRules)
+		pushRuleValues, err := flattenGroupPushRules(pushRules)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -1027,7 +1027,7 @@ func editOrAddGroupPushRules(ctx context.Context, client *gitlab.Client, groupID
 	pushRules, _, err := client.Groups.GetGroupPushRules(d.Id(), gitlab.WithContext(ctx))
 	// NOTE: push rules id `0` indicates that there haven't been any push rules set.
 	if err != nil || pushRules.ID == 0 {
-		addOptions, err := expandAddGroupPushRuleOptions(ctx, client, d)
+		addOptions, err := expandAddGroupPushRuleOptions(d)
 		if err != nil {
 			return err
 		}
@@ -1048,7 +1048,7 @@ func editOrAddGroupPushRules(ctx context.Context, client *gitlab.Client, groupID
 		return nil
 	}
 
-	editOptions, err := expandEditGroupPushRuleOptions(ctx, client, d)
+	editOptions, err := expandEditGroupPushRuleOptions(d)
 	if err != nil {
 		return err
 	}
@@ -1080,7 +1080,7 @@ func expandDefaultBranchProtectionDefaults(d *schema.ResourceData) gitlab.Defaul
 	return options
 }
 
-func expandEditGroupPushRuleOptions(ctx context.Context, client *gitlab.Client, d *schema.ResourceData) (gitlab.EditGroupPushRuleOptions, error) {
+func expandEditGroupPushRuleOptions(d *schema.ResourceData) (gitlab.EditGroupPushRuleOptions, error) {
 	options := gitlab.EditGroupPushRuleOptions{}
 
 	if d.HasChange("push_rules.0.commit_committer_check") {
@@ -1138,7 +1138,7 @@ func expandEditGroupPushRuleOptions(ctx context.Context, client *gitlab.Client, 
 	return options, nil
 }
 
-func expandAddGroupPushRuleOptions(ctx context.Context, client *gitlab.Client, d *schema.ResourceData) (gitlab.AddGroupPushRuleOptions, error) {
+func expandAddGroupPushRuleOptions(d *schema.ResourceData) (gitlab.AddGroupPushRuleOptions, error) {
 	options := gitlab.AddGroupPushRuleOptions{}
 
 	if v, ok := d.GetOk("push_rules.0.commit_committer_check"); ok {
@@ -1196,7 +1196,7 @@ func expandAddGroupPushRuleOptions(ctx context.Context, client *gitlab.Client, d
 	return options, nil
 }
 
-func flattenGroupPushRules(ctx context.Context, client *gitlab.Client, pushRules *gitlab.GroupPushRules) (values []map[string]any, err error) {
+func flattenGroupPushRules(pushRules *gitlab.GroupPushRules) (values []map[string]any, err error) {
 	if pushRules == nil {
 		return []map[string]any{}, nil
 	}

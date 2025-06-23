@@ -4,7 +4,6 @@
 package provider
 
 import (
-	"context"
 	"fmt"
 	"regexp"
 	"testing"
@@ -128,7 +127,7 @@ func testAccCheckGitlabGroupDependencyProxyDestroy(s *terraform.State) error {
 			return err
 		}
 
-		response, err := readGroupDependencyProxySettings(context.Background(), testutil.TestGitlabClient, group)
+		response, err := readGroupDependencyProxySettings(testutil.TestGitlabClient, group)
 		if err != nil && !api.Is404(err) {
 			return err
 		}

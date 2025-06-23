@@ -142,7 +142,7 @@ func (r *gitlabProjectIntegrationHarborResource) Create(ctx context.Context, req
 		"harbor_url":          data.URL.ValueString(),
 		"harbor_project_name": data.ProjectName.ValueString(),
 	})
-	err := r.updateIntegration(ctx, &data)
+	err := r.updateIntegration(&data)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to create Harbor integration", err.Error())
 		return
@@ -182,7 +182,7 @@ func (r *gitlabProjectIntegrationHarborResource) Update(ctx context.Context, req
 		"harbor_url":          data.URL.ValueString(),
 		"harbor_project_name": data.ProjectName.ValueString(),
 	})
-	err := r.updateIntegration(ctx, &data)
+	err := r.updateIntegration(&data)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to update Harbor integration", err.Error())
 		return
@@ -215,7 +215,7 @@ func (r *gitlabProjectIntegrationHarborResource) ImportState(ctx context.Context
 // updateIntegration performs the API call and update the `data` object with the results
 // of the API call. The calling function should ensure that `state.Set` is called on the data
 // object to set the values into state.
-func (r *gitlabProjectIntegrationHarborResource) updateIntegration(ctx context.Context, data *gitlabProjectIntegrationHarborResourceModel) error {
+func (r *gitlabProjectIntegrationHarborResource) updateIntegration(data *gitlabProjectIntegrationHarborResourceModel) error {
 	options := &gitlab.SetHarborServiceOptions{
 		URL:                  data.URL.ValueStringPointer(),
 		ProjectName:          data.ProjectName.ValueStringPointer(),
