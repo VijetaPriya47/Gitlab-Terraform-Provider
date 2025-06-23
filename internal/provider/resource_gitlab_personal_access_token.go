@@ -57,7 +57,7 @@ type gitlabPersonalAccessTokenResourceModel struct {
 	UserId      types.Int64  `tfsdk:"user_id"`
 
 	// []string, or a set of types.String behind the scenes.
-	Scopes []types.String `tfsdk:"scopes"`
+	Scopes types.Set `tfsdk:"scopes"`
 
 	ExpiresAt types.String `tfsdk:"expires_at"`
 	CreatedAt types.String `tfsdk:"created_at"`
@@ -130,6 +130,7 @@ func (r *gitlabPersonalAccessTokenResource) Schema(ctx context.Context, req reso
 					setvalidator.ValueStringsAre(
 						stringvalidator.OneOfCaseInsensitive(api.ValidPersonalAccessTokenScopes...),
 					),
+					setvalidator.SizeAtLeast(1),
 				},
 			},
 			"expires_at": schema.StringAttribute{
@@ -208,7 +209,7 @@ func (r *gitlabPersonalAccessTokenResource) Configure(ctx context.Context, req r
 	r.newGitLabClient = resourceData.NewGitLabClient
 }
 
-func (r *gitlabPersonalAccessTokenResource) personalAccessTokenToStateModel(data *gitlabPersonalAccessTokenResourceModel, token *gitlab.PersonalAccessToken, userId int) diag.Diagnostics {
+func (r *gitlabPersonalAccessTokenResource) personalAccessTokenToStateModel(ctx context.Context, data *gitlabPersonalAccessTokenResourceModel, token *gitlab.PersonalAccessToken, userId int) diag.Diagnostics {
 	data.UserId = types.Int64Value(int64(userId))
 	data.Name = types.StringValue(token.Name)
 	data.Description = types.StringValue(token.Description)
@@ -231,12 +232,12 @@ func (r *gitlabPersonalAccessTokenResource) personalAccessTokenToStateModel(data
 		data.ExpiresAt = types.StringNull()
 	}
 
-	// parse Scopes into []types.String
-	var scopes []types.String
-	for _, v := range token.Scopes {
-		scopes = append(scopes, types.StringValue(v))
+	// parse Scopes into types.Set
+	scopesSet, diags := types.SetValueFrom(ctx, types.StringType, token.Scopes)
+	if diags.HasError() {
+		return diags
 	}
-	data.Scopes = scopes
+	data.Scopes = scopesSet
 
 	return nil
 }
@@ -454,7 +455,7 @@ func (r *gitlabPersonalAccessTokenResource) Read(ctx context.Context, req resour
 	}
 
 	// Set the token information into state
-	resp.Diagnostics.Append(r.personalAccessTokenToStateModel(data, personalAccessToken, userIdInt)...)
+	resp.Diagnostics.Append(r.personalAccessTokenToStateModel(ctx, data, personalAccessToken, userIdInt)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -468,11 +469,11 @@ func (r *gitlabPersonalAccessTokenResource) Create(ctx context.Context, req reso
 		return
 	}
 
-	// convert data.Scopes into []*string
+	// convert data.Scopes into []string
 	var scopes []string
-	for _, v := range data.Scopes {
-		s := v.ValueString()
-		scopes = append(scopes, s)
+	resp.Diagnostics.Append(data.Scopes.ElementsAs(ctx, &scopes, true)...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	// Create options struct
@@ -510,7 +511,7 @@ func (r *gitlabPersonalAccessTokenResource) Create(ctx context.Context, req reso
 	// Set the ID for the resource
 	data.ID = types.StringValue(fmt.Sprintf("%d:%d", data.UserId.ValueInt64(), token.ID))
 
-	r.personalAccessTokenToStateModel(data, token, int(data.UserId.ValueInt64()))
+	r.personalAccessTokenToStateModel(ctx, data, token, int(data.UserId.ValueInt64()))
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -545,8 +546,13 @@ func (r *gitlabPersonalAccessTokenResource) Update(ctx context.Context, req reso
 
 	// find out whether self_rotate is one of the scopes
 	var selfRotate bool
-	for _, v := range data.Scopes {
-		if v.ValueString() == "self_rotate" {
+	var scopes []string
+	resp.Diagnostics.Append(data.Scopes.ElementsAs(ctx, &scopes, true)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	for _, scope := range scopes {
+		if scope == "self_rotate" {
 			selfRotate = true
 			break
 		}
@@ -585,7 +591,7 @@ func (r *gitlabPersonalAccessTokenResource) Update(ctx context.Context, req reso
 	// Updating an access token changes the primary key, so we need to re-set the ID of the resource
 	data.ID = types.StringValue(utils.BuildTwoPartID(gitlab.Ptr(strconv.Itoa(int(data.UserId.ValueInt64()))), gitlab.Ptr(strconv.Itoa(token.ID))))
 
-	r.personalAccessTokenToStateModel(data, token, userIdInt)
+	r.personalAccessTokenToStateModel(ctx, data, token, userIdInt)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
