@@ -5,7 +5,6 @@ package sdk
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"reflect"
 	"regexp"
@@ -77,7 +76,6 @@ func TestAccGitlabGroupLdapLink_basicCN(t *testing.T) {
 		ProtoV6ProviderFactories: providerFactoriesV6,
 		CheckDestroy:             testAccCheckGitlabGroupLdapLinkDestroy,
 		Steps: []resource.TestStep{
-
 			// Create a group LDAP link as a developer (uses testAccGitlabGroupLdapLinkCreateConfig for Config)
 			{
 				Config: fmt.Sprintf(`				
@@ -139,7 +137,6 @@ func TestAccGitlabGroupLdapLink_basicFilter(t *testing.T) {
 		ProtoV6ProviderFactories: providerFactoriesV6,
 		CheckDestroy:             testAccCheckGitlabGroupLdapLinkDestroy,
 		Steps: []resource.TestStep{
-
 			// Create a group LDAP link using a valid filter
 			{
 				Config: fmt.Sprintf(`
@@ -186,7 +183,6 @@ func TestAccGitlabGroupLdapLink_customRole(t *testing.T) {
 		ProtoV6ProviderFactories: providerFactoriesV6,
 		CheckDestroy:             testAccCheckGitlabGroupLdapLinkDestroy,
 		Steps: []resource.TestStep{
-
 			// Create a group LDAP link using a valid filter
 			{
 				Config: fmt.Sprintf(`
@@ -274,7 +270,6 @@ func TestAccGitlabGroupLdapLink_removeOutsideTf(t *testing.T) {
 		ProtoV6ProviderFactories: providerFactoriesV6,
 		CheckDestroy:             testAccCheckGitlabGroupLdapLinkDestroy,
 		Steps: []resource.TestStep{
-
 			// Create a group LDAP link as a developer (uses testAccGitlabGroupLdapLinkCreateConfig for Config)
 			{
 				Config: fmt.Sprintf(`
@@ -293,7 +288,6 @@ func TestAccGitlabGroupLdapLink_removeOutsideTf(t *testing.T) {
 			{
 				// Destroy the group outside of TF, which will also destroy the LDAP link by proxy
 				PreConfig: func() {
-
 					// Mark the group for deletion, then delete it
 					// We don't need to check error on the first call because the second will fail if the first one does.
 					_, _ = testutil.TestGitlabClient.Groups.DeleteGroup(groups[0].ID, nil)
@@ -422,7 +416,6 @@ func TestAccGitlabGroupLdapLink_conflictingArguments(t *testing.T) {
 		ProtoV6ProviderFactories: providerFactoriesV6,
 		CheckDestroy:             testAccCheckGitlabGroupLdapLinkDestroy,
 		Steps: []resource.TestStep{
-
 			// Create a group LDAP link using conflicting arguments
 			// ensure both conflict errors are printed appropriately.
 			{
@@ -584,7 +577,6 @@ func TestAccGitlabGroupLdapLink_forceDeletesWhenExists(t *testing.T) {
 			},
 		},
 	})
-
 }
 
 func TestAccGitlabGroupLdapLink_StateUpgradeV0(t *testing.T) {
@@ -687,7 +679,6 @@ type testAccGitlabGroupLdapLinkExpectedAttributes struct {
 
 func testAccCheckGitlabGroupLdapLinkAttributes(ldapLink *gitlab.LDAPGroupLink, want *testAccGitlabGroupLdapLinkExpectedAttributes) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-
 		accessLevelId, ok := api.AccessLevelValueToName[ldapLink.GroupAccess]
 		if !ok {
 			return fmt.Errorf("Invalid access level '%s'", accessLevelId)
@@ -740,18 +731,7 @@ func testAccGetGitlabGroupLdapLink(ldapLink *gitlab.LDAPGroupLink, resourceState
 	// Try to fetch all group links from GitLab
 	currentLdapLinks, _, err := testutil.TestGitlabClient.Groups.ListGroupLDAPLinks(group, nil)
 	if err != nil {
-		// The read/GET API wasn't implemented in GitLab until version 12.8 (March 2020, well after the add and delete APIs).
-		// If we 404, assume GitLab is at an older version and take things on faith.
-		switch err.(type) { // nolint // TODO: Resolve this golangci-lint issue: S1034: assigning the result of this type assertion to a variable (switch err := err.(type)) could eliminate type assertions in switch cases (gosimple)
-		case *gitlab.ErrorResponse:
-			if err.(*gitlab.ErrorResponse).Response.StatusCode == 404 { // nolint // TODO: Resolve this golangci-lint issue: S1034(related information): could eliminate this type assertion (gosimple)
-				// Do nothing
-			} else {
-				return err
-			}
-		default:
-			return err
-		}
+		return err
 	}
 
 	// If we got here and don't have links, assume GitLab is below version 12.8 and skip the check
@@ -768,7 +748,7 @@ func testAccGetGitlabGroupLdapLink(ldapLink *gitlab.LDAPGroupLink, resourceState
 		}
 
 		if !found {
-			return errors.New(fmt.Sprintf("LdapLink %s does not exist.", desiredLdapLinkId)) // nolint // TODO: Resolve this golangci-lint issue: S1028: should use fmt.Errorf(...) instead of errors.New(fmt.Sprintf(...)) (gosimple)
+			return fmt.Errorf("LdapLink %s does not exist.", desiredLdapLinkId)
 		}
 	} else {
 		*ldapLink = desiredLdapLink

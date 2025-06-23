@@ -114,7 +114,7 @@ func expiresAtSuppressFunc(k, old, new string, d *schema.ResourceData) bool {
 	if oldDateErr != nil || newDateErr != nil {
 		return false
 	}
-	return oldDate == newDate
+	return oldDate.Equal(newDate)
 }
 
 // resourceGitlabDeployTokenResourceV0 returns the V0 schema definition.

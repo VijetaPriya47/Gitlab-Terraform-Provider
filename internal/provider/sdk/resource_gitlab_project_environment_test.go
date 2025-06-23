@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 
@@ -420,9 +420,10 @@ func testAccCheckGitlabProjectEnvironmentDestroy(s *terraform.State) error {
 	var environmentIDInt int
 	var err error
 	for _, rs := range s.RootModule().Resources {
-		if rs.Type == "gitlab_project" {
+		switch rs.Type {
+		case "gitlab_project":
 			project = rs.Primary.ID
-		} else if rs.Type == "gitlab_project_environment" {
+		case "gitlab_project_environment":
 			project, environmentIDString, err = utils.ParseTwoPartID(rs.Primary.ID)
 			if err != nil {
 				return fmt.Errorf("[ERROR] cannot get project and environmentID from input: %v", rs.Primary.ID)

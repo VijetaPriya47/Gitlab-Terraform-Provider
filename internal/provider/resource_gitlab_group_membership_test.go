@@ -17,7 +17,6 @@ import (
 )
 
 func TestAccGitlabGroupMembership_basic(t *testing.T) {
-
 	var groupMember gitlab.GroupMember
 	group := testutil.CreateGroups(t, 1)[0]
 	user := testutil.CreateUsers(t, 1)[0]
@@ -275,7 +274,10 @@ func testAccCheckGitlabGroupMembershipDestroy(s *terraform.State) error {
 		userIdString := rs.Primary.Attributes["user_id"]
 
 		// GetGroupMember needs int type for userIdString
-		userId, err := strconv.Atoi(userIdString) // nolint // TODO: Resolve this golangci-lint issue: ineffectual assignment to err (ineffassign)
+		userId, err := strconv.Atoi(userIdString)
+		if err != nil {
+			return fmt.Errorf("Error when checking destroy. Unable to convert user_id to integer: %v", err)
+		}
 		groupMember, _, err := testutil.TestGitlabClient.GroupMembers.GetGroupMember(groupId, userId)
 		if err != nil {
 			if groupMember != nil && fmt.Sprintf("%d", groupMember.AccessLevel) == rs.Primary.Attributes["access_level"] {

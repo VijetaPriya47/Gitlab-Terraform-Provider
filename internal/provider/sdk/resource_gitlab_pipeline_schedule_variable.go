@@ -130,9 +130,10 @@ func resourceGitlabPipelineScheduleVariableCreate(ctx context.Context, d *schema
 
 	if v, ok := d.GetOk("variable_type"); v != nil && ok {
 		val := v.(string)
-		if val == "env_var" {
+		switch val {
+		case "env_var":
 			options.VariableType = gitlab.Ptr(gitlab.EnvVariableType)
-		} else if val == "file" {
+		case "file":
 			options.VariableType = gitlab.Ptr(gitlab.FileVariableType)
 		}
 	}
@@ -202,9 +203,10 @@ func resourceGitlabPipelineScheduleVariableUpdate(ctx context.Context, d *schema
 
 		if v, ok := d.GetOk("variable_type"); v != nil && ok {
 			val := v.(string)
-			if val == "env_var" {
+			switch val {
+			case "env_var":
 				options.VariableType = gitlab.Ptr(gitlab.EnvVariableType)
-			} else if val == "file" {
+			case "file":
 				options.VariableType = gitlab.Ptr(gitlab.FileVariableType)
 			}
 		}
