@@ -88,6 +88,7 @@ func TestAccGitlabGroupHook_basic(t *testing.T) {
 						releases_events            = true
 						subgroup_events            = true
 						feature_flag_events        = true
+						emoji_events               = true
 						branch_filter_strategy     = "wildcard"
 					}
 				`, testGroup.FullPath),
@@ -141,6 +142,7 @@ func TestAccGitlabGroupHook_basic(t *testing.T) {
 					releases_events            = true
 					subgroup_events            = true
 					feature_flag_events        = true
+					emoji_events               = true
 					branch_filter_strategy     = "wildcard"
 					custom_webhook_template    = "{\"event\":\"{{object_kind}}\"}"
 				}
