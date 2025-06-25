@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -23,10 +24,12 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces
-var _ resource.Resource = &gitlabProjectProtectedEnvironmentResource{}
-var _ resource.ResourceWithConfigure = &gitlabProjectProtectedEnvironmentResource{}
-var _ resource.ResourceWithImportState = &gitlabProjectProtectedEnvironmentResource{}
-var _ resource.ResourceWithValidateConfig = &gitlabProjectProtectedEnvironmentResource{}
+var (
+	_ resource.Resource                   = &gitlabProjectProtectedEnvironmentResource{}
+	_ resource.ResourceWithConfigure      = &gitlabProjectProtectedEnvironmentResource{}
+	_ resource.ResourceWithImportState    = &gitlabProjectProtectedEnvironmentResource{}
+	_ resource.ResourceWithValidateConfig = &gitlabProjectProtectedEnvironmentResource{}
+)
 
 func init() {
 	registerResource(NewGitLabProjectProtectedEnvironmentResource)
@@ -44,13 +47,12 @@ type gitlabProjectProtectedEnvironmentResource struct {
 
 // gitlabProjectProtectedEnvironmentResourceModel describes the resource data model.
 type gitlabProjectProtectedEnvironmentResourceModel struct {
-	Id          types.String `tfsdk:"id"`
-	Project     types.String `tfsdk:"project"`
-	Environment types.String `tfsdk:"environment"`
-
-	// Set objects
-	DeployAccessLevels types.Set  `tfsdk:"deploy_access_levels"`
-	ApprovalRules      types.List `tfsdk:"approval_rules"`
+	Id                          types.String `tfsdk:"id"`
+	Project                     types.String `tfsdk:"project"`
+	Environment                 types.String `tfsdk:"environment"`
+	DeployAccessLevelsAttribute types.Set    `tfsdk:"deploy_access_levels_attribute"`
+	DeployAccessLevels          types.Set    `tfsdk:"deploy_access_levels"`
+	ApprovalRules               types.List   `tfsdk:"approval_rules"`
 }
 
 type gitlabProjectProtectedEnvironmentDeployAccessLevelModel struct {
@@ -87,7 +89,6 @@ func (r *gitlabProjectProtectedEnvironmentResource) Schema(ctx context.Context, 
    In case this happens you will get perpetual state diffs.
 
 **Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/protected_environments/)`,
-
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:            true,
@@ -105,58 +106,82 @@ func (r *gitlabProjectProtectedEnvironmentResource) Schema(ctx context.Context, 
 				Required:            true,
 				PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 			},
-			"approval_rules": approvalRuleSchema(),
+			"deploy_access_levels_attribute": deployAccessLevelSchemaV1(),
+			"approval_rules":                 approvalRuleSchema(),
 		},
 		Blocks: map[string]schema.Block{
-			"deploy_access_levels": deployAccessLevelSchema(),
+			"deploy_access_levels": deployAccessLevelSchemaV0(),
 		},
 	}
 }
 
-func deployAccessLevelSchema() schema.SetNestedBlock {
+func deployAccessLevelSchemaV1() schema.SetNestedAttribute {
+	return schema.SetNestedAttribute{
+		MarkdownDescription: "Array of access levels allowed to deploy, with each described by a hash.  Elements in the `deploy_access_levels` should be one of `user_id`, `group_id` or `access_level`.",
+		Optional:            true,
+		Validators: []validator.Set{
+			setvalidator.SizeAtLeast(1),
+			setvalidator.ConflictsWith(path.MatchRelative().AtParent().AtName("deploy_access_levels")),
+		},
+		NestedObject: schema.NestedAttributeObject{
+			Attributes: deployAccessLevelSchemaAttributes(),
+		},
+	}
+}
+
+func deployAccessLevelSchemaV0() schema.SetNestedBlock {
 	return schema.SetNestedBlock{
 		MarkdownDescription: "Array of access levels allowed to deploy, with each described by a hash.  Elements in the `deploy_access_levels` should be one of `user_id`, `group_id` or `access_level`.",
+		DeprecationMessage:  "This attribute is deprecated. Use `deploy_access_levels_attribute` instead.",
+		Validators: []validator.Set{
+			setvalidator.SizeAtLeast(1),
+			setvalidator.ConflictsWith(path.MatchRelative().AtParent().AtName("deploy_access_levels_attribute")),
+		},
 		NestedObject: schema.NestedBlockObject{
-			Attributes: map[string]schema.Attribute{
-				"id": schema.Int64Attribute{
-					MarkdownDescription: "The unique ID of the Deploy Access Level object.",
-					Computed:            true,
-					PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
-				},
-				"access_level": schema.StringAttribute{
-					MarkdownDescription: fmt.Sprintf("Levels of access required to deploy to this protected environment. Mutually exclusive with `user_id` and `group_id`. Valid values are %s.", utils.RenderValueListForDocs(api.ValidProtectedEnvironmentDeploymentLevelNames)),
-					Optional:            true,
-					PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
-					Validators: []validator.String{
-						stringvalidator.ExactlyOneOf(path.MatchRelative().AtParent().AtName("user_id"), path.MatchRelative().AtParent().AtName("group_id")),
-						stringvalidator.OneOfCaseInsensitive(api.ValidProtectedEnvironmentDeploymentLevelNames...),
-					},
-				},
-				"access_level_description": schema.StringAttribute{
-					MarkdownDescription: "Readable description of level of access.",
-					Computed:            true,
-				},
-				"user_id": schema.Int64Attribute{
-					MarkdownDescription: "The ID of the user allowed to deploy to this protected environment. The user must be a member of the project. Mutually exclusive with `access_level` and `group_id`.",
-					Optional:            true,
-					PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
-					Validators:          []validator.Int64{int64validator.AtLeast(1)},
-				},
-				"group_id": schema.Int64Attribute{
-					MarkdownDescription: "The ID of the group allowed to deploy to this protected environment. The project must be shared with the group. Mutually exclusive with `access_level` and `user_id`.",
-					Optional:            true,
-					PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
-					Validators:          []validator.Int64{int64validator.AtLeast(1)},
-				},
-				"group_inheritance_type": schema.Int64Attribute{
-					MarkdownDescription: "Group inheritance allows deploy access levels to take inherited group membership into account. Valid values are `0`, `1`. `0` => Direct group membership only, `1` => All inherited groups. Default: `0`",
-					Optional:            true,
-					Computed:            true,
-					PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
-					Validators: []validator.Int64{
-						int64validator.OneOf([]int64{0, 1}...),
-					},
-				},
+			Attributes: deployAccessLevelSchemaAttributes(),
+		},
+	}
+}
+
+func deployAccessLevelSchemaAttributes() map[string]schema.Attribute {
+	return map[string]schema.Attribute{
+		"id": schema.Int64Attribute{
+			MarkdownDescription: "The unique ID of the Deploy Access Level object.",
+			Computed:            true,
+			PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
+		},
+		"access_level": schema.StringAttribute{
+			MarkdownDescription: fmt.Sprintf("Levels of access required to deploy to this protected environment. Mutually exclusive with `user_id` and `group_id`. Valid values are %s.", utils.RenderValueListForDocs(api.ValidProtectedEnvironmentDeploymentLevelNames)),
+			Optional:            true,
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+			Validators: []validator.String{
+				stringvalidator.ExactlyOneOf(path.MatchRelative().AtParent().AtName("user_id"), path.MatchRelative().AtParent().AtName("group_id")),
+				stringvalidator.OneOfCaseInsensitive(api.ValidProtectedEnvironmentDeploymentLevelNames...),
+			},
+		},
+		"access_level_description": schema.StringAttribute{
+			MarkdownDescription: "Readable description of level of access.",
+			Computed:            true,
+		},
+		"user_id": schema.Int64Attribute{
+			MarkdownDescription: "The ID of the user allowed to deploy to this protected environment. The user must be a member of the project. Mutually exclusive with `access_level` and `group_id`.",
+			Optional:            true,
+			PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
+			Validators:          []validator.Int64{int64validator.AtLeast(1)},
+		},
+		"group_id": schema.Int64Attribute{
+			MarkdownDescription: "The ID of the group allowed to deploy to this protected environment. The project must be shared with the group. Mutually exclusive with `access_level` and `user_id`.",
+			Optional:            true,
+			PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
+			Validators:          []validator.Int64{int64validator.AtLeast(1)},
+		},
+		"group_inheritance_type": schema.Int64Attribute{
+			MarkdownDescription: "Group inheritance allows deploy access levels to take inherited group membership into account. Valid values are `0`, `1`. `0` => Direct group membership only, `1` => All inherited groups. Default: `0`",
+			Optional:            true,
+			Computed:            true,
+			PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
+			Validators: []validator.Int64{
+				int64validator.OneOf([]int64{0, 1}...),
 			},
 		},
 	}
@@ -238,25 +263,27 @@ func (r *gitlabProjectProtectedEnvironmentResource) ValidateConfig(ctx context.C
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
-	if !data.DeployAccessLevels.IsNull() && !data.DeployAccessLevels.IsUnknown() {
-		deployAccessLevels := make([]*gitlabProjectProtectedEnvironmentDeployAccessLevelModel, 0, len(data.DeployAccessLevels.Elements()))
-		resp.Diagnostics.Append(data.DeployAccessLevels.ElementsAs(ctx, &deployAccessLevels, false)...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-
-		for i, dal := range deployAccessLevels {
-			if !dal.UserId.IsNull() && !dal.GroupId.IsNull() {
-				resp.Diagnostics.AddAttributeError(path.Root("deploy_access_levels").AtListIndex(i), "Invalid Attribute Combination", "Cannot have user_id and group_id in the same deploy_access_levels block")
-			}
-		}
+	deployAccessLevelsAttributeName := "deploy_access_levels"
+	if !data.DeployAccessLevelsAttribute.IsUnknown() && !data.DeployAccessLevelsAttribute.IsNull() {
+		deployAccessLevelsAttributeName = "deploy_access_levels_attribute"
 	}
+	deployAccessLevels, diags := data.deployAccessLevelToResourceModel(ctx)
+	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	if !data.ApprovalRules.IsNull() && !data.DeployAccessLevels.IsUnknown() {
+	for i, dal := range deployAccessLevels {
+		if !dal.UserId.IsNull() && !dal.GroupId.IsNull() {
+			resp.Diagnostics.AddAttributeError(path.Root(deployAccessLevelsAttributeName).AtListIndex(i), "Invalid Attribute Combination", fmt.Sprintf("Cannot have user_id and group_id in the same %s entry", deployAccessLevelsAttributeName))
+		}
+	}
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if !data.ApprovalRules.IsNull() {
 		rules := make([]*gitlabProjectProtectedEnvironmentApprovalRuleModel, 0, len(data.ApprovalRules.Elements()))
 		data.ApprovalRules.ElementsAs(ctx, &rules, true)
 		if resp.Diagnostics.HasError() {
@@ -299,8 +326,8 @@ func (r *gitlabProjectProtectedEnvironmentResource) Create(ctx context.Context, 
 	}
 
 	// deploy access levels
-	deployAccessLevels := make([]*gitlabProjectProtectedEnvironmentDeployAccessLevelModel, 0, len(data.DeployAccessLevels.Elements()))
-	resp.Diagnostics.Append(data.DeployAccessLevels.ElementsAs(ctx, &deployAccessLevels, false)...)
+	deployAccessLevels, diags := data.deployAccessLevelToResourceModel(ctx)
+	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -382,10 +409,26 @@ func (r *gitlabProjectProtectedEnvironmentResource) Create(ctx context.Context, 
 	data.Id = types.StringValue(utils.BuildTwoPartID(&projectID, &protectedEnvironment.Name))
 
 	// persist API response in state model
-	r.protectedEnvironmentToStateModel(ctx, resp.Diagnostics, projectID, protectedEnvironment, data)
+	data.protectedEnvironmentToStateModel(ctx, resp.Diagnostics, projectID, protectedEnvironment)
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+
+func (data *gitlabProjectProtectedEnvironmentResourceModel) deployAccessLevelToResourceModel(ctx context.Context) ([]*gitlabProjectProtectedEnvironmentDeployAccessLevelModel, diag.Diagnostics) {
+	deployAccessLevels := make([]*gitlabProjectProtectedEnvironmentDeployAccessLevelModel, 0)
+	if !data.DeployAccessLevels.IsNull() && !data.DeployAccessLevels.IsUnknown() {
+		diags := data.DeployAccessLevels.ElementsAs(ctx, &deployAccessLevels, false)
+		if diags.HasError() {
+			return nil, diags
+		}
+	} else {
+		diags := data.DeployAccessLevelsAttribute.ElementsAs(ctx, &deployAccessLevels, false)
+		if diags.HasError() {
+			return nil, diags
+		}
+	}
+	return deployAccessLevels, nil
 }
 
 // Read refreshes the Terraform state with the latest data.
@@ -423,8 +466,7 @@ func (r *gitlabProjectProtectedEnvironmentResource) Read(ctx context.Context, re
 		return
 	}
 
-	// persist API response in state model
-	r.protectedEnvironmentToStateModel(ctx, resp.Diagnostics, projectID, protectedEnvironment, data)
+	data.protectedEnvironmentToStateModel(ctx, resp.Diagnostics, projectID, protectedEnvironment)
 
 	tflog.Debug(ctx, "Protected Environment when state is being read", map[string]any{
 		"project": projectID,
@@ -472,8 +514,8 @@ func (r *gitlabProjectProtectedEnvironmentResource) Update(ctx context.Context, 
 	}
 
 	// deploy access levels
-	deployAccessLevels := make([]*gitlabProjectProtectedEnvironmentDeployAccessLevelModel, 0, len(data.DeployAccessLevels.Elements()))
-	resp.Diagnostics.Append(data.DeployAccessLevels.ElementsAs(ctx, &deployAccessLevels, false)...)
+	deployAccessLevels, diags := data.deployAccessLevelToResourceModel(ctx)
+	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -626,7 +668,7 @@ func (r *gitlabProjectProtectedEnvironmentResource) Update(ctx context.Context, 
 	})
 
 	// Add data to state
-	r.protectedEnvironmentToStateModel(ctx, resp.Diagnostics, projectID, protectedEnvironment, data)
+	data.protectedEnvironmentToStateModel(ctx, resp.Diagnostics, projectID, protectedEnvironment)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -664,35 +706,12 @@ func (r *gitlabProjectProtectedEnvironmentResource) ImportState(ctx context.Cont
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
-func (r *gitlabProjectProtectedEnvironmentResource) protectedEnvironmentToStateModel(ctx context.Context, existingDiag diag.Diagnostics, projectID string, protectedEnvironment *gitlab.ProtectedEnvironment, data *gitlabProjectProtectedEnvironmentResourceModel) {
+func (data *gitlabProjectProtectedEnvironmentResourceModel) protectedEnvironmentToStateModel(ctx context.Context, existingDiag diag.Diagnostics, projectID string, protectedEnvironment *gitlab.ProtectedEnvironment) {
 	data.Project = types.StringValue(projectID)
 	data.Environment = types.StringValue(protectedEnvironment.Name)
 
-	deployAccessLevelsData := make([]gitlabProjectProtectedEnvironmentDeployAccessLevelModel, 0)
-	for _, v := range protectedEnvironment.DeployAccessLevels {
-		obj := *v
-		deployAccessLevelData := gitlabProjectProtectedEnvironmentDeployAccessLevelModel{
-			ID:                     types.Int64Value(int64(obj.ID)),
-			AccessLevelDescription: types.StringValue(obj.AccessLevelDescription),
-		}
-		if obj.AccessLevel != 0 {
-			deployAccessLevelData.AccessLevel = types.StringValue(api.AccessLevelValueToName[obj.AccessLevel])
-		}
-		if obj.UserID != 0 {
-			deployAccessLevelData.UserId = types.Int64Value(int64(obj.UserID))
-		}
-		if obj.GroupID != 0 {
-			deployAccessLevelData.GroupId = types.Int64Value(int64(obj.GroupID))
-		}
-		if obj.GroupInheritanceType != 0 {
-			deployAccessLevelData.GroupInheritanceType = types.Int64Value(int64(obj.GroupInheritanceType))
-		}
-
-		deployAccessLevelsData = append(deployAccessLevelsData, deployAccessLevelData)
-	}
-	dalSetType, newDiag := types.SetValueFrom(ctx, deployAccessLevelSchema().NestedObject.Type(), deployAccessLevelsData)
+	newDiag := data.deployAccessLevelsToStateModel(ctx, protectedEnvironment.DeployAccessLevels)
 	existingDiag.Append(newDiag...)
-	data.DeployAccessLevels = dalSetType
 
 	approvalRulesData := make([]gitlabProjectProtectedEnvironmentApprovalRuleModel, 0)
 	for _, v := range protectedEnvironment.ApprovalRules {
@@ -719,7 +738,50 @@ func (r *gitlabProjectProtectedEnvironmentResource) protectedEnvironmentToStateM
 
 		approvalRulesData = append(approvalRulesData, approvalRuleData)
 	}
-	arSetType, newDiag := types.ListValueFrom(ctx, approvalRuleSchema().NestedObject.Type(), approvalRulesData)
+	arListType, newDiag := types.ListValueFrom(ctx, approvalRuleSchema().NestedObject.Type(), approvalRulesData)
 	existingDiag.Append(newDiag...)
-	data.ApprovalRules = arSetType
+	data.ApprovalRules = arListType
+}
+
+func (data *gitlabProjectProtectedEnvironmentResourceModel) deployAccessLevelsToStateModel(ctx context.Context, deployAccessLevels []*gitlab.EnvironmentAccessDescription) diag.Diagnostics {
+	deployAccessLevelsData := make([]gitlabProjectProtectedEnvironmentDeployAccessLevelModel, 0)
+
+	for _, level := range deployAccessLevels {
+		deployAccessLevelData := data.deployAccessLevelToStateModel(level)
+		deployAccessLevelsData = append(deployAccessLevelsData, deployAccessLevelData)
+	}
+
+	if !data.DeployAccessLevels.IsNull() && !data.DeployAccessLevels.IsUnknown() {
+		dalSetType, diags := types.SetValueFrom(ctx, deployAccessLevelSchemaV0().NestedObject.Type(), deployAccessLevelsData)
+		if !diags.HasError() {
+			data.DeployAccessLevels = dalSetType
+		}
+		return diags
+	} else {
+		dalSetType, diags := types.SetValueFrom(ctx, deployAccessLevelSchemaV1().NestedObject.Type(), deployAccessLevelsData)
+		if !diags.HasError() {
+			data.DeployAccessLevelsAttribute = dalSetType
+		}
+		return diags
+	}
+}
+
+func (data *gitlabProjectProtectedEnvironmentResourceModel) deployAccessLevelToStateModel(apiLevel *gitlab.EnvironmentAccessDescription) gitlabProjectProtectedEnvironmentDeployAccessLevelModel {
+	deployAccessLevelData := gitlabProjectProtectedEnvironmentDeployAccessLevelModel{
+		ID:                     types.Int64Value(int64(apiLevel.ID)),
+		AccessLevelDescription: types.StringValue(apiLevel.AccessLevelDescription),
+	}
+	if apiLevel.AccessLevel != 0 {
+		deployAccessLevelData.AccessLevel = types.StringValue(api.AccessLevelValueToName[apiLevel.AccessLevel])
+	}
+	if apiLevel.UserID != 0 {
+		deployAccessLevelData.UserId = types.Int64Value(int64(apiLevel.UserID))
+	}
+	if apiLevel.GroupID != 0 {
+		deployAccessLevelData.GroupId = types.Int64Value(int64(apiLevel.GroupID))
+	}
+	if apiLevel.GroupInheritanceType != 0 {
+		deployAccessLevelData.GroupInheritanceType = types.Int64Value(int64(apiLevel.GroupInheritanceType))
+	}
+	return deployAccessLevelData
 }
