@@ -63,6 +63,7 @@ type gitlabGroupHookResourceModel struct {
 	ReleasesEvents           types.Bool   `tfsdk:"releases_events"`
 	SubGroupEvents           types.Bool   `tfsdk:"subgroup_events"`
 	FeatureFlagEvents        types.Bool   `tfsdk:"feature_flag_events"`
+	EmojiEvents              types.Bool   `tfsdk:"emoji_events"`
 
 	EnableSSLVerification types.Bool                     `tfsdk:"enable_ssl_verification"`
 	CustomWebhookTemplate types.String                   `tfsdk:"custom_webhook_template"`
@@ -126,6 +127,7 @@ func (r *gitlabGroupHookResource) Create(ctx context.Context, req resource.Creat
 		DeploymentEvents:         data.DeploymentEvents.ValueBoolPointer(),
 		ReleasesEvents:           data.ReleasesEvents.ValueBoolPointer(),
 		SubGroupEvents:           data.SubGroupEvents.ValueBoolPointer(),
+		EmojiEvents:              data.EmojiEvents.ValueBoolPointer(),
 		EnableSSLVerification:    data.EnableSSLVerification.ValueBoolPointer(),
 		CustomWebhookTemplate:    data.CustomWebhookTemplate.ValueStringPointer(),
 	}
@@ -247,6 +249,7 @@ func (r *gitlabGroupHookResource) Update(ctx context.Context, req resource.Updat
 		DeploymentEvents:         data.DeploymentEvents.ValueBoolPointer(),
 		ReleasesEvents:           data.ReleasesEvents.ValueBoolPointer(),
 		SubGroupEvents:           data.SubGroupEvents.ValueBoolPointer(),
+		EmojiEvents:              data.EmojiEvents.ValueBoolPointer(),
 		EnableSSLVerification:    data.EnableSSLVerification.ValueBoolPointer(),
 		CustomWebhookTemplate:    data.CustomWebhookTemplate.ValueStringPointer(),
 	}
@@ -465,6 +468,12 @@ func (d *gitlabGroupHookResource) getSchema() schema.Schema {
 				Computed:    true,
 				Default:     booldefault.StaticBool(false),
 			},
+			"emoji_events": schema.BoolAttribute{
+				Description: "Invoke the hook for emoji events.",
+				Optional:    true,
+				Computed:    true,
+				Default:     booldefault.StaticBool(false),
+			},
 			"enable_ssl_verification": schema.BoolAttribute{
 				Description: "Enable SSL verification when invoking the hook.",
 				Optional:    true,
@@ -530,6 +539,7 @@ func (d *gitlabGroupHookResourceModel) modelToStateModel(a *gitlab.GroupHook) {
 	d.EnableSSLVerification = types.BoolValue(a.EnableSSLVerification)
 	d.CustomWebhookTemplate = types.StringValue(a.CustomWebhookTemplate)
 	d.FeatureFlagEvents = types.BoolValue(a.FeatureFlagEvents)
+	d.EmojiEvents = types.BoolValue(a.EmojiEvents)
 	d.BranchFilterStrategy = types.StringValue(a.BranchFilterStrategy)
 
 	if len(a.CustomHeaders) > 0 || len(d.CustomHeaders) > 0 {

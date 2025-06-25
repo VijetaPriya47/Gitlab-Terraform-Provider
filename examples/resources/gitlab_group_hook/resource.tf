@@ -28,6 +28,7 @@ resource "gitlab_group_hook" "all_attributes" {
   deployment_events          = true
   releases_events            = true
   subgroup_events            = true
+  emoji_events               = true
   feature_flag_events        = true
   branch_filter_strategy     = "wildcard"
 }

@@ -116,6 +116,12 @@ func gitlabGroupHookSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Default:     false,
 		},
+		"emoji_events": {
+			Description: "Invoke the hook for emoji events.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     false,
+		},
 		"enable_ssl_verification": {
 			Description: "Enable ssl verification when invoking the hook.",
 			Type:        schema.TypeBool,
@@ -150,6 +156,7 @@ func gitlabGroupHookToStateMap(group string, hook *gitlab.GroupHook) map[string]
 	stateMap["deployment_events"] = hook.DeploymentEvents
 	stateMap["releases_events"] = hook.ReleasesEvents
 	stateMap["subgroup_events"] = hook.SubGroupEvents
+	stateMap["emoji_events"] = hook.EmojiEvents
 	stateMap["enable_ssl_verification"] = hook.EnableSSLVerification
 	stateMap["custom_webhook_template"] = hook.CustomWebhookTemplate
 	return stateMap

@@ -406,7 +406,8 @@ func CreateGroupHooks(t *testing.T, gid interface{}, n int) []*gitlab.GroupHook 
 	var hooks []*gitlab.GroupHook
 	for i := 0; i < n; i++ {
 		hook, _, err := TestGitlabClient.Groups.AddGroupHook(gid, &gitlab.AddGroupHookOptions{
-			URL: gitlab.Ptr(fmt.Sprintf("https://%s.com", acctest.RandomWithPrefix("acctest"))),
+			URL:         gitlab.Ptr(fmt.Sprintf("https://%s.com", acctest.RandomWithPrefix("acctest"))),
+			EmojiEvents: gitlab.Ptr(true),
 		})
 		if err != nil {
 			t.Fatalf("could not create group hook: %v", err)

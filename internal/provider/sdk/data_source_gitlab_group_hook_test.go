@@ -32,6 +32,7 @@ func TestAccDataSourceGitlabGroupHook_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("data.gitlab_group_hook.this", "hook_id", fmt.Sprintf("%d", testHook.ID)),
 					resource.TestCheckResourceAttr("data.gitlab_group_hook.this", "group_id", fmt.Sprintf("%d", testGroup.ID)),
 					resource.TestCheckResourceAttr("data.gitlab_group_hook.this", "url", testHook.URL),
+					resource.TestCheckResourceAttr("data.gitlab_group_hook.this", "emoji_events", "true"),
 				),
 			},
 		},
