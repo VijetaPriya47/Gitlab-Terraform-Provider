@@ -63,6 +63,10 @@ var ValidProtectedBranchUnprotectAccessLevelNames = []string{
 	"developer", "maintainer", "admin",
 }
 
+var ValidProtectedContainerRepositoryAccessLevelNames = []string{
+	"maintainer", "owner", "admin",
+}
+
 var ValidProtectedEnvironmentDeploymentLevelNames = []string{
 	"developer", "maintainer",
 }
