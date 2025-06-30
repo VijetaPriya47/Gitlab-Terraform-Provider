@@ -1,0 +1,2 @@
+# GitLab project container repository protection rules can be imported using an id made up of `<project_id>:<protection_rule_id>`, e.g.
+terraform import gitlab_project_container_repository_protection.this 123:321
