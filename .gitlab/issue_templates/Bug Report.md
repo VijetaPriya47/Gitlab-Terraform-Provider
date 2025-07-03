@@ -66,3 +66,4 @@ TF_LOG_PATH=$(pwd)/log.jsonl TF_LOG=JSON terraform ...
 - GitLab Terraform Provider Version: ``
 - GitLab Instance Version: ``
 - Terraform Version: ``
+- License Tier: `Free|Premium|Ultimate`
