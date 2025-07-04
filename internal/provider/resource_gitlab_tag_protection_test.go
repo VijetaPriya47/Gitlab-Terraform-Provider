@@ -259,6 +259,67 @@ func TestAccGitlabTagProtection_customAccessLevel_userIdAndGroupIdAreMutuallyExc
 	})
 }
 
+func TestAccGitlabTagProtection_adminCreateAccessLevel(t *testing.T) {
+	var pt gitlab.ProtectedTag
+	rInt := acctest.RandInt()
+	project := testutil.CreateProject(t)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		CheckDestroy:             testAccCheckGitlabTagProtectionDestroy,
+		Steps: []resource.TestStep{
+			// Create a project and Tag Protection with admin create access level
+			{
+				Config: fmt.Sprintf(`				
+				resource "gitlab_tag_protection" "tag_protect" {
+				  project            = %d
+				  tag                = "TagProtect-%d"
+				  create_access_level = "admin"
+				}
+				`, project.ID, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabTagProtectionExists("gitlab_tag_protection.tag_protect", &pt),
+					testAccCheckGitlabTagProtectionPersistsInStateCorrectly("gitlab_tag_protection.tag_protect", &pt),
+					testAccCheckGitlabTagProtectionAttributes(&pt, &testAccGitlabTagProtectionExpectedAttributes{
+						Name:              fmt.Sprintf("TagProtect-%d", rInt),
+						CreateAccessLevel: "admin",
+					}),
+				),
+			},
+			// Verify import after creation
+			{
+				ResourceName:      "gitlab_tag_protection.tag_protect",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Update to change from admin to maintainer
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_tag_protection" "tag_protect" {
+				  project            = %d
+				  tag                = "TagProtect-%d"
+				  create_access_level = "maintainer"
+				}
+				`, project.ID, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabTagProtectionExists("gitlab_tag_protection.tag_protect", &pt),
+					testAccCheckGitlabTagProtectionPersistsInStateCorrectly("gitlab_tag_protection.tag_protect", &pt),
+					testAccCheckGitlabTagProtectionAttributes(&pt, &testAccGitlabTagProtectionExpectedAttributes{
+						Name:              fmt.Sprintf("TagProtect-%d", rInt),
+						CreateAccessLevel: api.AccessLevelValueToName[gitlab.MaintainerPermissions],
+					}),
+				),
+			},
+			// Verify import after update
+			{
+				ResourceName:      "gitlab_tag_protection.tag_protect",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 func testAccCheckGitlabTagProtectionPersistsInStateCorrectly(n string, pt *gitlab.ProtectedTag) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]

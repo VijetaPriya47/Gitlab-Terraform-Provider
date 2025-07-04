@@ -41,3 +41,12 @@ resource "gitlab_branch_protection" "main" {
     }
   }
 }
+
+# Example with admin push access level
+resource "gitlab_branch_protection" "admin_push" {
+  project                = "12345"
+  branch                 = "admin-protected"
+  push_access_level      = "admin"
+  merge_access_level     = "maintainer"
+  unprotect_access_level = "maintainer"
+}
