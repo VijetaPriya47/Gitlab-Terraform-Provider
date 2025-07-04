@@ -49,12 +49,8 @@ var ValidProjectAccessLevelNames = []string{
 	"owner",
 }
 
-// NOTE(TF): the documentation here https://docs.gitlab.com/api/protected_branches/
-//
-//	mentions an `60 => Admin access` level, but it actually seems to not exist.
-//	Ignoring here that I've every read about this ...
 var ValidProtectedBranchTagAccessLevelNames = []string{
-	"no one", "developer", "maintainer",
+	"no one", "developer", "maintainer", "admin",
 }
 
 // The only access levels allowed to be configured to unprotect a protected branch

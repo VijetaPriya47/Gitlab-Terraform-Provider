@@ -197,6 +197,13 @@ func TestAccGitlabBranchProtection_basic(t *testing.T) {
 					}),
 				),
 			},
+			// Verify import after creation
+			{
+				ResourceName:            "gitlab_branch_protection.branch_protect",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"unprotect_access_level"},
+			},
 		},
 	})
 }
@@ -253,6 +260,13 @@ func TestAccGitlabBranchProtection_createWithCodeOwnerApproval(t *testing.T) {
 					}),
 				),
 			},
+			// Verify import after creation
+			{
+				ResourceName:            "gitlab_branch_protection.branch_protect",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"unprotect_access_level"},
+			},
 			// Attempting to update code owner approval setting on CE should fail safely and with an informative error message
 			{
 				SkipFunc: testutil.IsRunningInEE,
@@ -265,6 +279,13 @@ func TestAccGitlabBranchProtection_createWithCodeOwnerApproval(t *testing.T) {
 				}
 					`, project.ID, rInt),
 				ExpectError: regexp.MustCompile("feature unavailable `code_owner_approval_required`"),
+			},
+			// Verify import after creation
+			{
+				ResourceName:            "gitlab_branch_protection.branch_protect",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"unprotect_access_level"},
 			},
 			// Update the Branch Protection to get back to initial settings
 			{
@@ -284,6 +305,13 @@ func TestAccGitlabBranchProtection_createWithCodeOwnerApproval(t *testing.T) {
 						UnprotectAccessLevel: api.AccessLevelValueToName[gitlab.MaintainerPermissions],
 					}),
 				),
+			},
+			// Verify import after update to initial settings
+			{
+				ResourceName:            "gitlab_branch_protection.branch_protect",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"unprotect_access_level"},
 			},
 		},
 	})
@@ -317,6 +345,13 @@ func TestAccGitlabBranchProtection_createWithAllowForcePush(t *testing.T) {
 					}),
 				),
 			},
+			// Verify import after creation
+			{
+				ResourceName:            "gitlab_branch_protection.branch_protect",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"unprotect_access_level"},
+			},
 			// Create a project and Branch Protection with allow force push enabled
 			{
 				Config: fmt.Sprintf(`				
@@ -339,6 +374,13 @@ func TestAccGitlabBranchProtection_createWithAllowForcePush(t *testing.T) {
 					}),
 				),
 			},
+			// Verify import after creation
+			{
+				ResourceName:            "gitlab_branch_protection.branch_protect",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"unprotect_access_level"},
+			},
 			// Update the Branch Protection to get back to initial settings
 			{
 				Config: fmt.Sprintf(`				
@@ -358,11 +400,20 @@ func TestAccGitlabBranchProtection_createWithAllowForcePush(t *testing.T) {
 					}),
 				),
 			},
+			// Verify import after update to initial settings
+			{
+				ResourceName:            "gitlab_branch_protection.branch_protect",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"unprotect_access_level"},
+			},
 		},
 	})
 }
 
 func TestAccGitlabBranchProtection_createWithUnprotectAccessLevel(t *testing.T) {
+	testutil.SkipIfCE(t)
+
 	var pb gitlab.ProtectedBranch
 	rInt := acctest.RandInt()
 	project := testutil.CreateProject(t)
@@ -393,6 +444,12 @@ func TestAccGitlabBranchProtection_createWithUnprotectAccessLevel(t *testing.T) 
 					}),
 				),
 			},
+			// Verify import after creation
+			{
+				ResourceName:      "gitlab_branch_protection.branch_protect",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
 			// Update the Branch Protection access levels
 			{
 				Config: fmt.Sprintf(`				
@@ -415,6 +472,12 @@ func TestAccGitlabBranchProtection_createWithUnprotectAccessLevel(t *testing.T) 
 					}),
 				),
 			},
+			// Verify import after update to maintainer
+			{
+				ResourceName:      "gitlab_branch_protection.branch_protect",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
 			// Update the Branch Protection access levels using "admin"
 			{
 				Config: fmt.Sprintf(`				
@@ -436,6 +499,12 @@ func TestAccGitlabBranchProtection_createWithUnprotectAccessLevel(t *testing.T) 
 						UnprotectAccessLevel: api.AccessLevelValueToName[gitlab.AdminPermissions],
 					}),
 				),
+			},
+			// Verify import after update to admin
+			{
+				ResourceName:      "gitlab_branch_protection.branch_protect",
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 	})
@@ -470,6 +539,13 @@ func TestAccGitlabBranchProtection_createForProjectDefaultBranch(t *testing.T) {
 						return nil
 					},
 				),
+			},
+			// Verify import after creation
+			{
+				ResourceName:            "gitlab_branch_protection.default_branch",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"unprotect_access_level"},
 			},
 		},
 	})
@@ -567,6 +643,13 @@ func TestAccGitlabBranchProtection_UpgradeFromSDKToFrameworkForEELicense(t *test
 					}),
 				),
 			},
+			// Verify import after creation
+			{
+				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+				ResourceName:             "gitlab_branch_protection.default",
+				ImportState:              true,
+				ImportStateVerify:        true,
+			},
 		},
 	})
 }
@@ -639,6 +722,14 @@ func TestAccGitlabBranchProtection_UpgradeFromSDKToFrameworkForCELicense(t *test
 					}),
 				),
 			},
+			// Verify import after creation
+			{
+				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+				ResourceName:             "gitlab_branch_protection.default",
+				ImportState:              true,
+				ImportStateVerify:        true,
+				ImportStateVerifyIgnore:  []string{"unprotect_access_level"},
+			},
 		},
 	})
 }
@@ -654,10 +745,10 @@ func TestAccGitlabBranchProtection_FailIfEnterpriseFeaturesUsedForCommunityLicen
 	testutil.AddProjectMembers(t, testProject.ID, testUsers)
 
 	resource.ParallelTest(t, resource.TestCase{
-		CheckDestroy: testAccCheckGitlabProjectLevelMRApprovalsDestroy,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabProjectLevelMRApprovalsDestroy,
 		Steps: []resource.TestStep{
 			{
-				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 				Config: fmt.Sprintf(`
 				resource "gitlab_branch_protection" "default" {
 					project                = "%d"
@@ -674,7 +765,6 @@ func TestAccGitlabBranchProtection_FailIfEnterpriseFeaturesUsedForCommunityLicen
 				ExpectError: regexp.MustCompile("feature unavailable `allowed_to_push`"),
 			},
 			{
-				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 				Config: fmt.Sprintf(`
 				resource "gitlab_branch_protection" "default" {
 					project                = "%d"
@@ -691,7 +781,6 @@ func TestAccGitlabBranchProtection_FailIfEnterpriseFeaturesUsedForCommunityLicen
 				ExpectError: regexp.MustCompile("feature unavailable `allowed_to_merge`"),
 			},
 			{
-				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 				Config: fmt.Sprintf(`
 				resource "gitlab_branch_protection" "default" {
 					project                = "%d"
@@ -708,7 +797,6 @@ func TestAccGitlabBranchProtection_FailIfEnterpriseFeaturesUsedForCommunityLicen
 				ExpectError: regexp.MustCompile("feature unavailable `allowed_to_unprotect`"),
 			},
 			{
-				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 				Config: fmt.Sprintf(`
 				resource "gitlab_branch_protection" "default" {
 					project                = "%d"
@@ -721,6 +809,107 @@ func TestAccGitlabBranchProtection_FailIfEnterpriseFeaturesUsedForCommunityLicen
 				  }
 				`, testProject.ID, testProject.DefaultBranch, testUsers[0].ID),
 				ExpectError: regexp.MustCompile("feature unavailable `code_owner_approval_required`"),
+			},
+		},
+	})
+}
+
+func TestAccGitlabBranchProtection_adminPushAccessLevel(t *testing.T) {
+	var pb gitlab.ProtectedBranch
+	rInt := acctest.RandInt()
+	project := testutil.CreateProject(t)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		CheckDestroy:             testAccCheckGitlabBranchProtectionDestroy,
+		Steps: []resource.TestStep{
+			// Create a project and Branch Protection with admin push access level
+			{
+				Config: fmt.Sprintf(`				
+				resource "gitlab_branch_protection" "branch_protect" {
+				  project            = %d
+				  branch             = "BranchProtect-%d"
+				  push_access_level  = "admin"
+				  merge_access_level = "maintainer"
+				  unprotect_access_level = "maintainer"
+				}
+				`, project.ID, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabBranchProtectionExists("gitlab_branch_protection.branch_protect", &pb),
+					testAccCheckGitlabBranchProtectionPersistsInStateCorrectly("gitlab_branch_protection.branch_protect", &pb),
+					testAccCheckGitlabBranchProtectionComputedAttributes("gitlab_branch_protection.branch_protect", &pb),
+					testAccCheckGitlabBranchProtectionAttributes("gitlab_branch_protection.branch_protect", &pb, &testAccGitlabBranchProtectionExpectedAttributes{
+						Name:                 fmt.Sprintf("BranchProtect-%d", rInt),
+						PushAccessLevel:      "admin",
+						MergeAccessLevel:     api.AccessLevelValueToName[gitlab.MaintainerPermissions],
+						UnprotectAccessLevel: api.AccessLevelValueToName[gitlab.MaintainerPermissions],
+					}),
+				),
+			},
+			// Verify import after creation
+			{
+				ResourceName:            "gitlab_branch_protection.branch_protect",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"unprotect_access_level"},
+			},
+			// Update to change from admin to maintainer
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_branch_protection" "branch_protect" {
+				  project            = %d
+				  branch             = "BranchProtect-%d"
+				  push_access_level  = "maintainer"
+				  merge_access_level = "maintainer"
+				  unprotect_access_level = "maintainer"
+				}
+				`, project.ID, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabBranchProtectionExists("gitlab_branch_protection.branch_protect", &pb),
+					testAccCheckGitlabBranchProtectionPersistsInStateCorrectly("gitlab_branch_protection.branch_protect", &pb),
+					testAccCheckGitlabBranchProtectionAttributes("gitlab_branch_protection.branch_protect", &pb, &testAccGitlabBranchProtectionExpectedAttributes{
+						Name:                 fmt.Sprintf("BranchProtect-%d", rInt),
+						PushAccessLevel:      api.AccessLevelValueToName[gitlab.MaintainerPermissions],
+						MergeAccessLevel:     api.AccessLevelValueToName[gitlab.MaintainerPermissions],
+						UnprotectAccessLevel: api.AccessLevelValueToName[gitlab.MaintainerPermissions],
+					}),
+				),
+			},
+			// Verify import after update to maintainer
+			{
+				ResourceName:            "gitlab_branch_protection.branch_protect",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"unprotect_access_level"},
+			},
+			// Update back to admin
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_branch_protection" "branch_protect" {
+				  project            = %d
+				  branch             = "BranchProtect-%d"
+				  push_access_level  = "admin"
+				  merge_access_level = "maintainer"
+				  unprotect_access_level = "maintainer"
+				}
+				`, project.ID, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabBranchProtectionExists("gitlab_branch_protection.branch_protect", &pb),
+					testAccCheckGitlabBranchProtectionPersistsInStateCorrectly("gitlab_branch_protection.branch_protect", &pb),
+					testAccCheckGitlabBranchProtectionAttributes("gitlab_branch_protection.branch_protect", &pb, &testAccGitlabBranchProtectionExpectedAttributes{
+						Name:                 fmt.Sprintf("BranchProtect-%d", rInt),
+						PushAccessLevel:      "admin",
+						MergeAccessLevel:     api.AccessLevelValueToName[gitlab.MaintainerPermissions],
+						UnprotectAccessLevel: api.AccessLevelValueToName[gitlab.MaintainerPermissions],
+					}),
+				),
+			},
+			// Verify import after update back to admin
+			{
+				ResourceName:            "gitlab_branch_protection.branch_protect",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"unprotect_access_level"},
 			},
 		},
 	})
