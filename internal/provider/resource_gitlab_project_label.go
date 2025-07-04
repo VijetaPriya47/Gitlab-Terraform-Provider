@@ -123,6 +123,7 @@ func (r *gitlabProjectLabelResource) getV1Schema() schema.Schema {
 			"description": schema.StringAttribute{
 				MarkdownDescription: "The description of the label.",
 				Optional:            true,
+				Computed:            true,
 			},
 		},
 	}
