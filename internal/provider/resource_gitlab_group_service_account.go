@@ -48,6 +48,7 @@ type gitlabGroupServiceAccountResourceModel struct {
 	Group            types.String `tfsdk:"group"`
 	Name             types.String `tfsdk:"name"`
 	Username         types.String `tfsdk:"username"`
+	Email            types.String `tfsdk:"email"`
 }
 
 func (r *gitlabGroupServiceAccountResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -80,6 +81,12 @@ func (r *gitlabGroupServiceAccountResource) Schema(_ context.Context, _ resource
 				Optional:            true,
 				MarkdownDescription: "The username of the user. If not specified, it’s automatically generated.",
 				PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace(), stringplanmodifier.UseStateForUnknown()},
+			},
+			"email": schema.StringAttribute{
+				MarkdownDescription: "User account email. If not specified, generates an email prepended with `service_account_group_`. Custom email addresses require confirmation before the account is active, unless the group has a matching verified domain.",
+				Optional:            true,
+				Computed:            true,
+				PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 			},
 		},
 	}
@@ -116,6 +123,10 @@ func (r *gitlabGroupServiceAccountResource) Create(ctx context.Context, req reso
 		Username: gitlab.Ptr(data.Username.ValueString()),
 	}
 
+	if !data.Email.IsNull() && !data.Email.IsUnknown() {
+		options.Email = gitlab.Ptr(data.Email.ValueString())
+	}
+
 	// Create service account
 	serviceAccount, _, err := r.client.Groups.CreateServiceAccount(group, options, gitlab.WithContext(ctx))
 	if err != nil {
@@ -129,6 +140,7 @@ func (r *gitlabGroupServiceAccountResource) Create(ctx context.Context, req reso
 		"id":       data.ServiceAccountID.ValueString(),
 		"name":     data.Name.ValueString(),
 		"username": data.Username.ValueString(),
+		"email":    data.Email.ValueString(),
 	})
 
 	// Save data into Terraform state
@@ -230,6 +242,7 @@ func (r *gitlabGroupServiceAccountResourceModel) serviceAccountToStateModel(serv
 	r.Group = types.StringValue(group)
 	r.Name = types.StringValue(serviceAccount.Name)
 	r.Username = types.StringValue(serviceAccount.UserName)
+	r.Email = types.StringValue(serviceAccount.Email)
 }
 
 func findGitlabServiceAccount(client *gitlab.Client, group, desiredId string) (*gitlab.GroupServiceAccount, error) {
