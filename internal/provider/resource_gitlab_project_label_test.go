@@ -280,6 +280,51 @@ func TestAcc_GitlabProjectLabel_migrateFromSDKToFramework_deprecatedResourceName
 	})
 }
 
+func TestAcc_GitlabProjectLabel_regressionNullDescription(t *testing.T) {
+	project := testutil.CreateProject(t)
+	rInt := acctest.RandInt()
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabProjectLabelDestroy,
+		Steps: []resource.TestStep{
+			// Create a label with no description
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_label" "fixme" {
+						project     = "%d"
+						name        = "FIXME-%d"
+						color       = "#ffcc00"
+					}
+				`, project.ID, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project_label.fixme", "description", ""),
+				),
+			},
+			// Verify Import
+			{
+				ResourceName:      "gitlab_project_label.fixme",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Update the label to include a description
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_label" "fixme" {
+						project     = "%d"
+						name        = "FIXME-%d"
+						color       = "#ffcc00"
+						description = "fix this test"
+					}
+				`, project.ID, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project_label.fixme", "description", "fix this test"),
+				),
+			},
+		},
+	})
+}
+
 func testAccCheckGitlabProjectLabelDestroy(s *terraform.State) error {
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "gitlab_project_label" && rs.Type != "gitlab_label" {
