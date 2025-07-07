@@ -156,9 +156,6 @@ testacc:acceptance:
     TESTACCTAG: acceptance
 
 testacc:generate-flakey:
-  rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "schedule"
-    - if: $CI_MERGE_REQUEST_LABELS =~ /run-nightly-tests/
   script:
     # This ensures that the flakey jobs retry twice. "retry" doesn't allow variable
     # expansion, so we need to do this workaround.
