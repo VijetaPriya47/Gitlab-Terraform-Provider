@@ -74,14 +74,14 @@ testacc-up: | certs ## Launch a GitLab instance.
 testacc-down: ## Teardown a GitLab instance.
 	$(CONTAINER_COMPOSE_ENGINE) down --volumes
 
+# Run the acceptance tests. Normal execution only runs the normal "acceptance" tagged tests. 
+# Options for tags are:
+#   - acceptance      : run normal acceptance tests
+#   - flakey          : run tests that have a higher failure rate, and are slightly flakier
+#   - settings        : run settings sets that permanently alter instance settings
+TESTACCTAG ?= acceptance
 testacc: ## Run acceptance tests against a GitLab instance.
-	TF_ACC=1 GITLAB_TOKEN=$(GITLAB_TOKEN) GITLAB_BASE_URL=$(GITLAB_BASE_URL) GITLAB_EARLY_AUTH_CHECK=$(GITLAB_EARLY_AUTH_CHECK) go test --tags acceptance -v $(PROVIDER_SRC_DIR) $(TESTARGS) -timeout 40m
-
-testacc-flakey: ## Run flakey acceptance tests against a GitLab instance.
-	TF_ACC=1 GITLAB_TOKEN=$(GITLAB_TOKEN) GITLAB_BASE_URL=$(GITLAB_BASE_URL) GITLAB_EARLY_AUTH_CHECK=$(GITLAB_EARLY_AUTH_CHECK) go test --tags flakey -v $(PROVIDER_SRC_DIR) $(TESTARGS) -timeout 40m
-
-testacc-settings: ## Run application settings acceptance tests against a GitLab instance.
-	TF_ACC=1 GITLAB_TOKEN=$(GITLAB_TOKEN) GITLAB_BASE_URL=$(GITLAB_BASE_URL) GITLAB_EARLY_AUTH_CHECK=$(GITLAB_EARLY_AUTH_CHECK) go test --tags settings -v $(PROVIDER_SRC_DIR) $(TESTARGS) -timeout 40m
+	TF_ACC=1 GITLAB_TOKEN=$(GITLAB_TOKEN) GITLAB_BASE_URL=$(GITLAB_BASE_URL) GITLAB_EARLY_AUTH_CHECK=$(GITLAB_EARLY_AUTH_CHECK) go test --tags $(TESTACCTAG) -v $(PROVIDER_SRC_DIR) $(TESTARGS) -timeout 120m
 
 certs: ## Generate certs for the GitLab container registry
 	mkdir -p certs

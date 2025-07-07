@@ -46,13 +46,6 @@ cache:
   paths:
     - .go/pkg/mod
 
-.run-for-supported-versions:
-  parallel:
-    matrix:
-      - GITLAB_VERSION:
-          - "17.11.4-${GITLAB_EDITION}.0"
-          - "18.0.2-${GITLAB_EDITION}.0"
-          - "18.1.0-${GITLAB_EDITION}.0"
 # Disabling code navigatino with LSIF, until the upload issue is solved.
 # see https://gitlab.com/gitlab-org/gitlab/-/issues/365885#note_1219840952
 # code_navigation:
@@ -152,226 +145,91 @@ go:test:
   script:
     - make test
 
-.testacc:
-  stage: acceptance-test
-  services:
-    - docker:28.3.1-dind
+testacc:acceptance:
+  trigger:
+    include: .gitlab/ci/test-set.gitlab-ci.yml
+    strategy: depend
+    forward:
+      pipeline_variables: true
+      yaml_variables: true
   variables:
-    DOCKER_HOST: tcp://docker:2376/
-    DOCKER_TLS_VERIFY: 1
-    DOCKER_TLS_CERTDIR: "/certs"
-    DOCKER_CERT_PATH: "$DOCKER_TLS_CERTDIR/client"
-    GITLAB_BASE_URL: http://docker:8085/api/v4
-    # Debug logging of the test suite
-    TF_LOG_PATH: "$CI_PROJECT_DIR/$GITLAB_EDITION-$GITLAB_VERSION-acctest.jsonl"
-    # NOTE: the test command will complain about that `JSON` value with:
-    #       `[WARN] Invalid log level: "JSON". Defaulting to level: TRACE. Valid levels are: [TRACE DEBUG INFO WARN ERROR]`
-    #       But it actually works ¯\_(ツ)_/¯
-    TF_LOG: JSON
-  # Use the CI container we build
-  image: registry.gitlab.com/gitlab-org/terraform-provider-gitlab:${IMAGE_TAG}
-  before_script:
-    - export GITLAB_$(echo "${GITLAB_EDITION}" | tr '[:lower:]' '[:upper:]')_VERSION=${GITLAB_VERSION}
-    - docker-compose pull 2>"${GITLAB_EDITION}-${GITLAB_VERSION}-docker-compose-pull-logs.txt"
-    - test -f "${GITLAB_LICENSE}" && cp "${GITLAB_LICENSE}" "${CI_PROJECT_DIR}/Gitlab-license.txt"
-    - make testacc-up SERVICE=gitlab-${GITLAB_EDITION} GITLAB_$(echo "${GITLAB_EDITION}" | tr '[:lower:]' '[:upper:]')_VERSION=${GITLAB_VERSION}
+    TESTACCTAG: acceptance
+
+testacc:generate-flakey:
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_MERGE_REQUEST_LABELS =~ /run-nightly-tests/
   script:
-    - make testacc
+    # This ensures that the flakey jobs retry twice. "retry" doesn't allow variable
+    # expansion, so we need to do this workaround.
+    - |
+      sed -i 's/  retry: 0/  retry: 2/' .gitlab/ci/test-set.gitlab-ci.yml
+    - cp .gitlab/ci/test-set.gitlab-ci.yml ./generated-flakey.gitlab-ci.yml
   artifacts:
     paths:
-      - tests-log.jsonl
-      - $GITLAB_EDITION-$GITLAB_VERSION-docker-compose-pull-logs.txt
-      - $CI_PROJECT_DIR/$GITLAB_EDITION-$GITLAB_VERSION-acctest.jsonl
-    expire_in: 2 days
-    when: always
+      - generated-flakey.gitlab-ci.yml
 
-# This set of jobs always runs, and tests any resources that can be
-# tested within the CE distribution of GitLab.
-testacc:ce:
-  extends:
-    - .testacc
-    - .run-for-supported-versions
-  rules:
-    - if: $CI_MERGE_REQUEST_IID
-      changes:
-        - "**/*.go"
-        - go.mod
-        - go.sum
-        - .gitlab-ci.yml
-        - docker-compose.yml
-        - GNUmakefile
-        - scripts/await-healthy.sh
-        - scripts/healthcheck-and-setup.sh
-        - scripts/gitlab.rb
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-    - if: $CI_COMMIT_TAG
+testacc:flakey:
+  needs:
+    - testacc:generate-flakey
+  trigger:
+    include: 
+      - artifact: generated-flakey.gitlab-ci.yml
+        job: testacc:generate-flakey
+    strategy: depend
+    forward:
+      pipeline_variables: true
+      yaml_variables: true
   variables:
-    GITLAB_EDITION: ce
+    TESTACCTAG: flakey
 
-testacc:ce:flakey:
-  extends:
-    - .testacc
-    - .run-for-supported-versions
-  rules:
-    - if: $CI_MERGE_REQUEST_IID
-      changes:
-        - "**/*.go"
-        - go.mod
-        - go.sum
-        - .gitlab-ci.yml
-        - docker-compose.yml
-        - GNUmakefile
-        - scripts/await-healthy.sh
-        - scripts/healthcheck-and-setup.sh
-        - scripts/gitlab.rb
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-    - if: $CI_COMMIT_TAG
-  retry: 2
+testacc:settings:
+  trigger:
+    include: .gitlab/ci/test-set.gitlab-ci.yml
+    strategy: depend
+    forward:
+      pipeline_variables: true
+      yaml_variables: true
   variables:
-    GITLAB_EDITION: ce
-  script: make testacc-flakey
+    TESTACCTAG: settings
 
-# This set of jobs tests the "ApplicationSettings" resource. Since the resource
-# make changes to the underlying application settings of the instance, we
-# want it to have its own isolated instance so it doesns't "leak" into the
-# other tests, especially since the `destroy` operation doesn't revert the
-# changes.
-testacc:ce:settings:
-  extends:
-    - .testacc
-    - .run-for-supported-versions
-  rules:
-    - if: $CI_MERGE_REQUEST_IID
-      changes:
-        - "**/*.go"
-        - go.mod
-        - go.sum
-        - .gitlab-ci.yml
-        - docker-compose.yml
-        - GNUmakefile
-        - scripts/await-healthy.sh
-        - scripts/healthcheck-and-setup.sh
-        - scripts/gitlab.rb
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-    - if: $CI_COMMIT_TAG
-  variables:
-    GITLAB_EDITION: ce
-  script: make testacc-settings
-
-testacc:ee:settings:
-  extends:
-    - .testacc
-    - .run-for-supported-versions
-  variables:
-    GITLAB_EDITION: ee
-  rules:
-    # If we're on a merge request, only run the tests if go files have changed.
-    # Otherwise, run them on the default branch as long as EE is enabled.
-    - if: $CI_MERGE_REQUEST_IID && $ENABLE_EE_ACCEPTANCE_TESTS == "true"
-      changes:
-        - "**/*.go"
-        - go.mod
-        - go.sum
-        - .gitlab-ci.yml
-        - docker-compose.yml
-        - GNUmakefile
-        - scripts/await-healthy.sh
-        - scripts/healthcheck-and-setup.sh
-        - scripts/gitlab.rb
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $ENABLE_EE_ACCEPTANCE_TESTS == "true"
-    - if: $CI_COMMIT_TAG && $ENABLE_EE_ACCEPTANCE_TESTS == "true"
-  script: make testacc-settings
-
-# This set of jobs tests the resources that only work in GitLab EE. These include
-# resources which may require a premium or ultimate license to run, but also include
-# some resources that are available in the free tier, but still require GitLab EE.
-testacc:ee:
-  extends:
-    - .testacc
-    - .run-for-supported-versions
-  variables:
-    GITLAB_EDITION: ee
-  rules:
-    # If we're on a merge request, only run the tests if go files have changed.
-    # Otherwise, run them on the default branch as long as EE is enabled.
-    - if: $CI_MERGE_REQUEST_IID && $ENABLE_EE_ACCEPTANCE_TESTS == "true"
-      changes:
-        - "**/*.go"
-        - go.mod
-        - go.sum
-        - .gitlab-ci.yml
-        - docker-compose.yml
-        - GNUmakefile
-        - scripts/await-healthy.sh
-        - scripts/healthcheck-and-setup.sh
-        - scripts/gitlab.rb
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $ENABLE_EE_ACCEPTANCE_TESTS == "true"
-    - if: $CI_COMMIT_TAG && $ENABLE_EE_ACCEPTANCE_TESTS == "true"
-
-testacc:ee:flakey:
-  extends:
-    - .testacc
-    - .run-for-supported-versions
-  variables:
-    GITLAB_EDITION: ee
-  retry: 2
-  rules:
-    # If we're on a merge request, only run the tests if go files have changed.
-    # Otherwise, run them on the default branch as long as EE is enabled.
-    - if: $CI_MERGE_REQUEST_IID && $ENABLE_EE_ACCEPTANCE_TESTS == "true"
-      changes:
-        - "**/*.go"
-        - go.mod
-        - go.sum
-        - .gitlab-ci.yml
-        - docker-compose.yml
-        - GNUmakefile
-        - scripts/await-healthy.sh
-        - scripts/healthcheck-and-setup.sh
-        - scripts/gitlab.rb
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $ENABLE_EE_ACCEPTANCE_TESTS == "true"
-    - if: $CI_COMMIT_TAG && $ENABLE_EE_ACCEPTANCE_TESTS == "true"
-  script: make testacc-flakey
-
-testacc:ce:nightly:
-  extends: .testacc
+testacc:generate-nightly:
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "schedule"
     - if: $CI_MERGE_REQUEST_LABELS =~ /run-nightly-tests/
-  variables:
-    GITLAB_EDITION: ce
-    GITLAB_VERSION: nightly
+  script:
+    # run sed to replace the matrix values in the test-set with a single "nightly" value
+    # This is a hack based on the fact that you can't use variable replacement in the parallel
+    # matrix jobs, so we replace the values, then trigger a new pipeline with the generated yml.
+    - |
+        sed -i '/- GITLAB_VERSION:/,/^[[:space:]]*[^[:space:]-]/{
+          /- GITLAB_VERSION:/!{
+            /^          - "/d
+          }
+          /- GITLAB_VERSION:/a\
+                  - "nightly"
+        }' .gitlab/ci/test-set.gitlab-ci.yml
+    - cp .gitlab/ci/test-set.gitlab-ci.yml ./generated-nightly.gitlab-ci.yml
+  artifacts:
+    paths:
+      - generated-nightly.gitlab-ci.yml
 
-testacc:ee:nightly:
-  extends: .testacc
-  rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $ENABLE_EE_ACCEPTANCE_TESTS == "true" && $CI_PIPELINE_SOURCE == "schedule"
-    - if: $CI_MERGE_REQUEST_LABELS =~ /run-nightly-tests/
-  variables:
-    GITLAB_EDITION: ee
-    GITLAB_VERSION: nightly
-
-testacc:ce:nightly:flakey:
-  extends: .testacc
+testacc:nightly:
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "schedule"
     - if: $CI_MERGE_REQUEST_LABELS =~ /run-nightly-tests/
-  retry: 2
+  needs:
+    - testacc:generate-nightly
+  trigger:
+    include: 
+      - artifact: generated-nightly.gitlab-ci.yml
+        job: testacc:generate-nightly
+    strategy: depend
+    forward:
+      pipeline_variables: true
+      yaml_variables: true
   variables:
-    GITLAB_EDITION: ce
-    GITLAB_VERSION: nightly
-  script: make testacc-flakey
-
-testacc:ee:nightly:flakey:
-  extends: .testacc
-  rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $ENABLE_EE_ACCEPTANCE_TESTS == "true" && $CI_PIPELINE_SOURCE == "schedule"
-    - if: $CI_MERGE_REQUEST_LABELS =~ /run-nightly-tests/
-  retry: 2
-  variables:
-    GITLAB_EDITION: ee
-    GITLAB_VERSION: nightly
-  script: make testacc-flakey
+    TESTACCTAG: acceptance
 
 goreleaser:build-verification:
   stage: acceptance-test
@@ -404,13 +262,10 @@ testacc:nightly:failure:
   needs:
     # needs to be set to optional for pipelines in forks that may not have
     # EE tests enabled.
-    - job: testacc:ee:nightly
+    - job: testacc:nightly
       optional: true
-    - job: testacc:ee
+    - job: testacc:acceptance
       optional: true
-    # CE jobs will always be present in the pipeline
-    - job: testacc:ce:nightly
-    - job: testacc:ce
   before_script:
     - apk add --update curl jq
   script:
