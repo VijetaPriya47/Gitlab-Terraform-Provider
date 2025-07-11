@@ -5,6 +5,7 @@ package testutil
 
 import (
 	"context"
+	"crypto/rand"
 	"encoding/base64"
 	"fmt"
 	"io"
@@ -295,7 +296,7 @@ func CreateUsersWithPrefix(t *testing.T, n int, prefix string) []*gitlab.User {
 			Name:             gitlab.Ptr(username),
 			Username:         gitlab.Ptr(username),
 			Email:            gitlab.Ptr(username + "@example.com"),
-			Password:         gitlab.Ptr(acctest.RandString(16)),
+			Password:         gitlab.Ptr(rand.Text()),
 			SkipConfirmation: gitlab.Ptr(true),
 		})
 		if err != nil {
