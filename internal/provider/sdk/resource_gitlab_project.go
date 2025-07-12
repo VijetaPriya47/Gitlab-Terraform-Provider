@@ -804,6 +804,12 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 		Optional:    true,
 		Computed:    true,
 	},
+	"ci_push_repository_for_job_token_allowed": {
+		Description: "Allow Git push requests to your project repository that are authenticated with a CI/CD job token.",
+		Type:        schema.TypeBool,
+		Optional:    true,
+		Computed:    true,
+	},
 }
 
 var validContainerExpirationPolicyAttributesCadenceValues = []string{
@@ -1032,6 +1038,7 @@ func resourceGitlabProjectSetToState(d *schema.ResourceData, project *gitlab.Pro
 	d.Set("model_registry_access_level", string(project.ModelRegistryAccessLevel))
 	d.Set("prevent_merge_without_jira_issue", project.PreventMergeWithoutJiraIssue)
 	d.Set("auto_duo_code_review_enabled", project.AutoDuoCodeReviewEnabled)
+	d.Set("ci_push_repository_for_job_token_allowed", project.CIPushRepositoryForJobTokenAllowed)
 
 	return nil
 }
@@ -1647,6 +1654,10 @@ func resourceGitlabProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 
 	if d.HasChange("auto_duo_code_review_enabled") {
 		options.AutoDuoCodeReviewEnabled = gitlab.Ptr(d.Get("auto_duo_code_review_enabled").(bool))
+	}
+
+	if d.HasChange("ci_push_repository_for_job_token_allowed") {
+		options.CIPushRepositoryForJobTokenAllowed = gitlab.Ptr(d.Get("ci_push_repository_for_job_token_allowed").(bool))
 	}
 
 	avatar, err := handleAvatarOnUpdate(d)
@@ -2673,6 +2684,10 @@ func updatePostCreateEditOptions(editProjectOptions *gitlab.EditProjectOptions, 
 
 	if v, ok := d.GetOk("auto_duo_code_review_enabled"); ok {
 		editProjectOptions.AutoDuoCodeReviewEnabled = gitlab.Ptr(v.(bool))
+	}
+
+	if v, ok := d.GetOk("ci_push_repository_for_job_token_allowed"); ok {
+		editProjectOptions.CIPushRepositoryForJobTokenAllowed = gitlab.Ptr(v.(bool))
 	}
 
 	// If we forked the project we could apply lots of the attributes,

@@ -3452,6 +3452,53 @@ func TestAccGitlabProject_DuoCodeReviewEnabled(t *testing.T) {
 	})
 }
 
+func TestAccGitlabProject_CIPushRepositoryForJobTokenAllowed(t *testing.T) {
+	projectName := acctest.RandomWithPrefix("acctest")
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabProjectDestroy,
+		Steps: []resource.TestStep{
+			// Create a project with ci_push_repository_for_job_token_allowed enabled
+			{
+				Config: fmt.Sprintf(`resource "gitlab_project" "test" {
+					name           = "%s"
+					default_branch = "main"
+
+					ci_push_repository_for_job_token_allowed = true
+				}`, projectName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project.test", "ci_push_repository_for_job_token_allowed", "true"),
+				),
+			},
+			// Verify import
+			{
+				ResourceName:      "gitlab_project.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Disable ci_push_repository_for_job_token_allowed
+			{
+				Config: fmt.Sprintf(`resource "gitlab_project" "test" {
+					name           = "%s"
+					default_branch = "main"
+
+					ci_push_repository_for_job_token_allowed = false
+				}`, projectName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project.test", "ci_push_repository_for_job_token_allowed", "false"),
+				),
+			},
+			// Verify import
+			{
+				ResourceName:      "gitlab_project.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 type testAccGitlabProjectMirroredExpectedAttributes struct {
 	Mirror                           bool
 	MirrorTriggerBuilds              bool
