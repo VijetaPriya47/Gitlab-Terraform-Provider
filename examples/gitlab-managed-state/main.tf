@@ -43,13 +43,13 @@ resource "gitlab_project" "api" {
   remove_source_branch_after_merge                 = true
   printing_merge_request_link_enabled              = true
 
-  container_registry_enabled = false
-  lfs_enabled                = false
-  packages_enabled           = false
-  request_access_enabled     = false
-  shared_runners_enabled     = false
-  snippets_enabled           = false
-  wiki_enabled               = false
+  container_registry_access_level = "enabled"
+  lfs_enabled                     = false
+  packages_enabled                = false
+  request_access_enabled          = false
+  shared_runners_enabled          = false
+  snippets_enabled                = false
+  wiki_enabled                    = false
 
   tags = setunion(var.tags, ["api", "backend", "rest"])
 }
@@ -68,7 +68,7 @@ resource "gitlab_project_approval_rule" "default" {
 }
 
 resource "gitlab_project_level_mr_approvals" "default" {
-  project_id                                 = gitlab_project.api.id
+  project                                    = gitlab_project.api.id
   merge_requests_author_approval             = false
   merge_requests_disable_committers_approval = true
   reset_approvals_on_push                    = true

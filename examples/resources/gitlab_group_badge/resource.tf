@@ -1,5 +1,6 @@
 resource "gitlab_group" "foo" {
   name = "foo-group"
+  path = "foo-path"
 }
 
 resource "gitlab_group_badge" "example" {

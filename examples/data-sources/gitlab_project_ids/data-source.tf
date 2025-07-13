@@ -1,5 +1,5 @@
 resource "gitlab_project" "new_project" {
-  // include required attributes
+  name = "project"
 }
 
 // use project IDs to get additional information, such as the GraphQL ID
