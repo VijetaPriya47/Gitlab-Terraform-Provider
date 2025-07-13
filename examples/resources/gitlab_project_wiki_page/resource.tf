@@ -1,5 +1,5 @@
 resource "gitlab_project_wiki_page" "example" {
-  project = var.ProjectID    # Specify your project path or ID
+  project = "12345"
   slug    = "test-wiki-page" # Unique slug for the wiki page
   title   = "Test Wiki Page"
   content = <<EOF

@@ -1,5 +1,7 @@
 resource "gitlab_group" "new_group" {
-  // include required attributes
+  name        = "example-group"
+  path        = "example-path"
+  description = "This is an example group"
 }
 
 // use group IDs to get additional information, such as the GraphQL ID

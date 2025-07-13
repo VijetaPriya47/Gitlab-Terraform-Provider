@@ -1,8 +1,10 @@
 # Basic GitLab Group Runner
 resource "gitlab_group" "my_group" {
   name        = "my runner"
+  path        = "group_path"
   description = "group that holds the runners"
 }
+
 resource "gitlab_runner" "basic_runner" {
   registration_token = gitlab_group.my_group.runners_token
 }

@@ -145,6 +145,21 @@ go:test:
   script:
     - make test
 
+.testacc:rules: &testacc_rules
+  - if: $CI_MERGE_REQUEST_IID
+    changes:
+      - "**/*.go"
+      - go.mod
+      - go.sum
+      - .gitlab-ci.yml
+      - docker-compose.yml
+      - GNUmakefile
+      - scripts/await-healthy.sh
+      - scripts/healthcheck-and-setup.sh
+      - scripts/gitlab.rb
+  - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  - if: $CI_COMMIT_TAG
+
 testacc:acceptance:
   trigger:
     include: .gitlab/ci/test-set.gitlab-ci.yml
@@ -152,6 +167,7 @@ testacc:acceptance:
     forward:
       pipeline_variables: true
       yaml_variables: true
+  rules: *testacc_rules
   variables:
     TESTACCTAG: acceptance
 
@@ -162,6 +178,7 @@ testacc:generate-flakey:
     - |
       sed -i 's/  retry: 0/  retry: 2/' .gitlab/ci/test-set.gitlab-ci.yml
     - cp .gitlab/ci/test-set.gitlab-ci.yml ./generated-flakey.gitlab-ci.yml
+  rules: *testacc_rules
   artifacts:
     paths:
       - generated-flakey.gitlab-ci.yml
@@ -170,13 +187,14 @@ testacc:flakey:
   needs:
     - testacc:generate-flakey
   trigger:
-    include: 
+    include:
       - artifact: generated-flakey.gitlab-ci.yml
         job: testacc:generate-flakey
     strategy: depend
     forward:
       pipeline_variables: true
       yaml_variables: true
+  rules: *testacc_rules
   variables:
     TESTACCTAG: flakey
 
@@ -187,6 +205,7 @@ testacc:settings:
     forward:
       pipeline_variables: true
       yaml_variables: true
+  rules: *testacc_rules
   variables:
     TESTACCTAG: settings
 
@@ -199,13 +218,13 @@ testacc:generate-nightly:
     # This is a hack based on the fact that you can't use variable replacement in the parallel
     # matrix jobs, so we replace the values, then trigger a new pipeline with the generated yml.
     - |
-        sed -i '/- GITLAB_VERSION:/,/^[[:space:]]*[^[:space:]-]/{
-          /- GITLAB_VERSION:/!{
-            /^          - "/d
-          }
-          /- GITLAB_VERSION:/a\
-                  - "nightly"
-        }' .gitlab/ci/test-set.gitlab-ci.yml
+      sed -i '/- GITLAB_VERSION:/,/^[[:space:]]*[^[:space:]-]/{
+        /- GITLAB_VERSION:/!{
+          /^          - "/d
+        }
+        /- GITLAB_VERSION:/a\
+                - "nightly"
+      }' .gitlab/ci/test-set.gitlab-ci.yml
     - cp .gitlab/ci/test-set.gitlab-ci.yml ./generated-nightly.gitlab-ci.yml
   artifacts:
     paths:
@@ -218,7 +237,7 @@ testacc:nightly:
   needs:
     - testacc:generate-nightly
   trigger:
-    include: 
+    include:
       - artifact: generated-nightly.gitlab-ci.yml
         job: testacc:generate-nightly
     strategy: depend
