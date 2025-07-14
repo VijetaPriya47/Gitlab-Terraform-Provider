@@ -1171,7 +1171,7 @@ func CreateScheduledPipeline(t *testing.T, project int, branch string) (*gitlab.
 	pipeline, _, err := TestGitlabClient.PipelineSchedules.CreatePipelineSchedule(project, &gitlab.CreatePipelineScheduleOptions{
 		Description:  gitlab.Ptr("test"),
 		Ref:          gitlab.Ptr(branch),
-		Cron:         gitlab.Ptr("0 1 * * *"),
+		Cron:         gitlab.Ptr("0 0 1 1 *"),
 		CronTimezone: gitlab.Ptr("UTC"),
 	})
 
