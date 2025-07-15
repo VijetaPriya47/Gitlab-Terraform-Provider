@@ -1310,3 +1310,42 @@ func CreateCustomInstanceRole(t *testing.T, input *gitlab.CreateMemberRoleOption
 
 	return role
 }
+
+func CreateProjectAccessToken(t *testing.T, projectID int, name string, scopes []string, accessLevel gitlab.AccessLevelValue, description *string) *gitlab.
+	ProjectAccessToken {
+	options := &gitlab.CreateProjectAccessTokenOptions{
+		Name:        gitlab.Ptr(name),
+		Description: description,
+		Scopes:      gitlab.Ptr(scopes),
+		AccessLevel: gitlab.Ptr(accessLevel),
+		ExpiresAt:   gitlab.Ptr(gitlab.ISOTime(time.Now().AddDate(0, 11, 0))),
+	}
+
+	projectAccessToken, _, err := TestGitlabClient.ProjectAccessTokens.CreateProjectAccessToken(projectID, options)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if _, err := TestGitlabClient.ProjectAccessTokens.RevokeProjectAccessToken(projectID, projectAccessToken.ID); err != nil && !api.Is404(err) {
+			t.Fatal(err)
+		}
+	})
+
+	return projectAccessToken
+}
+
+// This helper should only be used if you need to create a GitLab Client with a bespoke token.
+// Generally you should use
+//
+//	testutil.TestGitLabClient
+func CreateGitlabClientWithToken(t *testing.T, token string) *gitlab.Client {
+	clientConfig := api.Config{
+		Token:   token,
+		BaseURL: os.Getenv("GITLAB_BASE_URL"),
+	}
+	client, err := clientConfig.NewGitLabClient(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	return client
+}
