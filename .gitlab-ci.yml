@@ -152,6 +152,7 @@ go:test:
       - go.mod
       - go.sum
       - .gitlab-ci.yml
+      - .gitlab/ci/test-set.gitlab-ci.yml
       - docker-compose.yml
       - GNUmakefile
       - scripts/await-healthy.sh
