@@ -16,7 +16,6 @@ GitLab resources, like users, groups and projects.
 
 Check out the [CONTRIBUTING.md](/CONTRIBUTING.md) guide for tips on how to contribute and develop the provider.
 
-
 ## Troubleshooting support
 
 This is a community maintained project. If you have a paid GitLab subscription, please note that GitLab Terraform Provider is not packaged as a part of GitLab, and falls outside of the scope of support. For more information, see GitLab's [Statement of Support](https://about.gitlab.com/support/statement-of-support.html).
@@ -29,9 +28,10 @@ We support the following versions:
 
 All other versions are best effort support.
 
+We do not support experimental GitLab features until they are enabled by default or made Generally Available.
+
 Note, that the compatibility between a provider release and GitLab itself **cannot** be inferred from the
 release version. New features added to GitLab may not be added to the provider until later versions.
 Equally, features removed or deprecated in GitLab may not be removed or deprecated from the provider until later versions.
 
 Please [fill out an issue](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/issues) in this project's issue tracker and someone from the community will respond as soon as they are available to help you.
-

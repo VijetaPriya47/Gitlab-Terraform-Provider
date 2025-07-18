@@ -20,6 +20,8 @@ We support the following versions:
 
 All other versions are best effort support.
 
+We do not support experimental GitLab features until they are enabled by default or made Generally Available.
+
 -> Note, that the compatibility between a provider release and GitLab itself **cannot** be inferred from the
 release version. New features added to GitLab may not be added to the provider until later versions.
 Equally, features removed or deprecated in GitLab may not be removed or deprecated from the provider until later versions.
