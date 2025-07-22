@@ -65,6 +65,8 @@ apiunused: tool-apiunused ## Run an analysis tool to output unused parts of the 
 SERVICE ?= gitlab-ce
 GITLAB_TOKEN ?= glpat-ACCTEST1234567890123
 GITLAB_BASE_URL ?= http://127.0.0.1:8085/api/v4
+GITLAB_SAAS_BASE_URL ?= https://gitlab.com/api/v4
+GITLAB_SAAS_NAMESPACE_ID ?= 101118380
 GITLAB_EARLY_AUTH_CHECK ?= false
 
 testacc-up: | certs ## Launch a GitLab instance.
@@ -82,6 +84,9 @@ testacc-down: ## Teardown a GitLab instance.
 TESTACCTAG ?= acceptance
 testacc: ## Run acceptance tests against a GitLab instance.
 	TF_ACC=1 GITLAB_TOKEN=$(GITLAB_TOKEN) GITLAB_BASE_URL=$(GITLAB_BASE_URL) GITLAB_EARLY_AUTH_CHECK=$(GITLAB_EARLY_AUTH_CHECK) go test --tags $(TESTACCTAG) -v $(PROVIDER_SRC_DIR) $(TESTARGS) -timeout 120m
+
+testacc-saas:
+	TF_ACC=1 GITLAB_TOKEN=$(GITLAB_SAAS_TOKEN) GITLAB_BASE_URL=$(GITLAB_SAAS_BASE_URL) GITLAB_EARLY_AUTH_CHECK=$(GITLAB_EARLY_AUTH_CHECK) GITLAB_SAAS_NAMESPACE_ID=$(GITLAB_SAAS_NAMESPACE_ID) go test --tags saas -v $(PROVIDER_SRC_DIR) $(TESTARGS) -timeout 40m
 
 certs: ## Generate certs for the GitLab container registry
 	mkdir -p certs
