@@ -74,11 +74,13 @@ func (r *gitlabInstanceServiceAccountResource) Schema(ctx context.Context, _ res
 			},
 			"name": schema.StringAttribute{
 				Optional:            true,
+				Computed:            true,
 				MarkdownDescription: "The name of the user. If not set, uses Service account user.",
 				PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace(), stringplanmodifier.UseStateForUnknown()},
 			},
 			"username": schema.StringAttribute{
 				Optional:            true,
+				Computed:            true,
 				MarkdownDescription: "The username of the user account. If not set, generates a name prepended with service_account_.",
 				PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace(), stringplanmodifier.UseStateForUnknown()},
 			},
@@ -121,9 +123,14 @@ func (r *gitlabInstanceServiceAccountResource) Create(ctx context.Context, req r
 	}
 
 	// Create service account
-	options := &gitlab.CreateServiceAccountUserOptions{
-		Name:     data.Name.ValueStringPointer(),
-		Username: data.Username.ValueStringPointer(),
+	options := &gitlab.CreateServiceAccountUserOptions{}
+
+	if !data.Name.IsNull() && !data.Name.IsUnknown() {
+		options.Name = data.Name.ValueStringPointer()
+	}
+
+	if !data.Username.IsNull() && !data.Username.IsUnknown() {
+		options.Username = data.Username.ValueStringPointer()
 	}
 
 	if !data.Email.IsNull() && !data.Email.IsUnknown() {

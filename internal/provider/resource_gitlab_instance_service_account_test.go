@@ -48,6 +48,70 @@ func TestAcc_GitlabInstanceServiceAccount_basic(t *testing.T) {
 	})
 }
 
+func TestAcc_GitlabInstanceServiceAccount_defaults(t *testing.T) {
+	testutil.SkipIfCE(t)
+
+	name := acctest.RandString(10)
+	username := acctest.RandString(10)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		CheckDestroy:             testAcc_GitlabInstanceServiceAccount_CheckDestroy(),
+		Steps: []resource.TestStep{
+			// Create a basic service account with just defaults.
+			{
+				Config: `resource "gitlab_instance_service_account" "this" {}`,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("gitlab_instance_service_account.this", "name"),
+					resource.TestCheckResourceAttrSet("gitlab_instance_service_account.this", "username"),
+				),
+			},
+			// Verify upstream attributes with an import.
+			{
+				ResourceName:      "gitlab_instance_service_account.this",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Create a basic service account with just username.
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_instance_service_account" "this2" {
+					username = "%s"
+				}
+				`, username),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("gitlab_instance_service_account.this2", "name"),
+					resource.TestCheckResourceAttr("gitlab_instance_service_account.this2", "username", username),
+				),
+			},
+			// Verify upstream attributes with an import.
+			{
+				ResourceName:      "gitlab_instance_service_account.this2",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Create a basic service account with just name.
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_instance_service_account" "this3" {
+					name 	 = "%s"
+				}
+				`, name),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_instance_service_account.this3", "name", name),
+					resource.TestCheckResourceAttrSet("gitlab_instance_service_account.this3", "username"),
+				),
+			},
+			// Verify upstream attributes with an import.
+			{
+				ResourceName:      "gitlab_instance_service_account.this3",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 func TestAcc_GitlabInstanceServiceAccount_EnsureRecreate(t *testing.T) {
 	testutil.SkipIfCE(t)
 
