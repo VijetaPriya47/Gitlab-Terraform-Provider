@@ -7,7 +7,7 @@
   "go.testFlags": [
     "-count=1",
     "-v",
-    "-tags=acceptance,flakey,settings",
+    "-tags=acceptance,flakey,settings,saas",
     "-parallel=2",
     "-timeout",
     "180s"

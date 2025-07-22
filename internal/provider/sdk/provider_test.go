@@ -1,5 +1,5 @@
-//go:build acceptance || flakey || settings
-// +build acceptance flakey settings
+//go:build acceptance || flakey || settings || saas
+// +build acceptance flakey settings saas
 
 package sdk
 
@@ -33,5 +33,5 @@ func TestProvider(t *testing.T) {
 
 func TestProvider_impl(t *testing.T) {
 	t.Parallel()
-	var _ = New("dev")()
+	_ = New("dev")()
 }

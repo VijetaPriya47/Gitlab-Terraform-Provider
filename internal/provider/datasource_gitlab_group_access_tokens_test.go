@@ -17,7 +17,7 @@ import (
 func TestAccDataSourceGitlabGroupAccessTokens_basic(t *testing.T) {
 	testGroup := testutil.CreateGroups(t, 1)[0]
 	testAccessTokens := make([]*gitlab.GroupAccessToken, 0)
-	for i := 0; i < 25; i++ {
+	for range 25 {
 		testAccessTokens = append(testAccessTokens, testutil.CreateGroupAccessToken(t, testGroup.ID))
 	}
 

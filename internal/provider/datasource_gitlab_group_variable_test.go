@@ -50,7 +50,6 @@ func TestAccDataSourceGitlabGroupVariable_basic(t *testing.T) {
 
 func testAccDataSourceGitlabGroupVariable(src, n string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-
 		resource := s.RootModule().Resources[src]
 		resourceAttributes := resource.Primary.Attributes
 

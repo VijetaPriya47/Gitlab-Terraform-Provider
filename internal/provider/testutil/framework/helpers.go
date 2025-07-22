@@ -1,5 +1,5 @@
-//go:build acceptance || flakey || settings
-// +build acceptance flakey settings
+//go:build acceptance || flakey || settings || saas
+// +build acceptance flakey settings saas
 
 package framework
 

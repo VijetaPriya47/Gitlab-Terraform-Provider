@@ -1,5 +1,5 @@
-//go:build acceptance || flakey
-// +build acceptance flakey
+//go:build acceptance || flakey || saas
+// +build acceptance flakey saas
 
 package provider
 
@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
 var (
@@ -43,6 +44,7 @@ var (
 )
 
 func TestProvider_customHeaders(t *testing.T) {
+	testutil.SkipIfSaaS(t)
 
 	// Create a mock server for intercepting early auth commands. This also lets us check the
 	// headers without trying to intercept http calls to the real GitLab API.
@@ -80,16 +82,15 @@ func TestProvider_customHeaders(t *testing.T) {
 			}
 			}`))
 		}
-
 	}))
 	defer mockServer.Close()
 
-	//lintignore:AT001 // Providers don't need check destroy in their tests
+	// lintignore:AT001 // Providers don't need check destroy in their tests
 	resource.ParallelTest(t, resource.TestCase{
 		Steps: []resource.TestStep{
 			{
 				ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
-				//lintignore:AT004 // Explicitly testing a provider configuration
+				// lintignore:AT004 // Explicitly testing a provider configuration
 				Config: fmt.Sprintf(`
 					provider "gitlab" {
 						base_url = "%s"

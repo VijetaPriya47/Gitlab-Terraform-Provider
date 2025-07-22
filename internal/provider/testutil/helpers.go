@@ -1,5 +1,5 @@
-//go:build acceptance || flakey || settings
-// +build acceptance flakey settings
+//go:build acceptance || flakey || settings || saas
+// +build acceptance flakey settings saas
 
 package testutil
 
@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -100,6 +101,14 @@ func SkipIfEE(t *testing.T) {
 	}
 }
 
+func SkipIfSaaS(t *testing.T) {
+	t.Helper()
+
+	if IsRunningOnSaaS(t) {
+		t.Skipf("Test is skipped for SaaS version of GitLab")
+	}
+}
+
 func RunIfLessThan(t *testing.T, requiredMaxVersion string) {
 	isLessThan, err := api.IsGitLabVersionLessThan(context.Background(), TestGitlabClient, requiredMaxVersion)()
 	if err != nil {
@@ -129,6 +138,12 @@ func IsRunningAtLeast(t *testing.T, requiredMinVersion string) bool {
 	}
 
 	return isAtLeast
+}
+
+func IsRunningOnSaaS(t *testing.T) bool {
+	t.Helper()
+
+	return TestGitlabClient.BaseURL().Host == "gitlab.com"
 }
 
 // GetCurrentUser is a test helper for getting the current user of the provided client.
@@ -174,14 +189,37 @@ func CreateProjectWithNamespace(t *testing.T, namespaceID int) *gitlab.Project {
 func CreateProjectWithOptions(t *testing.T, opts *gitlab.CreateProjectOptions) *gitlab.Project {
 	t.Helper()
 
+	if IsRunningOnSaaS(t) && (opts.NamespaceID == nil || opts.NamespaceID == gitlab.Ptr(0)) {
+		namespaceID, err := strconv.Atoi(os.Getenv("GITLAB_SAAS_NAMESPACE_ID"))
+		if err != nil {
+			t.Fatalf("could not parse GITLAB_SAAS_NAMESPACE_ID: %v", err)
+		}
+		opts.NamespaceID = gitlab.Ptr(namespaceID)
+	}
+
 	project, _, err := TestGitlabClient.Projects.CreateProject(opts)
 	if err != nil {
 		t.Fatalf("could not create test project: %v", err)
 	}
 
 	t.Cleanup(func() {
-		if _, err := TestGitlabClient.Projects.DeleteProject(project.ID, nil); err != nil {
+		_, err := TestGitlabClient.Projects.DeleteProject(project.ID, nil)
+		if err != nil {
 			t.Fatalf("could not cleanup test project: %v", err)
+		}
+
+		if IsRunningOnSaaS(t) {
+			project, _, err := TestGitlabClient.Projects.GetProject(project.ID, nil)
+			if err != nil {
+				t.Fatalf("could not check test project status: %v", err)
+			}
+			_, err = TestGitlabClient.Projects.DeleteProject(project.ID, &gitlab.DeleteProjectOptions{
+				PermanentlyRemove: gitlab.Ptr(true),
+				FullPath:          gitlab.Ptr(project.PathWithNamespace),
+			})
+			if err != nil {
+				t.Fatalf("could not cleanup test project: %v", err)
+			}
 		}
 	})
 
@@ -344,6 +382,14 @@ func CreateGroups(t *testing.T, n int) []*gitlab.Group {
 func CreateGroupsWithPrefix(t *testing.T, n int, prefix string) []*gitlab.Group {
 	t.Helper()
 
+	var parentID *int
+	if IsRunningOnSaaS(t) {
+		namespaceID, err := strconv.Atoi(os.Getenv("GITLAB_SAAS_NAMESPACE_ID"))
+		if err != nil {
+			t.Fatalf("could not parse GITLAB_SAAS_NAMESPACE_ID: %v", err)
+		}
+		parentID = gitlab.Ptr(namespaceID)
+	}
 	groups := make([]*gitlab.Group, n)
 
 	for i := range groups {
@@ -354,6 +400,7 @@ func CreateGroupsWithPrefix(t *testing.T, n int, prefix string) []*gitlab.Group 
 			Path: gitlab.Ptr(name),
 			// So that acceptance tests can be run in a gitlab organization with no billing.
 			Visibility: gitlab.Ptr(gitlab.PublicVisibility),
+			ParentID:   parentID,
 		})
 		if err != nil {
 			t.Fatalf("could not create test group: %v", err)
@@ -361,8 +408,22 @@ func CreateGroupsWithPrefix(t *testing.T, n int, prefix string) []*gitlab.Group 
 
 		groupID := groups[i].ID // Needed for closure.
 		t.Cleanup(func() {
-			if _, err := TestGitlabClient.Groups.DeleteGroup(groupID, nil); err != nil {
+			_, err := TestGitlabClient.Groups.DeleteGroup(groupID, &gitlab.DeleteGroupOptions{})
+			if err != nil {
 				t.Fatalf("could not cleanup test group: %v", err)
+			}
+			if IsRunningOnSaaS(t) {
+				group, _, err := TestGitlabClient.Groups.GetGroup(groupID, nil)
+				if err != nil {
+					t.Fatalf("could not check test group status: %v", err)
+				}
+				_, err = TestGitlabClient.Groups.DeleteGroup(groupID, &gitlab.DeleteGroupOptions{
+					PermanentlyRemove: gitlab.Ptr(true),
+					FullPath:          gitlab.Ptr(group.FullPath),
+				})
+				if err != nil {
+					t.Fatalf("could not cleanup test group: %v", err)
+				}
 			}
 		})
 	}
@@ -401,11 +462,11 @@ func CreateSubGroups(t *testing.T, parentGroup *gitlab.Group, n int) []*gitlab.G
 	return CreateSubGroupsWithPrefix(t, parentGroup, n, "acctest-group")
 }
 
-func CreateGroupHooks(t *testing.T, gid interface{}, n int) []*gitlab.GroupHook {
+func CreateGroupHooks(t *testing.T, gid any, n int) []*gitlab.GroupHook {
 	t.Helper()
 
 	var hooks []*gitlab.GroupHook
-	for i := 0; i < n; i++ {
+	for range n {
 		hook, _, err := TestGitlabClient.Groups.AddGroupHook(gid, &gitlab.AddGroupHookOptions{
 			URL:         gitlab.Ptr(fmt.Sprintf("https://%s.com", acctest.RandomWithPrefix("acctest"))),
 			EmojiEvents: gitlab.Ptr(true),
@@ -608,7 +669,7 @@ func CloseMergeRequest(t *testing.T, project *gitlab.Project, mr *gitlab.MergeRe
 
 // AddProjectMembers is a test helper for adding users as members of a project with Developer access level.
 // It assumes the project will be destroyed at the end of the test and will not cleanup members.
-func AddProjectMembers(t *testing.T, pid interface{}, users []*gitlab.User) {
+func AddProjectMembers(t *testing.T, pid any, users []*gitlab.User) {
 	t.Helper()
 
 	AddProjectMembersWithAccessLevel(t, pid, users, gitlab.DeveloperPermissions)
@@ -616,7 +677,7 @@ func AddProjectMembers(t *testing.T, pid interface{}, users []*gitlab.User) {
 
 // AddProjectMembersWithAccessLevel is a test helper for adding users as members of a project with a given access level.
 // It assumes the project will be destroyed at the end of the test and will not cleanup members.
-func AddProjectMembersWithAccessLevel(t *testing.T, pid interface{}, users []*gitlab.User, accessLevel gitlab.AccessLevelValue) {
+func AddProjectMembersWithAccessLevel(t *testing.T, pid any, users []*gitlab.User, accessLevel gitlab.AccessLevelValue) {
 	t.Helper()
 
 	for _, user := range users {
@@ -630,7 +691,7 @@ func AddProjectMembersWithAccessLevel(t *testing.T, pid interface{}, users []*gi
 	}
 }
 
-func CreateProjectHooks(t *testing.T, pid interface{}, n int) []*gitlab.ProjectHook {
+func CreateProjectHooks(t *testing.T, pid any, n int) []*gitlab.ProjectHook {
 	t.Helper()
 
 	var hooks []*gitlab.ProjectHook
@@ -646,7 +707,7 @@ func CreateProjectHooks(t *testing.T, pid interface{}, n int) []*gitlab.ProjectH
 	return hooks
 }
 
-func CreateClusterAgents(t *testing.T, pid interface{}, n int) []*gitlab.Agent {
+func CreateClusterAgents(t *testing.T, pid any, n int) []*gitlab.Agent {
 	t.Helper()
 
 	var clusterAgents []*gitlab.Agent
@@ -672,13 +733,13 @@ func SetupUserAccess(t *testing.T, project *gitlab.Project, agent *gitlab.Agent)
 	t.Helper()
 
 	agentCfgPath := fmt.Sprintf(".gitlab/agents/%s/config.yaml", agent.Name)
-	userAccessCfg := []byte(fmt.Sprintf(`
+	userAccessCfg := fmt.Appendf(nil, `
 user_access:
   access_as:
     agent: {}
   projects:
     - id: %q
-`, project.PathWithNamespace))
+`, project.PathWithNamespace)
 	_, _, err := TestGitlabClient.RepositoryFiles.CreateFile(project.ID, agentCfgPath, &gitlab.CreateFileOptions{
 		Branch:        gitlab.Ptr(project.DefaultBranch),
 		Encoding:      gitlab.Ptr("base64"),
@@ -690,7 +751,7 @@ user_access:
 	}
 }
 
-func CreateProjectIssues(t *testing.T, pid interface{}, n int) []*gitlab.Issue {
+func CreateProjectIssues(t *testing.T, pid any, n int) []*gitlab.Issue {
 	t.Helper()
 
 	dueDate := gitlab.ISOTime(time.Now().Add(time.Hour))
@@ -729,13 +790,13 @@ func CreateGroupEpicBoard(t *testing.T, path string) {
 			}`, path, acctest.RandomWithPrefix("acctest")),
 	}
 
-	var pid interface{}
+	var pid any
 	if _, err := TestGitlabClient.GraphQL.Do(query, &pid); err != nil {
 		t.Fatalf("Unable to create epic board: %s", err.Error())
 	}
 }
 
-func CreateGroupIssueBoard(t *testing.T, pid interface{}) *gitlab.GroupIssueBoard {
+func CreateGroupIssueBoard(t *testing.T, pid any) *gitlab.GroupIssueBoard {
 	t.Helper()
 
 	issueBoard, _, err := TestGitlabClient.GroupIssueBoards.CreateGroupIssueBoard(pid, &gitlab.CreateGroupIssueBoardOptions{Name: gitlab.Ptr(acctest.RandomWithPrefix("acctest"))})
@@ -746,7 +807,7 @@ func CreateGroupIssueBoard(t *testing.T, pid interface{}) *gitlab.GroupIssueBoar
 	return issueBoard
 }
 
-func CreateProjectIssueBoard(t *testing.T, pid interface{}) *gitlab.IssueBoard {
+func CreateProjectIssueBoard(t *testing.T, pid any) *gitlab.IssueBoard {
 	t.Helper()
 
 	issueBoard, _, err := TestGitlabClient.Boards.CreateIssueBoard(pid, &gitlab.CreateIssueBoardOptions{Name: gitlab.Ptr(acctest.RandomWithPrefix("acctest"))})
@@ -757,12 +818,12 @@ func CreateProjectIssueBoard(t *testing.T, pid interface{}) *gitlab.IssueBoard {
 	return issueBoard
 }
 
-func CreateGroupLabels(t *testing.T, pid interface{}, n int) []*gitlab.GroupLabel {
+func CreateGroupLabels(t *testing.T, gid any, n int) []*gitlab.GroupLabel {
 	t.Helper()
 
 	var labels []*gitlab.GroupLabel
-	for i := 0; i < n; i++ {
-		label, _, err := TestGitlabClient.GroupLabels.CreateGroupLabel(pid, &gitlab.CreateGroupLabelOptions{Name: gitlab.Ptr(acctest.RandomWithPrefix("acctest")), Color: gitlab.Ptr("#000000")})
+	for range n {
+		label, _, err := TestGitlabClient.GroupLabels.CreateGroupLabel(gid, &gitlab.CreateGroupLabelOptions{Name: gitlab.Ptr(acctest.RandomWithPrefix("acctest")), Color: gitlab.Ptr("#000000")})
 		if err != nil {
 			t.Fatalf("could not create test group label: %v", err)
 		}
@@ -772,11 +833,11 @@ func CreateGroupLabels(t *testing.T, pid interface{}, n int) []*gitlab.GroupLabe
 	return labels
 }
 
-func CreateProjectLabels(t *testing.T, pid interface{}, n int) []*gitlab.Label {
+func CreateProjectLabels(t *testing.T, pid any, n int) []*gitlab.Label {
 	t.Helper()
 
 	var labels []*gitlab.Label
-	for i := 0; i < n; i++ {
+	for range n {
 		label, _, err := TestGitlabClient.Labels.CreateLabel(pid, &gitlab.CreateLabelOptions{Name: gitlab.Ptr(acctest.RandomWithPrefix("acctest")), Color: gitlab.Ptr("#000000")})
 		if err != nil {
 			t.Fatalf("could not create test label: %v", err)
@@ -789,14 +850,14 @@ func CreateProjectLabels(t *testing.T, pid interface{}, n int) []*gitlab.Label {
 
 // AddGroupMembers is a test helper for adding users as members of a group with Developer level access.
 // It assumes the group will be destroyed at the end of the test and will not cleanup members.
-func AddGroupMembers(t *testing.T, gid interface{}, users []*gitlab.User) {
+func AddGroupMembers(t *testing.T, gid any, users []*gitlab.User) {
 	t.Helper()
 
 	AddGroupMembersWithAccessLevel(t, gid, users, gitlab.DeveloperPermissions)
 }
 
 // GroupShareGroup shares a group with another group with a developer access level and finite date.
-func GroupShareGroup(t *testing.T, parentGid interface{}, sharedGid *int) *gitlab.Group {
+func GroupShareGroup(t *testing.T, parentGid any, sharedGid *int) *gitlab.Group {
 	t.Helper()
 
 	endDate := time.Date(2023, 12, 21, 0, 0, 0, 0, time.UTC)
@@ -814,7 +875,7 @@ func GroupShareGroup(t *testing.T, parentGid interface{}, sharedGid *int) *gitla
 }
 
 // AddGroupMembersWithAccessLevel is a test helper for adding users as members of a group with a given access level.
-func AddGroupMembersWithAccessLevel(t *testing.T, gid interface{}, users []*gitlab.User, accessLevel gitlab.AccessLevelValue) {
+func AddGroupMembersWithAccessLevel(t *testing.T, gid any, users []*gitlab.User, accessLevel gitlab.AccessLevelValue) {
 	t.Helper()
 
 	for _, user := range users {
@@ -829,7 +890,7 @@ func AddGroupMembersWithAccessLevel(t *testing.T, gid interface{}, users []*gitl
 }
 
 // ProjectShareGroup is a test helper for sharing a project with a group.
-func ProjectShareGroup(t *testing.T, pid interface{}, gid int) {
+func ProjectShareGroup(t *testing.T, pid any, gid int) {
 	t.Helper()
 
 	_, err := TestGitlabClient.Projects.ShareProjectWithGroup(pid, &gitlab.ShareWithGroupOptions{
@@ -842,7 +903,7 @@ func ProjectShareGroup(t *testing.T, pid interface{}, gid int) {
 }
 
 // List project members
-func ListProjectMembers(t *testing.T, pid interface{}) {
+func ListProjectMembers(t *testing.T, pid any) {
 	t.Helper()
 
 	members, _, err := TestGitlabClient.ProjectMembers.ListAllProjectMembers(pid, &gitlab.ListProjectMembersOptions{})
