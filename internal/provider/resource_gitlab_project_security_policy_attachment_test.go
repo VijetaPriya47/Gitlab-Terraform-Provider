@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strconv"
 	"testing"
 
@@ -73,6 +74,52 @@ func TestAcc_GitlabProjectSecurityPolicyAttachment_basic(t *testing.T) {
 					policy_project = %d
 				}`, project.ID, secondSecurityPolicyProject.ID),
 				Destroy: true,
+			},
+		},
+	})
+}
+
+// This test validates the ownership check in the ModifyPlan function.
+// It creates a user with Maintainer permissions (not Owner) and verifies
+// that the resource creation fails with "Insufficient Permissions" error.
+func TestAcc_GitlabProjectSecurityPolicyAttachment_OwnershipCheck(t *testing.T) {
+	testutil.SkipIfCE(t)
+
+	// Create projects and users for the test
+	project := testutil.CreateProject(t)
+	securityPolicyProject := testutil.CreateProject(t)
+	
+	// Create a user and add them as Maintainer to the project (not Owner)
+	users := testutil.CreateUsers(t, 1)
+	testutil.AddProjectMembersWithAccessLevel(t, project.ID, users, gitlab.MaintainerPermissions)
+	
+	// Create a personal access token for the maintainer user
+	maintainerUserPAT := testutil.CreatePersonalAccessToken(t, users[0])
+
+	// Compile the expected error regex for insufficient permissions
+	insufficientPermissionsRegex, err := regexp.Compile("Insufficient Permissions")
+	if err != nil {
+		t.Errorf("Unable to format expected permission error regex: %s", err)
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAcc_GitlabProjectSecurityPolicyAttachment_CheckDestroy,
+		Steps: []resource.TestStep{
+			// Attempt to create security policy attachment with maintainer user - should fail
+			{
+				// lintignore:AT004  // we need the provider configuration here to test with a different user token
+				Config: fmt.Sprintf(`
+					provider "gitlab" {
+						token = "%s"
+					}
+
+					resource "gitlab_project_security_policy_attachment" "this" {
+						project        = %d
+						policy_project = %d
+					}
+				`, maintainerUserPAT.Token, project.ID, securityPolicyProject.ID),
+				ExpectError: insufficientPermissionsRegex,
 			},
 		},
 	})
