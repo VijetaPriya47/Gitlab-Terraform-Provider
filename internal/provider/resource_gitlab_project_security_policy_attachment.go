@@ -481,10 +481,12 @@ func (d *gitlabProjectSecurityPolicyAttachmentResource) parseGraphQLIds(ctx cont
 
 // verifyPolicyAssociation checks every 20 seconds for up to 1 minute to ensure the policy association applied properly
 func (d *gitlabProjectSecurityPolicyAttachmentResource) verifyPolicyAssociation(ctx context.Context, data *gitlabProjectSecurityPolicyAttachmentResourceModel, projectIds *api.ProjectIdentifiers) error {
+	// Create a context with timeout for the verification process
+	timeoutCtx, cancel := context.WithTimeout(ctx, 1*time.Minute)
+	defer cancel()
+
 	ticker := time.NewTicker(20 * time.Second)
 	defer ticker.Stop()
-
-	timeout := time.After(1 * time.Minute)
 
 	// Check immediately first
 	response, err := d.readPolicy(projectIds)
@@ -509,8 +511,11 @@ func (d *gitlabProjectSecurityPolicyAttachmentResource) verifyPolicyAssociation(
 	// If not immediately successful, start checking with ticker
 	for {
 		select {
-		case <-timeout:
-			return fmt.Errorf("policy association verification timed out after 1 minute. Expected policy project %s to be associated with project %s", data.PolicyProject.ValueString(), data.Project.ValueString())
+		case <-timeoutCtx.Done():
+			if timeoutCtx.Err() == context.DeadlineExceeded {
+				return fmt.Errorf("policy association verification timed out after 1 minute. Expected policy project %s to be associated with project %s", data.PolicyProject.ValueString(), data.Project.ValueString())
+			}
+			return timeoutCtx.Err()
 		case <-ticker.C:
 			response, err := d.readPolicy(projectIds)
 			if err != nil {
@@ -539,8 +544,6 @@ func (d *gitlabProjectSecurityPolicyAttachmentResource) verifyPolicyAssociation(
 				"project":        data.Project.ValueString(),
 				"policy_project": data.PolicyProject.ValueString(),
 			})
-		case <-ctx.Done():
-			return ctx.Err()
 		}
 	}
 }
