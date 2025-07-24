@@ -80,10 +80,53 @@ func TestAcc_GitlabGroupSecurityPolicyAttachment_basic(t *testing.T) {
 
 }
 
-// This test validates the ownership check in the ModifyPlan function.
-// It creates a user with Maintainer permissions (not Owner) and verifies
-// that the resource creation fails with "Insufficient Permissions" error.
-func TestAcc_GitlabGroupSecurityPolicyAttachment_OwnershipCheck(t *testing.T) {
+// This test validates the ownership check in the ModifyPlan function when the user
+// is not a member of the group at all.
+func TestAcc_GitlabGroupSecurityPolicyAttachment_NotAMember(t *testing.T) {
+	testutil.SkipIfCE(t)
+
+	// Create group and projects for the test
+	group := testutil.CreateGroups(t, 1)[0]
+	securityPolicyProject := testutil.CreateProject(t)
+
+	// Create a user but do NOT add them to the group
+	users := testutil.CreateUsers(t, 1)
+
+	// Create a personal access token for the non-member user
+	nonMemberUserPAT := testutil.CreatePersonalAccessToken(t, users[0])
+
+	// Compile the expected error regex for access denied
+	accessDeniedRegex, err := regexp.Compile("Access Denied")
+	if err != nil {
+		t.Errorf("Unable to format expected access denied error regex: %s", err)
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAcc_GitlabGroupSecurityPolicyAttachment_CheckDestroy,
+		Steps: []resource.TestStep{
+			// Attempt to create security policy attachment with non-member user - should fail
+			{
+				// lintignore:AT004  // we need the provider configuration here to test with a different user token
+				Config: fmt.Sprintf(`
+					provider "gitlab" {
+						token = "%s"
+					}
+
+					resource "gitlab_group_security_policy_attachment" "this" {
+						group          = %d
+						policy_project = %d
+					}
+				`, nonMemberUserPAT.Token, group.ID, securityPolicyProject.ID),
+				ExpectError: accessDeniedRegex,
+			},
+		},
+	})
+}
+
+// This test validates the ownership check in the ModifyPlan function when the user
+// is a member but has insufficient permissions (Maintainer instead of Owner).
+func TestAcc_GitlabGroupSecurityPolicyAttachment_InsufficientPermissions(t *testing.T) {
 	testutil.SkipIfCE(t)
 
 	// Create group and projects for the test

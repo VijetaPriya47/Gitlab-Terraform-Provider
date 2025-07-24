@@ -138,8 +138,22 @@ func (d *gitlabGroupSecurityPolicyAttachmentResource) ModifyPlan(ctx context.Con
 		return
 	}
 
-	if err != nil || membership.AccessLevel != gitlab.OwnerPermissions {
-		resp.Diagnostics.AddError("Insufficient Permissions", "To apply a security policy, the client must have Owner permissions for the group being edited. Current user does not have Owner permissions on the specified group.")
+	// Handle the scenario where the user is not a member at all
+	if err != nil {
+		// User is not a member of the group at all (404 error)
+		if api.Is404(err) {
+			resp.Diagnostics.AddError("Access Denied", fmt.Sprintf("Current user is not a member of the group '%s'. To apply a security policy, the token must be added as an Owner to the group.", data.Group.ValueString()))
+			return
+		}
+
+		resp.Diagnostics.AddError("GitLab API error occurred when attempting to read group membership", err.Error())
+		return
+	}
+
+	if membership.AccessLevel != gitlab.OwnerPermissions {
+		// User is a member but doesn't have Owner permissions
+		resp.Diagnostics.AddError("Insufficient Permissions", fmt.Sprintf("Current user has %s access to group '%s', but Owner permissions are required to apply security policies.", api.AccessLevelValueToName[membership.AccessLevel], data.Group.ValueString()))
+		return
 	}
 }
 
