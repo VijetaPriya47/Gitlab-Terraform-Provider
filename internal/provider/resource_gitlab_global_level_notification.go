@@ -317,6 +317,30 @@ func (d *gitlabGlobalLevelNotificationsResource) ValidateConfig(ctx context.Cont
 	var data gitlabGlobalLevelNotificationsModel
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
 
+	// Skip validation if any custom notification fields are unknown
+	// This handles the case where for_each with optional variables causes unknown values during planning
+	if data.NewNote.IsUnknown() ||
+		data.NewIssue.IsUnknown() ||
+		data.ReopenIssue.IsUnknown() ||
+		data.CloseIssue.IsUnknown() ||
+		data.ReassignIssue.IsUnknown() ||
+		data.IssueDue.IsUnknown() ||
+		data.NewMergeRequest.IsUnknown() ||
+		data.PushToMergeRequest.IsUnknown() ||
+		data.ReopenMergeRequest.IsUnknown() ||
+		data.CloseMergeRequest.IsUnknown() ||
+		data.ReassignMergeRequest.IsUnknown() ||
+		data.MergeMergeRequest.IsUnknown() ||
+		data.FailedPipeline.IsUnknown() ||
+		data.FixedPipeline.IsUnknown() ||
+		data.SuccessPipeline.IsUnknown() ||
+		data.MovedProject.IsUnknown() ||
+		data.MergeWhenPipelineSucceeds.IsUnknown() ||
+		data.Level.IsUnknown() {
+		tflog.Debug(ctx, "Custom notification fields or level have unknown values, skipping validation")
+		return
+	}
+
 	// Check if any custom values are set
 	customOptionsSet := false
 	if !data.NewNote.IsNull() ||

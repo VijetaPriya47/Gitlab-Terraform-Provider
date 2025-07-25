@@ -5,6 +5,7 @@ package provider
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -98,6 +99,107 @@ func TestAccGitlabGlobalLevelNotifications_basic(t *testing.T) {
 				ResourceName:      "gitlab_global_level_notifications.foo",
 				ImportState:       true,
 				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccGitlabGlobalLevelNotifications_withVariables(t *testing.T) {
+	// This test validates the fix for the unknown value issue that occurs when using
+	// variables with the global level notifications resource. Previously, this would
+	// fail with "level must be set to custom" error during planning phase.
+	//
+	// Note: Using resource.Test (not ParallelTest) because global notification settings
+	// are shared across the GitLab instance and parallel tests would interfere with each other.
+	resource.Test(t, resource.TestCase{
+		CheckDestroy:             testAccCheckGitlabGlobalLevelNotificationsDestroy,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+					variable "notification_level" {
+					type    = string
+					default = "custom"
+					}
+
+					variable "close_issue_enabled" {
+					type    = bool
+					default = true
+					}
+
+					variable "new_issue_enabled" {
+					type    = bool
+					default = false
+					}
+
+					resource "gitlab_global_level_notifications" "test" {
+					level       = var.notification_level
+					close_issue = var.close_issue_enabled
+					new_issue   = var.new_issue_enabled
+					}
+				`,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_global_level_notifications.test", "level", "custom"),
+					resource.TestCheckResourceAttr("gitlab_global_level_notifications.test", "close_issue", "true"),
+					resource.TestCheckResourceAttr("gitlab_global_level_notifications.test", "new_issue", "false"),
+				),
+			},
+			// Verify Import
+			{
+				ResourceName:      "gitlab_global_level_notifications.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Test updating variables
+			{
+				Config: `
+					variable "notification_level" {
+					type    = string
+					default = "custom"
+					}
+
+					variable "close_issue_enabled" {
+					type    = bool
+					default = false
+					}
+
+					variable "new_issue_enabled" {
+					type    = bool
+					default = true
+					}
+
+					resource "gitlab_global_level_notifications" "test" {
+					level       = var.notification_level
+					close_issue = var.close_issue_enabled
+					new_issue   = var.new_issue_enabled
+					}
+				`,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_global_level_notifications.test", "level", "custom"),
+					resource.TestCheckResourceAttr("gitlab_global_level_notifications.test", "close_issue", "false"),
+					resource.TestCheckResourceAttr("gitlab_global_level_notifications.test", "new_issue", "true"),
+				),
+			},
+			// Test validation error: level is "participating" but individual notification options are set
+			// This should fail with validation error during planning phase
+			{
+				Config: `
+					variable "notification_level" {
+					type    = string
+					default = "participating"
+					}
+
+					variable "close_issue_enabled" {
+					type    = bool
+					default = true
+					}
+
+					resource "gitlab_global_level_notifications" "test" {
+					level       = var.notification_level
+					close_issue = var.close_issue_enabled
+					}
+				`,
+				ExpectError: regexp.MustCompile(`"level" must be set to "custom" to set individual notification levels`),
 			},
 		},
 	})
