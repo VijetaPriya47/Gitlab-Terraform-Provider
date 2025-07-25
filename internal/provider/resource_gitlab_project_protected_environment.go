@@ -263,16 +263,30 @@ func (r *gitlabProjectProtectedEnvironmentResource) ValidateConfig(ctx context.C
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	// Determine which deploy_access_level attribute is being used
 	deployAccessLevelsAttributeName := "deploy_access_levels"
 	if !data.DeployAccessLevelsAttribute.IsUnknown() && !data.DeployAccessLevelsAttribute.IsNull() {
 		deployAccessLevelsAttributeName = "deploy_access_levels_attribute"
 	}
+
+	// Retrieve a list of access levels based on which attribute is used
 	deployAccessLevels, diags := data.deployAccessLevelToResourceModel(ctx)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
+	if data.DeployAccessLevels.IsUnknown() && data.DeployAccessLevelsAttribute.IsUnknown() {
+		tflog.Debug(ctx, "Both deploy_access_levels and deploy_access_level_attributes have unknown values. Either they are both not set, or they are being passed in from a list. They will not be validated as a result.", map[string]any{
+			"project":                        data.Project,
+			"environment_name":               data.Environment,
+			"detected_deploy_attribute_used": deployAccessLevelsAttributeName,
+		})
+		// continue with the rest of validation, since this is just here for debugging.
+	}
+
+	// Validate the access levels
 	for i, dal := range deployAccessLevels {
 		if !dal.UserId.IsNull() && !dal.GroupId.IsNull() {
 			resp.Diagnostics.AddAttributeError(path.Root(deployAccessLevelsAttributeName).AtListIndex(i), "Invalid Attribute Combination", fmt.Sprintf("Cannot have user_id and group_id in the same %s entry", deployAccessLevelsAttributeName))
@@ -417,17 +431,21 @@ func (r *gitlabProjectProtectedEnvironmentResource) Create(ctx context.Context, 
 
 func (data *gitlabProjectProtectedEnvironmentResourceModel) deployAccessLevelToResourceModel(ctx context.Context) ([]*gitlabProjectProtectedEnvironmentDeployAccessLevelModel, diag.Diagnostics) {
 	deployAccessLevels := make([]*gitlabProjectProtectedEnvironmentDeployAccessLevelModel, 0)
+
+	// Handle the deprecated deploy_access_levels block first
 	if !data.DeployAccessLevels.IsNull() && !data.DeployAccessLevels.IsUnknown() {
 		diags := data.DeployAccessLevels.ElementsAs(ctx, &deployAccessLevels, false)
 		if diags.HasError() {
 			return nil, diags
 		}
-	} else {
+	} else if !data.DeployAccessLevelsAttribute.IsNull() && !data.DeployAccessLevelsAttribute.IsUnknown() {
+		// Handle the new deploy_access_levels_attribute if it's not null or unknown
 		diags := data.DeployAccessLevelsAttribute.ElementsAs(ctx, &deployAccessLevels, false)
 		if diags.HasError() {
 			return nil, diags
 		}
 	}
+	// If both are null or unknown, return empty slice
 	return deployAccessLevels, nil
 }
 

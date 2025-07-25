@@ -832,6 +832,60 @@ func TestAcc_GitlabProjectProtectedEnvironment_deprecatedDeployAndApprovalRules(
 	})
 }
 
+func TestAcc_GitlabProjectProtectedEnvironment_UnknownValueError(t *testing.T) {
+	testutil.SkipIfCE(t)
+
+	// Set up project environment.
+	project := testutil.CreateProject(t)
+	environment := testutil.CreateProjectEnvironment(t, project.ID, &gitlab.CreateEnvironmentOptions{
+		Name: gitlab.Ptr(acctest.RandomWithPrefix("test-protected-environment")),
+	})
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAcc_GitlabProjectProtectedEnvironment_CheckDestroy(project.ID, environment.Name),
+		Steps: []resource.TestStep{
+			// Test with unknown value from for expression - this reproduces the reported error. While we normally
+			// only test the one resource under test, the second resource is required here to ensure that an "unknown"
+			// value is produced during validating the config.
+			{
+				Config: fmt.Sprintf(`
+				# Create a project variable to create a dependency
+				resource "gitlab_project_variable" "test" {
+					project = %d
+					key     = "test_key"
+					value   = "test_value"
+				}
+
+				variable "list" {
+					type = list(string)
+					default = ["item1"]
+				}
+
+				locals {
+					# This creates unknown values because it depends on the resource above
+					values_with_conversion_error = [for mapping in var.list : {
+						access_level = "maintainer"
+						# This dependency makes the entire local unknown during planning
+						user_id = gitlab_project_variable.test.id != null ? null : null
+					}]
+				}
+
+				resource "gitlab_project_protected_environment" "main" {
+					project     = %d
+					environment = %q
+					deploy_access_levels_attribute = local.values_with_conversion_error
+				}`, project.ID, project.ID, environment.Name),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project_protected_environment.main", "deploy_access_levels_attribute.#", "1"),
+					resource.TestCheckResourceAttr("gitlab_project_protected_environment.main", "deploy_access_levels_attribute.0.access_level", "maintainer"),
+					resource.TestCheckResourceAttrSet("gitlab_project_protected_environment.main", "deploy_access_levels_attribute.0.access_level_description"),
+				),
+			},
+		},
+	})
+}
+
 func TestAcc_GitlabProjectProtectedEnvironment_GroupInheritanceType(t *testing.T) {
 	testutil.SkipIfCE(t)
 
