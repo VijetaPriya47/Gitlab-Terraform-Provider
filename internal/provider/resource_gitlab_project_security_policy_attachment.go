@@ -27,6 +27,7 @@ var (
 	_ resource.Resource                = &gitlabProjectSecurityPolicyAttachmentResource{}
 	_ resource.ResourceWithConfigure   = &gitlabProjectSecurityPolicyAttachmentResource{}
 	_ resource.ResourceWithImportState = &gitlabProjectSecurityPolicyAttachmentResource{}
+	_ resource.ResourceWithModifyPlan  = &gitlabProjectSecurityPolicyAttachmentResource{}
 )
 
 func init() {
@@ -56,6 +57,7 @@ func (r *gitlabProjectSecurityPolicyAttachmentResource) Metadata(ctx context.Con
 func (r *gitlabProjectSecurityPolicyAttachmentResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_project_security_policy_attachment`" + ` resource allows to attach a security policy project to a project.
+This resource requires being an owner on the project that is having the security policy applied.
 
 ~> [Policies](https://docs.gitlab.com/user/application_security/policies/) are files stored in a policy project as raw YAML, to allow maximum flexibility with support of all kind of policy and all their options. See the examples for how to create a policy project, add a policy, and link it. Use the ` + "`gitlab_repository_file`" + ` resource to create policies instead of a specific policy resource. This ensures all policy options are immediately via Terraform once released.
 
@@ -104,6 +106,57 @@ func (d *gitlabProjectSecurityPolicyAttachmentResource) ImportState(ctx context.
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
+func (d *gitlabProjectSecurityPolicyAttachmentResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	var data *gitlabProjectSecurityPolicyAttachmentResourceModel
+	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if data == nil {
+		// Log a note that there is no plan data, usually because we're importing.
+		tflog.Debug(ctx, "Plan data is nil, no check for token permissions is needed")
+		return
+	}
+
+	// Check if the current user has Owner permissions on the project
+	user, _, err := d.client.Users.CurrentUser(gitlab.WithContext(ctx))
+	if err != nil {
+		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to check current user permissions: %s", err.Error()))
+		return
+	}
+
+	// Admin users can always apply security policies
+	if user.IsAdmin {
+		return
+	}
+
+	// Check project membership for Owner permissions
+	membership, _, err := d.client.ProjectMembers.GetInheritedProjectMember(data.Project.ValueString(), user.ID, gitlab.WithContext(ctx))
+	if err != nil && !api.Is404(err) {
+		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to check project membership: %s", err.Error()))
+		return
+	}
+
+	// Handle the scenario where the user is not a member at all
+	if err != nil {
+		// User is not a member of the project at all (404 error)
+		if api.Is404(err) {
+			resp.Diagnostics.AddError("Access Denied", fmt.Sprintf("Current user is not a member of the project '%s'. To apply a security policy, the token must be added as an Owner to the project.", data.Project.ValueString()))
+			return
+		}
+
+		resp.Diagnostics.AddError("GitLab API error occurred when attempting to read project membership", err.Error())
+		return
+	}
+
+	if membership.AccessLevel != gitlab.OwnerPermissions {
+		// User is a member but doesn't have Owner permissions
+		resp.Diagnostics.AddError("Insufficient Permissions", fmt.Sprintf("Current user has %s access to project '%s', but Owner permissions are required to apply security policies.", api.AccessLevelValueToName[membership.AccessLevel], data.Project.ValueString()))
+		return
+	}
+}
+
 func (d *gitlabProjectSecurityPolicyAttachmentResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var data *gitlabProjectSecurityPolicyAttachmentResourceModel
 
@@ -122,6 +175,13 @@ func (d *gitlabProjectSecurityPolicyAttachmentResource) Create(ctx context.Conte
 	err = d.updatePolicy(data, projectIds)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to update GraphQL ID", err.Error())
+		return
+	}
+
+	// Verify the association applied properly with a ticker
+	err = d.verifyPolicyAssociation(ctx, data, projectIds)
+	if err != nil {
+		resp.Diagnostics.AddError("Failed to verify policy association", err.Error())
 		return
 	}
 
@@ -248,6 +308,18 @@ func (d *gitlabProjectSecurityPolicyAttachmentResource) Update(ctx context.Conte
 
 		return nil
 	})
+
+	if err != nil {
+		resp.Diagnostics.AddError("Failed to update policy", err.Error())
+		return
+	}
+
+	// Verify the association applied properly with a ticker
+	err = d.verifyPolicyAssociation(ctx, data, projectIds)
+	if err != nil {
+		resp.Diagnostics.AddError("Failed to verify policy association", err.Error())
+		return
+	}
 
 	tflog.Debug(ctx, "Updated security policy project", map[string]any{
 		"project":        data.Project.ValueString(),
@@ -405,6 +477,75 @@ func (d *gitlabProjectSecurityPolicyAttachmentResource) parseGraphQLIds(ctx cont
 	}
 
 	return projectGid, nil
+}
+
+// verifyPolicyAssociation checks every 20 seconds for up to 1 minute to ensure the policy association applied properly
+func (d *gitlabProjectSecurityPolicyAttachmentResource) verifyPolicyAssociation(ctx context.Context, data *gitlabProjectSecurityPolicyAttachmentResourceModel, projectIds *api.ProjectIdentifiers) error {
+	// Create a context with timeout for the verification process
+	timeoutCtx, cancel := context.WithTimeout(ctx, 1*time.Minute)
+	defer cancel()
+
+	ticker := time.NewTicker(20 * time.Second)
+	defer ticker.Stop()
+
+	// Check immediately first
+	response, err := d.readPolicy(projectIds)
+	if err != nil {
+		return fmt.Errorf("failed to read policy during verification: %w", err)
+	}
+
+	if response.Data.Project != nil && response.Data.Project.SecurityPolicyProject != nil {
+		// Extract the policy project ID from the GraphQL ID
+		parts := strings.Split(response.Data.Project.SecurityPolicyProject.ID, "/")
+		actualPolicyId := parts[len(parts)-1]
+
+		if actualPolicyId == data.PolicyProject.ValueString() {
+			tflog.Debug(ctx, "Policy association verified successfully", map[string]any{
+				"project":        data.Project.ValueString(),
+				"policy_project": data.PolicyProject.ValueString(),
+			})
+			return nil
+		}
+	}
+
+	// If not immediately successful, start checking with ticker
+	for {
+		select {
+		case <-timeoutCtx.Done():
+			if timeoutCtx.Err() == context.DeadlineExceeded {
+				return fmt.Errorf("policy association verification timed out after 1 minute. Expected policy project %s to be associated with project %s", data.PolicyProject.ValueString(), data.Project.ValueString())
+			}
+			return timeoutCtx.Err()
+		case <-ticker.C:
+			response, err := d.readPolicy(projectIds)
+			if err != nil {
+				tflog.Warn(ctx, "Error reading policy during verification, will retry", map[string]any{
+					"project": data.Project.ValueString(),
+					"error":   err.Error(),
+				})
+				continue
+			}
+
+			if response.Data.Project != nil && response.Data.Project.SecurityPolicyProject != nil {
+				// Extract the policy project ID from the GraphQL ID
+				parts := strings.Split(response.Data.Project.SecurityPolicyProject.ID, "/")
+				actualPolicyId := parts[len(parts)-1]
+
+				if actualPolicyId == data.PolicyProject.ValueString() {
+					tflog.Debug(ctx, "Policy association verified successfully", map[string]any{
+						"project":        data.Project.ValueString(),
+						"policy_project": data.PolicyProject.ValueString(),
+					})
+					return nil
+				}
+			}
+
+			tflog.Debug(ctx, "Policy association not yet applied, continuing to wait", map[string]any{
+				"project":        data.Project.ValueString(),
+				"policy_project": data.PolicyProject.ValueString(),
+			})
+		}
+	}
 }
 
 type GetSecurityPolicyProjectResponse struct {
