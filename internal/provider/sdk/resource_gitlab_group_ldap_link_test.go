@@ -291,9 +291,13 @@ func TestAccGitlabGroupLdapLink_removeOutsideTf(t *testing.T) {
 					// Mark the group for deletion, then delete it
 					// We don't need to check error on the first call because the second will fail if the first one does.
 					_, _ = testutil.TestGitlabClient.Groups.DeleteGroup(groups[0].ID, nil)
-					_, err := testutil.TestGitlabClient.Groups.DeleteGroup(groups[0].ID, &gitlab.DeleteGroupOptions{
+					softDeletedGroup, _, err := testutil.TestGitlabClient.Groups.GetGroup(groups[0].ID, nil)
+					if err != nil {
+						t.Fatalf("Failed to get deleted group outside of TF. err: %v", err)
+					}
+					_, err = testutil.TestGitlabClient.Groups.DeleteGroup(groups[0].ID, &gitlab.DeleteGroupOptions{
 						PermanentlyRemove: gitlab.Ptr(true),
-						FullPath:          gitlab.Ptr(groups[0].FullPath),
+						FullPath:          gitlab.Ptr(softDeletedGroup.FullPath),
 					})
 					if err != nil {
 						t.Fatalf("Failed to delete group outside of TF. err: %v", err)
