@@ -29,15 +29,18 @@ type GitLabProvider struct {
 
 // GitLabProviderModel describes the provider data model.
 type GitLabProviderModel struct {
-	Token          types.String `tfsdk:"token"`
-	BaseUrl        types.String `tfsdk:"base_url"`
-	CACertFile     types.String `tfsdk:"cacert_file"`
-	Insecure       types.Bool   `tfsdk:"insecure"`
-	ClientCert     types.String `tfsdk:"client_cert"`
-	ClientKey      types.String `tfsdk:"client_key"`
-	EarlyAuthCheck types.Bool   `tfsdk:"early_auth_check"`
-	Retries        types.Int64  `tfsdk:"retries"`
-	Headers        types.Map    `tfsdk:"headers"`
+	Token               types.String `tfsdk:"token"`
+	BaseUrl             types.String `tfsdk:"base_url"`
+	CACertFile          types.String `tfsdk:"cacert_file"`
+	Insecure            types.Bool   `tfsdk:"insecure"`
+	ClientCert          types.String `tfsdk:"client_cert"`
+	ClientKey           types.String `tfsdk:"client_key"`
+	EarlyAuthCheck      types.Bool   `tfsdk:"early_auth_check"`
+	Retries             types.Int64  `tfsdk:"retries"`
+	Headers             types.Map    `tfsdk:"headers"`
+	Context             types.String `tfsdk:"context"`
+	ConfigFile          types.String `tfsdk:"config_file"`
+	EnableAutoCISupport types.Bool   `tfsdk:"enable_auto_ci_support"`
 }
 
 func (p *GitLabProvider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
@@ -86,6 +89,18 @@ func (p *GitLabProvider) Schema(_ context.Context, _ provider.SchemaRequest, res
 				Optional:            true,
 				ElementType:         types.StringType,
 			},
+			"context": schema.StringAttribute{
+				MarkdownDescription: "The context to use for authentication and configuration. The context must exist in the configuration file. It may be sourced from the `GITLAB_CONTEXT` environment variable.",
+				Optional:            true,
+			},
+			"config_file": schema.StringAttribute{
+				MarkdownDescription: "The path to the configuration file to use. It may be sourced from the `GITLAB_CONFIG_FILE` environment variable.",
+				Optional:            true,
+			},
+			"enable_auto_ci_support": schema.BoolAttribute{
+				MarkdownDescription: "If automatic CI support should be enabled or not. This only works when not providing a token.",
+				Optional:            true,
+			},
 		},
 	}
 }
@@ -112,7 +127,7 @@ func (p *GitLabProvider) Configure(ctx context.Context, req provider.ConfigureRe
 			path.Root("base_url"),
 			"Unknown GitLab Base URL for the API endpoint",
 			"The provider cannot create the GitLab API client as there is an unknown configuration value for the GitLab Base URL. "+
-				"Either apply the source of the value first, set the token attribute value statically in the configuration, or use the GITLAB_BASE_URL environment variable.",
+				"Either apply the source of the value first, set the base_url attribute value statically in the configuration, or use the GITLAB_BASE_URL environment variable.",
 		)
 	}
 	if config.CACertFile.IsUnknown() {
@@ -120,7 +135,7 @@ func (p *GitLabProvider) Configure(ctx context.Context, req provider.ConfigureRe
 			path.Root("cacert_file"),
 			"Unknown GitLab CA Certificate File",
 			"The provider cannot create the GitLab API client as there is an unknown configuration value for the GitLab CA Certificate File. "+
-				"Either apply the source of the value first, set the token attribute value statically in the configuration.",
+				"Either apply the source of the value first, set the cacert_file attribute value statically in the configuration.",
 		)
 	}
 	if config.Insecure.IsUnknown() {
@@ -128,7 +143,7 @@ func (p *GitLabProvider) Configure(ctx context.Context, req provider.ConfigureRe
 			path.Root("insecure"),
 			"Unknown GitLab Insecure Flag Value",
 			"The provider cannot create the GitLab API client as there is an unknown configuration value for the GitLab Insecure flag. "+
-				"Either apply the source of the value first, set the token attribute value statically in the configuration.",
+				"Either apply the source of the value first, set the insecure attribute value statically in the configuration.",
 		)
 	}
 	if config.ClientCert.IsUnknown() {
@@ -136,7 +151,7 @@ func (p *GitLabProvider) Configure(ctx context.Context, req provider.ConfigureRe
 			path.Root("client_cert"),
 			"Unknown GitLab Client Certificate",
 			"The provider cannot create the GitLab API client as there is an unknown configuration value for the GitLab Client Certificate. "+
-				"Either apply the source of the value first, set the token attribute value statically in the configuration.",
+				"Either apply the source of the value first, set the client_cert attribute value statically in the configuration.",
 		)
 	}
 	if config.ClientKey.IsUnknown() {
@@ -144,7 +159,7 @@ func (p *GitLabProvider) Configure(ctx context.Context, req provider.ConfigureRe
 			path.Root("client_key"),
 			"Unknown GitLab Client Key",
 			"The provider cannot create the GitLab API client as there is an unknown configuration value for the GitLab Client Key. "+
-				"Either apply the source of the value first, set the token attribute value statically in the configuration.",
+				"Either apply the source of the value first, set the client_key attribute value statically in the configuration.",
 		)
 	}
 	if config.EarlyAuthCheck.IsUnknown() {
@@ -152,7 +167,7 @@ func (p *GitLabProvider) Configure(ctx context.Context, req provider.ConfigureRe
 			path.Root("early_auth_check"),
 			"Unknown GitLab Early Auth Check Flag Value",
 			"The provider cannot create the GitLab API client as there is an unknown configuration value for the GitLab Early Auth Check flag. "+
-				"Either apply the source of the value first, set the token attribute value statically in the configuration, or use the GITLAB_EARLY_AUTH_CHECK environment variable.",
+				"Either apply the source of the value first, set the early_auth_check attribute value statically in the configuration, or use the GITLAB_EARLY_AUTH_CHECK environment variable.",
 		)
 	}
 	if config.Headers.IsUnknown() {
@@ -161,6 +176,30 @@ func (p *GitLabProvider) Configure(ctx context.Context, req provider.ConfigureRe
 			"Unknown Headers for the GitLab API calls",
 			"The provider cannot create the GitLab API client as there is an unknown configuration value for the GitLab Headers flag. "+
 				"Either apply the source of the value first or set the headers attribute value statically in the configuration.",
+		)
+	}
+	if config.Context.IsUnknown() {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("context"),
+			"Unknown Context for the GitLab API calls",
+			"The provider cannot create the GitLab API client as there is an unknown configuration value for the GitLab Context flag. "+
+				"Either apply the source of the value first or set the context attribute value statically in the configuration, or use the GITLAB_CONTEXT environment variable.",
+		)
+	}
+	if config.ConfigFile.IsUnknown() {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("config_file"),
+			"Unknown Config File for the GitLab API calls",
+			"The provider cannot create the GitLab API client as there is an unknown configuration value for the GitLab Config File flag. "+
+				"Either apply the source of the value first or set the config_file attribute value statically in the configuration, or use the GITLAB_CONFIG_FILE environment variable.",
+		)
+	}
+	if config.EnableAutoCISupport.IsUnknown() {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("enable_auto_ci_support"),
+			"Unknown Enable Auto CI Support for the GitLab API calls",
+			"The provider cannot create the GitLab API client as there is an unknown configuration value for the GitLab Enable Auto CI Support flag. "+
+				"Either apply the source of the value first or set the enable_auto_ci_support attribute value statically in the configuration.",
 		)
 	}
 
@@ -185,14 +224,17 @@ func (p *GitLabProvider) Configure(ctx context.Context, req provider.ConfigureRe
 	// Provider Configuration containing the values after evaluation of defaults etc.
 	// Initialized with the defaults which get overridden later if config is set.
 	evaluatedConfig := api.Config{
-		Token:         os.Getenv("GITLAB_TOKEN"),
-		BaseURL:       os.Getenv("GITLAB_BASE_URL"),
-		CACertFile:    "",
-		Insecure:      false,
-		ClientCert:    "",
-		ClientKey:     "",
-		EarlyAuthFail: earlyAuthCheck,
-		Headers:       nil,
+		Token:               os.Getenv("GITLAB_TOKEN"),
+		BaseURL:             os.Getenv("GITLAB_BASE_URL"),
+		CACertFile:          "",
+		Insecure:            false,
+		ClientCert:          "",
+		ClientKey:           "",
+		EarlyAuthFail:       earlyAuthCheck,
+		Headers:             nil,
+		Context:             os.Getenv("GITLAB_CONTEXT"),
+		ConfigFile:          os.Getenv("GITLAB_CONFIG_FILE"),
+		EnableAutoCISupport: false,
 	}
 
 	// Evaluate Provider Attribute Default values now that they are all "known"
@@ -232,6 +274,15 @@ func (p *GitLabProvider) Configure(ctx context.Context, req provider.ConfigureRe
 		}
 
 		evaluatedConfig.Headers = headersMap
+	}
+	if !config.Context.IsNull() {
+		evaluatedConfig.Context = config.Context.ValueString()
+	}
+	if !config.ConfigFile.IsNull() {
+		evaluatedConfig.ConfigFile = config.ConfigFile.ValueString()
+	}
+	if !config.EnableAutoCISupport.IsNull() {
+		evaluatedConfig.EnableAutoCISupport = config.EnableAutoCISupport.ValueBool()
 	}
 
 	// TODO(@timofurrer): validate configuration values

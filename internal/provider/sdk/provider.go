@@ -95,6 +95,22 @@ func New(version string) func() *schema.Provider {
 					Description: "A map of headers to append to all API request to the GitLab instance.",
 					Elem:        schema.TypeString,
 				},
+				"context": {
+					Type:        schema.TypeString,
+					Optional:    true,
+					Description: "The context to use for authentication and configuration. The context must exist in the configuration file. It may be sourced from the `GITLAB_CONTEXT` environment variable.",
+				},
+				"config_file": {
+					Type:        schema.TypeString,
+					Optional:    true,
+					Description: "The path to the configuration file to use. It may be sourced from the `GITLAB_CONFIG_FILE` environment variable.",
+				},
+				"enable_auto_ci_support": {
+					Type:        schema.TypeBool,
+					Default:     false,
+					Optional:    true,
+					Description: "If automatic CI support should be enabled or not. This only works when not providing a token.",
+				},
 			},
 
 			DataSourcesMap: resourceFactoriesToMap(allDataSources),
@@ -110,21 +126,30 @@ func New(version string) func() *schema.Provider {
 func configure(version string, p *schema.Provider) func(context.Context, *schema.ResourceData) (any, diag.Diagnostics) {
 	return func(ctx context.Context, d *schema.ResourceData) (any, diag.Diagnostics) {
 		config := api.Config{
-			Token:         d.Get("token").(string),
-			BaseURL:       d.Get("base_url").(string),
-			CACertFile:    d.Get("cacert_file").(string),
-			Insecure:      d.Get("insecure").(bool),
-			ClientCert:    d.Get("client_cert").(string),
-			ClientKey:     d.Get("client_key").(string),
-			EarlyAuthFail: d.Get("early_auth_check").(bool),
-			Retries:       d.Get("retries").(int),
-			Headers:       d.Get("headers").(map[string]any),
+			Token:               d.Get("token").(string),
+			BaseURL:             d.Get("base_url").(string),
+			CACertFile:          d.Get("cacert_file").(string),
+			Insecure:            d.Get("insecure").(bool),
+			ClientCert:          d.Get("client_cert").(string),
+			ClientKey:           d.Get("client_key").(string),
+			EarlyAuthFail:       d.Get("early_auth_check").(bool),
+			Retries:             d.Get("retries").(int),
+			Headers:             d.Get("headers").(map[string]any),
+			Context:             d.Get("context").(string),
+			ConfigFile:          d.Get("config_file").(string),
+			EnableAutoCISupport: d.Get("enable_auto_ci_support").(bool),
 		}
 		if _, ok := d.GetOk("token"); !ok {
 			config.Token = os.Getenv("GITLAB_TOKEN")
 		}
 		if _, ok := d.GetOk("base_url"); !ok {
 			config.BaseURL = os.Getenv("GITLAB_BASE_URL")
+		}
+		if _, ok := d.GetOk("context"); !ok {
+			config.Context = os.Getenv("GITLAB_CONTEXT")
+		}
+		if _, ok := d.GetOk("config_file"); !ok {
+			config.ConfigFile = os.Getenv("GITLAB_CONFIG_FILE")
 		}
 		// It is the only way to differentiate between unset boolean attributes and attributes set to false
 		//nolint:staticcheck, tfproviderlint
