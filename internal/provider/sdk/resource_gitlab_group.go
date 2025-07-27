@@ -967,7 +967,7 @@ func resourceGitlabGroupDelete(ctx context.Context, d *schema.ResourceData, meta
 		Delay:      5 * time.Second,
 	}
 
-	_, err = stateConf.WaitForStateContext(ctx)
+	softDeletedGroup, err := stateConf.WaitForStateContext(ctx)
 	if err != nil {
 		return diag.Errorf("error waiting for group (%s) to become deleted: %s", d.Id(), err)
 	}
@@ -980,7 +980,7 @@ func resourceGitlabGroupDelete(ctx context.Context, d *schema.ResourceData, meta
 
 		opts := &gitlab.DeleteGroupOptions{}
 		opts.PermanentlyRemove = gitlab.Ptr(d.Get("permanently_remove_on_delete").(bool))
-		opts.FullPath = gitlab.Ptr(d.Get("full_path").(string))
+		opts.FullPath = gitlab.Ptr(softDeletedGroup.(*gitlab.Group).FullPath)
 
 		_, err = client.Groups.DeleteGroup(d.Id(), opts, gitlab.WithContext(ctx))
 		if err != nil {

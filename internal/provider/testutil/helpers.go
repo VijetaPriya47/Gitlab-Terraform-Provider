@@ -209,13 +209,13 @@ func CreateProjectWithOptions(t *testing.T, opts *gitlab.CreateProjectOptions) *
 		}
 
 		if IsRunningOnSaaS(t) {
-			project, _, err := TestGitlabClient.Projects.GetProject(project.ID, nil)
+			softDeletedProject, _, err := TestGitlabClient.Projects.GetProject(project.ID, nil)
 			if err != nil {
 				t.Fatalf("could not check test project status: %v", err)
 			}
 			_, err = TestGitlabClient.Projects.DeleteProject(project.ID, &gitlab.DeleteProjectOptions{
 				PermanentlyRemove: gitlab.Ptr(true),
-				FullPath:          gitlab.Ptr(project.PathWithNamespace),
+				FullPath:          gitlab.Ptr(softDeletedProject.PathWithNamespace),
 			})
 			if err != nil {
 				t.Fatalf("could not cleanup test project: %v", err)
@@ -413,13 +413,13 @@ func CreateGroupsWithPrefix(t *testing.T, n int, prefix string) []*gitlab.Group 
 				t.Fatalf("could not cleanup test group: %v", err)
 			}
 			if IsRunningOnSaaS(t) {
-				group, _, err := TestGitlabClient.Groups.GetGroup(groupID, nil)
+				softDeletedGroup, _, err := TestGitlabClient.Groups.GetGroup(groupID, nil)
 				if err != nil {
 					t.Fatalf("could not check test group status: %v", err)
 				}
 				_, err = TestGitlabClient.Groups.DeleteGroup(groupID, &gitlab.DeleteGroupOptions{
 					PermanentlyRemove: gitlab.Ptr(true),
-					FullPath:          gitlab.Ptr(group.FullPath),
+					FullPath:          gitlab.Ptr(softDeletedGroup.FullPath),
 				})
 				if err != nil {
 					t.Fatalf("could not cleanup test group: %v", err)
