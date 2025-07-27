@@ -16,7 +16,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
@@ -172,7 +171,7 @@ func (d *gitlabGroupSecurityPolicyAttachmentResource) Create(ctx context.Context
 		return
 	}
 
-	err = d.updatePolicy(data, groupIds)
+	err = d.updatePolicy(ctx, data, groupIds)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to update GraphQL ID", err.Error())
 		return
@@ -222,7 +221,7 @@ func (d *gitlabGroupSecurityPolicyAttachmentResource) Read(ctx context.Context, 
 		"policy_project": policyProject,
 	})
 
-	response, err := d.readPolicy(groupIds)
+	response, err := d.readPolicy(ctx, groupIds)
 	if err != nil {
 		tflog.Error(ctx, "Received an error when reading the policy. Exiting", map[string]any{
 			"grooup":         group,
@@ -283,32 +282,52 @@ func (d *gitlabGroupSecurityPolicyAttachmentResource) Update(ctx context.Context
 	// "removal" of the previous policy happens after the update, and no policy is left behind,
 	// causing a situation where the `apply` is successful, then an immediate `plan` is generated.
 	// The retry will read after update until we get the policy project we expect.
-	err = retry.RetryContext(ctx, 1*time.Minute, func() *retry.RetryError {
-		err = d.updatePolicy(data, groupIds)
-		if err != nil {
-			return retry.NonRetryableError(err)
-		}
 
-		response, err := d.readPolicy(groupIds)
-		if err != nil {
-			tflog.Error(ctx, "Received an error when reading the policy. Exiting", map[string]any{
-				"group":          data.Group.ValueString(),
-				"policy_project": data.PolicyProject.ValueString(),
-			})
-			return retry.NonRetryableError(err)
-		}
+	ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
+	defer cancel()
 
-		// If we read, and our read doesn't match our expected policy project, retry.
-		if response.Data.Group.SecurityPolicyProject.ID != data.PolicyProject.ValueString() {
-			tflog.Warn(ctx, "Received a mismatched policy post-update, retryin update", map[string]any{
-				"group":          data.Group.ValueString(),
-				"policy_project": data.PolicyProject.ValueString(),
-			})
-			return retry.RetryableError(fmt.Errorf("Received a mismatched policy post-update. Expected %s, got %s. Retrying update.", data.PolicyProject.ValueString(), response.Data.Group.SecurityPolicyProject.ID))
-		}
+	t := time.NewTicker(20 * time.Second)
+	defer t.Stop()
 
-		return nil
-	})
+	done := ctx.Done()
+
+	err = func() error {
+		for {
+			select {
+			case <-done:
+				if ctx.Err() == context.DeadlineExceeded {
+					return fmt.Errorf("Received a mismatched policy post-update. Expected %s. Retrying update.", data.PolicyProject.ValueString())
+				}
+				return ctx.Err()
+			case <-t.C:
+
+				err = d.updatePolicy(ctx, data, groupIds)
+				if err != nil {
+					return fmt.Errorf("failed to update policy: %w", err)
+				}
+
+				response, err := d.readPolicy(ctx, groupIds)
+				if err != nil {
+					tflog.Error(ctx, "Received an error when reading the policy. Exiting", map[string]any{
+						"group":          data.Group.ValueString(),
+						"policy_project": data.PolicyProject.ValueString(),
+					})
+					return fmt.Errorf("failed to read policy: %w", err)
+				}
+
+				// If we read, and our read doesn't match our expected policy project, retry.
+				if response.Data.Group.SecurityPolicyProject.ID != data.PolicyProject.ValueString() {
+					tflog.Warn(ctx, "Received a mismatched policy post-update, retrying update", map[string]any{
+						"group":          data.Group.ValueString(),
+						"policy_project": data.PolicyProject.ValueString(),
+					})
+					continue
+				}
+
+				return nil
+			}
+		}
+	}()
 
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to update policy", err.Error())
@@ -356,7 +375,7 @@ func (d *gitlabGroupSecurityPolicyAttachmentResource) Delete(ctx context.Context
 		}
 	`, projectIds.GroupFullPath)
 	var response SecurityProjectUnassignResponse
-	_, err = d.client.GraphQL.Do(gitlab.GraphQLQuery{Query: query}, &response)
+	_, err = d.client.GraphQL.Do(gitlab.GraphQLQuery{Query: query}, &response, gitlab.WithContext(ctx))
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to delete the group security policy attachment - generic GraphQL error", err.Error())
 		return
@@ -381,7 +400,7 @@ func (d *gitlabGroupSecurityPolicyAttachmentResource) Delete(ctx context.Context
 }
 
 // Create a function that reads the security policy associated to the group
-func (d *gitlabGroupSecurityPolicyAttachmentResource) readPolicy(ids *api.GroupIdentifiers) (*GetGroupSecurityPolicyProjectResponse, error) {
+func (d *gitlabGroupSecurityPolicyAttachmentResource) readPolicy(ctx context.Context, ids *api.GroupIdentifiers) (*GetGroupSecurityPolicyProjectResponse, error) {
 	// Read the policy project
 	var response GetGroupSecurityPolicyProjectResponse
 	query := fmt.Sprintf(`
@@ -392,7 +411,7 @@ func (d *gitlabGroupSecurityPolicyAttachmentResource) readPolicy(ids *api.GroupI
 		}
 	}
 	`, ids.GroupFullPath)
-	_, err := d.client.GraphQL.Do(gitlab.GraphQLQuery{Query: query}, &response)
+	_, err := d.client.GraphQL.Do(gitlab.GraphQLQuery{Query: query}, &response, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("generic GraphQL error: %s", err.Error())
 	}
@@ -406,7 +425,7 @@ func (d *gitlabGroupSecurityPolicyAttachmentResource) readPolicy(ids *api.GroupI
 }
 
 // Update the security policy associated to the group
-func (d *gitlabGroupSecurityPolicyAttachmentResource) updatePolicy(data *gitlabGroupSecurityPolicyAttachmentResourceModel, ids *api.GroupIdentifiers) error {
+func (d *gitlabGroupSecurityPolicyAttachmentResource) updatePolicy(ctx context.Context, data *gitlabGroupSecurityPolicyAttachmentResourceModel, ids *api.GroupIdentifiers) error {
 	// Update the policy project - This uses the same mutation as assigning a project to a project, but passes in the group path instead.
 	query := fmt.Sprintf(`
 		mutation {
@@ -420,7 +439,7 @@ func (d *gitlabGroupSecurityPolicyAttachmentResource) updatePolicy(data *gitlabG
 	`, ids.GroupFullPath, data.PolicyProjectGraphQLId.ValueString())
 
 	var response SecurityProjectAssignResponse
-	_, err := d.client.GraphQL.Do(gitlab.GraphQLQuery{Query: query}, &response)
+	_, err := d.client.GraphQL.Do(gitlab.GraphQLQuery{Query: query}, &response, gitlab.WithContext(ctx))
 	if err != nil {
 		return err
 	}
@@ -463,7 +482,7 @@ func (d *gitlabGroupSecurityPolicyAttachmentResource) verifyPolicyAssociation(ct
 	defer ticker.Stop()
 
 	// Check immediately first
-	response, err := d.readPolicy(groupIds)
+	response, err := d.readPolicy(ctx, groupIds)
 	if err != nil {
 		return fmt.Errorf("failed to read policy during verification: %w", err)
 	}
@@ -491,7 +510,7 @@ func (d *gitlabGroupSecurityPolicyAttachmentResource) verifyPolicyAssociation(ct
 			}
 			return timeoutCtx.Err()
 		case <-ticker.C:
-			response, err := d.readPolicy(groupIds)
+			response, err := d.readPolicy(ctx, groupIds)
 			if err != nil {
 				tflog.Warn(ctx, "Error reading policy during verification, will retry", map[string]any{
 					"group": data.Group.ValueString(),
