@@ -106,7 +106,7 @@ func resourceGitlabProjectIntegrationGithubCreate(ctx context.Context, d *schema
 	client := meta.(*gitlab.Client)
 	project := d.Get("project").(string)
 
-	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab github service for project %s", project))
+	tflog.Debug(ctx, fmt.Sprintf("create gitlab github service for project %s", project))
 
 	opts := &gitlab.SetGithubServiceOptions{
 		Token:         gitlab.Ptr(d.Get("token").(string)),
@@ -126,15 +126,12 @@ func resourceGitlabProjectIntegrationGithubRead(ctx context.Context, d *schema.R
 	client := meta.(*gitlab.Client)
 	project := d.Get("project").(string)
 
-	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read gitlab github service for project %s", project))
+	tflog.Debug(ctx, fmt.Sprintf("read gitlab github service for project %s", project))
 
 	service, _, err := client.Services.GetGithubService(project, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] gitlab service github not found %s / %s / %s",
-				project,
-				service.Title,
-				service.Properties.RepositoryURL))
+			tflog.Debug(ctx, fmt.Sprintf("gitlab service github not found for project %s", project))
 			d.SetId("")
 			return nil
 		}
@@ -154,7 +151,7 @@ func resourceGitlabProjectIntegrationGithubDelete(ctx context.Context, d *schema
 	client := meta.(*gitlab.Client)
 	project := d.Get("project").(string)
 
-	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] delete gitlab github service for project %s", project))
+	tflog.Debug(ctx, fmt.Sprintf("delete gitlab github service for project %s", project))
 
 	_, err := client.Services.DeleteGithubService(project, gitlab.WithContext(ctx))
 	if err != nil {
