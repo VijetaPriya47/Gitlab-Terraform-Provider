@@ -58,6 +58,7 @@ func stringToProjectCreationLevel(s string) *gitlab.ProjectCreationLevelValue {
 		"noone":      gitlab.NoOneProjectCreation,
 		"maintainer": gitlab.MaintainerProjectCreation,
 		"developer":  gitlab.DeveloperProjectCreation,
+		"administrator":  gitlab.AdministratorProjectCreation,
 	}
 
 	value, ok := lookup[s]
