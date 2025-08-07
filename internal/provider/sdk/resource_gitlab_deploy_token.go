@@ -13,11 +13,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
+	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
 
 var _ = registerResource("gitlab_deploy_token", func() *schema.Resource {
 	return &schema.Resource{
 		Description: `The ` + "`gitlab_deploy_token`" + ` resource allows to manage the lifecycle of group and project deploy tokens.
+
+~> This resource is deprecated and will be removed in 19.0. Use ` + "`gitlab_project_deploy_token`" + ` or ` + "`gitlab_group_deploy_token`" + ` instead!
 
 **Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/deploy_tokens/)`,
 
@@ -82,20 +85,13 @@ func gitlabDeployTokenSchema() map[string]*schema.Schema {
 			ForceNew:         true,
 		},
 		"scopes": {
-			Description: "Valid values: `read_repository`, `read_registry`, `read_package_registry`, `write_registry`, `write_package_registry`.",
+			Description: fmt.Sprintf("The scopes of the deploy token. Valid values are: %s", utils.RenderValueListForDocs(api.ValidDeployTokenScopes)),
 			Type:        schema.TypeSet,
 			Required:    true,
 			ForceNew:    true,
 			Elem: &schema.Schema{
-				Type: schema.TypeString,
-				ValidateFunc: validation.StringInSlice(
-					[]string{
-						"read_registry",
-						"read_repository",
-						"read_package_registry",
-						"write_registry",
-						"write_package_registry",
-					}, false),
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice(api.ValidDeployTokenScopes, false),
 			},
 		},
 
