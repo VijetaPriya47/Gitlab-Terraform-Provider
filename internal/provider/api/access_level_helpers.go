@@ -178,3 +178,16 @@ var ValidPersonalAccessTokenScopes = []string{
 	"self_rotate",
 	"read_service_ping",
 }
+
+// Valid scopes for a project/group deploy token
+// See: https://docs.gitlab.com/user/project/deploy_tokens/#scope
+// There aren't separate docs for group tokens currently, these same scopes work for both project/group
+var ValidDeployTokenScopes = []string{
+	"read_repository",
+	"read_registry",
+	"write_registry",
+	"read_virtual_registry",
+	"write_virtual_registry",
+	"read_package_registry",
+	"write_package_registry",
+}
