@@ -8,7 +8,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -97,103 +96,86 @@ func (d *gitlabGlobalLevelNotificationsResource) Schema(_ context.Context, _ res
 				MarkdownDescription: "Enable notifications for new notes on merge requests. Can only be used when `level` is `custom`.",
 				Optional:            true,
 				Computed:            true,
-				PlanModifiers:       []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
 			},
 			"new_issue": schema.BoolAttribute{
 				MarkdownDescription: "Enable notifications for new issues. Can only be used when `level` is `custom`.",
 				Optional:            true,
 				Computed:            true,
-				PlanModifiers:       []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
 			},
 			"reopen_issue": schema.BoolAttribute{
 				MarkdownDescription: "Enable notifications for reopened issues. Can only be used when `level` is `custom`.",
 				Optional:            true,
 				Computed:            true,
-				PlanModifiers:       []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
 			},
 			"close_issue": schema.BoolAttribute{
 				MarkdownDescription: "Enable notifications for closed issues. Can only be used when `level` is `custom`.",
 				Optional:            true,
 				Computed:            true,
-				PlanModifiers:       []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
 			},
 			"reassign_issue": schema.BoolAttribute{
 				MarkdownDescription: "Enable notifications for issue reassignments. Can only be used when `level` is `custom`.",
 				Optional:            true,
 				Computed:            true,
-				PlanModifiers:       []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
 			},
 			"issue_due": schema.BoolAttribute{
 				MarkdownDescription: "Enable notifications for due issues. Can only be used when `level` is `custom`.",
 				Optional:            true,
 				Computed:            true,
-				PlanModifiers:       []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
 			},
 			"new_merge_request": schema.BoolAttribute{
 				MarkdownDescription: "Enable notifications for new merge requests. Can only be used when `level` is `custom`.",
 				Optional:            true,
 				Computed:            true,
-				PlanModifiers:       []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
 			},
 			"push_to_merge_request": schema.BoolAttribute{
 				MarkdownDescription: "Enable notifications for push to merge request branches. Can only be used when `level` is `custom`.",
 				Optional:            true,
 				Computed:            true,
-				PlanModifiers:       []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
 			},
 			"reopen_merge_request": schema.BoolAttribute{
 				MarkdownDescription: "Enable notifications for reopened merge requests. Can only be used when `level` is `custom`.",
 				Optional:            true,
 				Computed:            true,
-				PlanModifiers:       []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
 			},
 			"close_merge_request": schema.BoolAttribute{
 				MarkdownDescription: "Enable notifications for closed merge requests. Can only be used when `level` is `custom`.",
 				Optional:            true,
 				Computed:            true,
-				PlanModifiers:       []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
 			},
 			"reassign_merge_request": schema.BoolAttribute{
 				MarkdownDescription: "Enable notifications for merge request reassignments. Can only be used when `level` is `custom`.",
 				Optional:            true,
 				Computed:            true,
-				PlanModifiers:       []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
 			},
 			"merge_merge_request": schema.BoolAttribute{
 				MarkdownDescription: "Enable notifications for merged merge requests. Can only be used when `level` is `custom`.",
 				Optional:            true,
 				Computed:            true,
-				PlanModifiers:       []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
 			},
 			"failed_pipeline": schema.BoolAttribute{
 				MarkdownDescription: "Enable notifications for failed pipelines. Can only be used when `level` is `custom`.",
 				Optional:            true,
 				Computed:            true,
-				PlanModifiers:       []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
 			},
 			"fixed_pipeline": schema.BoolAttribute{
 				MarkdownDescription: "Enable notifications for fixed pipelines. Can only be used when `level` is `custom`.",
 				Optional:            true,
 				Computed:            true,
-				PlanModifiers:       []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
 			},
 			"success_pipeline": schema.BoolAttribute{
 				MarkdownDescription: "Enable notifications for successful pipelines. Can only be used when `level` is `custom`.",
 				Optional:            true,
 				Computed:            true,
-				PlanModifiers:       []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
 			},
 			"moved_project": schema.BoolAttribute{
 				MarkdownDescription: "Enable notifications for moved projects. Can only be used when `level` is `custom`.",
 				Optional:            true,
 				Computed:            true,
-				PlanModifiers:       []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
 			},
 			"merge_when_pipeline_succeeds": schema.BoolAttribute{
 				MarkdownDescription: "Enable notifications for merged merge requests when the pipeline succeeds. Can only be used when `level` is `custom`.",
 				Optional:            true,
 				Computed:            true,
-				PlanModifiers:       []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
 			},
 		},
 	}

@@ -12,7 +12,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -126,7 +125,6 @@ func groupDeployAccessLevelSchema() schema.SetNestedAttribute {
 				"id": schema.Int64Attribute{
 					MarkdownDescription: "The unique ID of the Deploy Access Level object.",
 					Computed:            true,
-					PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
 				},
 				"access_level": schema.StringAttribute{
 					MarkdownDescription: fmt.Sprintf("Levels of access required to deploy to this protected environment. Mutually exclusive with `user_id` and `group_id`. Valid values are %s.", utils.RenderValueListForDocs(api.ValidProtectedEnvironmentDeploymentLevelNames)),
@@ -157,7 +155,6 @@ func groupDeployAccessLevelSchema() schema.SetNestedAttribute {
 					MarkdownDescription: "Group inheritance allows deploy access levels to take inherited group membership into account. Valid values are `0`, `1`. `0` => Direct group membership only, `1` => All inherited groups. Default: `0`",
 					Optional:            true,
 					Computed:            true,
-					PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
 					Validators: []validator.Int64{
 						int64validator.OneOf([]int64{0, 1}...),
 					},
@@ -173,12 +170,10 @@ func groupApprovalRuleSchema() schema.SetNestedAttribute {
 		Optional:            true,
 		Computed:            true,
 		NestedObject: schema.NestedAttributeObject{
-			PlanModifiers: []planmodifier.Object{objectplanmodifier.UseStateForUnknown()},
 			Attributes: map[string]schema.Attribute{
 				"id": schema.Int64Attribute{
 					MarkdownDescription: "The unique ID of the Approval Rules object.",
 					Computed:            true,
-					PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
 				},
 				"access_level": schema.StringAttribute{
 					MarkdownDescription: fmt.Sprintf("Levels of access allowed to approve a deployment to this protected environment. Mutually exclusive with `user_id` and `group_id`. Valid values are %s.", utils.RenderValueListForDocs(api.ValidProtectedEnvironmentDeploymentLevelNames)),
@@ -191,7 +186,6 @@ func groupApprovalRuleSchema() schema.SetNestedAttribute {
 				"access_level_description": schema.StringAttribute{
 					MarkdownDescription: "Readable description of level of access.",
 					Computed:            true,
-					PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 				},
 				"user_id": schema.Int64Attribute{
 					MarkdownDescription: "The ID of the user allowed to approve a deployment to this protected environment. The user must be a member of the group with Maintainer role or higher. Mutually exclusive with `access_level` and `group_id`.",
@@ -209,14 +203,12 @@ func groupApprovalRuleSchema() schema.SetNestedAttribute {
 					MarkdownDescription: "The number of approval required to allow deployment to this protected environment. This is mutually exclusive with user_id.",
 					Optional:            true,
 					Computed:            true,
-					PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
 					Validators:          []validator.Int64{int64validator.AtLeast(1)},
 				},
 				"group_inheritance_type": schema.Int64Attribute{
 					MarkdownDescription: "Group inheritance allows access rules to take inherited group membership into account. Valid values are `0`, `1`. `0` => Direct group membership only, `1` => All inherited groups. Default: `0`",
 					Optional:            true,
 					Computed:            true,
-					PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
 					Validators: []validator.Int64{
 						int64validator.OneOf([]int64{0, 1}...),
 					},
