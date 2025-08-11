@@ -10,8 +10,11 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/tfversion"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
+	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil/framework"
 )
 
 func TestAccGitlabGroupDependencyProxy_basic(t *testing.T) {
@@ -110,6 +113,66 @@ func TestAccGitlabGroupDependencyProxy_validation(t *testing.T) {
 					identity  = "someidentity"
 				}`,
 				ExpectError: regexp.MustCompile("Secret must be set when proxy is enabled"),
+			},
+		},
+	})
+}
+
+// An explicit tests for the block-style import instead of CLI import (which is tested
+// in other tests with the `ImportState` commands). The block import causes replacement
+// issues if run in the same apply as other actions, since changing "Group" post-plan
+// forces a replace.
+// see https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2607
+// nolint - "import" is fine in the test name.
+func TestAccGitlabGroupDependencyProxy_import(t *testing.T) {
+
+	group := testutil.CreateGroups(t, 1)[0]
+	graphQLcall := fmt.Sprintf(`
+mutation {
+  updateDependencyProxySettings(input: {
+    groupPath: "%s",
+    enabled: false,
+	identity: "someidentity",
+	secret: "somesecret"
+  }){
+   errors
+   dependencyProxySetting{
+      enabled,
+      identity
+   }
+  }
+}`, group.FullPath)
+
+	// Make the GraphQL call
+	var response *updateGroupDependencyProxyGraphQLResponse
+	_, err := testutil.TestGitlabClient.GraphQL.Do(gitlab.GraphQLQuery{Query: graphQLcall}, &response)
+	if err != nil {
+		t.Fatalf("Failed to create initial Dependency Proxy settings via GraphQL: %v", err)
+	}
+
+	// Run the test with TF version 1.6.0 to ensure the `import` block is
+	// supported
+	framework.RunTestWithVersion(t, "1.6.0", resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
+			tfversion.RequireAbove(tfversion.Version1_6_0),
+		},
+		CheckDestroy: testAccCheckGitlabGroupDependencyProxyDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+				import {
+					to = gitlab_group_dependency_proxy.this
+				    id = "%[1]d"
+				}
+
+				resource "gitlab_group_dependency_proxy" "this" {
+					group    = "%[1]d"
+
+					enabled  = true
+					identity = "someidentity"
+					secret   = "somesecret"
+				}`, group.ID),
 			},
 		},
 	})
