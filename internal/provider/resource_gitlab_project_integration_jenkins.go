@@ -165,7 +165,7 @@ func (r *gitlabProjectIntegrationJenkinsResource) Read(ctx context.Context, req 
 
 	projectID := data.ID.ValueString()
 
-	jenkins, _, err := r.client.Services.GetJenkinsCIService(projectID)
+	jenkins, _, err := r.client.Services.GetJenkinsCIService(projectID, gitlab.WithContext(ctx))
 	if err != nil {
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to read gitlab jenkins integration: %s", err.Error()))
 		return
@@ -189,7 +189,7 @@ func (r *gitlabProjectIntegrationJenkinsResource) Delete(ctx context.Context, re
 		return
 	}
 
-	_, err := r.client.Services.DeleteJenkinsCIService(data.Project.ValueString())
+	_, err := r.client.Services.DeleteJenkinsCIService(data.Project.ValueString(), gitlab.WithContext(ctx))
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"GitLab API Error occurred",
@@ -227,12 +227,12 @@ func (r *gitlabProjectIntegrationJenkinsResource) update(ctx context.Context, pl
 
 	projectID := data.Project.ValueString()
 
-	_, _, err := r.client.Services.SetJenkinsCIService(projectID, options)
+	_, _, err := r.client.Services.SetJenkinsCIService(projectID, options, gitlab.WithContext(ctx))
 	if err != nil {
 		return err
 	}
 
-	jenkins, _, err := r.client.Services.GetJenkinsCIService(projectID)
+	jenkins, _, err := r.client.Services.GetJenkinsCIService(projectID, gitlab.WithContext(ctx))
 	if err != nil {
 		return err
 	}

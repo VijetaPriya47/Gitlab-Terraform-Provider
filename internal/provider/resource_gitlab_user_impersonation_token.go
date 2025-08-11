@@ -226,7 +226,7 @@ func (r *gitlabUserImpersonationTokenResource) Create(ctx context.Context, req r
 	}
 
 	userID := data.UserID.ValueInt64()
-	token, _, err := r.client.Users.CreateImpersonationToken(int(userID), options)
+	token, _, err := r.client.Users.CreateImpersonationToken(int(userID), options, gitlab.WithContext(ctx))
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error creating GitLab User Impersonation Token",
@@ -263,7 +263,7 @@ func (r *gitlabUserImpersonationTokenResource) Read(ctx context.Context, req res
 	}
 
 	// Read the user impersonation token from the API
-	token, _, err := r.client.Users.GetImpersonationToken(*userID, *tokenID)
+	token, _, err := r.client.Users.GetImpersonationToken(*userID, *tokenID, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
 			// The user impersonation token doesn't exist anymore; remove it.

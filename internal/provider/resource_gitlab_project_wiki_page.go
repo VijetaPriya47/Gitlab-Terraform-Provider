@@ -56,7 +56,7 @@ type gitlabWikiPageResourceModel struct {
 // Schema defines the structure of the resource.
 func (r *gitlabWikiPageResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	// Valid values for the schema
-	var validFormats = []string{"markdown", "rdoc", "asciidoc", "org"}
+	validFormats := []string{"markdown", "rdoc", "asciidoc", "org"}
 
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_project_wiki_page`" + ` resource allows managing the lifecycle of a project wiki page.
@@ -211,7 +211,7 @@ func (r *gitlabWikiPageResource) Update(ctx context.Context, req resource.Update
 		Content: gitlab.Ptr(data.Content.ValueString()),
 	}
 
-	_, _, err := r.client.Wikis.EditWikiPage(projectID, data.Slug.ValueString(), options)
+	_, _, err := r.client.Wikis.EditWikiPage(projectID, data.Slug.ValueString(), options, gitlab.WithContext(ctx))
 	if err != nil {
 		resp.Diagnostics.AddError("GitLab API Error", fmt.Sprintf("Failed to update wiki page: %s", err.Error()))
 		return
@@ -230,7 +230,7 @@ func (r *gitlabWikiPageResource) Delete(ctx context.Context, req resource.Delete
 	}
 
 	projectID := data.Project.ValueString()
-	_, err := r.client.Wikis.DeleteWikiPage(projectID, data.Slug.ValueString())
+	_, err := r.client.Wikis.DeleteWikiPage(projectID, data.Slug.ValueString(), gitlab.WithContext(ctx))
 	if err != nil {
 		resp.Diagnostics.AddError("GitLab API Error", fmt.Sprintf("Failed to delete wiki page: %s", err.Error()))
 		return

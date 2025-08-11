@@ -221,7 +221,7 @@ func (r *gitlabGroupServiceAccountResource) Delete(ctx context.Context, req reso
 		return
 	}
 
-	if _, err = r.client.Groups.DeleteServiceAccount(group, serviceAccountIDInt, nil); err != nil {
+	if _, err = r.client.Groups.DeleteServiceAccount(group, serviceAccountIDInt, nil, gitlab.WithContext(ctx)); err != nil {
 		resp.Diagnostics.AddError(
 			"GitLab API Error occurred",
 			fmt.Sprintf("Unable to delete service account: %s", err.Error()),

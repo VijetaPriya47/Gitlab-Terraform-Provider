@@ -61,8 +61,10 @@ type gitlabApplicationResourceModel struct {
 }
 
 func (r *gitlabApplicationResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-	allowedScopes := []string{"api", "read_api", "read_user", "read_repository", "write_repository", "read_registry",
-		"write_registry", "sudo", "admin_mode", "openid", "profile", "email"}
+	allowedScopes := []string{
+		"api", "read_api", "read_user", "read_repository", "write_repository", "read_registry",
+		"write_registry", "sudo", "admin_mode", "openid", "profile", "email",
+	}
 	resp.Schema = schema.Schema{
 		MarkdownDescription: fmt.Sprintf(`The ` + "`gitlab_application`" + ` resource allows to manage the lifecycle of applications in gitlab.
 
@@ -163,7 +165,7 @@ func (r *gitlabApplicationResource) Create(ctx context.Context, req resource.Cre
 	}
 
 	// Create application
-	application, _, err := r.client.Applications.CreateApplication(options)
+	application, _, err := r.client.Applications.CreateApplication(options, gitlab.WithContext(ctx))
 	if err != nil {
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to create application: %s", err.Error()))
 		return
@@ -225,7 +227,6 @@ func (r *gitlabApplicationResource) Delete(ctx context.Context, req resource.Del
 	}
 
 	id, err := strconv.Atoi(data.Id.ValueString())
-
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Internal provider error",
@@ -234,7 +235,7 @@ func (r *gitlabApplicationResource) Delete(ctx context.Context, req resource.Del
 		return
 	}
 
-	if _, err = r.client.Applications.DeleteApplication(id); err != nil {
+	if _, err = r.client.Applications.DeleteApplication(id, gitlab.WithContext(ctx)); err != nil {
 		resp.Diagnostics.AddError(
 			"GitLab API Error occurred",
 			fmt.Sprintf("Unable to delete application: %s", err.Error()),
@@ -261,7 +262,6 @@ func (r *gitlabApplicationResource) applicationModelToState(application *gitlab.
 }
 
 func findGitlabApplication(client *gitlab.Client, desiredId string) (*gitlab.Application, error) {
-
 	options := gitlab.ListApplicationsOptions{
 		PerPage: 20,
 		Page:    1,
