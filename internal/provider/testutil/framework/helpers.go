@@ -28,3 +28,16 @@ func TestCheckResourceAttrSetIfGitLabAtLeast(t *testing.T, requiredMinVersion, n
 }
 
 func NopTestCheckFunc(*terraform.State) error { return nil }
+
+// This helper function sets the `TF_ACC_TERRAFORM_VERSION` env variable
+// that tells the test framework to run the test with a specific Terraform
+// version. It uses a cleanup function to unset it when the test finishes.
+// It accepts a TestCase to ensure that the test doesn't run with Parallel
+// to prevent polluting other tests
+func RunTestWithVersion(t *testing.T, version string, testcase resource.TestCase) {
+	t.Helper()
+
+	t.Setenv("TF_ACC_TERRAFORM_VERSION", version)
+
+	resource.Test(t, testcase)
+}

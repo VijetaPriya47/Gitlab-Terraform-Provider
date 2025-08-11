@@ -142,7 +142,13 @@ If you're looking to manage the project-level package dependency proxy, see the 
 
 // ImportState imports the resource into the Terraform state.
 func (r *gitlabGroupDependencyProxyResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	// Use the framework helper to set the ID field properly
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+
+	// Set the group field to the same value as ID to prevent replacement during import
+	// This is necessary because the group field has RequiresReplace and must match
+	// the configuration to avoid forcing a replacement during import blocks
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("group"), req.ID)...)
 }
 
 // Creates the resource, which actually performs an "update" mutation since it's updating a setting on a group
