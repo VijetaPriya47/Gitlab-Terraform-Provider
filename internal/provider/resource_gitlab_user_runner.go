@@ -68,8 +68,8 @@ type gitlabUserRunnerModel struct {
 
 func (d *gitlabUserRunnerResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	// Valid values for the schema:
-	var validRunnerTypes = []string{"instance_type", "group_type", "project_type"}
-	var validAccessLevels = []string{"not_protected", "ref_protected"}
+	validRunnerTypes := []string{"instance_type", "group_type", "project_type"}
+	validAccessLevels := []string{"not_protected", "ref_protected"}
 
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_user_runner`" + ` resource allows creating a GitLab runner using the new [GitLab Runner Registration Flow](https://docs.gitlab.com/ci/runners/new_creation_workflow/).
@@ -259,7 +259,7 @@ func (r *gitlabUserRunnerResource) Create(ctx context.Context, req resource.Crea
 	tflog.Debug(ctx, "Creating new GitLab Runner", map[string]any{
 		"options": options,
 	})
-	userRunner, _, err := r.client.Users.CreateUserRunner(options)
+	userRunner, _, err := r.client.Users.CreateUserRunner(options, gitlab.WithContext(ctx))
 	if err != nil {
 		resp.Diagnostics.Append(diag.NewErrorDiagnostic("Error creating new GitLab Runner", fmt.Sprintf("couldn't create new GitLab Runner: %v", err)))
 		return
@@ -276,7 +276,7 @@ func (r *gitlabUserRunnerResource) Create(ctx context.Context, req resource.Crea
 
 	// call "getRunner" so we get a Runner Details model from our user runner response. This
 	// is required because the userRunner response doesn't have all the attribute values, it only has the ID and token info.
-	runner, _, err := r.client.Runners.GetRunnerDetails(userRunner.ID)
+	runner, _, err := r.client.Runners.GetRunnerDetails(userRunner.ID, gitlab.WithContext(ctx))
 	if err != nil {
 		resp.Diagnostics.Append(diag.NewErrorDiagnostic("Error reading new GitLab runner after creation", fmt.Sprintf("Error reading new GitLab runner after creation: %v", err)))
 		return
@@ -294,7 +294,7 @@ func (r *gitlabUserRunnerResource) Read(ctx context.Context, req resource.ReadRe
 	}
 	runnerId := data.ID.ValueString()
 
-	runner, _, err := r.client.Runners.GetRunnerDetails(runnerId)
+	runner, _, err := r.client.Runners.GetRunnerDetails(runnerId, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
 			tflog.Debug(ctx, "[DEBUG] gitlab runner not found", map[string]any{
@@ -357,7 +357,7 @@ func (r *gitlabUserRunnerResource) Update(ctx context.Context, req resource.Upda
 		"runnerId": runnerId,
 		"options":  options,
 	})
-	runner, _, err := r.client.Runners.UpdateRunnerDetails(runnerId, options)
+	runner, _, err := r.client.Runners.UpdateRunnerDetails(runnerId, options, gitlab.WithContext(ctx))
 	if err != nil {
 		resp.Diagnostics.Append(diag.NewErrorDiagnostic("Error updating GitLab runner", fmt.Sprintf("Error updating GitLab runner %s: %v", runnerId, err)))
 		return
@@ -389,7 +389,7 @@ func (r *gitlabUserRunnerResource) Delete(ctx context.Context, req resource.Dele
 	tflog.Debug(ctx, "Deleting GitLab Runner by ID", map[string]any{
 		"runnerId": runnerId,
 	})
-	if _, err = r.client.Runners.DeleteRegisteredRunnerByID(runnerId); err != nil {
+	if _, err = r.client.Runners.DeleteRegisteredRunnerByID(runnerId, gitlab.WithContext(ctx)); err != nil {
 		resp.Diagnostics.AddError(
 			"GitLab API Error occurred",
 			fmt.Sprintf("Unable to delete runner: %s", err.Error()),

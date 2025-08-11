@@ -245,7 +245,7 @@ func (r *gitlabProjectIntegrationRedmineResource) updateRedmineService(ctx conte
 		return err
 	}
 
-	redmineService, _, err := r.client.Services.GetRedmineService(projectId)
+	redmineService, _, err := r.client.Services.GetRedmineService(projectId, gitlab.WithContext(ctx))
 	if err != nil {
 		return err
 	}

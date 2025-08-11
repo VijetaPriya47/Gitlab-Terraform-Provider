@@ -159,7 +159,7 @@ func (r *gitlabProjectJobTokenScopesResource) ModifyPlan(ctx context.Context, re
 
 	// Determine if `enforce_ci_inbound_job_token_scope_enabled` is set to true; if so, we cannot set `enabled` to false, and an attribute
 	// error must be thrown if that's the value in the config.
-	settings, _, err := r.client.Settings.GetSettings(nil)
+	settings, _, err := r.client.Settings.GetSettings(nil, gitlab.WithContext(ctx))
 	if err != nil {
 		// since we don't know if the attribute is set to `true` or not, we need to skip this check. We'll log a warning instead.
 		tflog.Warn(ctx, "failed to retrieve settings; skipping `enforce_ci_inbound_job_token_scope_enabled` validation. Proceeding with plan assuming the user knows they can configure it properly.", map[string]interface{}{
@@ -174,7 +174,6 @@ func (r *gitlabProjectJobTokenScopesResource) ModifyPlan(ctx context.Context, re
 			"`enabled` may not be set to false when the setting for `enforce_ci_inbound_job_token_scope_enabled` is set to true.",
 			"Job Token Scope enforcement must be enabled on this GitLab instance due to application settings. Talk to a system administrator if you believe this error is inaccurate.")
 	}
-
 }
 
 // Create a new upstream resources and adds it into the Terraform state.
@@ -305,7 +304,7 @@ func (r *gitlabProjectJobTokenScopesResource) setProjectCIJobScopes(ctx context.
 		return diags
 	}
 
-	_, err := r.client.JobTokenScope.PatchProjectJobTokenAccessSettings(project, &gitlab.PatchProjectJobTokenAccessSettingsOptions{Enabled: data.Enabled.ValueBool()})
+	_, err := r.client.JobTokenScope.PatchProjectJobTokenAccessSettings(project, &gitlab.PatchProjectJobTokenAccessSettingsOptions{Enabled: data.Enabled.ValueBool()}, gitlab.WithContext(ctx))
 	if err != nil {
 		return diag.NewErrorDiagnostic(
 			fmt.Sprintf("GitLab API error occured when setting the jobtoken allowlist enabled flag in project %s", project),
@@ -492,7 +491,7 @@ func (r *gitlabProjectJobTokenScopesResource) getProjectCIJobScopesGroups(ctx co
 
 // Retrieves a comprehensive list of CI project scope targets
 func (r *gitlabProjectJobTokenScopesResource) readIntoState(ctx context.Context, project string, data *gitlabProjectJobTokenScopesResourceModel) diag.Diagnostic {
-	settings, _, err := r.client.JobTokenScope.GetProjectJobTokenAccessSettings(project)
+	settings, _, err := r.client.JobTokenScope.GetProjectJobTokenAccessSettings(project, gitlab.WithContext(ctx))
 	if err != nil {
 		return diag.NewErrorDiagnostic("Error reading project job token access settings", err.Error())
 	}

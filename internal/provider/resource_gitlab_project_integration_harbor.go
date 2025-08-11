@@ -142,7 +142,7 @@ func (r *gitlabProjectIntegrationHarborResource) Create(ctx context.Context, req
 		"harbor_url":          data.URL.ValueString(),
 		"harbor_project_name": data.ProjectName.ValueString(),
 	})
-	err := r.updateIntegration(&data)
+	err := r.updateIntegration(ctx, &data)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to create Harbor integration", err.Error())
 		return
@@ -160,7 +160,7 @@ func (r *gitlabProjectIntegrationHarborResource) Read(ctx context.Context, req r
 
 	projectID := data.ID.ValueString()
 
-	harbor, _, err := r.client.Services.GetHarborService(projectID)
+	harbor, _, err := r.client.Services.GetHarborService(projectID, gitlab.WithContext(ctx))
 	if err != nil {
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to read gitlab harbor integration: %s", err.Error()))
 		return
@@ -182,7 +182,7 @@ func (r *gitlabProjectIntegrationHarborResource) Update(ctx context.Context, req
 		"harbor_url":          data.URL.ValueString(),
 		"harbor_project_name": data.ProjectName.ValueString(),
 	})
-	err := r.updateIntegration(&data)
+	err := r.updateIntegration(ctx, &data)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to update Harbor integration", err.Error())
 		return
@@ -198,7 +198,7 @@ func (r *gitlabProjectIntegrationHarborResource) Delete(ctx context.Context, req
 		return
 	}
 
-	_, err := r.client.Services.DeleteHarborService(data.Project.ValueString())
+	_, err := r.client.Services.DeleteHarborService(data.Project.ValueString(), gitlab.WithContext(ctx))
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"GitLab API Error occurred",
@@ -215,7 +215,7 @@ func (r *gitlabProjectIntegrationHarborResource) ImportState(ctx context.Context
 // updateIntegration performs the API call and update the `data` object with the results
 // of the API call. The calling function should ensure that `state.Set` is called on the data
 // object to set the values into state.
-func (r *gitlabProjectIntegrationHarborResource) updateIntegration(data *gitlabProjectIntegrationHarborResourceModel) error {
+func (r *gitlabProjectIntegrationHarborResource) updateIntegration(ctx context.Context, data *gitlabProjectIntegrationHarborResourceModel) error {
 	options := &gitlab.SetHarborServiceOptions{
 		URL:                  data.URL.ValueStringPointer(),
 		ProjectName:          data.ProjectName.ValueStringPointer(),
@@ -224,7 +224,7 @@ func (r *gitlabProjectIntegrationHarborResource) updateIntegration(data *gitlabP
 		UseInheritedSettings: data.UseInheritedSettings.ValueBoolPointer(),
 	}
 
-	updatedHarbor, _, err := r.client.Services.SetHarborService(data.Project.ValueString(), options)
+	updatedHarbor, _, err := r.client.Services.SetHarborService(data.Project.ValueString(), options, gitlab.WithContext(ctx))
 	if err != nil {
 		return err
 	}
