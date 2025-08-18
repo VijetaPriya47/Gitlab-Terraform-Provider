@@ -16,7 +16,7 @@ require (
 	github.com/hashicorp/terraform-plugin-testing v1.13.3
 	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/onsi/gomega v1.38.0
-	gitlab.com/gitlab-org/api/client-go v0.139.2
+	gitlab.com/gitlab-org/api/client-go v0.140.0
 	golang.org/x/oauth2 v0.30.0
 )
 
