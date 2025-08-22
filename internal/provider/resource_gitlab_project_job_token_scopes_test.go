@@ -165,50 +165,7 @@ func TestAcc_GitlabProjectJobTokenScopes_basic(t *testing.T) {
 	})
 }
 
-func TestAcc_GitlabProjectJobTokenScopes_destroyRestoresEnabledFlagToTrue(t *testing.T) {
-	testutil.RunIfLessThan(t, "18.0")
-
-	// Set up project environment.
-	project := testutil.CreateProject(t)
-
-	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		CheckDestroy:             testAcc_GitlabProjectJobTokenScopes_CheckDestroy,
-		Steps: []resource.TestStep{
-			// Create a basic CI/CD job token scope array allowing all projects.
-			{
-				Config: fmt.Sprintf(`
-				resource "gitlab_project_job_token_scopes" "this" {
-					project = %d
-					enabled = false
-				}`, project.ID),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "id", strconv.Itoa(project.ID)),
-					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "project", strconv.Itoa(project.ID)),
-					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "project_id", strconv.Itoa(project.ID)),
-					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "enabled", "false"),
-				),
-			},
-			{
-				ResourceName:      "gitlab_project_job_token_scopes.this",
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
-			{
-				Config: fmt.Sprintf(`
-				resource "gitlab_project_job_token_scopes" "this" {
-					project = %d
-					enabled = false
-				}`, project.ID),
-				Destroy: true,
-			},
-		},
-	})
-}
-
 func TestAcc_GitlabProjectJobTokenScopes_destroyRevertsToApplicationSettings(t *testing.T) {
-	testutil.RunIfAtLeast(t, "18.0")
-
 	// Set the application settings to `false` to ensure we revert `enabled` to false.
 	// changing application settings means this can't be a parallel test.
 	_, _, err := testutil.TestGitlabClient.Settings.UpdateSettings(&gitlab.UpdateSettingsOptions{
@@ -267,8 +224,6 @@ func TestAcc_GitlabProjectJobTokenScopes_destroyRevertsToApplicationSettings(t *
 }
 
 func TestAcc_GitlabProjectJobTokenScopes_testEnabledValidation(t *testing.T) {
-	testutil.RunIfAtLeast(t, "18.0")
-
 	// Set up project environment.
 	project := testutil.CreateProject(t)
 

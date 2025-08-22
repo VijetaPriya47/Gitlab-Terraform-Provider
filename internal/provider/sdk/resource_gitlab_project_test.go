@@ -3399,7 +3399,6 @@ func TestAccGitlabProject_CIDeletePipelinesInSeconds(t *testing.T) {
 }
 
 func TestAccGitlabProject_DuoCodeReviewEnabled(t *testing.T) {
-	testutil.RunIfAtLeast(t, "18.0")
 	testutil.SkipIfCE(t)
 
 	// Currently, activating Duo in a self-hosted setup requires a synchronized subscription,
