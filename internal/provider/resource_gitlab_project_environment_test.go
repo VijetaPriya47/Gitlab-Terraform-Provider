@@ -1,7 +1,7 @@
 //go:build acceptance
 // +build acceptance
 
-package sdk
+package provider
 
 import (
 	"fmt"
@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
@@ -34,7 +34,7 @@ func TestAccGitlabProjectEnvironment_basic(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabProjectEnvironmentDestroy,
 		Steps: []resource.TestStep{
 			// Create an Environment with default options
@@ -152,7 +152,7 @@ func TestAccGitlabProjectEnvironment_stopBeforeDestroyDisabled(t *testing.T) {
 	testProject := testutil.CreateProject(t)
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabProjectEnvironmentDestroy,
 		Steps: []resource.TestStep{
 			// Create environment with `stop_before_destroy = false`
@@ -203,7 +203,7 @@ func TestAccGitlabProjectEnvironment_ClusterAgent(t *testing.T) {
 	testutil.SetupUserAccess(t, testProject, testAgent2)
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabProjectEnvironmentDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -313,7 +313,7 @@ func TestAccGitlabProjectEnvironment_AutoStopSetting(t *testing.T) {
 	testProject := testutil.CreateProject(t)
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabProjectEnvironmentDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -349,6 +349,58 @@ func TestAccGitlabProjectEnvironment_AutoStopSetting(t *testing.T) {
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"stop_before_destroy"},
+			},
+		},
+	})
+}
+
+func TestAccGitlabProjectEnvironment_migrateFromSDKToFramework(t *testing.T) {
+	rInt := acctest.RandInt()
+	testProject := testutil.CreateProject(t)
+
+	resource.ParallelTest(t, resource.TestCase{
+		CheckDestroy: testAccCheckGitlabProjectEnvironmentDestroy,
+		Steps: []resource.TestStep{
+			// Create the environment in the old provider version
+			{
+				ExternalProviders: map[string]resource.ExternalProvider{
+					"gitlab": {
+						VersionConstraint: "~> 18.2",
+						Source:            "gitlabhq/gitlab",
+					},
+				},
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_environment" "this" {
+						project     = %d
+						name        = "ProjectEnvironment-%d"
+						description = "A test project"	
+					
+						stop_before_destroy = true
+					}
+				`, testProject.ID, rInt),
+				Check: resource.TestCheckResourceAttrSet("gitlab_project_environment.this", "id"),
+			},
+			// Create the config in the new provider version to ensure migration works
+			{
+				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_environment" "this" {
+						project     = %d
+						name        = "ProjectEnvironment-%d"
+						description = "A test project"	
+					
+						stop_before_destroy = true
+					}
+				`, testProject.ID, rInt),
+				Check: resource.TestCheckResourceAttrSet("gitlab_project_environment.this", "id"),
+			},
+			// Verify upstream attributes with an import
+			{
+				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+				ResourceName:             "gitlab_project_environment.this",
+				ImportState:              true,
+				ImportStateVerify:        true,
+				ImportStateVerifyIgnore:  []string{"stop_before_destroy"},
 			},
 		},
 	})
