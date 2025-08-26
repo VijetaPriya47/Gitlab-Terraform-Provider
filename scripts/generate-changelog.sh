@@ -62,7 +62,7 @@ output=$(curl \
     "source_branch": "'$release_branch'",
     "target_branch": "'$default_branch'",
     "title": "Release '$VERSION'",
-    "description": "Please review the automatically generated changelog.\n/assign @timofurrer @patrickricee\n/assign_reviewer @timofurrer @patrickrice",
+    "description": "Please review the automatically generated changelog.\n/assign @timofurrer @patrickrice @heidi.berry\n/assign_reviewer @timofurrer @patrickrice @heidi.berry",
     "labels": "group::environments, maintenance::release"
   }'
 )
