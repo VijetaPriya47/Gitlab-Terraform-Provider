@@ -14,8 +14,8 @@ There was an issue identified within the nightly acceptance test run, please inv
 
 <!-- Feel free to add yourself to the list below if you want to be pinged on new issues. -->
 
-/cc @timofurrer @PatrickRice 
+/cc @timofurrer @PatrickRice @heidi.berry
 
- ## Relevant Pipeline
+## Relevant Pipeline
 
 REPLACE_ME
