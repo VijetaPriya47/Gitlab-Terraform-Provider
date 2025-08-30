@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -13,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
+	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
 
@@ -226,6 +228,32 @@ func (r *gitlabGroupServiceAccountResource) Delete(ctx context.Context, req reso
 			"GitLab API Error occurred",
 			fmt.Sprintf("Unable to delete service account: %s", err.Error()),
 		)
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
+	defer cancel()
+	ticker := time.NewTicker(10 * time.Second)
+	defer ticker.Stop()
+	done := ctx.Done()
+
+	for {
+		select {
+		case <-done:
+			resp.Diagnostics.AddError(
+				"GitLab API Error occurred",
+				"Timed out waiting for group service account deletion to complete",
+			)
+			return
+		case <-ticker.C:
+			_, _, err := r.client.Users.GetUser(serviceAccountIDInt, gitlab.GetUsersOptions{}, gitlab.WithContext(ctx))
+			if api.Is404(err) {
+				return
+			}
+
+			if err != nil {
+				tflog.Warn(ctx, fmt.Sprintf("Error checking group service account deletion status: %s", err.Error()))
+			}
+		}
 	}
 }
 
