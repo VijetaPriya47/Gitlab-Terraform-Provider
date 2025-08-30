@@ -1,26 +1,24 @@
 //go:build acceptance
 // +build acceptance
 
-package sdk
+package provider
 
 import (
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"gitlab.com/gitlab-org/api/client-go"
-
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
 func TestAccDataSourceGitlabCurrentUser_basic(t *testing.T) {
-
 	// Get the user so we can get the verified email that's randomly generated for them
 	user, _, err := testutil.TestGitlabClient.Users.GetUser(1, gitlab.GetUsersOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	//The root user has no public email by default, set the public email so it shows up properly.
+	// The root user has no public email by default, set the public email so it shows up properly.
 	_, _, err = testutil.TestGitlabClient.Users.ModifyUser(1, &gitlab.ModifyUserOptions{
 		// The public email MUST match an email on record for the user, or it gets a bad request.
 		PrivateProfile: gitlab.Ptr(false),
@@ -31,7 +29,7 @@ func TestAccDataSourceGitlabCurrentUser_basic(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: `data "gitlab_current_user" "this" {}`,
