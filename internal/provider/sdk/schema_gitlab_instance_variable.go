@@ -5,11 +5,14 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
 
 func gitlabInstanceVariableGetSchema() map[string]*schema.Schema {
+	// Remove when migrated to framework plugin
+	gitlabVariableTypeValues := []string{"env_var", "file"}
+
 	return map[string]*schema.Schema{
 		"key": {
 			Description:  "The name of the variable.",

@@ -41,6 +41,9 @@ var _ = registerResource("gitlab_pipeline_schedule_variable", func() *schema.Res
 })
 
 func gitlabPipelineScheduleVariableSchema() map[string]*schema.Schema {
+	// Remove when migrated to framework plugin
+	gitlabVariableTypeValues := []string{"env_var", "file"}
+
 	return map[string]*schema.Schema{
 		"project": {
 			Description: "The id of the project to add the schedule to.",
