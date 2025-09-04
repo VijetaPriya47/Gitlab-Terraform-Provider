@@ -432,9 +432,9 @@ func (r *gitlabProjectVariableResource) getProjectVariableSchema() *schema.Schem
 				Computed:            true,
 			},
 			"description": schema.StringAttribute{
-				Description: "The description of the variable.",
-				Optional:    true,
-				Computed:    true,
+				MarkdownDescription: "The description of the variable.",
+				Optional:            true,
+				Computed:            true,
 			},
 		},
 	}

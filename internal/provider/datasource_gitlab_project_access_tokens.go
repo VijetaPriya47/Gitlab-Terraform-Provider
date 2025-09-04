@@ -91,8 +91,8 @@ func (d *gitlabProjectAccessTokensDataSource) Schema(_ context.Context, _ dataso
 				Validators:          []validator.String{stringvalidator.OneOf(allowedStateValues...)},
 			},
 			"access_tokens": schema.ListAttribute{
-				Description: "The list of access tokens returned by the search",
-				Computed:    true,
+				MarkdownDescription: "The list of access tokens returned by the search",
+				Computed:            true,
 				ElementType: types.ObjectType{
 					AttrTypes: projectAccessTokenDataAttributes(),
 				},
@@ -113,7 +113,6 @@ func (d *gitlabProjectAccessTokensDataSource) Configure(_ context.Context, req d
 
 // Read refreshes the Terraform state with the latest data.
 func (d *gitlabProjectAccessTokensDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-
 	var config gitlabProjectAccessTokensDataSourceModel
 
 	// Read Terraform plan data into the model

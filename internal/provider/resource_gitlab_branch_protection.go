@@ -189,16 +189,16 @@ func schemaAllowedToBlock(action string, validValues []string) schema.Block {
 					},
 				},
 				"access_level_description": schema.StringAttribute{
-					Description: "Readable description of access level.",
-					Computed:    true,
+					MarkdownDescription: "Readable description of access level.",
+					Computed:            true,
 				},
 				"user_id": schema.Int64Attribute{
-					Description: "The ID of a GitLab user allowed to perform the relevant action. Mutually exclusive with `group_id`.",
-					Optional:    true,
+					MarkdownDescription: "The ID of a GitLab user allowed to perform the relevant action. Mutually exclusive with `group_id`.",
+					Optional:            true,
 				},
 				"group_id": schema.Int64Attribute{
-					Description: "The ID of a GitLab group allowed to perform the relevant action. Mutually exclusive with `user_id`.",
-					Optional:    true,
+					MarkdownDescription: "The ID of a GitLab group allowed to perform the relevant action. Mutually exclusive with `user_id`.",
+					Optional:            true,
 				},
 			},
 		},
@@ -224,20 +224,20 @@ func schemaAllowedToPushBlock(validValues []string) schema.Block {
 					},
 				},
 				"access_level_description": schema.StringAttribute{
-					Description: "Readable description of access level.",
-					Computed:    true,
+					MarkdownDescription: "Readable description of access level.",
+					Computed:            true,
 				},
 				"user_id": schema.Int64Attribute{
-					Description: "The ID of a GitLab user allowed to perform the relevant action. Mutually exclusive with `deploy_key_id` and `group_id`.",
-					Optional:    true,
+					MarkdownDescription: "The ID of a GitLab user allowed to perform the relevant action. Mutually exclusive with `deploy_key_id` and `group_id`.",
+					Optional:            true,
 				},
 				"group_id": schema.Int64Attribute{
-					Description: "The ID of a GitLab group allowed to perform the relevant action. Mutually exclusive with `deploy_key_id` and `user_id`.",
-					Optional:    true,
+					MarkdownDescription: "The ID of a GitLab group allowed to perform the relevant action. Mutually exclusive with `deploy_key_id` and `user_id`.",
+					Optional:            true,
 				},
 				"deploy_key_id": schema.Int64Attribute{
-					Description: "The ID of a GitLab deploy key allowed to perform the relevant action. Mutually exclusive with `group_id` and `user_id`. This field is read-only until Gitlab 17.5.",
-					Optional:    true,
+					MarkdownDescription: "The ID of a GitLab deploy key allowed to perform the relevant action. Mutually exclusive with `group_id` and `user_id`. This field is read-only until Gitlab 17.5.",
+					Optional:            true,
 				},
 			},
 		},
@@ -619,7 +619,7 @@ func generateAllowedToStateToAccessLevels(currentAllowedTos []*gitlab.BranchAcce
 	}
 
 	finalAllowedTo := []*gitlab.BranchPermissionOptions{}
-	//detect entities to be created
+	// detect entities to be created
 	for _, plannedAllowedTo := range plannedAllowedTos {
 		var allowedToBranchPermissionOptionData *gitlab.BranchPermissionOptions = populateBranchPermissionOptionsData(validCurrentAllowedTos, plannedAllowedTo)
 		if allowedToBranchPermissionOptionData != nil {
@@ -627,7 +627,7 @@ func generateAllowedToStateToAccessLevels(currentAllowedTos []*gitlab.BranchAcce
 		}
 	}
 
-	//detect entities to be removed
+	// detect entities to be removed
 	for _, validCurrentAllowedTo := range validCurrentAllowedTos {
 		requireRemoval := true
 		for _, plannedAllowedTo := range plannedAllowedTos {
@@ -662,7 +662,7 @@ func generateAllowedToPushStateToAccessLevels(currentAllowedTos []*gitlab.Branch
 	}
 
 	finalAllowedTo := []*gitlab.BranchPermissionOptions{}
-	//detect entities to be created
+	// detect entities to be created
 	for _, plannedAllowedTo := range plannedAllowedTos {
 		var allowedToBranchPermissionOptionData *gitlab.BranchPermissionOptions = populateBranchPermissionOptionsDataForPush(validCurrentAllowedTos, plannedAllowedTo)
 		if allowedToBranchPermissionOptionData != nil {
@@ -670,7 +670,7 @@ func generateAllowedToPushStateToAccessLevels(currentAllowedTos []*gitlab.Branch
 		}
 	}
 
-	//detect entities to be removed
+	// detect entities to be removed
 	for _, validCurrentAllowedTo := range validCurrentAllowedTos {
 		requireRemoval := true
 		for _, plannedAllowedTo := range plannedAllowedTos {
@@ -699,9 +699,9 @@ func generateAllowedToPushStateToAccessLevels(currentAllowedTos []*gitlab.Branch
 func populateBranchPermissionOptionsData(currentAllowedTos []*gitlab.BranchAccessDescription, allowedTo *gitlabBranchProtectionAllowedToObjectModel) *gitlab.BranchPermissionOptions {
 	var allowedToBranchPermissionOptionData *gitlab.BranchPermissionOptions
 	requireCreation := true
-	//detect if element already exists
+	// detect if element already exists
 	for _, currentAllowedTo := range currentAllowedTos {
-		//if element already exists skip creation
+		// if element already exists skip creation
 		if allowedTo.AccessLevel == types.StringValue(api.AccessLevelValueToName[currentAllowedTo.AccessLevel]) ||
 			!allowedTo.UserId.IsNull() && allowedTo.UserId.ValueInt64() == int64(currentAllowedTo.UserID) ||
 			!allowedTo.GroupId.IsNull() && allowedTo.GroupId.ValueInt64() == int64(currentAllowedTo.GroupID) {
@@ -729,9 +729,9 @@ func populateBranchPermissionOptionsData(currentAllowedTos []*gitlab.BranchAcces
 func populateBranchPermissionOptionsDataForPush(currentAllowedTos []*gitlab.BranchAccessDescription, allowedTo *gitlabBranchProtectionAllowedToPushObjectModel) *gitlab.BranchPermissionOptions {
 	var allowedToBranchPermissionOptionData *gitlab.BranchPermissionOptions
 	requireCreation := true
-	//detect if element already exists
+	// detect if element already exists
 	for _, currentAllowedTo := range currentAllowedTos {
-		//if element already exists skip creation
+		// if element already exists skip creation
 		if allowedTo.AccessLevel == types.StringValue(api.AccessLevelValueToName[currentAllowedTo.AccessLevel]) ||
 			!allowedTo.UserId.IsNull() && allowedTo.UserId.ValueInt64() == int64(currentAllowedTo.UserID) ||
 			!allowedTo.GroupId.IsNull() && allowedTo.GroupId.ValueInt64() == int64(currentAllowedTo.GroupID) ||
@@ -827,11 +827,9 @@ func populateAllowedToPushObjectList(access_levels []*gitlab.BranchAccessDescrip
 	}
 
 	return allowedTosData
-
 }
 
 func (r *gitlabBranchProtectionResource) protectedBranchToStateModel(projectID string, protectedBranch *gitlab.ProtectedBranch, data *gitlabBranchProtectionResourceModel) {
-
 	data.Project = types.StringValue(projectID)
 	data.Branch = types.StringValue(protectedBranch.Name)
 
@@ -974,16 +972,16 @@ func schemaAllowedToObject(action string, validValues []string) schema.Block {
 					},
 				},
 				"access_level_description": schema.StringAttribute{
-					Description: "Readable description of access level.",
-					Computed:    true,
+					MarkdownDescription: "Readable description of access level.",
+					Computed:            true,
 				},
 				"user_id": schema.Int64Attribute{
-					Description: "The ID of a GitLab user allowed to perform the relevant action. Mutually exclusive with `group_id`.",
-					Optional:    true,
+					MarkdownDescription: "The ID of a GitLab user allowed to perform the relevant action. Mutually exclusive with `group_id`.",
+					Optional:            true,
 				},
 				"group_id": schema.Int64Attribute{
-					Description: "The ID of a GitLab group allowed to perform the relevant action. Mutually exclusive with `user_id`.",
-					Optional:    true,
+					MarkdownDescription: "The ID of a GitLab group allowed to perform the relevant action. Mutually exclusive with `user_id`.",
+					Optional:            true,
 				},
 			},
 		},
