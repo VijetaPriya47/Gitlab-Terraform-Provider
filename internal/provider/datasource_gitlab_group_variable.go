@@ -103,8 +103,8 @@ func (d *gitlabGroupVariableDataSource) Schema(_ context.Context, _ datasource.S
 				Computed:            true,
 			},
 			"description": schema.StringAttribute{
-				Description: "The description of the variable.",
-				Computed:    true,
+				MarkdownDescription: "The description of the variable.",
+				Computed:            true,
 			},
 		},
 	}
@@ -122,7 +122,6 @@ func (d *gitlabGroupVariableDataSource) Configure(_ context.Context, req datasou
 
 // Read refreshes the Terraform state with the latest data.
 func (d *gitlabGroupVariableDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-
 	var state gitlabGroupVariableDataSourceModel
 
 	// Read Terraform plan data into the model

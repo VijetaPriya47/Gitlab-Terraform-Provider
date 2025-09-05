@@ -72,8 +72,8 @@ func (d *gitlabInstanceDeployKeysDataSource) Schema(_ context.Context, _ datasou
 				Computed:            true,
 			},
 			"public": schema.BoolAttribute{
-				Description: "Only return deploy keys that are public.",
-				Optional:    true,
+				MarkdownDescription: "Only return deploy keys that are public.",
+				Optional:            true,
 			},
 			"deploy_keys": schema.ListNestedAttribute{
 				MarkdownDescription: "The list of all deploy keys across all projects of the GitLab instance.",

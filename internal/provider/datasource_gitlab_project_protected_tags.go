@@ -93,16 +93,16 @@ func (d *gitLabProjectProtectedTagsDataSource) Schema(_ context.Context, _ datas
 										Computed:            true,
 									},
 									"access_level_description": schema.StringAttribute{
-										Description: "Readable description of access level.",
-										Computed:    true,
+										MarkdownDescription: "Readable description of access level.",
+										Computed:            true,
 									},
 									"user_id": schema.Int64Attribute{
-										Description: "The ID of a GitLab user allowed to perform the relevant action.",
-										Optional:    true,
+										MarkdownDescription: "The ID of a GitLab user allowed to perform the relevant action.",
+										Optional:            true,
 									},
 									"group_id": schema.Int64Attribute{
-										Description: "The ID of a GitLab group allowed to perform the relevant action.",
-										Optional:    true,
+										MarkdownDescription: "The ID of a GitLab group allowed to perform the relevant action.",
+										Optional:            true,
 									},
 								},
 							},

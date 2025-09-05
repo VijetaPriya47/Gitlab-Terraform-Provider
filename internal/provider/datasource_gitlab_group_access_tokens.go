@@ -55,7 +55,6 @@ func accessTokenDataAttibutes() map[string]attr.Type {
 		"active":       types.BoolType,
 		"revoked":      types.BoolType,
 	}
-
 }
 
 // Metadata returns the data source type name.
@@ -80,8 +79,8 @@ func (d *gitlabGroupAccessTokensDataSource) Schema(_ context.Context, _ datasour
 				Required:            true,
 			},
 			"access_tokens": schema.ListAttribute{
-				Description: "The list of access tokens returned by the search",
-				Computed:    true,
+				MarkdownDescription: "The list of access tokens returned by the search",
+				Computed:            true,
 				ElementType: types.ObjectType{
 					AttrTypes: accessTokenDataAttibutes(),
 				},
@@ -102,7 +101,6 @@ func (d *gitlabGroupAccessTokensDataSource) Configure(_ context.Context, req dat
 
 // Read refreshes the Terraform state with the latest data.
 func (d *gitlabGroupAccessTokensDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-
 	var state gitlabGroupAccessTokensDataSourceModel
 
 	// Read Terraform plan data into the model

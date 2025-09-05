@@ -138,9 +138,9 @@ func (r *gitlabGroupVariableResource) Schema(_ context.Context, _ resource.Schem
 				Computed:            true,
 			},
 			"description": schema.StringAttribute{
-				Description: "The description of the variable.",
-				Optional:    true,
-				Computed:    true,
+				MarkdownDescription: "The description of the variable.",
+				Optional:            true,
+				Computed:            true,
 			},
 		},
 	}

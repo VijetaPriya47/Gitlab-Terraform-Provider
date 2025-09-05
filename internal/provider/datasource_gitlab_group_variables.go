@@ -54,7 +54,6 @@ func variableDataAttibutes() map[string]attr.Type {
 		"raw":               types.BoolType,
 		"description":       types.StringType,
 	}
-
 }
 
 // Metadata returns the data source type name.
@@ -79,12 +78,12 @@ func (d *gitlabGroupVariablesDataSource) Schema(_ context.Context, _ datasource.
 				Required:            true,
 			},
 			"environment_scope": schema.StringAttribute{
-				Description: "The environment scope of the variable. Defaults to all environment (`*`).",
-				Optional:    true,
+				MarkdownDescription: "The environment scope of the variable. Defaults to all environment (`*`).",
+				Optional:            true,
 			},
 			"variables": schema.ListAttribute{
-				Description: "The list of variables returned by the search",
-				Computed:    true,
+				MarkdownDescription: "The list of variables returned by the search",
+				Computed:            true,
 				ElementType: types.ObjectType{
 					AttrTypes: variableDataAttibutes(),
 				},
@@ -105,7 +104,6 @@ func (d *gitlabGroupVariablesDataSource) Configure(_ context.Context, req dataso
 
 // Read refreshes the Terraform state with the latest data.
 func (d *gitlabGroupVariablesDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-
 	var state gitlabGroupVariablesDataSourceModel
 
 	// Read Terraform plan data into the model

@@ -120,18 +120,18 @@ If this is a potential issue for you, please use the ` + "`create_before_destroy
 							},
 						},
 						"access_level_description": schema.StringAttribute{
-							Description: "Readable description of access level.",
-							Computed:    true,
+							MarkdownDescription: "Readable description of access level.",
+							Computed:            true,
 						},
 						"user_id": schema.Int64Attribute{
-							Description:   "The ID of a GitLab user allowed to perform the relevant action. Mutually exclusive with `group_id`.",
-							Optional:      true,
-							PlanModifiers: []planmodifier.Int64{int64planmodifier.RequiresReplace()},
+							MarkdownDescription: "The ID of a GitLab user allowed to perform the relevant action. Mutually exclusive with `group_id`.",
+							Optional:            true,
+							PlanModifiers:       []planmodifier.Int64{int64planmodifier.RequiresReplace()},
 						},
 						"group_id": schema.Int64Attribute{
-							Description:   "The ID of a GitLab group allowed to perform the relevant action. Mutually exclusive with `user_id`.",
-							Optional:      true,
-							PlanModifiers: []planmodifier.Int64{int64planmodifier.RequiresReplace()},
+							MarkdownDescription: "The ID of a GitLab group allowed to perform the relevant action. Mutually exclusive with `user_id`.",
+							Optional:            true,
+							PlanModifiers:       []planmodifier.Int64{int64planmodifier.RequiresReplace()},
 						},
 					},
 				},
@@ -168,7 +168,7 @@ func (r *gitlabTagProtectionResource) Create(ctx context.Context, req resource.C
 	createAccessLevel := api.AccessLevelNameToValue[data.CreateAccessLevel.ValueString()]
 
 	allowedToCreate := []*gitlab.TagsPermissionOptions{}
-	//detect entities to be created
+	// detect entities to be created
 	for _, plannedAllowedTo := range data.AllowedToCreate {
 		allowedToTagsPermissionOptionData := &gitlab.TagsPermissionOptions{}
 
@@ -338,11 +338,9 @@ func populateTagAllowedToObjectList(access_levels []*gitlab.TagAccessDescription
 	}
 
 	return allowedTosData
-
 }
 
 func (r *gitlabTagProtectionResource) protectedTagToStateModel(projectID string, protectedTag *gitlab.ProtectedTag, data *gitlabTagProtectionResourceModel) {
-
 	data.Project = types.StringValue(projectID)
 	data.Tag = types.StringValue(protectedTag.Name)
 
