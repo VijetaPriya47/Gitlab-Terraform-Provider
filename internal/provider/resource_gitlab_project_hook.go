@@ -457,7 +457,7 @@ func (d *gitlabProjectHookResource) getSchema() schema.Schema {
 				Computed:            true,
 			},
 			"custom_headers": schema.ListNestedAttribute{
-				MarkdownDescription: "Custom headers for the project webhook.",
+				MarkdownDescription: "Custom headers for the project webhook. Available from GitLab 17.1 onwards.",
 				Optional:            true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
