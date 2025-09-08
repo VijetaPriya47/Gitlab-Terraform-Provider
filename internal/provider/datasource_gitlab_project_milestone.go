@@ -51,9 +51,9 @@ func (d *gitlabProjectMilestoneDataSource) Metadata(ctx context.Context, req dat
 	resp.TypeName = req.ProviderTypeName + "_project_milestone"
 }
 
-func (d *gitlabProjectMilestoneDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
-	validMilestoneStates := []string{"active", "closed"}
+var validMilestoneStates = []string{"active", "closed"}
 
+func (d *gitlabProjectMilestoneDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_project_milestone`" + ` data source allows get details of a project milestone.
 
