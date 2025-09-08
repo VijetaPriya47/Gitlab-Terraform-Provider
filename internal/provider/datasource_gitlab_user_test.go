@@ -1,14 +1,14 @@
 //go:build acceptance
 // +build acceptance
 
-package sdk
+package provider
 
 import (
 	"fmt"
 	"regexp"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
@@ -18,14 +18,14 @@ func TestAccDataSourceGitlabUser_basic(t *testing.T) {
 	user2 := users[1]
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			// Get user by email
 			{
 				Config: fmt.Sprintf(`				
-				data "gitlab_user" "foo" {
-				  email = "%s"
-				}
+					data "gitlab_user" "foo" {
+						email = "%s"
+					}
 				`, user1.Email),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("data.gitlab_user.foo", "username", user1.Username),
@@ -36,12 +36,21 @@ func TestAccDataSourceGitlabUser_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("data.gitlab_user.foo", "projects_limit", fmt.Sprintf("%d", user1.ProjectsLimit)),
 				),
 			},
+			// Check error when email doesn't match
+			{
+				Config: `
+					data "gitlab_user" "test" {
+						email = "potato"
+					}
+				`,
+				ExpectError: regexp.MustCompile("No matching users found"),
+			},
 			// Get user by ID
 			{
 				Config: fmt.Sprintf(`
-				data "gitlab_user" "foo2" {
-				  user_id = "%d"
-				}
+					data "gitlab_user" "foo2" {
+						user_id = "%d"
+					}
 				`, user2.ID),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("data.gitlab_user.foo2", "username", user2.Username),
@@ -55,9 +64,9 @@ func TestAccDataSourceGitlabUser_basic(t *testing.T) {
 			// Get user by username
 			{
 				Config: fmt.Sprintf(`				
-				data "gitlab_user" "foo" {
-				  username = "%s"
-				}
+					data "gitlab_user" "foo" {
+						username = "%s"
+					}
 				`, user1.Username),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("data.gitlab_user.foo", "username", user1.Username),
@@ -68,45 +77,52 @@ func TestAccDataSourceGitlabUser_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("data.gitlab_user.foo", "projects_limit", fmt.Sprintf("%d", user1.ProjectsLimit)),
 				),
 			},
+			// Check error when username doesn't match
+			{
+				Config: `
+					data "gitlab_user" "test" {
+						username = "potato"
+					}
+				`,
+				ExpectError: regexp.MustCompile("No matching users found"),
+			},
 		},
 	})
 }
 
 func TestAccDataSourceGitlabUser_emailExactMatch(t *testing.T) {
-
 	// Create some users for the test. Ensure more than 1 so that
 	// the fuzzy test would return a non-exact match.
 	user := testutil.CreateUsers(t, 5)[1]
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			// Validate the `email_exact_match` conflicts with `username`
 			{
 				Config: `
 					data "gitlab_user" "test" {
-						username = "asdf"
+						username          = "asdf"
 						email_exact_match = true
 					}
 				`,
-				ExpectError: regexp.MustCompile(`"email_exact_match": conflicts with username`),
+				ExpectError: regexp.MustCompile(`"username" cannot be specified when "email_exact_match"`),
 			},
 			// Validate the `email_exact_match` conflicts with `user_id`
 			{
 				Config: `
 					data "gitlab_user" "test" {
-						user_id = "1234"
+						user_id           = "1234"
 						email_exact_match = true
 					}
 				`,
-				ExpectError: regexp.MustCompile(`"email_exact_match": conflicts with user_id`),
+				ExpectError: regexp.MustCompile(`"user_id" cannot be specified when "email_exact_match"`),
 			},
 			// Validate that when we search with a valid email, we get the correct user back.
 			{
 				Config: fmt.Sprintf(`
 					data "gitlab_user" "test" {
-					  email = "%s"
-
+					  email             = "%s"
 					  email_exact_match = true
 					}
 				`, user.Email),
@@ -119,12 +135,11 @@ func TestAccDataSourceGitlabUser_emailExactMatch(t *testing.T) {
 			{
 				Config: `
 					data "gitlab_user" "test" {
-					  email = "acctest-user@example.com"
-
+					  email             = "acctest-user@example.com"
 					  email_exact_match = true
 					}
 				`,
-				ExpectError: regexp.MustCompile("couldn't find a user matching: acctest-user@example.com"),
+				ExpectError: regexp.MustCompile("No users matching email acctest-user@example.com"),
 			},
 		},
 	})
