@@ -54,6 +54,8 @@ func (r *gitlabGroupShareGroupResource) Schema(ctx context.Context, req resource
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`" + `gitlab_group_share_group` + "`" + ` resource allows managing the lifecycle of a group shared with another group.
 
+~> Note that ` + "`" + `member_role_id` + "`" + ` requires a feature flag enabled, see [this feature issue](https://gitlab.com/gitlab-org/gitlab/-/issues/443369) for details.
+
 **Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/groups/#share-groups-with-groups)`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
@@ -83,7 +85,7 @@ func (r *gitlabGroupShareGroupResource) Schema(ctx context.Context, req resource
 				PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 			},
 			"member_role_id": schema.Int64Attribute{
-				MarkdownDescription: "The ID of a custom member role. Only available for Ultimate instances. If `member_role_id` is removed from the config, the group share will revert to a base role.",
+				MarkdownDescription: "The ID of a custom member role. Only available for Ultimate instances and requires a feature flag enabling, see [this feature issue](https://gitlab.com/gitlab-org/gitlab/-/issues/443369) for details. If `member_role_id` is removed from the config, the group share will revert to a base role.",
 				Optional:            true,
 				PlanModifiers:       []planmodifier.Int64{int64planmodifier.RequiresReplace()},
 			},
