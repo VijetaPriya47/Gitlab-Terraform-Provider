@@ -1,17 +1,15 @@
 //go:build acceptance
 // +build acceptance
 
-package sdk
+package provider
 
 import (
+	"context"
 	"fmt"
-	"strconv"
 	"testing"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
@@ -24,25 +22,30 @@ func TestAccDataGitlabBranch_basic(t *testing.T) {
 
 	// Sometimes the branch hasn't been protected yet, so wait a bit and get it again
 	if !branch.Protected {
-		stateConf := &retry.StateChangeConf{
-			Pending: []string{"false"},
-			Target:  []string{"true"},
-			Timeout: 120 * time.Second,
-			Refresh: func() (any, string, error) {
+		ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+		defer cancel()
+		ticker := time.NewTicker(200 * time.Millisecond)
+		defer ticker.Stop()
+		done := ctx.Done()
+		for {
+			select {
+			case <-done:
+				t.Fatalf("timed out waiting for branch to be protected")
+				return
+			case <-ticker.C:
 				branch, _, err = testutil.TestGitlabClient.Branches.GetBranch(project.ID, "main")
 				if err != nil {
-					return branch, "false", fmt.Errorf("failed to get branch: %w", err)
+					t.Fatalf("could not get branch: %v", err)
 				}
-				return branch, strconv.FormatBool(branch.Protected), nil
-			},
-		}
-		if _, err = stateConf.WaitForStateContext(t.Context()); err != nil {
-			t.Fatalf("could not create branch in protected state: %v", err)
+				if branch.Protected {
+					return
+				}
+			}
 		}
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
