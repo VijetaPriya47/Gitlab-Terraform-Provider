@@ -47,6 +47,7 @@ data "gitlab_users" "example-two" {
 - `extern_provider` (String) Lookup users by external provider. (Requires administrator privileges)
 - `extern_uid` (String) Lookup users by external UID. (Requires administrator privileges)
 - `external` (Boolean) Filters only external users.
+- `humans` (Boolean) Filters only regular users that are not bot or internal users.
 - `order_by` (String) Order the users' list by `id`, `name`, `username`, `created_at` or `updated_at`. (Requires administrator privileges)
 - `search` (String) Search users by username, name or email.
 - `sort` (String) Sort users' list in asc or desc order. (Requires administrator privileges)
