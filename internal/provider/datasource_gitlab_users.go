@@ -50,6 +50,7 @@ type gitlabUsersDataSourceModel struct {
 	ExcludeExternal    types.Bool                             `tfsdk:"exclude_external"`
 	ExcludeInternal    types.Bool                             `tfsdk:"exclude_internal"`
 	WithoutProjectBots types.Bool                             `tfsdk:"without_project_bots"`
+	Humans             types.Bool                             `tfsdk:"humans"`
 	Users              []gitlabUsersIndividualDataSourceModel `tfsdk:"users"`
 }
 
@@ -158,6 +159,10 @@ func (d *gitlabUsersDataSource) Schema(_ context.Context, _ datasource.SchemaReq
 			},
 			"without_project_bots": schema.BoolAttribute{
 				MarkdownDescription: "Filters user without project bots.",
+				Optional:            true,
+			},
+			"humans": schema.BoolAttribute{
+				MarkdownDescription: "Filters only regular users that are not bot or internal users.",
 				Optional:            true,
 			},
 			"users": schema.ListNestedAttribute{
@@ -472,6 +477,12 @@ func expandGitlabUsersOptions(data *gitlabUsersDataSourceModel) (*gitlab.ListUse
 		withoutProjectBots := data.WithoutProjectBots.ValueBool()
 		listUsersOptions.WithoutProjectBots = &withoutProjectBots
 		optionsHash.WriteString(strconv.FormatBool(withoutProjectBots))
+	}
+	optionsHash.WriteString(",")
+	if !data.Humans.IsNull() && !data.Humans.IsUnknown() {
+		humans := data.Humans.ValueBool()
+		listUsersOptions.Humans = &humans
+		optionsHash.WriteString(strconv.FormatBool(humans))
 	}
 
 	hasher := sha256.New()
