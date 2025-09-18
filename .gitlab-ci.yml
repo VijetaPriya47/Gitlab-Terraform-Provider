@@ -3,6 +3,13 @@ include:
     inputs:
       job_stage: "lint"
       job_allow_failure: true
+  - component: ${CI_SERVER_FQDN}/components/opentofu/provider-release@3.1.0
+    inputs:
+      as: publish-to-oci-registry
+      stage: publish
+      provider_namespace: gitlabhq
+      rules:
+        - if: $CI_COMMIT_TAG
 
 stages:
   - lint
@@ -398,3 +405,10 @@ github-for-terraform-registry:
         -H "Authorization: token $GITHUB_TOKEN_FOR_SYNC" \
         https://api.github.com/repos/$GITHUB_ORG/$GITHUB_REPO/releases/$gh_release_id \
         -d '{"prerelease":false}'
+
+
+# NOTE: this is temporary until we verified that this job really works.
+# There is no proper way to test this, so we allow a failure to not
+# block releases.
+publish-to-oci-registry:
+  allow_failure: true
