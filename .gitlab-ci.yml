@@ -3,7 +3,7 @@ include:
     inputs:
       job_stage: "lint"
       job_allow_failure: true
-  - component: ${CI_SERVER_FQDN}/components/opentofu/provider-release@3.1.0
+  - component: ${CI_SERVER_FQDN}/components/opentofu/provider-release@3.4.0
     inputs:
       as: publish-to-oci-registry
       stage: publish
