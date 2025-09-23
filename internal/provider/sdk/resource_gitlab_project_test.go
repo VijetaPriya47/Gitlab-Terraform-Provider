@@ -3498,6 +3498,90 @@ func TestAccGitlabProject_CIPushRepositoryForJobTokenAllowed(t *testing.T) {
 	})
 }
 
+func TestAccGitlabProject_ResourceGroupDefaultProcessMode(t *testing.T) {
+	projectName := acctest.RandomWithPrefix("acctest")
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { testutil.RunIfAtLeast(t, "18.4") },
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabProjectDestroy,
+		Steps: []resource.TestStep{
+			// Create a project with resource_group_default_process_mode set to "unordered"
+			{
+				Config: fmt.Sprintf(`resource "gitlab_project" "test" {
+					name           = "%s"
+					default_branch = "main"
+
+					resource_group_default_process_mode = "unordered"
+				}`, projectName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project.test", "resource_group_default_process_mode", "unordered"),
+				),
+			},
+			// Verify import
+			{
+				ResourceName:      "gitlab_project.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Update to "oldest_first"
+			{
+				Config: fmt.Sprintf(`resource "gitlab_project" "test" {
+					name           = "%s"
+					default_branch = "main"
+
+					resource_group_default_process_mode = "oldest_first"
+				}`, projectName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project.test", "resource_group_default_process_mode", "oldest_first"),
+				),
+			},
+			// Verify import
+			{
+				ResourceName:      "gitlab_project.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Update to "newest_first"
+			{
+				Config: fmt.Sprintf(`resource "gitlab_project" "test" {
+					name           = "%s"
+					default_branch = "main"
+
+					resource_group_default_process_mode = "newest_first"
+				}`, projectName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project.test", "resource_group_default_process_mode", "newest_first"),
+				),
+			},
+			// Verify import
+			{
+				ResourceName:      "gitlab_project.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Update to "newest_ready_first"
+			{
+				Config: fmt.Sprintf(`resource "gitlab_project" "test" {
+					name           = "%s"
+					default_branch = "main"
+
+					resource_group_default_process_mode = "newest_ready_first"
+				}`, projectName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project.test", "resource_group_default_process_mode", "newest_ready_first"),
+				),
+			},
+			// Verify import
+			{
+				ResourceName:      "gitlab_project.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 type testAccGitlabProjectMirroredExpectedAttributes struct {
 	Mirror                           bool
 	MirrorTriggerBuilds              bool

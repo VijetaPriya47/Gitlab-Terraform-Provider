@@ -139,6 +139,21 @@ func stringToSquashOptionValue(s string) *gitlab.SquashOptionValue {
 	return &value
 }
 
+func stringToResourceGroupProcessModeValue(s string) *gitlab.ResourceGroupProcessMode {
+	lookup := map[string]gitlab.ResourceGroupProcessMode{
+		"unordered":          gitlab.Unordered,
+		"oldest_first":       gitlab.OldestFirst,
+		"newest_first":       gitlab.NewestFirst,
+		"newest_ready_first": gitlab.NewestReadyFirst,
+	}
+
+	value, ok := lookup[s]
+	if !ok {
+		return nil
+	}
+	return &value
+}
+
 func stringToAccessControlValue(s string) *gitlab.AccessControlValue {
 	lookup := map[string]gitlab.AccessControlValue{
 		"disabled": gitlab.DisabledAccessControl,

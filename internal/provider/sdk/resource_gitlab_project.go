@@ -57,6 +57,12 @@ var (
 		"internal",
 		"public",
 	}
+	validResourceGroupProcessModeValues = []string{
+		"unordered",
+		"oldest_first",
+		"newest_first",
+		"newest_ready_first",
+	}
 )
 
 var resourceGitLabProjectSchema = map[string]*schema.Schema{
@@ -252,6 +258,13 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 		Type:        schema.TypeBool,
 		Optional:    true,
 		Computed:    true,
+	},
+	"resource_group_default_process_mode": {
+		Description:  "The default resource group process mode for the project.",
+		Type:         schema.TypeString,
+		Optional:     true,
+		Computed:     true,
+		ValidateFunc: validation.StringInSlice(validResourceGroupProcessModeValues, true),
 	},
 	"tags": {
 		Description: "The list of tags for a project; put array of tags, that should be finally assigned to a project. Use topics instead.",
@@ -946,6 +959,7 @@ func resourceGitlabProjectSetToState(d *schema.ResourceData, project *gitlab.Pro
 	d.Set("runners_token", project.RunnersToken)
 	d.Set("shared_runners_enabled", project.SharedRunnersEnabled)
 	d.Set("group_runners_enabled", project.GroupRunnersEnabled)
+	d.Set("resource_group_default_process_mode", project.ResourceGroupDefaultProcessMode)
 	if err := d.Set("tags", project.TagList); err != nil { //nolint:staticcheck
 		return err
 	}
@@ -1361,6 +1375,9 @@ func resourceGitlabProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 
 	if d.HasChange("group_runners_enabled") {
 		options.GroupRunnersEnabled = gitlab.Ptr(d.Get("group_runners_enabled").(bool))
+	}
+	if d.HasChange("resource_group_default_process_mode") {
+		options.ResourceGroupDefaultProcessMode = stringToResourceGroupProcessModeValue(d.Get("resource_group_default_process_mode").(string))
 	}
 
 	if d.HasChange("tags") {
@@ -2455,6 +2472,10 @@ func createProject(ctx context.Context, d *schema.ResourceData, client *gitlab.C
 	if v, ok := d.GetOkExists("group_runners_enabled"); ok {
 		options.GroupRunnersEnabled = gitlab.Ptr(v.(bool))
 	}
+
+	if v, ok := d.GetOk("resource_group_default_process_mode"); ok {
+		options.ResourceGroupDefaultProcessMode = stringToResourceGroupProcessModeValue(v.(string))
+	}
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 	if v, ok := d.GetOkExists("remove_source_branch_after_merge"); ok {
@@ -2773,6 +2794,10 @@ func updatePostCreateEditOptions(editProjectOptions *gitlab.EditProjectOptions, 
 		// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 		if v, ok := d.GetOkExists("group_runners_enabled"); ok {
 			editProjectOptions.GroupRunnersEnabled = gitlab.Ptr(v.(bool))
+		}
+
+		if v, ok := d.GetOk("resource_group_default_process_mode"); ok {
+			editProjectOptions.ResourceGroupDefaultProcessMode = stringToResourceGroupProcessModeValue(v.(string))
 		}
 
 		if v, ok := d.GetOk("tags"); ok {
