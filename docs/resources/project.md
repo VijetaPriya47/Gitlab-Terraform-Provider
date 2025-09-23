@@ -221,6 +221,7 @@ resource "gitlab_project" "import_private" {
 - `request_access_enabled` (Boolean) Allow users to request member access.
 - `requirements_access_level` (String) Set the requirements access level. Valid values are `disabled`, `private`, `enabled`.
 - `resolve_outdated_diff_discussions` (Boolean) Automatically resolve merge request diffs discussions on lines changed with a push.
+- `resource_group_default_process_mode` (String) The default resource group process mode for the project.
 - `restrict_user_defined_variables` (Boolean) Allow only users with the Maintainer role to pass user-defined variables when triggering a pipeline.
 - `security_and_compliance_access_level` (String) Set the security and compliance access level. Valid values are `disabled`, `private`, `enabled`.
 - `shared_runners_enabled` (Boolean) Enable shared runners for this project.

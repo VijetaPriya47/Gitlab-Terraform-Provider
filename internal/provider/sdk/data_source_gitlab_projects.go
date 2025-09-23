@@ -107,44 +107,45 @@ func flattenGitlabBasicUser(user *gitlab.User) (values []map[string]any) {
 func flattenProjects(projects []*gitlab.Project) (values []map[string]any) {
 	for _, project := range projects {
 		v := map[string]any{
-			"id":                                project.ID,
-			"description":                       project.Description,
-			"default_branch":                    project.DefaultBranch,
-			"visibility":                        string(project.Visibility),
-			"ssh_url_to_repo":                   project.SSHURLToRepo,
-			"http_url_to_repo":                  project.HTTPURLToRepo,
-			"web_url":                           project.WebURL,
-			"readme_url":                        project.ReadmeURL,
-			"tag_list":                          project.TagList, //nolint:staticcheck
-			"owner":                             flattenGitlabBasicUser(project.Owner),
-			"name":                              project.Name,
-			"name_with_namespace":               project.NameWithNamespace,
-			"path":                              project.Path,
-			"path_with_namespace":               project.PathWithNamespace,
-			"issues_enabled":                    project.IssuesEnabled, //nolint:staticcheck
-			"open_issues_count":                 project.OpenIssuesCount,
-			"merge_requests_enabled":            project.MergeRequestsEnabled, //nolint:staticcheck
-			"approvals_before_merge":            project.ApprovalsBeforeMerge, //nolint:staticcheck
-			"jobs_enabled":                      project.JobsEnabled,          //nolint:staticcheck
-			"wiki_enabled":                      project.WikiEnabled,          //nolint:staticcheck
-			"snippets_enabled":                  project.SnippetsEnabled,      //nolint:staticcheck
-			"resolve_outdated_diff_discussions": project.ResolveOutdatedDiffDiscussions,
-			"container_registry_enabled":        project.ContainerRegistryEnabled, //nolint:staticcheck
-			"created_at":                        project.CreatedAt.String(),
-			"last_activity_at":                  project.LastActivityAt.String(),
-			"creator_id":                        project.CreatorID,
-			"namespace":                         flattenProjectNamespace(project.Namespace),
-			"import_status":                     project.ImportStatus,
-			"import_error":                      project.ImportError,
-			"permissions":                       flattenProjectPermissions(project.Permissions),
-			"empty_repo":                        project.EmptyRepo,
-			"archived":                          project.Archived,
-			"avatar_url":                        project.AvatarURL,
-			"shared_runners_enabled":            project.SharedRunnersEnabled,
-			"group_runners_enabled":             project.GroupRunnersEnabled,
-			"forks_count":                       project.ForksCount,
-			"star_count":                        project.StarCount,
-			"runners_token":                     project.RunnersToken,
+			"id":                                  project.ID,
+			"description":                         project.Description,
+			"default_branch":                      project.DefaultBranch,
+			"visibility":                          string(project.Visibility),
+			"ssh_url_to_repo":                     project.SSHURLToRepo,
+			"http_url_to_repo":                    project.HTTPURLToRepo,
+			"web_url":                             project.WebURL,
+			"readme_url":                          project.ReadmeURL,
+			"tag_list":                            project.TagList, //nolint:staticcheck
+			"owner":                               flattenGitlabBasicUser(project.Owner),
+			"name":                                project.Name,
+			"name_with_namespace":                 project.NameWithNamespace,
+			"path":                                project.Path,
+			"path_with_namespace":                 project.PathWithNamespace,
+			"issues_enabled":                      project.IssuesEnabled, //nolint:staticcheck
+			"open_issues_count":                   project.OpenIssuesCount,
+			"merge_requests_enabled":              project.MergeRequestsEnabled, //nolint:staticcheck
+			"approvals_before_merge":              project.ApprovalsBeforeMerge, //nolint:staticcheck
+			"jobs_enabled":                        project.JobsEnabled,          //nolint:staticcheck
+			"wiki_enabled":                        project.WikiEnabled,          //nolint:staticcheck
+			"snippets_enabled":                    project.SnippetsEnabled,      //nolint:staticcheck
+			"resolve_outdated_diff_discussions":   project.ResolveOutdatedDiffDiscussions,
+			"container_registry_enabled":          project.ContainerRegistryEnabled, //nolint:staticcheck
+			"created_at":                          project.CreatedAt.String(),
+			"last_activity_at":                    project.LastActivityAt.String(),
+			"creator_id":                          project.CreatorID,
+			"namespace":                           flattenProjectNamespace(project.Namespace),
+			"import_status":                       project.ImportStatus,
+			"import_error":                        project.ImportError,
+			"permissions":                         flattenProjectPermissions(project.Permissions),
+			"empty_repo":                          project.EmptyRepo,
+			"archived":                            project.Archived,
+			"avatar_url":                          project.AvatarURL,
+			"shared_runners_enabled":              project.SharedRunnersEnabled,
+			"group_runners_enabled":               project.GroupRunnersEnabled,
+			"resource_group_default_process_mode": project.ResourceGroupDefaultProcessMode,
+			"forks_count":                         project.ForksCount,
+			"star_count":                          project.StarCount,
+			"runners_token":                       project.RunnersToken,
 
 			// Map PublicJobs -> PublicBuilds until we have a breaking version
 			"public_builds":                                    project.PublicJobs,
@@ -655,6 +656,11 @@ var _ = registerDataSource("gitlab_projects", func() *schema.Resource {
 						"group_runners_enabled": {
 							Description: "Whether group runners are enabled for the project.",
 							Type:        schema.TypeBool,
+							Computed:    true,
+						},
+						"resource_group_default_process_mode": {
+							Description: "The default resource group process mode for the project.",
+							Type:        schema.TypeString,
 							Computed:    true,
 						},
 						"forks_count": {
