@@ -7,7 +7,6 @@
 - [Documentation](https://www.terraform.io/docs/providers/gitlab/index.html)
 - [Issues](https://gitlab.com/gitlab-org/terraform-provider-gitlab/issues)
 - [Discord Server](https://discord.gg/gitlab)
-- [Terraform Provider Office Hour Call](https://www.meetup.com/gitlab-virtual-meetups/events/291182840/)
 
 The Terraform GitLab Provider is a plugin for Terraform that allows for the full lifecycle management of
 GitLab resources, like users, groups and projects.
@@ -15,6 +14,8 @@ GitLab resources, like users, groups and projects.
 ## Contributing
 
 Check out the [CONTRIBUTING.md](/CONTRIBUTING.md) guide for tips on how to contribute and develop the provider.
+
+If you'd like to reach out for some help or a pair coding session, please mention Patrick or Timo on the Discord server, and we'll work with you to set up a pair coding session!
 
 ## Troubleshooting support
 
