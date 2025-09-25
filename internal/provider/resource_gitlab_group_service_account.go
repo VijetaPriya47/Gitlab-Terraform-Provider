@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -51,9 +52,12 @@ type gitlabGroupServiceAccountResourceModel struct {
 	Name             types.String `tfsdk:"name"`
 	Username         types.String `tfsdk:"username"`
 	Email            types.String `tfsdk:"email"`
+
+	// Timeouts meta block
+	Timeouts timeouts.Value `tfsdk:"timeouts"`
 }
 
-func (r *gitlabGroupServiceAccountResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *gitlabGroupServiceAccountResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_group_service_account`" + ` resource allows creating a GitLab group service account.
 
@@ -90,6 +94,10 @@ func (r *gitlabGroupServiceAccountResource) Schema(_ context.Context, _ resource
 				Computed:            true,
 				PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 			},
+			"timeouts": timeouts.Attributes(ctx, timeouts.Opts{
+				Delete:            true,
+				DeleteDescription: "How long to wait for the service account to be fully deleted. Defaults to 10 minutes.",
+			}),
 		},
 	}
 }
@@ -172,7 +180,13 @@ func (r *gitlabGroupServiceAccountResource) Read(ctx context.Context, req resour
 
 	serviceAccount, err := findGitlabServiceAccount(r.client, group, serviceAccountID)
 	if err != nil {
-		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to read service account: %s", err.Error()))
+		// If the service account is not found, it might have been deleted outside of Terraform
+		tflog.Debug(ctx, "Service account not found during read, removing from state", map[string]any{
+			"group":              group,
+			"service_account_id": serviceAccountID,
+			"error":              err.Error(),
+		})
+		resp.State.RemoveResource(ctx)
 		return
 	}
 
@@ -209,7 +223,7 @@ func (r *gitlabGroupServiceAccountResource) Delete(ctx context.Context, req reso
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Invalid resource ID format",
-			fmt.Sprintf("The resource ID '%s' has an invalid format in Read. It should be '<group>:<service_account_id>'. Error: %s", data.ID.ValueString(), err.Error()),
+			fmt.Sprintf("The resource ID '%s' has an invalid format in Delete. It should be '<group>:<service_account_id>'. Error: %s", data.ID.ValueString(), err.Error()),
 		)
 		return
 	}
@@ -223,37 +237,37 @@ func (r *gitlabGroupServiceAccountResource) Delete(ctx context.Context, req reso
 		return
 	}
 
-	if _, err = r.client.Groups.DeleteServiceAccount(group, serviceAccountIDInt, nil, gitlab.WithContext(ctx)); err != nil {
+	// Get configurable timeout with 10 minute default
+	timeout, diags := data.Timeouts.Delete(ctx, 10*time.Minute)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	deleteCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	if _, err = r.client.Groups.DeleteServiceAccount(group, serviceAccountIDInt, nil, gitlab.WithContext(deleteCtx)); err != nil {
+		// If the service account is already deleted (404), that's fine
+		if api.Is404(err) {
+			tflog.Debug(ctx, "Service account already deleted", map[string]any{
+				"group":              group,
+				"service_account_id": serviceAccountID,
+			})
+			return
+		}
 		resp.Diagnostics.AddError(
 			"GitLab API Error occurred",
 			fmt.Sprintf("Unable to delete service account: %s", err.Error()),
 		)
+		return
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
-	defer cancel()
-	ticker := time.NewTicker(10 * time.Second)
-	defer ticker.Stop()
-	done := ctx.Done()
-
-	for {
-		select {
-		case <-done:
-			resp.Diagnostics.AddError(
-				"GitLab API Error occurred",
-				"Timed out waiting for group service account deletion to complete",
-			)
-			return
-		case <-ticker.C:
-			_, _, err := r.client.Users.GetUser(serviceAccountIDInt, gitlab.GetUsersOptions{}, gitlab.WithContext(ctx))
-			if api.Is404(err) {
-				return
-			}
-
-			if err != nil {
-				tflog.Warn(ctx, fmt.Sprintf("Error checking group service account deletion status: %s", err.Error()))
-			}
-		}
+	// Verify deletion with polling using the configured timeout
+	err = r.waitForServiceAccountDeletion(deleteCtx, group, serviceAccountID, serviceAccountIDInt)
+	if err != nil {
+		resp.Diagnostics.AddError("GitLab API Error occurred", err.Error())
+		return
 	}
 }
 
@@ -271,6 +285,87 @@ func (r *gitlabGroupServiceAccountResourceModel) serviceAccountToStateModel(serv
 	r.Name = types.StringValue(serviceAccount.Name)
 	r.Username = types.StringValue(serviceAccount.UserName)
 	r.Email = types.StringValue(serviceAccount.Email)
+}
+
+// waitForServiceAccountDeletion waits for a service account to be deleted by polling the Users API
+// Returns nil when the service account returns a 404 (truly deleted)
+func (r *gitlabGroupServiceAccountResource) waitForServiceAccountDeletion(ctx context.Context, group, serviceAccountID string, serviceAccountIDInt int) error {
+	// Use 10-second polling interval for detection
+	ticker := time.NewTicker(10 * time.Second)
+	defer ticker.Stop()
+
+	tflog.Debug(ctx, "Starting service account deletion verification", map[string]any{
+		"group":              group,
+		"service_account_id": serviceAccountID,
+	})
+
+	// Helper function to check if service account is deleted
+	checkDeleted := func() bool {
+		_, _, err := r.client.Users.GetUser(serviceAccountIDInt, gitlab.GetUsersOptions{}, gitlab.WithContext(ctx))
+		if api.Is404(err) {
+			tflog.Debug(ctx, "Service account not found - deletion confirmed", map[string]any{
+				"group":              group,
+				"service_account_id": serviceAccountID,
+			})
+			return true
+		}
+		if err != nil {
+			tflog.Warn(ctx, "Error checking service account status", map[string]any{
+				"group":              group,
+				"service_account_id": serviceAccountID,
+				"error":              err.Error(),
+			})
+			return false
+		}
+
+		// Service account still exists - not deleted yet
+		tflog.Debug(ctx, "Service account still exists", map[string]any{
+			"group":              group,
+			"service_account_id": serviceAccountID,
+		})
+		return false
+	}
+
+	// Check immediately first
+	if checkDeleted() {
+		tflog.Debug(ctx, "Service account deletion verified immediately", map[string]any{
+			"group":              group,
+			"service_account_id": serviceAccountID,
+		})
+		return nil
+	}
+	tflog.Debug(ctx, "Service account still exists, starting polling for deletion", map[string]any{
+		"group":              group,
+		"service_account_id": serviceAccountID,
+	})
+
+	// Poll until timeout or success
+	for {
+		select {
+		case <-ctx.Done():
+			if ctx.Err() == context.DeadlineExceeded {
+				// Try one final check before giving up
+				if checkDeleted() {
+					tflog.Info(ctx, "Service account deletion verified on final check", map[string]any{
+						"group":              group,
+						"service_account_id": serviceAccountID,
+					})
+					return nil
+				}
+
+				return fmt.Errorf("timed out waiting for the service account to be deleted")
+			}
+			return fmt.Errorf("context cancelled while waiting for deletion: %s", ctx.Err())
+		case <-ticker.C:
+			if checkDeleted() {
+				tflog.Debug(ctx, "Service account deletion verified", map[string]any{
+					"group":              group,
+					"service_account_id": serviceAccountID,
+				})
+				return nil
+			}
+		}
+	}
 }
 
 func findGitlabServiceAccount(client *gitlab.Client, group, desiredId string) (*gitlab.GroupServiceAccount, error) {
