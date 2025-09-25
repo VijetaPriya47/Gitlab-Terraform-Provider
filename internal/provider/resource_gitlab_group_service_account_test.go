@@ -23,7 +23,7 @@ func TestAcc_GitlabGroupServiceAccount_basic(t *testing.T) {
 
 	name := acctest.RandString(10)
 	username := acctest.RandString(10)
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		CheckDestroy:             testAcc_GitlabGroupServiceAccount_CheckDestroy(),
 		Steps: []resource.TestStep{
@@ -34,6 +34,9 @@ func TestAcc_GitlabGroupServiceAccount_basic(t *testing.T) {
 					group 	 = %s
 					name 	 = "%s"
 					username = "%s"
+					timeouts = {
+						delete = "30m"
+					}
 				}
 				`, groupID, name, username),
 				Check: resource.ComposeTestCheckFunc(
@@ -63,7 +66,7 @@ func TestAcc_GitlabGroupServiceAccount_customEmail(t *testing.T) {
 	username := acctest.RandString(10)
 	email := fmt.Sprintf("a%s@test.com", username)
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		CheckDestroy:             testAcc_GitlabGroupServiceAccount_CheckDestroy(),
 		Steps: []resource.TestStep{
@@ -75,6 +78,9 @@ func TestAcc_GitlabGroupServiceAccount_customEmail(t *testing.T) {
 					name 	 = "%s"
 					username = "%s"
 					email    = "%s"
+					timeouts = {
+						delete = "30m"
+					}
 				}
 				`, groupID, name, username, email),
 				Check: resource.ComposeTestCheckFunc(
@@ -103,8 +109,8 @@ func TestAcc_GitlabGroupServiceAccount_EnsureRecreate(t *testing.T) {
 	username := acctest.RandString(10)
 	name2 := acctest.RandString(10)
 	username2 := acctest.RandString(10)
-	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		CheckDestroy:             testAcc_GitlabGroupServiceAccount_CheckDestroy(),
 		Steps: []resource.TestStep{
 			{
@@ -113,6 +119,9 @@ func TestAcc_GitlabGroupServiceAccount_EnsureRecreate(t *testing.T) {
 					group 	 = %s
 					name     = "%s"
 					username = "%s"
+					timeouts = {
+						delete = "30m"
+					}
 				}
 				`, groupID, name, username),
 			},
@@ -128,6 +137,9 @@ func TestAcc_GitlabGroupServiceAccount_EnsureRecreate(t *testing.T) {
 					group 	 = %s
 					name     = "%s"
 					username = "%s"
+					timeouts = {
+						delete = "30m"
+					}
 				}
 				`, groupID, name2, username2),
 				Check: resource.ComposeAggregateTestCheckFunc(
