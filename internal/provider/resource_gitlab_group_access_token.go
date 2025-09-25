@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"strconv"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
@@ -63,8 +65,9 @@ type gitlabGroupAccessTokenResourceModel struct {
 	// []string, or a set of types.String behind the scenes.
 	Scopes types.Set `tfsdk:"scopes"`
 
-	ExpiresAt types.String `tfsdk:"expires_at"`
-	CreatedAt types.String `tfsdk:"created_at"`
+	ExpiresAt                  types.String `tfsdk:"expires_at"`
+	CreatedAt                  types.String `tfsdk:"created_at"`
+	ValidatePastExpirationDate types.Bool   `tfsdk:"validate_past_expiration_date"`
 
 	Active  types.Bool `tfsdk:"active"`
 	Revoked types.Bool `tfsdk:"revoked"`
@@ -143,6 +146,12 @@ func (r *gitlabGroupAccessTokenResource) Schema(ctx context.Context, req resourc
 				},
 				Optional: true,
 				Computed: true,
+			},
+			"validate_past_expiration_date": schema.BoolAttribute{
+				MarkdownDescription: "Wether to validate if the expiration date is in the future.",
+				Optional:            true,
+				Computed:            true,
+				Default:             booldefault.StaticBool(false),
 			},
 			"created_at": schema.StringAttribute{
 				MarkdownDescription: "Time the token has been created, RFC3339 format.",
@@ -501,6 +510,17 @@ func (r *gitlabGroupAccessTokenResource) Create(ctx context.Context, req resourc
 		)
 		return
 	}
+
+	if data.ValidatePastExpirationDate.ValueBool() && api.CurrentTime().After(time.Time(*expiryDate)) {
+		currentTimeStr := api.CurrentTime().Format(time.RFC3339)
+
+		resp.Diagnostics.AddError(
+			"Error creating GitLab GroupAccessToken",
+			fmt.Sprintf("Expiry date %s must be in the future. Current time is %s", data.ExpiresAt.ValueString(), currentTimeStr),
+		)
+		return
+	}
+
 	options.ExpiresAt = expiryDate
 
 	token, _, err := r.client.GroupAccessTokens.CreateGroupAccessToken(data.Group.ValueString(), options, gitlab.WithContext(ctx))
@@ -549,6 +569,16 @@ func (r *gitlabGroupAccessTokenResource) Update(ctx context.Context, req resourc
 		return
 	}
 
+	if data.ValidatePastExpirationDate.ValueBool() && api.CurrentTime().After(time.Time(expiresAt)) {
+		currentTimeStr := api.CurrentTime().Format(time.RFC3339)
+
+		resp.Diagnostics.AddError(
+			"Error updating GitLab GroupAccessToken",
+			fmt.Sprintf("Expiry date %s must be in the future. Current time is %s", data.ExpiresAt.ValueString(), currentTimeStr),
+		)
+		return
+	}
+
 	// find out whether self_rotate is one of the scopes
 	var selfRotate bool
 	var scopes []string
@@ -556,11 +586,9 @@ func (r *gitlabGroupAccessTokenResource) Update(ctx context.Context, req resourc
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	for _, scope := range scopes {
-		if scope == "self_rotate" {
-			selfRotate = true
-			break
-		}
+
+	if slices.Contains(scopes, "self_rotate") {
+		selfRotate = true
 	}
 
 	// update with a group access token means rotate it

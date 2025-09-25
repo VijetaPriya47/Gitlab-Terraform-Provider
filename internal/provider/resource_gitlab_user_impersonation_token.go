@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
@@ -47,17 +48,18 @@ type gitlabUserImpersonationTokenResource struct {
 
 // gitlabUserImpersonationTokenResourceModel describes the resource data model.
 type gitlabUserImpersonationTokenResourceModel struct {
-	ID            types.String   `tfsdk:"id"`
-	UserID        types.Int64    `tfsdk:"user_id"`
-	TokenID       types.Int64    `tfsdk:"token_id"`
-	Name          types.String   `tfsdk:"name"`
-	ExpiresAt     types.String   `tfsdk:"expires_at"`
-	Scopes        []types.String `tfsdk:"scopes"`
-	Revoked       types.Bool     `tfsdk:"revoked"`
-	Token         types.String   `tfsdk:"token"`
-	Active        types.Bool     `tfsdk:"active"`
-	Impersonation types.Bool     `tfsdk:"impersonation"`
-	CreatedAt     types.String   `tfsdk:"created_at"`
+	ID                         types.String   `tfsdk:"id"`
+	UserID                     types.Int64    `tfsdk:"user_id"`
+	TokenID                    types.Int64    `tfsdk:"token_id"`
+	Name                       types.String   `tfsdk:"name"`
+	ExpiresAt                  types.String   `tfsdk:"expires_at"`
+	Scopes                     []types.String `tfsdk:"scopes"`
+	Revoked                    types.Bool     `tfsdk:"revoked"`
+	Token                      types.String   `tfsdk:"token"`
+	Active                     types.Bool     `tfsdk:"active"`
+	Impersonation              types.Bool     `tfsdk:"impersonation"`
+	CreatedAt                  types.String   `tfsdk:"created_at"`
+	ValidatePastExpirationDate types.Bool     `tfsdk:"validate_past_expiration_date"`
 }
 
 func (r *gitlabUserImpersonationTokenResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -113,6 +115,12 @@ Requires administrator access. Token values are returned once. You are only able
 					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
+			},
+			"validate_past_expiration_date": schema.BoolAttribute{
+				MarkdownDescription: "Wether to validate if the expiration date is in the future.",
+				Optional:            true,
+				Computed:            true,
+				Default:             booldefault.StaticBool(false),
 			},
 			"scopes": schema.SetAttribute{
 				MarkdownDescription: fmt.Sprintf("Array of scopes of the impersonation token. valid values are: %s", utils.RenderValueListForDocs(api.ValidPersonalAccessTokenScopes)),
@@ -216,6 +224,16 @@ func (r *gitlabUserImpersonationTokenResource) Create(ctx context.Context, req r
 	expiresAt, err := time.Parse(api.Iso8601, data.ExpiresAt.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Error determining expiry date", fmt.Sprintf("Could not determine expiry date: %s", err))
+		return
+	}
+
+	if data.ValidatePastExpirationDate.ValueBool() && api.CurrentTime().After(time.Time(expiresAt)) {
+		currentTimeStr := api.CurrentTime().Format(time.RFC3339)
+
+		resp.Diagnostics.AddError(
+			"Error creating GitLab UserImpersonationToken",
+			fmt.Sprintf("Expiry date %s must be in the future. Current time is %s", data.ExpiresAt.ValueString(), currentTimeStr),
+		)
 		return
 	}
 

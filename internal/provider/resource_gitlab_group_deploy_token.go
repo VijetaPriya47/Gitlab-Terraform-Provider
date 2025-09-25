@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -44,13 +45,14 @@ type gitlabGroupDeployTokenResource struct {
 }
 
 type gitlabGroupDeployTokenResourceModel struct {
-	Id        types.String      `tfsdk:"id"`
-	Group     types.String      `tfsdk:"group"`
-	Name      types.String      `tfsdk:"name"`
-	Username  types.String      `tfsdk:"username"`
-	Scopes    types.Set         `tfsdk:"scopes"`
-	ExpiresAt timetypes.RFC3339 `tfsdk:"expires_at"`
-	Token     types.String      `tfsdk:"token"`
+	Id                         types.String      `tfsdk:"id"`
+	Group                      types.String      `tfsdk:"group"`
+	Name                       types.String      `tfsdk:"name"`
+	Username                   types.String      `tfsdk:"username"`
+	Scopes                     types.Set         `tfsdk:"scopes"`
+	ExpiresAt                  timetypes.RFC3339 `tfsdk:"expires_at"`
+	ValidatePastExpirationDate types.Bool        `tfsdk:"validate_past_expiration_date"`
+	Token                      types.String      `tfsdk:"token"`
 
 	Expired types.Bool `tfsdk:"expired"`
 	Revoked types.Bool `tfsdk:"revoked"`
@@ -120,6 +122,12 @@ func (r *gitlabGroupDeployTokenResource) Schema(ctx context.Context, req resourc
 				},
 				Optional: true,
 				Computed: true,
+			},
+			"validate_past_expiration_date": schema.BoolAttribute{
+				MarkdownDescription: "Wether to validate if the expiration date is in the future.",
+				Optional:            true,
+				Computed:            true,
+				Default:             booldefault.StaticBool(false),
 			},
 			"expired": schema.BoolAttribute{
 				MarkdownDescription: "True if the token is expired.",
@@ -272,6 +280,17 @@ func (r *gitlabGroupDeployTokenResource) Create(ctx context.Context, req resourc
 			resp.Diagnostics.AddError("Error determining expiry date", fmt.Sprintf("Failed to determine expiration date. Provided value: %s", data.ExpiresAt.ValueString()))
 			return
 		}
+
+		if data.ValidatePastExpirationDate.ValueBool() && api.CurrentTime().After(parsedExpiresAt) {
+			currentTimeStr := api.CurrentTime().Format(time.RFC3339)
+
+			resp.Diagnostics.AddError(
+				"Error creating GitLab GroupDeployToken",
+				fmt.Sprintf("Expiry date %s must be in the future. Current time is %s", data.ExpiresAt.ValueString(), currentTimeStr),
+			)
+			return
+		}
+
 		options.ExpiresAt = &parsedExpiresAt
 	}
 

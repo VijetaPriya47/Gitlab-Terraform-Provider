@@ -5,6 +5,7 @@ package provider
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 	"time"
 
@@ -14,6 +15,57 @@ import (
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
+
+func TestAccGitlabProjectDeployToken_createWithPastExpiryDate_validationDisabled(t *testing.T) {
+	project := testutil.CreateProject(t)
+	pastDate, _ := timetypes.NewRFC3339Value(time.Now().Add(-24 * time.Hour).Format(time.RFC3339))
+	pastDateTime, _ := pastDate.ValueRFC3339Time()
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabProjectDeployTokenDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_deploy_token" "success" {
+						project    = %d
+						name       = "this-token-should-succeed"
+						scopes     = ["read_repository"]
+						expires_at = %s
+					}
+				`, project.ID, pastDate),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project_deploy_token.success", "expires_at", pastDateTime.Format(time.RFC3339)),
+				),
+			},
+		},
+	})
+}
+
+func TestAccGitlabProjectDeployToken_failsWithPastExpiryDate_validationEnabled(t *testing.T) {
+	project := testutil.CreateProject(t)
+	pastDate, _ := timetypes.NewRFC3339Value(time.Now().Add(-24 * time.Hour).Format(time.RFC3339))
+	pastDateTime, _ := pastDate.ValueRFC3339Time()
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabProjectDeployTokenDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_deploy_token" "fails" {
+						project                       = %d
+						name                          = "this-token-should-fail"
+						scopes                        = ["read_repository"]
+						expires_at                    = %s
+						validate_past_expiration_date = true
+					}
+				`, project.ID, pastDate),
+				ExpectError: regexp.MustCompile(fmt.Sprintf(`(?s)Expiry date %s must be in the future\. Current time is\s*.*`, pastDateTime.Format(time.RFC3339))),
+			},
+		},
+	})
+}
 
 func TestAccGitlabProjectDeployToken_basic(t *testing.T) {
 	project := testutil.CreateProject(t)
@@ -49,7 +101,7 @@ func TestAccGitlabProjectDeployToken_basic(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: true,
 				// The token is only known during creation. We explicitly mention this limitation in the docs.
-				ImportStateVerifyIgnore: []string{"token"},
+				ImportStateVerifyIgnore: []string{"token", "validate_past_expiration_date"},
 			},
 			// Recreate the deploy token with updated attributes.
 			{
@@ -83,7 +135,7 @@ func TestAccGitlabProjectDeployToken_basic(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: true,
 				// The token is only known during creation. We explicitly mention this limitation in the docs.
-				ImportStateVerifyIgnore: []string{"token"},
+				ImportStateVerifyIgnore: []string{"token", "validate_past_expiration_date"},
 			},
 		},
 	})
