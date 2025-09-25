@@ -20,6 +20,166 @@ import (
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
+func TestAccGitlabGroupServiceAccountAccessToken_createWithPastExpiryDate_validationDisabled(t *testing.T) {
+	testutil.SkipIfCE(t)
+
+	group := testutil.CreateGroups(t, 1)[0]
+	groupID := strconv.Itoa(group.ID)
+	serviceAccount := testutil.CreateGroupServiceAccounts(t, 1, groupID)[0]
+
+	pastDate := api.CurrentTime().Add(-24 * time.Hour).Format(api.Iso8601)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabGroupServiceAccountAccessTokenDestroy,
+		Steps: []resource.TestStep{
+			{
+				// This configuration should now SUCCEED because the new field defaults to false.
+				Config: fmt.Sprintf(`
+					resource "gitlab_group_service_account_access_token" "success" {
+						name       = "this-token-should-succeed"
+						group      = %s
+						user_id    = %d
+						scopes     = ["api"]
+						expires_at = "%s"
+					}
+				`, groupID, serviceAccount.ID, pastDate),
+				// We now check that the resource was created successfully with the past date.
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_group_service_account_access_token.success", "expires_at", pastDate),
+				),
+			},
+		},
+	})
+}
+
+func TestAccGitlabGroupServiceAccountAccessToken_updateWithPastExpiryDate_validationDisabled(t *testing.T) {
+	testutil.SkipIfCE(t)
+
+	group := testutil.CreateGroups(t, 1)[0]
+	groupID := strconv.Itoa(group.ID)
+	serviceAccount := testutil.CreateGroupServiceAccounts(t, 1, groupID)[0]
+
+	futureDate := api.CurrentTime().Add(48 * time.Hour).Format(api.Iso8601)
+	pastDate := api.CurrentTime().Add(-24 * time.Hour).Format(api.Iso8601)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabGroupServiceAccountAccessTokenDestroy,
+		Steps: []resource.TestStep{
+			// Step 1: Create the resource successfully with a future date.
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_group_service_account_access_token" "update_success" {
+						name       = "token-to-succeed-update"
+						group      = %s
+						user_id    = %d
+						scopes     = ["api"]
+						expires_at = "%s"
+					}
+				`, groupID, serviceAccount.ID, futureDate),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_group_service_account_access_token.update_success", "expires_at", futureDate),
+				),
+			},
+			// Step 2: Attempt to update the resource with a past date, which should now succeed.
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_group_service_account_access_token" "update_success" {
+						name       = "token-to-succeed-update"
+						group      = %s
+						user_id    = %d
+						scopes     = ["api"]
+						expires_at = "%s"
+					}
+				`, groupID, serviceAccount.ID, pastDate),
+				// We check that the expires_at attribute was successfully updated to the past date.
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_group_service_account_access_token.update_success", "expires_at", pastDate),
+				),
+			},
+		},
+	})
+}
+
+func TestAccGitlabGroupServiceAccountAccessToken_failsWithPastExpiryDate_validationEnabled(t *testing.T) {
+	testutil.SkipIfCE(t)
+
+	group := testutil.CreateGroups(t, 1)[0]
+	groupID := strconv.Itoa(group.ID)
+	serviceAccount := testutil.CreateGroupServiceAccounts(t, 1, groupID)[0]
+
+	pastDate := api.CurrentTime().Add(-24 * time.Hour).Format(api.Iso8601)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabGroupServiceAccountAccessTokenDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_group_service_account_access_token" "fails" {
+						name                          = "this-token-should-fail"
+						group                         = %s
+						user_id                       = %d
+						scopes                        = ["api"]
+						expires_at                    = "%s"
+						validate_past_expiration_date = true
+					}
+				`, groupID, serviceAccount.ID, pastDate),
+				ExpectError: regexp.MustCompile(fmt.Sprintf(`(?s)Expiry date %s must be in the future\. Current time is\s*.*`, pastDate)),
+			},
+		},
+	})
+}
+
+func TestAccGitlabGroupServiceAccountAccessToken_failsToUpdateWithPastExpiryDate_validationEnabled(t *testing.T) {
+	testutil.SkipIfCE(t)
+
+	group := testutil.CreateGroups(t, 1)[0]
+	groupID := strconv.Itoa(group.ID)
+	serviceAccount := testutil.CreateGroupServiceAccounts(t, 1, groupID)[0]
+
+	futureDate := api.CurrentTime().Add(48 * time.Hour).Format(api.Iso8601)
+	pastDate := api.CurrentTime().Add(-24 * time.Hour).Format(api.Iso8601)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabGroupServiceAccountAccessTokenDestroy,
+		Steps: []resource.TestStep{
+			// Step 1: Create the resource successfully with a future date.
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_group_service_account_access_token" "update_fail" {
+						name                          = "token-to-fail-update"
+						group                         = %s
+						user_id                       = %d
+						scopes                        = ["api"]
+						expires_at                    = "%s"
+						validate_past_expiration_date = true
+					}
+				`, groupID, serviceAccount.ID, futureDate),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_group_service_account_access_token.update_fail", "expires_at", futureDate),
+				),
+			},
+			// Step 2: Attempt to update the resource with a past date and expect an error.
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_group_service_account_access_token" "update_fail" {
+						name                          = "token-to-fail-update"
+						group                         = %s
+						user_id                       = %d
+						scopes                        = ["api"]
+						expires_at                    = "%s"
+						validate_past_expiration_date = true
+					}
+				`, groupID, serviceAccount.ID, pastDate),
+				ExpectError: regexp.MustCompile(fmt.Sprintf(`(?s)Expiry date %s must be in the future\. Current time is\s*.*`, pastDate)),
+			},
+		},
+	})
+}
+
 func TestAccGitlabGroupServiceAccountAccessToken_basic(t *testing.T) {
 	testutil.SkipIfCE(t)
 
@@ -59,7 +219,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_basic(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: true,
 				// The token is only known during creating. We explicitly mention this limitation in the docs.
-				ImportStateVerifyIgnore: []string{"token"},
+				ImportStateVerifyIgnore: []string{"token", "validate_past_expiration_date"},
 			},
 			// Recreate the access token with updated attributes.
 			{
@@ -102,7 +262,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_basic(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: true,
 				// The token is only known during creating. We explicitly mention this limitation in the docs.
-				ImportStateVerifyIgnore: []string{"token"},
+				ImportStateVerifyIgnore: []string{"token", "validate_past_expiration_date"},
 			},
 		},
 	})
@@ -150,7 +310,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_regression6537(t *testing.T) {
 				ImportState:              true,
 				ImportStateVerify:        true,
 				// The token is only known during creating. We explicitly mention this limitation in the docs.
-				ImportStateVerifyIgnore: []string{"token", "rotation_configuration"},
+				ImportStateVerifyIgnore: []string{"token", "rotation_configuration", "validate_past_expiration_date"},
 			},
 		},
 	})
@@ -188,7 +348,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_noExpiration(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: true,
 				// The token is only known during creating. We explicitly mention this limitation in the docs.
-				ImportStateVerifyIgnore: []string{"token"},
+				ImportStateVerifyIgnore: []string{"token", "validate_past_expiration_date"},
 			},
 			// Recreate the access token with an expiration. The expiration should trigger a rotation.
 			{
@@ -218,7 +378,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_noExpiration(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: true,
 				// The token is only known during creating. We explicitly mention this limitation in the docs.
-				ImportStateVerifyIgnore: []string{"token", "rotation_configuration"},
+				ImportStateVerifyIgnore: []string{"token", "rotation_configuration", "validate_past_expiration_date"},
 			},
 			// Recreate the access token without rotation again. The lower expiration should not trigger another rotation.
 			{
@@ -241,7 +401,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_noExpiration(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: true,
 				// The token is only known during creating. We explicitly mention this limitation in the docs.
-				ImportStateVerifyIgnore: []string{"token"},
+				ImportStateVerifyIgnore: []string{"token", "validate_past_expiration_date"},
 			},
 		},
 	})
@@ -286,7 +446,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_rotationConfiguration(t *testin
 				ImportState:       true,
 				ImportStateVerify: true,
 				// The token is only known during creating. We explicitly mention this limitation in the docs.
-				ImportStateVerifyIgnore: []string{"token", "rotation_configuration"},
+				ImportStateVerifyIgnore: []string{"token", "rotation_configuration", "validate_past_expiration_date"},
 			},
 			// Recreate the access token with a different expiration. The higher expiration should trigger a rotation.
 			{
@@ -316,7 +476,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_rotationConfiguration(t *testin
 				ImportState:       true,
 				ImportStateVerify: true,
 				// The token is only known during creating. We explicitly mention this limitation in the docs.
-				ImportStateVerifyIgnore: []string{"token", "rotation_configuration"},
+				ImportStateVerifyIgnore: []string{"token", "rotation_configuration", "validate_past_expiration_date"},
 			},
 			// Recreate the access token with a different rotation. The lower expiration should not trigger another rotation.
 			{
@@ -514,7 +674,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_rotationUsingDate(t *testing.T)
 				ImportState:       true,
 				ImportStateVerify: true,
 				// The token is only known during creating. We explicitly mention this limitation in the docs.
-				ImportStateVerifyIgnore: []string{"token", "rotation_configuration"},
+				ImportStateVerifyIgnore: []string{"token", "rotation_configuration", "validate_past_expiration_date"},
 			},
 		},
 	})
@@ -637,7 +797,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_rotationUsingSelfRotate(t *test
 				ImportState:       true,
 				ImportStateVerify: true,
 				// The token is only known during creating. We explicitly mention this limitation in the docs.
-				ImportStateVerifyIgnore: []string{"token", "rotation_configuration"},
+				ImportStateVerifyIgnore: []string{"token", "rotation_configuration", "validate_past_expiration_date"},
 			},
 		},
 	})
@@ -718,7 +878,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_rotationUsingExpiresAt(t *testi
 				ImportState:       true,
 				ImportStateVerify: true,
 				// The token is only known during creating. We explicitly mention this limitation in the docs.
-				ImportStateVerifyIgnore: []string{"token", "rotation_configuration"},
+				ImportStateVerifyIgnore: []string{"token", "rotation_configuration", "validate_past_expiration_date"},
 			},
 		},
 	})
@@ -1033,7 +1193,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_rotateRevokedTokenGracefully(t 
 				ResourceName:            "gitlab_group_service_account_access_token.revoked",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"token", "rotation_configuration"},
+				ImportStateVerifyIgnore: []string{"token", "rotation_configuration", "validate_past_expiration_date"},
 			},
 		},
 	})
@@ -1108,7 +1268,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_revokedTokenWithPastExpiry(t *t
 				ResourceName:            "gitlab_group_service_account_access_token.expired",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"token"},
+				ImportStateVerifyIgnore: []string{"token", "validate_past_expiration_date"},
 			},
 		},
 	})

@@ -20,6 +20,139 @@ import (
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
+func TestAccGitlabProjectAccessToken_createWithPastExpiryDate_validationDisabled(t *testing.T) {
+	project := testutil.CreateProject(t)
+	pastDate := api.CurrentTime().Add(-24 * time.Hour).Format(api.Iso8601)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabProjectAccessTokenDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_access_token" "success" {
+						project      = %d
+						name         = "this-token-should-succeed"
+						scopes       = ["api"]
+						access_level = "developer"
+						expires_at   = "%s"
+					}
+				`, project.ID, pastDate),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project_access_token.success", "expires_at", pastDate),
+				),
+			},
+		},
+	})
+}
+
+func TestAccGitlabProjectAccessToken_updateWithPastExpiryDate_validationDisabled(t *testing.T) {
+	project := testutil.CreateProject(t)
+	futureDate := api.CurrentTime().Add(48 * time.Hour).Format(api.Iso8601)
+	pastDate := api.CurrentTime().Add(-24 * time.Hour).Format(api.Iso8601)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabProjectAccessTokenDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_access_token" "update_success" {
+						project      = %d
+						name         = "token-to-succeed-update"
+						scopes       = ["api"]
+						access_level = "developer"
+						expires_at   = "%s"
+					}
+				`, project.ID, futureDate),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project_access_token.update_success", "expires_at", futureDate),
+				),
+			},
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_access_token" "update_success" {
+						project      = %d
+						name         = "token-to-succeed-update"
+						scopes       = ["api"]
+						access_level = "developer"
+						expires_at   = "%s"
+					}
+				`, project.ID, pastDate),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project_access_token.update_success", "expires_at", pastDate),
+				),
+			},
+		},
+	})
+}
+
+func TestAccGitlabProjectAccessToken_failsWithPastExpiryDate_validationEnabled(t *testing.T) {
+	project := testutil.CreateProject(t)
+	pastDate := api.CurrentTime().Add(-24 * time.Hour).Format(api.Iso8601)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabProjectAccessTokenDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_access_token" "fails" {
+						project                       = %d
+						name                          = "this-token-should-fail"
+						scopes                        = ["api"]
+						access_level                  = "developer"
+						expires_at                    = "%s"
+						validate_past_expiration_date = true
+					}
+				`, project.ID, pastDate),
+				ExpectError: regexp.MustCompile(fmt.Sprintf(`(?s)Expiry date %s must be in the future\. Current time is\s*.*`, pastDate)),
+			},
+		},
+	})
+}
+
+func TestAccGitlabProjectAccessToken_failsToUpdateWithPastExpiryDate_validationEnabled(t *testing.T) {
+	project := testutil.CreateProject(t)
+	futureDate := api.CurrentTime().Add(48 * time.Hour).Format(api.Iso8601)
+	pastDate := api.CurrentTime().Add(-24 * time.Hour).Format(api.Iso8601)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabProjectAccessTokenDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_access_token" "update_fail" {
+						project                       = %d
+						name                          = "token-to-fail-update"
+						scopes                        = ["api"]
+						access_level                  = "developer"
+						expires_at                    = "%s"
+						validate_past_expiration_date = true
+					}
+				`, project.ID, futureDate),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project_access_token.update_fail", "expires_at", futureDate),
+				),
+			},
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_access_token" "update_fail" {
+						project                       = %d
+						name                          = "token-to-fail-update"
+						scopes                        = ["api"]
+						access_level                  = "developer"
+						expires_at                    = "%s"
+						validate_past_expiration_date = true
+					}
+				`, project.ID, pastDate),
+				ExpectError: regexp.MustCompile(fmt.Sprintf(`(?s)Expiry date %s must be in the future\. Current time is\s*.*`, pastDate)),
+			},
+		},
+	})
+}
+
 func TestAccGitlabProjectAccessToken_migrateFromSDKToFramework(t *testing.T) {
 	// Set up project
 	project := testutil.CreateProject(t)
@@ -63,6 +196,7 @@ func TestAccGitlabProjectAccessToken_migrateFromSDKToFramework(t *testing.T) {
 				ImportStateVerify:        true,
 				ImportStateVerifyIgnore: []string{
 					"token",
+					"validate_past_expiration_date",
 				},
 			},
 		},
@@ -103,7 +237,7 @@ func TestAccGitlabProjectAccessToken_basic(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: true,
 				// The token is only known during creating. We explicitly mention this limitation in the docs.
-				ImportStateVerifyIgnore: []string{"token"},
+				ImportStateVerifyIgnore: []string{"token", "validate_past_expiration_date"},
 			},
 			// Recreate the access token with updated attributes.
 			{
@@ -143,7 +277,7 @@ func TestAccGitlabProjectAccessToken_basic(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: true,
 				// The token is only known during creating. We explicitly mention this limitation in the docs.
-				ImportStateVerifyIgnore: []string{"token"},
+				ImportStateVerifyIgnore: []string{"token", "validate_past_expiration_date"},
 			},
 			// Recreate with `owner` access level.
 			{
@@ -163,7 +297,7 @@ func TestAccGitlabProjectAccessToken_basic(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: true,
 				// The token is only known during creating. We explicitly mention this limitation in the docs.
-				ImportStateVerifyIgnore: []string{"token"},
+				ImportStateVerifyIgnore: []string{"token", "validate_past_expiration_date"},
 			},
 		},
 	})
@@ -236,7 +370,7 @@ func TestAccGitlabProjectAccessToken_rotationUsingExpiresAt(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: true,
 				// The token is only known during creating. We explicitly mention this limitation in the docs.
-				ImportStateVerifyIgnore: []string{"token", "rotation_configuration"},
+				ImportStateVerifyIgnore: []string{"token", "rotation_configuration", "validate_past_expiration_date"},
 			},
 		},
 	})
@@ -307,7 +441,7 @@ func TestAccGitlabProjectAccessToken_rotationUsingExpiresAtTimeOffset(t *testing
 				ImportState:       true,
 				ImportStateVerify: true,
 				// The token is only known during creating. We explicitly mention this limitation in the docs.
-				ImportStateVerifyIgnore: []string{"token", "rotation_configuration"},
+				ImportStateVerifyIgnore: []string{"token", "rotation_configuration", "validate_past_expiration_date"},
 			},
 		},
 	})
@@ -393,7 +527,7 @@ func TestAccGitlabProjectAccessToken_rotationUsingDate(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: true,
 				// The token is only known during creating. We explicitly mention this limitation in the docs.
-				ImportStateVerifyIgnore: []string{"token", "rotation_configuration"},
+				ImportStateVerifyIgnore: []string{"token", "rotation_configuration", "validate_past_expiration_date"},
 			},
 		},
 	})
@@ -510,7 +644,7 @@ func TestAccGitlabProjectAccessToken_rotationUsingSelfRotate(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: true,
 				// The token is only known during creating. We explicitly mention this limitation in the docs.
-				ImportStateVerifyIgnore: []string{"token", "rotation_configuration"},
+				ImportStateVerifyIgnore: []string{"token", "rotation_configuration", "validate_past_expiration_date"},
 			},
 		},
 	})
@@ -561,7 +695,7 @@ func TestAccGitlabProjectAccessToken_rotationConfiguration(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: true,
 				// The token is only known during creating. We explicitly mention this limitation in the docs.
-				ImportStateVerifyIgnore: []string{"token", "rotation_configuration"},
+				ImportStateVerifyIgnore: []string{"token", "rotation_configuration", "validate_past_expiration_date"},
 			},
 			// Recreate the access token with a different expiration. The higher expiration should trigger a rotation.
 			{
@@ -590,7 +724,7 @@ func TestAccGitlabProjectAccessToken_rotationConfiguration(t *testing.T) {
 				ResourceName:            "gitlab_project_access_token.foo",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"token", "rotation_configuration"},
+				ImportStateVerifyIgnore: []string{"token", "rotation_configuration", "validate_past_expiration_date"},
 			},
 			// Recreate the access token with a different rotation. The lower expiration should not trigger another rotation.
 			{
@@ -797,7 +931,7 @@ func TestAccGitlabProjectAccessToken_rotateRevokedTokenGracefully(t *testing.T) 
 				ResourceName:            "gitlab_project_access_token.revoked",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"token", "rotation_configuration"},
+				ImportStateVerifyIgnore: []string{"token", "rotation_configuration", "validate_past_expiration_date"},
 			},
 		},
 	})
@@ -867,7 +1001,7 @@ func TestAccGitlabProjectAccessToken_revokedTokenWithPastExpiry(t *testing.T) {
 				ResourceName:            "gitlab_project_access_token.expired",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"token"},
+				ImportStateVerifyIgnore: []string{"token", "validate_past_expiration_date"},
 			},
 		},
 	})

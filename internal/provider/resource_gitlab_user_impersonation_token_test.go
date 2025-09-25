@@ -5,6 +5,7 @@ package provider
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"testing"
 	"time"
@@ -15,6 +16,55 @@ import (
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
+
+func TestAccGitlabUserImpersonationToken_createWithPastExpiryDate_validationDisabled(t *testing.T) {
+	user := testutil.CreateUsers(t, 1)[0]
+	pastDate := api.CurrentTime().Add(-24 * time.Hour).Format(api.Iso8601)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabUserImpersonationToken_destroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_user_impersonation_token" "success" {
+						user_id    = %d
+						name       = "this-token-should-succeed"
+						scopes     = ["api"]
+						expires_at = "%s"
+					}
+				`, user.ID, pastDate),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_user_impersonation_token.success", "expires_at", pastDate),
+				),
+			},
+		},
+	})
+}
+
+func TestAccGitlabUserImpersonationToken_failsWithPastExpiryDate_validationEnabled(t *testing.T) {
+	user := testutil.CreateUsers(t, 1)[0]
+	pastDate := api.CurrentTime().Add(-24 * time.Hour).Format(api.Iso8601)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabUserImpersonationToken_destroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_user_impersonation_token" "fails" {
+						user_id                       = %d
+						name                          = "this-token-should-fail"
+						scopes                        = ["api"]
+						expires_at                    = "%s"
+						validate_past_expiration_date = true
+					}
+				`, user.ID, pastDate),
+				ExpectError: regexp.MustCompile(fmt.Sprintf(`(?s)Expiry date %s must be in the future\. Current time is\s*.*`, pastDate)),
+			},
+		},
+	})
+}
 
 func TestAccGitlabUserImpersonationToken_basic(t *testing.T) {
 	user := testutil.CreateUsers(t, 1)[0]
@@ -57,7 +107,7 @@ func TestAccGitlabUserImpersonationToken_basic(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: true,
 				// The token is only known during creating. We explicitly mention this limitation in the docs.
-				ImportStateVerifyIgnore: []string{"token"},
+				ImportStateVerifyIgnore: []string{"token", "validate_past_expiration_date"},
 			},
 			// Recreate the access token with updated attributes.
 			{
@@ -91,7 +141,7 @@ func TestAccGitlabUserImpersonationToken_basic(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: true,
 				// The token is only known during creating. We explicitly mention this limitation in the docs.
-				ImportStateVerifyIgnore: []string{"token"},
+				ImportStateVerifyIgnore: []string{"token", "validate_past_expiration_date"},
 			},
 		},
 	})
