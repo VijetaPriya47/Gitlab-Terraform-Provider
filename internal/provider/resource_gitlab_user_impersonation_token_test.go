@@ -68,7 +68,7 @@ func TestAccGitlabUserImpersonationToken_failsWithPastExpiryDate_validationEnabl
 
 func TestAccGitlabUserImpersonationToken_basic(t *testing.T) {
 	user := testutil.CreateUsers(t, 1)[0]
-	expiresAt := time.Now().Add(time.Hour * 48).Format(api.Iso8601)
+	expiresAt := api.CurrentTime().Add(time.Hour * 48).Format(api.Iso8601)
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,

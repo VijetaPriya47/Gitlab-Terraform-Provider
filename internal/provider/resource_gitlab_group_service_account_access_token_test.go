@@ -203,7 +203,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_basic(t *testing.T) {
 
 					expires_at = "%s"
 				}
-				`, groupID, serviceAccount.ID, time.Now().Add(time.Hour*48).Format(api.Iso8601)),
+				`, groupID, serviceAccount.ID, api.CurrentTime().Add(time.Hour*48).Format(api.Iso8601)),
 				// Check computed and default attributes.
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("gitlab_group_service_account_access_token.foo", "active", "true"),
@@ -246,7 +246,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_basic(t *testing.T) {
 					]
 					expires_at = %q
 				}
-				`, groupID, serviceAccount.ID, time.Now().Add(time.Hour*48).Format(api.Iso8601)),
+				`, groupID, serviceAccount.ID, api.CurrentTime().Add(time.Hour*48).Format(api.Iso8601)),
 				// Check computed and default attributes.
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("gitlab_group_service_account_access_token.foo", "active", "true"),
@@ -533,7 +533,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_attributeValidation(t *testing.
 					}
 
 				}
-				`, groupID, serviceAccount.ID, time.Now().Add(time.Hour*48).Format(api.Iso8601)), // so it's always in the future.
+				`, groupID, serviceAccount.ID, api.CurrentTime().Add(time.Hour*48).Format(api.Iso8601)), // so it's always in the future.
 				ExpectError: regexp.MustCompile("Error: Invalid Attribute Combination"),
 			},
 			// Validate that expiration must be > 0
@@ -1026,7 +1026,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_nonAdminToken(t *testing.T) {
 
 					expires_at = "%s"
 				}
-				`, token.Token, groupID, serviceAccount.ID, time.Now().Add(time.Hour*48).Format(api.Iso8601)),
+				`, token.Token, groupID, serviceAccount.ID, api.CurrentTime().Add(time.Hour*48).Format(api.Iso8601)),
 				// Check computed and default attributes.
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("gitlab_group_service_account_access_token.foo", "active", "true"),
@@ -1066,7 +1066,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_nonAdminToken(t *testing.T) {
 					]
 					expires_at = %q
 				}
-				`, token.Token, groupID, serviceAccount.ID, time.Now().Add(time.Hour*48).Format(api.Iso8601)),
+				`, token.Token, groupID, serviceAccount.ID, api.CurrentTime().Add(time.Hour*48).Format(api.Iso8601)),
 				// Check computed and default attributes.
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("gitlab_group_service_account_access_token.foo", "active", "true"),

@@ -161,7 +161,7 @@ func TestAccGitlabPersonalAccessToken_migrateFromSDKToFramework(t *testing.T) {
 
 		expires_at = "%s"
 	}
-	`, user.ID, time.Now().Add(time.Hour*48).Format(api.Iso8601))
+	`, user.ID, api.CurrentTime().Add(time.Hour*48).Format(api.Iso8601))
 
 	resource.ParallelTest(t, resource.TestCase{
 		CheckDestroy: testAccCheckGitlabPersonalAccessTokenDestroy,
@@ -216,7 +216,7 @@ func TestAccGitlabPersonalAccessToken_basic(t *testing.T) {
 
 					expires_at = "%s"
 				}
-				`, user.ID, time.Now().Add(time.Hour*48).Format(api.Iso8601)),
+				`, user.ID, api.CurrentTime().Add(time.Hour*48).Format(api.Iso8601)),
 				// Check computed and default attributes.
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("gitlab_personal_access_token.foo", "active", "true"),
@@ -256,7 +256,7 @@ func TestAccGitlabPersonalAccessToken_basic(t *testing.T) {
 					]
 					expires_at = %q
 				}
-				`, user.ID, time.Now().Add(time.Hour*48).Format(api.Iso8601)),
+				`, user.ID, api.CurrentTime().Add(time.Hour*48).Format(api.Iso8601)),
 				// Check computed and default attributes.
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("gitlab_personal_access_token.foo", "active", "true"),
@@ -620,7 +620,7 @@ func TestAccGitlabPersonalAccessToken_rotationConfiguration(t *testing.T) {
 
 	// Function for easily calculating the expiry days from the current time.
 	getCurrentTimePlusDays := func(days int) gitlab.ISOTime {
-		now := time.Now()
+		now := api.CurrentTime()
 		expiryDate := now.AddDate(0, 0, days)
 		expiryIsoTime, err := gitlab.ParseISOTime(expiryDate.Format(api.Iso8601))
 		if err != nil {

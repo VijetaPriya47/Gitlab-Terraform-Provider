@@ -75,7 +75,7 @@ func CurrentTime() time.Time {
 		})
 		return testingTime
 	}
-	return time.Now()
+	return time.Now().UTC()
 }
 
 // Retrieves the data for the current user (which is the user configured in the provider) and determines if they are an admin.

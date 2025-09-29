@@ -166,7 +166,7 @@ func TestAccGitlabProjectAccessToken_migrateFromSDKToFramework(t *testing.T) {
 
 		expires_at = "%s"
 	}
-	`, project.ID, time.Now().Add(time.Hour*48).Format(api.Iso8601))
+	`, project.ID, api.CurrentTime().Add(time.Hour*48).Format(api.Iso8601))
 
 	resource.ParallelTest(t, resource.TestCase{
 		CheckDestroy: testAccCheckGitlabProjectAccessTokenDestroy,
@@ -220,7 +220,7 @@ func TestAccGitlabProjectAccessToken_basic(t *testing.T) {
 
 					expires_at = "%s"
 				}
-				`, project.ID, time.Now().Add(time.Hour*48).Format(api.Iso8601)),
+				`, project.ID, api.CurrentTime().Add(time.Hour*48).Format(api.Iso8601)),
 				// Check computed and default attributes.
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("gitlab_project_access_token.foo", "active", "true"),
@@ -261,7 +261,7 @@ func TestAccGitlabProjectAccessToken_basic(t *testing.T) {
 					access_level = "developer"
 					expires_at = %q
 				}
-				`, project.ID, time.Now().Add(time.Hour*48).Format(api.Iso8601)),
+				`, project.ID, api.CurrentTime().Add(time.Hour*48).Format(api.Iso8601)),
 				// Check computed and default attributes.
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("gitlab_project_access_token.foo", "active", "true"),
@@ -289,7 +289,7 @@ func TestAccGitlabProjectAccessToken_basic(t *testing.T) {
 					access_level = "owner"
 					expires_at = %q
 				}
-				`, project.ID, time.Now().Add(time.Hour*48).Format("2006-01-02")),
+				`, project.ID, api.CurrentTime().Add(time.Hour*48).Format("2006-01-02")),
 			},
 			// Verify upstream resource with an import.
 			{
@@ -655,7 +655,7 @@ func TestAccGitlabProjectAccessToken_rotationConfiguration(t *testing.T) {
 
 	// Function for easily calculating the expiry days from the current time.
 	getCurrentTimePlusDays := func(days int) gitlab.ISOTime {
-		now := time.Now()
+		now := api.CurrentTime()
 		expiryDate := now.AddDate(0, 0, days)
 		expiryIsoTime, err := gitlab.ParseISOTime(expiryDate.Format(api.Iso8601))
 		if err != nil {
@@ -756,7 +756,7 @@ func TestAccGitlabProjectAccessToken_attributeValidation(t *testing.T) {
 
 	// Function for easily calculating the expiry days from the current time.
 	getCurrentTimePlusDays := func(days int) gitlab.ISOTime {
-		now := time.Now()
+		now := api.CurrentTime()
 		expiryDate := now.AddDate(0, 0, days)
 		expiryIsoTime, err := gitlab.ParseISOTime(expiryDate.Format(api.Iso8601))
 		if err != nil {

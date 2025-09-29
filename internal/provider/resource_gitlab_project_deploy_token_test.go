@@ -12,13 +12,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timetypes/timetypes"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
 func TestAccGitlabProjectDeployToken_createWithPastExpiryDate_validationDisabled(t *testing.T) {
 	project := testutil.CreateProject(t)
-	pastDate, _ := timetypes.NewRFC3339Value(time.Now().Add(-24 * time.Hour).Format(time.RFC3339))
+	pastDate, _ := timetypes.NewRFC3339Value(api.CurrentTime().Add(-24 * time.Hour).Format(time.RFC3339))
 	pastDateTime, _ := pastDate.ValueRFC3339Time()
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -44,7 +45,7 @@ func TestAccGitlabProjectDeployToken_createWithPastExpiryDate_validationDisabled
 
 func TestAccGitlabProjectDeployToken_failsWithPastExpiryDate_validationEnabled(t *testing.T) {
 	project := testutil.CreateProject(t)
-	pastDate, _ := timetypes.NewRFC3339Value(time.Now().Add(-24 * time.Hour).Format(time.RFC3339))
+	pastDate, _ := timetypes.NewRFC3339Value(api.CurrentTime().Add(-24 * time.Hour).Format(time.RFC3339))
 	pastDateTime, _ := pastDate.ValueRFC3339Time()
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -69,7 +70,7 @@ func TestAccGitlabProjectDeployToken_failsWithPastExpiryDate_validationEnabled(t
 
 func TestAccGitlabProjectDeployToken_basic(t *testing.T) {
 	project := testutil.CreateProject(t)
-	expireTime, _ := timetypes.NewRFC3339Value(time.Now().Add(time.Hour * 48).Format(time.RFC3339))
+	expireTime, _ := timetypes.NewRFC3339Value(api.CurrentTime().Add(time.Hour * 48).Format(time.RFC3339))
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
@@ -143,7 +144,7 @@ func TestAccGitlabProjectDeployToken_basic(t *testing.T) {
 
 func TestAccGitlabProjectDeployToken_pagination(t *testing.T) {
 	project := testutil.CreateProject(t)
-	expireTime, _ := timetypes.NewRFC3339Value(time.Now().Add(time.Hour * 48).Format(time.RFC3339))
+	expireTime, _ := timetypes.NewRFC3339Value(api.CurrentTime().Add(time.Hour * 48).Format(time.RFC3339))
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
