@@ -1409,3 +1409,32 @@ func CreateGitlabClientWithToken(t *testing.T, token string) *gitlab.Client {
 	}
 	return client
 }
+
+func CreateProjectApprovalRule(t *testing.T, project int, ruleName string, approvalsRequired int, userIDs []int, groupIDs []int, protectedBranchIDs []int) (*gitlab.ProjectApprovalRule, error) {
+	t.Helper()
+
+	approvalRuleOptions := gitlab.CreateProjectLevelRuleOptions{
+		Name:                          gitlab.Ptr(ruleName),
+		RuleType:                      gitlab.Ptr("regular"),
+		ApprovalsRequired:             gitlab.Ptr(approvalsRequired),
+		AppliesToAllProtectedBranches: gitlab.Ptr(false),
+	}
+
+	if len(userIDs) > 0 {
+		approvalRuleOptions.UserIDs = gitlab.Ptr(userIDs)
+	}
+	if len(groupIDs) > 0 {
+		approvalRuleOptions.GroupIDs = gitlab.Ptr(groupIDs)
+	}
+	if len(protectedBranchIDs) > 0 {
+		approvalRuleOptions.ProtectedBranchIDs = gitlab.Ptr(protectedBranchIDs)
+	}
+
+	approvalRule, _, err := TestGitlabClient.Projects.CreateProjectApprovalRule(project, &approvalRuleOptions)
+
+	t.Cleanup(func() {
+		_, _ = TestGitlabClient.Projects.DeleteProjectApprovalRule(project, approvalRule.ID)
+	})
+
+	return approvalRule, err
+}
