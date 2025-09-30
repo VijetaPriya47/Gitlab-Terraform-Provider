@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -28,6 +29,9 @@ var (
 	_ resource.ResourceWithImportState = &gitlabMemberRoleResource{}
 	_ resource.ResourceWithModifyPlan  = &gitlabMemberRoleResource{}
 )
+
+// https://docs.gitlab.com/user/custom_roles/abilities/#admin
+const ReadAdminCICDPermission = "READ_ADMIN_CICD"
 
 func init() {
 	registerResource(NewGitLabMemberRoleResource)
@@ -169,7 +173,20 @@ func (r *gitlabMemberRoleResource) ModifyPlan(ctx context.Context, req resource.
 	if len(r.client.BaseURL().Host) == 0 || r.client.BaseURL().Host == "gitlab.com" {
 		if planData.GroupPath.IsNull() || planData.GroupPath.ValueString() == "" {
 			resp.Diagnostics.AddAttributeError(path.Root("group_path"), "Missing Attribute", "`group_path` is required when using GitLab SaaS")
+			return
 		}
+
+		found := slices.ContainsFunc(planData.EnabledPermissions, func(v types.String) bool { return v.ValueString() == ReadAdminCICDPermission })
+
+		if found {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("enabled_permissions"),
+				"Attribute Not Permitted",
+				fmt.Sprintf("`%s` permission is not available when using GitLab SaaS", ReadAdminCICDPermission),
+			)
+			return
+		}
+
 	} else {
 		if !planData.GroupPath.IsNull() && planData.GroupPath.ValueString() != "" {
 			resp.Diagnostics.AddAttributeError(path.Root("group_path"), "Attribute Not Permitted", "`group_path` is not allowed when using GitLab self-managed")
