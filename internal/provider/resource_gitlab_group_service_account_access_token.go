@@ -39,6 +39,8 @@ var (
 	_ resource.ResourceWithValidateConfig = &gitlabGroupServiceAccountAccessTokenResource{}
 )
 
+const DEFAULT_EXPIRATION_DAYS = 7
+
 func init() {
 	registerResource(NewGitlabGroupServiceAccountAccessTokenResource)
 }
@@ -70,14 +72,7 @@ type gitlabGroupServiceAccountAccessTokenResourceModel struct {
 	Active  types.Bool `tfsdk:"active"`
 	Revoked types.Bool `tfsdk:"revoked"`
 
-	RotationConfiguration *gitlabServiceAccountAccessTokenRotationConfiguration `tfsdk:"rotation_configuration"`
-}
-
-// The struct for rotation configurations. Used when the provider is auto
-// rotating tokens, and its use conflicts with `expires_at`
-type gitlabServiceAccountAccessTokenRotationConfiguration struct {
-	ExpirationDays   types.Int64 `tfsdk:"expiration_days"`
-	RotateBeforeDays types.Int64 `tfsdk:"rotate_before_days"`
+	RotationConfiguration *utils.GitlabAccessTokenRotationConfiguration `tfsdk:"rotation_configuration"`
 }
 
 func (r *gitlabGroupServiceAccountAccessTokenResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -386,7 +381,8 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) ModifyPlan(ctx context.Co
 
 	if shouldSetExpiration {
 		// We need to re-calculate the expiryDate, and set it in the plan
-		expiryDate, err := r.determineExpiryDate(planData)
+		fallbackExpirationDays := DEFAULT_EXPIRATION_DAYS
+		expiryDate, err := utils.DetermineExpiryDate(planData.ExpiresAt, planData.RotationConfiguration, &fallbackExpirationDays)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Error determining new expiry date",
@@ -450,7 +446,8 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) modifyPlanRevoked(ctx con
 	resp.RequiresReplace = append(resp.RequiresReplace, path.Root("revoked"))
 
 	// Calculate new expiration date
-	expiryDate, err := r.determineExpiryDate(planData)
+	fallbackExpirationDays := DEFAULT_EXPIRATION_DAYS
+	expiryDate, err := utils.DetermineExpiryDate(planData.ExpiresAt, planData.RotationConfiguration, &fallbackExpirationDays)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error determining new expiry date",
@@ -586,7 +583,8 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Create(ctx context.Contex
 	// Optional attributes
 
 	// Get the valid expiry date from the `expires_at` or `rotation_configuration`
-	expiryDate, err := r.determineExpiryDate(data)
+	fallbackExpirationDays := DEFAULT_EXPIRATION_DAYS
+	expiryDate, err := utils.DetermineExpiryDate(data.ExpiresAt, data.RotationConfiguration, &fallbackExpirationDays)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error determining expiry date",
@@ -595,14 +593,15 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Create(ctx context.Contex
 		return
 	}
 	if expiryDate != nil {
-		if data.ValidatePastExpirationDate.ValueBool() && api.CurrentTime().After(time.Time(*expiryDate)) {
-			currentTimeStr := api.CurrentTime().Format(time.RFC3339)
-
-			resp.Diagnostics.AddError(
-				"Error creating GitLab GroupServiceAccountAccessToken",
-				fmt.Sprintf("Expiry date %s must be in the future. Current time is %s", data.ExpiresAt.ValueString(), currentTimeStr),
-			)
-			return
+		if data.ValidatePastExpirationDate.ValueBool() {
+			err := utils.ValidateISOTimeExpiryDate(*expiryDate)
+			if err != nil {
+				resp.Diagnostics.AddError(
+					"Error creating GitLab GroupServiceAccountAccessToken",
+					err.Error(),
+				)
+				return
+			}
 		}
 
 		options.ExpiresAt = expiryDate
@@ -671,14 +670,15 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Update(ctx context.Contex
 		return
 	}
 
-	if planData.ValidatePastExpirationDate.ValueBool() && api.CurrentTime().After(time.Time(expiresAt)) {
-		currentTimeStr := api.CurrentTime().Format(time.RFC3339)
-
-		resp.Diagnostics.AddError(
-			"Error updating GitLab GroupServiceAccountAccessToken",
-			fmt.Sprintf("Expiry date %s must be in the future. Current time is %s", planData.ExpiresAt.ValueString(), currentTimeStr),
-		)
-		return
+	if planData.ValidatePastExpirationDate.ValueBool() {
+		err := utils.ValidateISOTimeExpiryDate(expiresAt)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Error updating GitLab GroupServiceAccountAccessToken",
+				err.Error(),
+			)
+			return
+		}
 	}
 
 	// find out whether self_rotate is one of the scopes
@@ -819,48 +819,6 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Delete(ctx context.Contex
 		)
 		return
 	}
-}
-
-// Takes in a resource model, and checks with the `expires_at` or the `rotation_configuration` to determine what
-// value should be set into the `expires_at` field for the options.
-// Returns a gitlab.ISOTime object of what should be set into the `expires_at` field.
-func (r *gitlabGroupServiceAccountAccessTokenResource) determineExpiryDate(data *gitlabGroupServiceAccountAccessTokenResourceModel) (*gitlab.ISOTime, error) {
-	// If the plan doesn't have either of these, we don't want an expiry
-	if data.ExpiresAt.IsNull() && data.RotationConfiguration == nil {
-		return nil, nil
-	}
-
-	// If `expires_at` is set, then attempt to parse the time, and return the isoTime value if it
-	// successfully parses
-	if !data.ExpiresAt.IsNull() && !data.ExpiresAt.IsUnknown() && data.RotationConfiguration == nil {
-
-		isoTime, err := gitlab.ParseISOTime(data.ExpiresAt.ValueString())
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse expiration date into ISOTime. Provided value: %s", data.ExpiresAt.ValueString())
-		}
-		return &isoTime, nil
-	}
-
-	// If `expires_at` is not set, then use the `rotation_configuration.expiration_days` if possible to to add the duration
-	// to the current date to determine expiration, and return that instead. Otherwise, simply return nil, and let the default take.
-	if data.RotationConfiguration != nil {
-		now := api.CurrentTime()
-		var expiryDate time.Time
-
-		// If `expiration_days` is not set, then use 7 days, since that was the default from GitLab before 17.9. This is checked during
-		// `ValidatePlan` so users shouldn't be able to set an expiration_days then have it overridden here.
-		if !data.RotationConfiguration.ExpirationDays.IsNull() && !data.RotationConfiguration.ExpirationDays.IsUnknown() {
-			expiryDate = now.AddDate(0, 0, int(data.RotationConfiguration.ExpirationDays.ValueInt64()))
-		} else {
-			expiryDate = now.AddDate(0, 0, 7)
-		}
-
-		// Create an ISO time to return it
-		expiryIsoTime, err := gitlab.ParseISOTime(expiryDate.Format(api.Iso8601))
-		return &expiryIsoTime, err
-	}
-
-	return nil, nil
 }
 
 // Rotates the token using the token itself. Only works if the token has the `self_rotate` scope.

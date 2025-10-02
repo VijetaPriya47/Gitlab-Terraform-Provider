@@ -89,7 +89,15 @@ func TestAccGitlabProjectAccessToken_updateWithPastExpiryDate_validationDisabled
 
 func TestAccGitlabProjectAccessToken_failsWithPastExpiryDate_validationEnabled(t *testing.T) {
 	project := testutil.CreateProject(t)
-	pastDate := api.CurrentTime().Add(-24 * time.Hour).Format(api.Iso8601)
+
+	pastDateForConfig := api.CurrentTime().Add(-24 * time.Hour).Format(api.Iso8601)
+
+	parsedDate, err := time.Parse(api.Iso8601, pastDateForConfig)
+	if err != nil {
+		t.Fatalf("Failed to parse date for test setup: %v", err)
+	}
+
+	pastDateForError := parsedDate.Format(time.RFC3339)
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
@@ -105,8 +113,8 @@ func TestAccGitlabProjectAccessToken_failsWithPastExpiryDate_validationEnabled(t
 						expires_at                    = "%s"
 						validate_past_expiration_date = true
 					}
-				`, project.ID, pastDate),
-				ExpectError: regexp.MustCompile(fmt.Sprintf(`(?s)Expiry date %s must be in the future\. Current time is\s*.*`, pastDate)),
+				`, project.ID, pastDateForConfig),
+				ExpectError: regexp.MustCompile(fmt.Sprintf(`(?s)Expiry date %s must be in the future\. Current time is\s*.*`, pastDateForError)),
 			},
 		},
 	})
@@ -115,7 +123,15 @@ func TestAccGitlabProjectAccessToken_failsWithPastExpiryDate_validationEnabled(t
 func TestAccGitlabProjectAccessToken_failsToUpdateWithPastExpiryDate_validationEnabled(t *testing.T) {
 	project := testutil.CreateProject(t)
 	futureDate := api.CurrentTime().Add(48 * time.Hour).Format(api.Iso8601)
-	pastDate := api.CurrentTime().Add(-24 * time.Hour).Format(api.Iso8601)
+
+	pastDateForConfig := api.CurrentTime().Add(-24 * time.Hour).Format(api.Iso8601)
+
+	parsedDate, err := time.Parse(api.Iso8601, pastDateForConfig)
+	if err != nil {
+		t.Fatalf("Failed to parse date for test setup: %v", err)
+	}
+
+	pastDateForError := parsedDate.Format(time.RFC3339)
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
@@ -146,8 +162,8 @@ func TestAccGitlabProjectAccessToken_failsToUpdateWithPastExpiryDate_validationE
 						expires_at                    = "%s"
 						validate_past_expiration_date = true
 					}
-				`, project.ID, pastDate),
-				ExpectError: regexp.MustCompile(fmt.Sprintf(`(?s)Expiry date %s must be in the future\. Current time is\s*.*`, pastDate)),
+				`, project.ID, pastDateForConfig),
+				ExpectError: regexp.MustCompile(fmt.Sprintf(`(?s)Expiry date %s must be in the future\. Current time is\s*.*`, pastDateForError)),
 			},
 		},
 	})

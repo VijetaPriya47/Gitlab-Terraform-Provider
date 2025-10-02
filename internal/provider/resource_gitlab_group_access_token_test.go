@@ -91,7 +91,15 @@ func TestAccGitlabGroupAccessToken_updateWithPastExpiryDate_validationDisabled(t
 
 func TestAccGitlabGroupAccessToken_failsWithPastExpiryDate_validationEnabled(t *testing.T) {
 	group := testutil.CreateGroups(t, 1)[0]
-	pastDate := api.CurrentTime().Add(-24 * time.Hour).Format(api.Iso8601)
+
+	pastDateForConfig := api.CurrentTime().Add(-24 * time.Hour).Format(api.Iso8601)
+
+	parsedDate, err := time.Parse(api.Iso8601, pastDateForConfig)
+	if err != nil {
+		t.Fatalf("Failed to parse date for test setup: %v", err)
+	}
+
+	pastDateForError := parsedDate.Format(time.RFC3339)
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
@@ -107,8 +115,8 @@ func TestAccGitlabGroupAccessToken_failsWithPastExpiryDate_validationEnabled(t *
 						scopes                        = ["api"]
 						validate_past_expiration_date = true
 					}
-				`, group.ID, pastDate),
-				ExpectError: regexp.MustCompile(fmt.Sprintf(`(?s)Expiry date %s must be in the future\. Current time is\s*.*`, pastDate)),
+				`, group.ID, pastDateForConfig),
+				ExpectError: regexp.MustCompile(fmt.Sprintf(`(?s)Expiry date %s must be in the future\. Current time is\s*.*`, pastDateForError)),
 			},
 		},
 	})
@@ -117,7 +125,15 @@ func TestAccGitlabGroupAccessToken_failsWithPastExpiryDate_validationEnabled(t *
 func TestAccGitlabGroupAccessToken_failsToUpdateWithPastExpiryDate_validationEnabled(t *testing.T) {
 	group := testutil.CreateGroups(t, 1)[0]
 	futureDate := api.CurrentTime().Add(48 * time.Hour).Format(api.Iso8601)
-	pastDate := api.CurrentTime().Add(-24 * time.Hour).Format(api.Iso8601)
+
+	pastDateForConfig := api.CurrentTime().Add(-24 * time.Hour).Format(api.Iso8601)
+
+	parsedDate, err := time.Parse(api.Iso8601, pastDateForConfig)
+	if err != nil {
+		t.Fatalf("Failed to parse date for test setup: %v", err)
+	}
+
+	pastDateForError := parsedDate.Format(time.RFC3339)
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
@@ -148,8 +164,8 @@ func TestAccGitlabGroupAccessToken_failsToUpdateWithPastExpiryDate_validationEna
 						scopes                        = ["api"]
 						validate_past_expiration_date = true
 					}
-				`, group.ID, pastDate),
-				ExpectError: regexp.MustCompile(fmt.Sprintf(`(?s)Expiry date %s must be in the future\. Current time is\s*.*`, pastDate)),
+				`, group.ID, pastDateForConfig),
+				ExpectError: regexp.MustCompile(fmt.Sprintf(`(?s)Expiry date %s must be in the future\. Current time is\s*.*`, pastDateForError)),
 			},
 		},
 	})

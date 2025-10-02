@@ -221,26 +221,29 @@ func (r *gitlabUserImpersonationTokenResource) Create(ctx context.Context, req r
 		scopes = append(scopes, s)
 	}
 
-	expiresAt, err := time.Parse(api.Iso8601, data.ExpiresAt.ValueString())
+	expiresAt, err := utils.DetermineExpiryDate(data.ExpiresAt, nil, nil)
 	if err != nil {
-		resp.Diagnostics.AddError("Error determining expiry date", fmt.Sprintf("Could not determine expiry date: %s", err))
+		resp.Diagnostics.AddError("Error determining expiry date", err.Error())
 		return
 	}
 
-	if data.ValidatePastExpirationDate.ValueBool() && api.CurrentTime().After(time.Time(expiresAt)) {
-		currentTimeStr := api.CurrentTime().Format(time.RFC3339)
-
-		resp.Diagnostics.AddError(
-			"Error creating GitLab UserImpersonationToken",
-			fmt.Sprintf("Expiry date %s must be in the future. Current time is %s", data.ExpiresAt.ValueString(), currentTimeStr),
-		)
-		return
+	if data.ValidatePastExpirationDate.ValueBool() {
+		err := utils.ValidateISOTimeExpiryDate(*expiresAt)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Error creating GitLab UserImpersonationToken",
+				err.Error(),
+			)
+			return
+		}
 	}
+
+	timeExpiresAt := time.Time(*expiresAt)
 
 	options := &gitlab.CreateImpersonationTokenOptions{
 		Name:      data.Name.ValueStringPointer(),
 		Scopes:    gitlab.Ptr(scopes),
-		ExpiresAt: &expiresAt,
+		ExpiresAt: &timeExpiresAt,
 	}
 
 	userID := data.UserID.ValueInt64()

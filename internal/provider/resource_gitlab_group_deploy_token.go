@@ -275,23 +275,24 @@ func (r *gitlabGroupDeployTokenResource) Create(ctx context.Context, req resourc
 
 	// Get the valid expiry date from `expires_at`
 	if !data.ExpiresAt.IsNull() && !data.ExpiresAt.IsUnknown() {
-		parsedExpiresAt, err := data.ExpiresAt.ValueRFC3339Time()
+		parsedExpiresAt, err := utils.DetermineRFC3339ExpiryDate(data.ExpiresAt)
 		if err != nil {
-			resp.Diagnostics.AddError("Error determining expiry date", fmt.Sprintf("Failed to determine expiration date. Provided value: %s", data.ExpiresAt.ValueString()))
+			resp.Diagnostics.AddError("Error determining expiry date", err.Error())
 			return
 		}
 
-		if data.ValidatePastExpirationDate.ValueBool() && api.CurrentTime().After(parsedExpiresAt) {
-			currentTimeStr := api.CurrentTime().Format(time.RFC3339)
-
-			resp.Diagnostics.AddError(
-				"Error creating GitLab GroupDeployToken",
-				fmt.Sprintf("Expiry date %s must be in the future. Current time is %s", data.ExpiresAt.ValueString(), currentTimeStr),
-			)
-			return
+		if data.ValidatePastExpirationDate.ValueBool() {
+			err := utils.ValidateExpiryDateValid(*parsedExpiresAt)
+			if err != nil {
+				resp.Diagnostics.AddError(
+					"Error creating GitLab GroupDeployToken",
+					err.Error(),
+				)
+				return
+			}
 		}
 
-		options.ExpiresAt = &parsedExpiresAt
+		options.ExpiresAt = parsedExpiresAt
 	}
 
 	token, _, err := r.client.DeployTokens.CreateGroupDeployToken(data.Group.ValueString(), options, gitlab.WithContext(ctx))
