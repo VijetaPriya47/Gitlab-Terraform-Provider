@@ -415,3 +415,33 @@ func testAcc_GitlabMemberRole_CheckDestroy(s *terraform.State) error {
 	}
 	return nil
 }
+
+func TestAccGitlabMemberRole_EnsureErrorOnSaaS(t *testing.T) {
+	// This should run only on SaaS
+	t.Skip("integration tests are skipped")
+
+	notPermittedOnSaaSRegex, err := regexp.Compile(
+		fmt.Sprintf("`%s` permission is not available when using GitLab SaaS", ReadAdminCICDPermission),
+	)
+	if err != nil {
+		t.Errorf("Unable to format attribute not permitted on SaaS error regex: %s", err)
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			// READ_ADMIN_CICD is not permitted for SaaS
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_member_role" "foo" {
+						name                = "Test role"
+						base_access_level   = "REPORTER"
+						enabled_permissions = ["READ_VULNERABILITY", "%s"]
+						group_path          = "test-group"
+					}
+				`, ReadAdminCICDPermission),
+				ExpectError: notPermittedOnSaaSRegex,
+			},
+		},
+	})
+}
