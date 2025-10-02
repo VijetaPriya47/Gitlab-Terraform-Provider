@@ -1,14 +1,13 @@
 //go:build acceptance
 // +build acceptance
 
-package sdk
+package provider
 
 import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
@@ -18,7 +17,7 @@ func TestAccDataSourceGitlabGroup_basic(t *testing.T) {
 	withShare := testutil.GroupShareGroup(t, groups[0].ID, &groups[1].ID)
 
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			// Get group using its ID
 			{
