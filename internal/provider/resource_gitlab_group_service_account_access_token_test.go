@@ -109,7 +109,14 @@ func TestAccGitlabGroupServiceAccountAccessToken_failsWithPastExpiryDate_validat
 	groupID := strconv.Itoa(group.ID)
 	serviceAccount := testutil.CreateGroupServiceAccounts(t, 1, groupID)[0]
 
-	pastDate := api.CurrentTime().Add(-24 * time.Hour).Format(api.Iso8601)
+	pastDateForConfig := api.CurrentTime().Add(-24 * time.Hour).Format(api.Iso8601)
+
+	parsedDate, err := time.Parse(api.Iso8601, pastDateForConfig)
+	if err != nil {
+		t.Fatalf("Failed to parse date for test setup: %v", err)
+	}
+
+	pastDateForError := parsedDate.Format(time.RFC3339)
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
@@ -125,8 +132,8 @@ func TestAccGitlabGroupServiceAccountAccessToken_failsWithPastExpiryDate_validat
 						expires_at                    = "%s"
 						validate_past_expiration_date = true
 					}
-				`, groupID, serviceAccount.ID, pastDate),
-				ExpectError: regexp.MustCompile(fmt.Sprintf(`(?s)Expiry date %s must be in the future\. Current time is\s*.*`, pastDate)),
+				`, groupID, serviceAccount.ID, pastDateForConfig),
+				ExpectError: regexp.MustCompile(fmt.Sprintf(`(?s)Expiry date %s must be in the future\. Current time is\s*.*`, pastDateForError)),
 			},
 		},
 	})
@@ -140,7 +147,14 @@ func TestAccGitlabGroupServiceAccountAccessToken_failsToUpdateWithPastExpiryDate
 	serviceAccount := testutil.CreateGroupServiceAccounts(t, 1, groupID)[0]
 
 	futureDate := api.CurrentTime().Add(48 * time.Hour).Format(api.Iso8601)
-	pastDate := api.CurrentTime().Add(-24 * time.Hour).Format(api.Iso8601)
+	pastDateForConfig := api.CurrentTime().Add(-24 * time.Hour).Format(api.Iso8601)
+
+	parsedDate, err := time.Parse(api.Iso8601, pastDateForConfig)
+	if err != nil {
+		t.Fatalf("Failed to parse date for test setup: %v", err)
+	}
+
+	pastDateForError := parsedDate.Format(time.RFC3339)
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
@@ -173,8 +187,8 @@ func TestAccGitlabGroupServiceAccountAccessToken_failsToUpdateWithPastExpiryDate
 						expires_at                    = "%s"
 						validate_past_expiration_date = true
 					}
-				`, groupID, serviceAccount.ID, pastDate),
-				ExpectError: regexp.MustCompile(fmt.Sprintf(`(?s)Expiry date %s must be in the future\. Current time is\s*.*`, pastDate)),
+				`, groupID, serviceAccount.ID, pastDateForConfig),
+				ExpectError: regexp.MustCompile(fmt.Sprintf(`(?s)Expiry date %s must be in the future\. Current time is\s*.*`, pastDateForError)),
 			},
 		},
 	})

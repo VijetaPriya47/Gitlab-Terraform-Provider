@@ -44,7 +44,15 @@ func TestAccGitlabUserImpersonationToken_createWithPastExpiryDate_validationDisa
 
 func TestAccGitlabUserImpersonationToken_failsWithPastExpiryDate_validationEnabled(t *testing.T) {
 	user := testutil.CreateUsers(t, 1)[0]
-	pastDate := api.CurrentTime().Add(-24 * time.Hour).Format(api.Iso8601)
+
+	pastDateForConfig := api.CurrentTime().Add(-24 * time.Hour).Format(api.Iso8601)
+
+	parsedDate, err := time.Parse(api.Iso8601, pastDateForConfig)
+	if err != nil {
+		t.Fatalf("Failed to parse date for test setup: %v", err)
+	}
+
+	pastDateForError := parsedDate.Format(time.RFC3339)
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
@@ -59,8 +67,8 @@ func TestAccGitlabUserImpersonationToken_failsWithPastExpiryDate_validationEnabl
 						expires_at                    = "%s"
 						validate_past_expiration_date = true
 					}
-				`, user.ID, pastDate),
-				ExpectError: regexp.MustCompile(fmt.Sprintf(`(?s)Expiry date %s must be in the future\. Current time is\s*.*`, pastDate)),
+				`, user.ID, pastDateForConfig),
+				ExpectError: regexp.MustCompile(fmt.Sprintf(`(?s)Expiry date %s must be in the future\. Current time is\s*.*`, pastDateForError)),
 			},
 		},
 	})
