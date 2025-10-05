@@ -19,15 +19,16 @@ test -f $done || {
   echo 'Initializing GitLab for acceptance tests'
 
   echo 'Creating access token'
-  (
-    printf 'terraform_token = PersonalAccessToken.create('
-    printf 'user_id: 1, '
-    printf 'scopes: [:api, :read_user], '
-    printf 'name: :terraform, '
-    printf 'expires_at: Time.now + 30.days);'
-    printf "terraform_token.set_token('$GITLAB_TOKEN');"
-    printf 'terraform_token.save!;'
-  ) | gitlab-rails console
+  gitlab-rails console <<EOF
+terraform_token = PersonalAccessToken.create(
+  user_id: 1,
+  scopes: [:api, :read_user],
+  name: :terraform,
+  expires_at: Time.now + 30.days
+)
+terraform_token.set_token('$GITLAB_TOKEN')
+terraform_token.save!
+EOF
 
   # 2020-09-07: Currently Gitlab (version 13.3.6 ) doesn't allow in admin API
   # ability to set a group as instance level templates.
@@ -38,20 +39,21 @@ test -f $done || {
   # Works on CE too
 
   echo 'Creating an instance level template group with a simple template based on rails'
-  (
-    printf 'group_template = Group.new('
-    printf 'name: :terraform, '
-    printf 'path: :terraform);'
-    printf 'group_template.save!;'
-    printf 'application_settings = ApplicationSetting.find_by "";'
-    printf 'application_settings.custom_project_templates_group_id = group_template.id;'
-    printf 'application_settings.save!;'
-  ) | gitlab-rails console
+  gitlab-rails console <<EOF
+group_template = Group.new(
+  name: :terraform,
+  path: :terraform
+)
+group_template.save!
+application_settings = ApplicationSetting.find_by ""
+application_settings.custom_project_templates_group_id = group_template.id
+application_settings.save!
+EOF
 
   echo 'Enabling `retain_resource_access_token_user_after_revoke` feature flag'
-  (
-    printf 'Feature.enable(:retain_resource_access_token_user_after_revoke);'
-  ) | gitlab-rails console
+  gitlab-rails console <<EOF
+Feature.enable(:retain_resource_access_token_user_after_revoke)
+EOF
 
   touch $done
 }
