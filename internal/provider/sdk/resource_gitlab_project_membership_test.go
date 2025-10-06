@@ -6,8 +6,10 @@ package sdk
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -235,4 +237,82 @@ func testAccCheckGitlabProjectMembershipDestroy(s *terraform.State) error {
 		return nil
 	}
 	return nil
+}
+
+func TestAccGitlabProjectMembership_failsWithPastExpiryDate(t *testing.T) {
+	project := testutil.CreateProject(t)
+	user := testutil.CreateUsers(t, 1)[0]
+
+	pastDateForConfig := api.CurrentTime().Add(-24 * time.Hour).Format("2006-01-02")
+
+	parsedDate, err := time.Parse("2006-01-02", pastDateForConfig)
+	if err != nil {
+		t.Fatalf("Failed to parse date for test setup: %v", err)
+	}
+
+	pastDateForError := parsedDate.Format(time.RFC3339)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabProjectMembershipDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_membership" "test_fail" {
+						project                        = "%d"
+						user_id                        = %d
+						access_level                   = "developer"
+						expires_at                     = "%s"
+					}
+				`, project.ID, user.ID, pastDateForConfig),
+				ExpectError: regexp.MustCompile(fmt.Sprintf(`(?s)Expiry date %s must be in the future\. Current time is\s*.*`, pastDateForError)),
+			},
+		},
+	})
+}
+
+func TestAccGitlabProjectMembership_failsToUpdateWithPastExpiryDate(t *testing.T) {
+	project := testutil.CreateProject(t)
+	user := testutil.CreateUsers(t, 1)[0]
+
+	futureDate := time.Now().Add(48 * time.Hour).Format("2006-01-02")
+	pastDateForConfig := time.Now().Add(-24 * time.Hour).Format("2006-01-02")
+
+	parsedDate, err := time.Parse("2006-01-02", pastDateForConfig)
+	if err != nil {
+		t.Fatalf("Failed to parse date for test setup: %v", err)
+	}
+
+	pastDateForError := parsedDate.Format(time.RFC3339)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabProjectMembershipDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_membership" "test_update_fail" {
+						project                        = "%d"
+						user_id                        = %d
+						access_level                   = "developer"
+						expires_at                     = "%s"
+					}
+				`, project.ID, user.ID, futureDate),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project_membership.test_update_fail", "expires_at", futureDate),
+				),
+			},
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_membership" "test_update_fail" {
+						project                        = "%d"
+						user_id                        = %d
+						access_level                   = "developer"
+						expires_at                     = "%s"
+					}
+				`, project.ID, user.ID, pastDateForConfig),
+				ExpectError: regexp.MustCompile(fmt.Sprintf(`(?s)Expiry date %s must be in the future\. Current time is\s*.*`, pastDateForError)),
+			},
+		},
+	})
 }
