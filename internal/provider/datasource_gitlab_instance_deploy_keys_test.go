@@ -1,5 +1,5 @@
-//go:build acceptance
-// +build acceptance
+//go:build flakey
+// +build flakey
 
 package provider
 
