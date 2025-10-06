@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -139,6 +140,10 @@ func resourceGitlabProjectMembershipCreate(ctx context.Context, d *schema.Resour
 		options.MemberRoleID = gitlab.Ptr(v.(int))
 	}
 
+	if diags := validateProjectMembershipExpiry(d); diags != nil {
+		return diag.FromErr(diags)
+	}
+
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab project membership for %d in %s", options.UserID, project))
 
 	_, _, err := client.ProjectMembers.AddProjectMember(project, options, gitlab.WithContext(ctx))
@@ -203,6 +208,10 @@ func resourceGitlabProjectMembershipUpdate(ctx context.Context, d *schema.Resour
 		options.MemberRoleID = gitlab.Ptr(v.(int))
 	}
 
+	if diags := validateProjectMembershipExpiry(d); diags != nil {
+		return diag.FromErr(diags)
+	}
+
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab project membership %v for %s", userId, project))
 
 	_, _, err := client.ProjectMembers.EditProjectMember(project, userId, &options, gitlab.WithContext(ctx))
@@ -232,7 +241,6 @@ func resourceGitlabProjectMembershipDelete(ctx context.Context, d *schema.Resour
 }
 
 func resourceGitlabProjectMembershipSetToState(d *schema.ResourceData, projectMember *gitlab.ProjectMember, projectId *string) {
-
 	d.Set("project", projectId)
 	d.Set("user_id", projectMember.ID)
 	d.Set("access_level", api.AccessLevelValueToName[projectMember.AccessLevel])
@@ -251,4 +259,23 @@ func resourceGitlabProjectMembershipSetToState(d *schema.ResourceData, projectMe
 	}
 	userId := strconv.Itoa(projectMember.ID)
 	d.SetId(utils.BuildTwoPartID(projectId, &userId))
+}
+
+func validateProjectMembershipExpiry(d *schema.ResourceData) error {
+	expiresAt, ok := d.GetOk("expires_at")
+	if !ok || expiresAt.(string) == "" {
+		return nil
+	}
+	expiresAtStr := expiresAt.(string)
+
+	expiryDate, err := utils.DetermineExpiryDate(types.StringValue(expiresAtStr), nil, nil)
+	if err != nil {
+		return err
+	}
+
+	if err := utils.ValidateISOTimeExpiryDate(*expiryDate); err != nil {
+		return err
+	}
+
+	return nil
 }
