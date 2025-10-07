@@ -1092,6 +1092,54 @@ var _ = registerDataSource("gitlab_projects", func() *schema.Resource {
 	}
 })
 
+var datasourceContainerExpirationPolicyAttributesSchema = &schema.Resource{
+	Schema: map[string]*schema.Schema{
+		"cadence": {
+			Description:      fmt.Sprintf("The cadence of the policy. Valid values are: %s.", utils.RenderValueListForDocs(validContainerExpirationPolicyAttributesCadenceValues)),
+			Type:             schema.TypeString,
+			Optional:         true,
+			Computed:         true,
+			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(validContainerExpirationPolicyAttributesCadenceValues, false)),
+		},
+		"keep_n": {
+			Description:      "The number of images to keep.",
+			Type:             schema.TypeInt,
+			Optional:         true,
+			Computed:         true,
+			ValidateDiagFunc: validation.ToDiagFunc(validation.IntAtLeast(0)),
+		},
+		"older_than": {
+			Description: "The number of days to keep images.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
+		},
+		"name_regex_delete": {
+			Description: "The regular expression to match image names to delete.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
+		},
+		"name_regex_keep": {
+			Description: "The regular expression to match image names to keep.",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
+		},
+		"enabled": {
+			Description: "If true, the policy is enabled.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
+		"next_run_at": {
+			Description: "The next time the policy will run.",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
+	},
+}
+
 // CRUD methods
 
 func dataSourceGitlabProjectsRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {

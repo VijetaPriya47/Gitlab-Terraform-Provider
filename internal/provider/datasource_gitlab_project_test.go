@@ -1,7 +1,7 @@
 //go:build acceptance
 // +build acceptance
 
-package sdk
+package provider
 
 import (
 	"fmt"
@@ -9,10 +9,9 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-
+	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
@@ -23,11 +22,11 @@ func TestAccDataGitlabProject_basic(t *testing.T) {
 	project := testutil.CreateProject(t)
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
-					resource "gitlab_project" "test"{
+					resource "gitlab_project" "test" {
 						name = "%s"
 						path = "%s"
 						description = "Terraform acceptance tests"
@@ -95,7 +94,7 @@ func TestAccDataGitlabProject_withoutPushRulesAccess(t *testing.T) {
 	testToken := testutil.CreatePersonalAccessToken(t, testUser)
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// lintignore:AT004  // we need the provider configuration here
@@ -125,7 +124,7 @@ func TestAccDataGitlabProject_sharedWithGroup(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
@@ -164,7 +163,7 @@ func TestAccDataGitlabProject_pathWithNamespaceAsIdExpectError(t *testing.T) {
 	testProject := testutil.CreateProject(t)
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
@@ -198,7 +197,7 @@ func TestAccDataGitlabProject_CIRestrictPipeline(t *testing.T) {
 
 	// Create the terraform test
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(
@@ -232,7 +231,7 @@ func TestAccDataGitlabProject_CIIdTokenSubClaimComponents(t *testing.T) {
 
 	// Create the terraform test
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(
@@ -246,7 +245,6 @@ func TestAccDataGitlabProject_CIIdTokenSubClaimComponents(t *testing.T) {
 					resource.TestCheckResourceAttr("data.gitlab_project.this", "ci_id_token_sub_claim_components.0", "project_path"),
 					resource.TestCheckResourceAttr("data.gitlab_project.this", "ci_id_token_sub_claim_components.1", "ref_type"),
 					resource.TestCheckResourceAttr("data.gitlab_project.this", "ci_id_token_sub_claim_components.#", "2"),
-					// resource.TestCheckResourc
 				),
 			},
 		},
@@ -271,7 +269,7 @@ func TestAccDataGitlabProject_CIPipelineVariablesMinimumOverrideRole(t *testing.
 
 	// Create the terraform test
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(
@@ -308,7 +306,7 @@ func TestAccDataGitlabProject_CIDeletePipelinesInSeconds(t *testing.T) {
 
 	// Create the terraform test
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(
