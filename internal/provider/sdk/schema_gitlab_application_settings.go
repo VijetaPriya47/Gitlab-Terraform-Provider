@@ -2768,6 +2768,10 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 		options.PackageRegistryCleanupPoliciesWorkerCapacity = gitlab.Ptr(d.Get("package_registry_cleanup_policies_worker_capacity").(int))
 	}
 
+	if d.HasChange("package_metadata_purl_types") {
+		options.PackageMetadataPURLTypes = intListToIntSlice(d.Get("package_metadata_purl_types").([]any))
+	}
+
 	if d.HasChange("deactivate_dormant_users") {
 		options.DeactivateDormantUsers = gitlab.Ptr(d.Get("deactivate_dormant_users").(bool))
 	}
