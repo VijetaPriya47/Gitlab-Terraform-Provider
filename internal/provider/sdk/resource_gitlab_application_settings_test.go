@@ -266,6 +266,55 @@ func TestAccGitlabApplicationSettings_testMinimumPasswordLength(t *testing.T) {
 	})
 }
 
+func TestAccGitlabApplicationSettings_PackageMetadataPurlTypes(t *testing.T) {
+	// PURL types are an EE-only feature.
+	testutil.SkipIfCE(t)
+
+	// lintignore:AT001
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccGitlabApplicationSettingsDestroy,
+		Steps: []resource.TestStep{
+			// Step 1: Create the settings with an initial list of PURL types.
+			{
+				Config: `
+					resource "gitlab_application_settings" "this" {
+						package_metadata_purl_types = [1, 2, 6]
+					}
+				`,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_application_settings.this", "package_metadata_purl_types.#", "3"),
+					resource.TestCheckResourceAttr("gitlab_application_settings.this", "package_metadata_purl_types.0", "1"),
+					resource.TestCheckResourceAttr("gitlab_application_settings.this", "package_metadata_purl_types.1", "2"),
+					resource.TestCheckResourceAttr("gitlab_application_settings.this", "package_metadata_purl_types.2", "6"),
+				),
+			},
+			// Step 2: Update the list to a new set of values. This triggers the d.HasChange() logic.
+			{
+				Config: `
+					resource "gitlab_application_settings" "this" {
+						package_metadata_purl_types = [1, 4]
+					}
+				`,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_application_settings.this", "package_metadata_purl_types.#", "2"),
+					resource.TestCheckResourceAttr("gitlab_application_settings.this", "package_metadata_purl_types.0", "1"),
+					resource.TestCheckResourceAttr("gitlab_application_settings.this", "package_metadata_purl_types.1", "4"),
+				),
+			},
+			// Step 3: Test the edge case of setting the list to empty.
+			{
+				Config: `
+					resource "gitlab_application_settings" "this" {
+						package_metadata_purl_types = []
+					}
+				`,
+				Check: resource.TestCheckResourceAttr("gitlab_application_settings.this", "package_metadata_purl_types.#", "0"),
+			},
+		},
+	})
+}
+
 /*
 README: Adding a test destroy function seems a easier-to-understand path to illustrate
 application settings nature and its inability to be destroyed than simply using a nil
