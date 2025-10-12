@@ -131,6 +131,7 @@ Read-Only:
 - `keep_latest_artifact` (Boolean)
 - `last_activity_at` (String)
 - `lfs_enabled` (Boolean)
+- `links` (Map of String)
 - `merge_commit_template` (String)
 - `merge_method` (String)
 - `merge_pipelines_enabled` (Boolean)

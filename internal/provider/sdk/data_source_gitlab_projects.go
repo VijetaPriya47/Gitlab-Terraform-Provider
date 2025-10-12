@@ -168,6 +168,7 @@ func flattenProjects(projects []*gitlab.Project) (values []map[string]any) {
 			"shared_with_groups":                               flattenSharedWithGroupsOptions(project),
 			"statistics":                                       project.Statistics,
 			"_links":                                           flattenProjectLinks(project.Links),
+			"links":                                            flattenProjectLinks(project.Links),
 			"ci_config_path":                                   project.CIConfigPath,
 			"custom_attributes":                                project.CustomAttributes,
 			"packages_enabled":                                 project.PackagesEnabled,
@@ -836,6 +837,15 @@ var _ = registerDataSource("gitlab_projects", func() *schema.Resource {
 							},
 						},
 						"_links": {
+							Description: "Links for the project. Use `links` instead. To be removed in 19.0.",
+							Deprecated:  "Use `links` instead. To be removed in 19.0.",
+							Type:        schema.TypeMap,
+							Computed:    true,
+							Elem: &schema.Schema{
+								Type: schema.TypeString,
+							},
+						},
+						"links": {
 							Description: "Links for the project.",
 							Type:        schema.TypeMap,
 							Computed:    true,
