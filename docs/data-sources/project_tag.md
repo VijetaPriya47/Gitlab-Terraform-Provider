@@ -39,11 +39,11 @@ data "gitlab_project_tag" "foo" {
 
 ### Read-Only
 
-- `commit` (Set of Object) The commit associated with the tag. (see [below for nested schema](#nestedatt--commit))
-- `id` (String) The ID of this resource.
+- `commit` (Attributes Set) The commit associated with the tag. (see [below for nested schema](#nestedatt--commit))
+- `id` (String) The ID of this datasource. In the format `<project:name>`.
 - `message` (String) The message of the annotated tag.
-- `protected` (Boolean) Bool, true if tag has tag protection.
-- `release` (Set of Object) The release associated with the tag. (see [below for nested schema](#nestedatt--release))
+- `protected` (Boolean) True if tag has tag protection.
+- `release` (Attributes Set) The release associated with the tag. (see [below for nested schema](#nestedatt--release))
 - `target` (String) The unique id assigned to the commit by Gitlab.
 
 <a id="nestedatt--commit"></a>
@@ -51,17 +51,17 @@ data "gitlab_project_tag" "foo" {
 
 Read-Only:
 
-- `author_email` (String)
-- `author_name` (String)
-- `authored_date` (String)
-- `committed_date` (String)
-- `committer_email` (String)
-- `committer_name` (String)
-- `id` (String)
-- `message` (String)
-- `parent_ids` (Set of String)
-- `short_id` (String)
-- `title` (String)
+- `author_email` (String) The email of the author.
+- `author_name` (String) The name of the author.
+- `authored_date` (String) The date which the commit was authored (format: yyyy-MM-ddTHH:mm:ssZ).
+- `committed_date` (String) The date at which the commit was pushed (format: yyyy-MM-ddTHH:mm:ssZ).
+- `committer_email` (String) The email of the user that committed.
+- `committer_name` (String) The name of the user that committed.
+- `id` (String) The unique id assigned to the commit by Gitlab.
+- `message` (String) The commit message
+- `parent_ids` (Set of String) The id of the parents of the commit
+- `short_id` (String) The short id assigned to the commit by Gitlab.
+- `title` (String) The title of the commit
 
 
 <a id="nestedatt--release"></a>
@@ -69,5 +69,5 @@ Read-Only:
 
 Read-Only:
 
-- `description` (String)
-- `tag_name` (String)
+- `description` (String) The description of the release.
+- `tag_name` (String) The name of the tag.
