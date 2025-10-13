@@ -33,13 +33,21 @@ func init() {
 func NewGitLabProjectLabelResource() resource.Resource {
 	return &gitlabProjectLabelResource{
 		ResourceName: "_project_label",
+		ResourceDescription: `The ` + "`" + `gitlab_project_label` + "`" + ` resource manages the lifecycle of a project label.
+
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/labels/#get-a-single-project-label)`,
 	}
 }
 
 // Remove in 19.0
 func NewGitLabLabelResource() resource.Resource {
 	return &gitlabProjectLabelResource{
-		ResourceName:       "_label",
+		ResourceName: "_label",
+		ResourceDescription: `The ` + "`" + `gitlab_label` + "`" + ` resource manages the lifecycle of a project label.
+
+~> This resource is deprecated and will be removed in 19.0. Use ` + "`" + `gitlab_project_label` + "`" + `instead.
+
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/labels/#get-a-single-project-label)`,
 		DeprecationMessage: "This resource is deprecated and will be removed in 19.0. Use `gitlab_project_label` instead.",
 	}
 }
@@ -57,10 +65,11 @@ type gitlabProjectLabelResourceModel struct {
 type gitlabProjectLabelResource struct {
 	client *gitlab.Client
 
-	// Represents the name of the resource, since this resource uses both `gitlab_project_label` and `gitlab_label` for
+	// Represents the name and description of the resource, since this resource uses both `gitlab_project_label` and `gitlab_label` for
 	// backwards compatibility reasons. Should be removed in %19.0
-	ResourceName       string
-	DeprecationMessage string
+	ResourceName        string
+	ResourceDescription string
+	DeprecationMessage  string
 }
 
 func (r *gitlabProjectLabelResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -87,11 +96,9 @@ func (r *gitlabProjectLabelResource) Schema(ctx context.Context, req resource.Sc
 
 func (r *gitlabProjectLabelResource) getV1Schema() schema.Schema {
 	toReturn := schema.Schema{
-		MarkdownDescription: `The ` + "`" + fmt.Sprintf(`gitlab%s`, r.ResourceName) + "`" + ` resource manages the lifecycle of a project label.
-
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/labels/#get-a-single-project-label)`,
-		DeprecationMessage: r.DeprecationMessage,
-		Version:            1,
+		MarkdownDescription: r.ResourceDescription,
+		DeprecationMessage:  r.DeprecationMessage,
+		Version:             1,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "The ID of this Terraform resource. In the format of `<project-id>:<label-name>`.",

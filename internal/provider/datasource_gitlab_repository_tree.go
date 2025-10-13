@@ -83,9 +83,9 @@ func (d *gitlabRepositoryTreeDataSource) Schema(_ context.Context, _ datasource.
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"id": schema.StringAttribute{
-							MarkdownDescription: "The project ID.",
+							MarkdownDescription: "The project ID. Use `node_id` instead. To be removed in 19.0.",
 							Computed:            true,
-							DeprecationMessage:  "Use `node_id` instead. To be removed in version 19.0.",
+							DeprecationMessage:  "Use `node_id` instead. To be removed in 19.0.",
 						},
 						"node_id": schema.StringAttribute{
 							MarkdownDescription: "The SHA-1 hash of the tree or blob in the repository.",

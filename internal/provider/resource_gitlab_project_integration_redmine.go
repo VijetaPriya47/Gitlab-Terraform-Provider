@@ -36,12 +36,23 @@ func init() {
 func NewGitLabProjectIntegrationRedmineResource() resource.Resource {
 	return &gitlabProjectIntegrationRedmineResource{
 		ResourceName: "_project_integration_redmine",
+		ResourceDescription: `The ` + "`" + `gitlab_project_integration_redmine` + "`" + ` resource manages the lifecycle of a project integration with Redmine.
+
+~> Using Redmine requires that GitLab internal issue tracking is disabled for the project.
+
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#redmine)`,
 	}
 }
 
 func NewGitLabIntegrationRedmineResource() resource.Resource {
 	return &gitlabProjectIntegrationRedmineResource{
-		ResourceName:       "_integration_redmine",
+		ResourceName: "_integration_redmine",
+		ResourceDescription: `The ` + "`" + `gitlab_integration_redmine` + "`" + ` resource manages the lifecycle of a project integration with Redmine.
+
+~> This resource is deprecated and will be removed in 19.0. Use ` + "`" + `gitlab_project_integration_redmine` + "`" + `instead.
+~> Using Redmine requires that GitLab internal issue tracking is disabled for the project.
+
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#redmine)`,
 		DeprecationMessage: "This resource is deprecated and will be removed in 19.0. Use `gitlab_project_integration_redmine` instead.",
 	}
 }
@@ -49,10 +60,11 @@ func NewGitLabIntegrationRedmineResource() resource.Resource {
 type gitlabProjectIntegrationRedmineResource struct {
 	client *gitlab.Client
 
-	// Represents the name of the resource, since this resource uses both `gitlab_project_integration_redmine`
+	// Represents the name and description of the resource, since this resource uses both `gitlab_project_integration_redmine`
 	// and `gitlab_integration_redmine` for backwards compatibility reasons. Should be removed in 19.0.
-	ResourceName       string
-	DeprecationMessage string
+	ResourceName        string
+	ResourceDescription string
+	DeprecationMessage  string
 }
 
 type gitlabProjectIntegrationRedmineResourceModel struct {
@@ -79,12 +91,8 @@ func (r *gitlabProjectIntegrationRedmineResource) Metadata(_ context.Context, re
 
 func (r *gitlabProjectIntegrationRedmineResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `The ` + "`" + fmt.Sprintf(`gitlab%s`, r.ResourceName) + "`" + ` resource manages the lifecycle of a project integration with Redmine.
-
-~> Using Redmine requires that GitLab internal issue tracking is disabled for the project.
-
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#redmine)`,
-		DeprecationMessage: r.DeprecationMessage,
+		MarkdownDescription: r.ResourceDescription,
+		DeprecationMessage:  r.DeprecationMessage,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:            true,

@@ -34,13 +34,21 @@ func init() {
 func NewGitLabProjectIntegrationHarborResource() resource.Resource {
 	return &gitlabProjectIntegrationHarborResource{
 		ResourceName: "_project_integration_harbor",
+		ResourceDescription: `The ` + "`" + `gitlab_project_integration_harbor` + "`" + ` resource manages the lifecycle of a project integration with Harbor.
+
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#harbor)`,
 	}
 }
 
 // Remove in 19.0
 func NewGitLabIntegrationHarborResource() resource.Resource {
 	return &gitlabProjectIntegrationHarborResource{
-		ResourceName:       "_integration_harbor",
+		ResourceName: "_integration_harbor",
+		ResourceDescription: `The ` + "`" + `gitlab_integration_harbor` + "`" + ` resource manages the lifecycle of a project integration with Harbor.
+
+~> This resource is deprecated and will be removed in 19.0. Use ` + "`" + `gitlab_project_integration_harbor` + "`" + `instead.
+
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#harbor)`,
 		DeprecationMessage: "This resource is deprecated and will be removed in 19.0. Use `gitlab_project_integration_harbor` instead.",
 	}
 }
@@ -48,10 +56,11 @@ func NewGitLabIntegrationHarborResource() resource.Resource {
 type gitlabProjectIntegrationHarborResource struct {
 	client *gitlab.Client
 
-	// Represents the name of the resource, since this resource uses both `gitlab_project_integration_harbor`
+	// Represents the name and description of the resource, since this resource uses both `gitlab_project_integration_harbor`
 	// and `gitlab_integration_harbor` for backwards compatibility reasons. Should be removed in %19.0
-	ResourceName       string
-	DeprecationMessage string
+	ResourceName        string
+	ResourceDescription string
+	DeprecationMessage  string
 }
 
 type gitlabProjectIntegrationHarborResourceModel struct {
@@ -71,10 +80,8 @@ func (r *gitlabProjectIntegrationHarborResource) Metadata(_ context.Context, req
 
 func (r *gitlabProjectIntegrationHarborResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `The ` + "`" + fmt.Sprintf(`gitlab%s`, r.ResourceName) + "`" + ` resource manages the lifecycle of a project integration with Harbor.
-
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#harbor)`,
-		DeprecationMessage: r.DeprecationMessage,
+		MarkdownDescription: r.ResourceDescription,
+		DeprecationMessage:  r.DeprecationMessage,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:            true,

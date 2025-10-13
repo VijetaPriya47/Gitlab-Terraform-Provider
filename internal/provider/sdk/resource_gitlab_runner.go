@@ -17,10 +17,12 @@ var _ = registerResource("gitlab_runner", func() *schema.Resource {
 	return &schema.Resource{
 		Description: `The ` + "`gitlab_runner`" + ` resource allows to manage the lifecycle of a runner.
 
+~> This resource has been deprecated in favor of the ` + "`gitlab_user_runner`" + ` resource. Please use that resource, and the new registration flow, instead.
+
 A runner can either be registered at an instance level or group level.
 The runner will be registered at a group level if the token used is from a group, or at an instance level if the token used is for the instance.
 
-~ > Using this resource will register a runner using the deprecated ` + "`registration_token`" + ` flow. To use the new ` + "`authentication_token`" + ` flow instead,
+~> Using this resource will register a runner using the deprecated ` + "`registration_token`" + ` flow. To use the new ` + "`authentication_token`" + ` flow instead,
 use the ` + "`gitlab_user_runner`" + ` resource!
 
 **Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/runners/#register-a-new-runner)`,
@@ -250,7 +252,6 @@ func resourceGitLabRunnerUpdate(ctx context.Context, d *schema.ResourceData, met
 	}
 
 	return resourceGitLabRunnerRead(ctx, d, meta)
-
 }
 
 func resourceGitLabRunnerDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {

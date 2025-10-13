@@ -130,8 +130,8 @@ func deployAccessLevelSchemaV1() schema.SetNestedAttribute {
 
 func deployAccessLevelSchemaV0() schema.SetNestedBlock {
 	return schema.SetNestedBlock{
-		MarkdownDescription: "Array of access levels allowed to deploy, with each described by a hash.  Elements in the `deploy_access_levels` should be one of `user_id`, `group_id` or `access_level`.",
-		DeprecationMessage:  "This attribute is deprecated. Use `deploy_access_levels_attribute` instead.",
+		MarkdownDescription: "Array of access levels allowed to deploy, with each described by a hash.  Elements in the `deploy_access_levels` should be one of `user_id`, `group_id` or `access_level`. Use `deploy_access_levels_attribute` instead. To be removed in 19.0.",
+		DeprecationMessage:  "Use `deploy_access_levels_attribute` instead. To be removed in 19.0.",
 		Validators: []validator.Set{
 			setvalidator.SizeAtLeast(1),
 			setvalidator.ConflictsWith(path.MatchRelative().AtParent().AtName("deploy_access_levels_attribute")),

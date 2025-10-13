@@ -52,7 +52,7 @@ data "gitlab_groups" "example-two" {
 
 Read-Only:
 
-- `default_branch_protection` (Number, Deprecated) Whether developers and maintainers can push to the applicable default branch. Deprecated, will be removed in 19.0.
+- `default_branch_protection` (Number, Deprecated) Whether developers and maintainers can push to the applicable default branch. Will be removed in 19.0.
 - `description` (String) The description of the group.
 - `full_name` (String) The full name of the group.
 - `full_path` (String) The full path of the group.

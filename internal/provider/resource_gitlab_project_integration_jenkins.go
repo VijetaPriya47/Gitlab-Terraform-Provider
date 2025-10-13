@@ -35,13 +35,21 @@ func init() {
 func NewGitLabProjectIntegrationJenkinsResource() resource.Resource {
 	return &gitlabProjectIntegrationJenkinsResource{
 		ResourceName: "_project_integration_jenkins",
+		ResourceDescription: `The ` + "`" + `gitlab_project_integration_jenkins` + "`" + ` resource manages the lifecycle of a project integration with Jenkins.
+
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#jenkins)`,
 	}
 }
 
 // Remove in 19.0
 func NewGitLabIntegrationJenkinsResource() resource.Resource {
 	return &gitlabProjectIntegrationJenkinsResource{
-		ResourceName:       "_integration_jenkins",
+		ResourceName: "_integration_jenkins",
+		ResourceDescription: `The ` + "`" + `gitlab_integration_jenkins` + "`" + ` resource manages the lifecycle of a project integration with Jenkins.
+
+~> This resource is deprecated and will be removed in 19.0. Use ` + "`" + `gitlab_project_integration_jenkins` + "`" + `instead.
+
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#jenkins)`,
 		DeprecationMessage: "This resource is deprecated and will be removed in 19.0. Use `gitlab_project_integration_jenkins` instead.",
 	}
 }
@@ -49,10 +57,11 @@ func NewGitLabIntegrationJenkinsResource() resource.Resource {
 type gitlabProjectIntegrationJenkinsResource struct {
 	client *gitlab.Client
 
-	// Represents the name of the resource, since this resource uses both `gitlab_project_integration_jenkins`
+	// Represents the name and description of the resource, since this resource uses both `gitlab_project_integration_jenkins`
 	// and `gitlab_integration_jenkins` for backwards compatibility reasons. Should be removed in 19.0.
-	ResourceName       string
-	DeprecationMessage string
+	ResourceName        string
+	ResourceDescription string
+	DeprecationMessage  string
 }
 
 type gitlabProjectIntegrationJenkinsResourceModel struct {
@@ -75,10 +84,8 @@ func (r *gitlabProjectIntegrationJenkinsResource) Metadata(_ context.Context, re
 
 func (r *gitlabProjectIntegrationJenkinsResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `The ` + "`" + fmt.Sprintf(`gitlab%s`, r.ResourceName) + "`" + ` resource manages the lifecycle of a project integration with Jenkins.
-
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#jenkins)`,
-		DeprecationMessage: r.DeprecationMessage,
+		MarkdownDescription: r.ResourceDescription,
+		DeprecationMessage:  r.DeprecationMessage,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:            true,

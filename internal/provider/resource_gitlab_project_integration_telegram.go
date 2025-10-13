@@ -37,12 +37,20 @@ func init() {
 func NewGitlabProjectIntegrationTelegramResource() resource.Resource {
 	return &gitlabProjectIntegrationTelegramResource{
 		ResourceName: "_project_integration_telegram",
+		ResourceDescription: `The ` + "`" + `gitlab_project_integration_telegram` + "`" + ` resource manages the lifecycle of a project integration with Telegram.
+
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#telegram)`,
 	}
 }
 
 func NewGitlabIntegrationTelegramResource() resource.Resource {
 	return &gitlabProjectIntegrationTelegramResource{
-		ResourceName:       "_integration_telegram",
+		ResourceName: "_integration_telegram",
+		ResourceDescription: `The ` + "`" + `gitlab_integration_telegram` + "`" + ` resource manages the lifecycle of a project integration with Telegram.
+
+~> This resource is deprecated and will be removed in 19.0. Use ` + "`" + `gitlab_project_integration_telegram` + "`" + `instead.
+
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#telegram)`,
 		DeprecationMessage: "This resource is deprecated and will be removed in 19.0. Use `gitlab_project_integration_telegram` instead.",
 	}
 }
@@ -85,10 +93,11 @@ func (r *gitlabProjectIntegrationTelegramResourceModel) TelegramServiceToStateMo
 type gitlabProjectIntegrationTelegramResource struct {
 	client *gitlab.Client
 
-	// Represents the name of the resource, since this resource uses both `gitlab_project_integration_telegram`
+	// Represents the name and description of the resource, since this resource uses both `gitlab_project_integration_telegram`
 	// and `gitlab_integration_telegram` for backwards compatibility reasons. Should be removed in 19.0.
-	ResourceName       string
-	DeprecationMessage string
+	ResourceName        string
+	ResourceDescription string
+	DeprecationMessage  string
 }
 
 func (r *gitlabProjectIntegrationTelegramResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -97,9 +106,7 @@ func (r *gitlabProjectIntegrationTelegramResource) Metadata(_ context.Context, r
 
 func (r *gitlabProjectIntegrationTelegramResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `The ` + "`" + fmt.Sprintf(`gitlab%s`, r.ResourceName) + "`" + ` resource manages the lifecycle of a project integration with Telegram.
-
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#telegram)`,
+		MarkdownDescription: r.ResourceDescription,
 
 		DeprecationMessage: r.DeprecationMessage,
 		Attributes: map[string]schema.Attribute{

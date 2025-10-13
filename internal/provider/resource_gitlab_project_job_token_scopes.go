@@ -99,8 +99,8 @@ which allows this resource to be used as an explicit deny.
 				Validators:          []validator.String{stringvalidator.LengthAtLeast(1), stringvalidator.ConflictsWith(path.MatchRoot("project_id"))},
 			},
 			"project_id": schema.Int64Attribute{
-				MarkdownDescription: "The ID of the project.",
-				DeprecationMessage:  "`project_id` has been deprecated and will be removed in 19.0. Use `project` instead.",
+				MarkdownDescription: "The ID of the project. Use `project` instead. To be removed in 19.0.",
+				DeprecationMessage:  "Use `project` instead. To be removed in 19.0.",
 				Optional:            true,
 				Computed:            true,
 				PlanModifiers:       []planmodifier.Int64{int64planmodifier.RequiresReplace()},

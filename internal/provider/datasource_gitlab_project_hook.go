@@ -82,7 +82,7 @@ func (d *gitlabProjectHookDataSource) Schema(_ context.Context, _ datasource.Sch
 				Computed:            true,
 			},
 			"token": schema.StringAttribute{
-				MarkdownDescription: "A token to present when invoking the hook. The token is not available in this datasource.",
+				MarkdownDescription: "A token to present when invoking the hook. The token is only available on resource creation, not in this datasource. It will always be blank.",
 				Computed:            true,
 				Sensitive:           true,
 				DeprecationMessage:  "The token is only available on resource creation, not in this datasource. It will always be blank.",
