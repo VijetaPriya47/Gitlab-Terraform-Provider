@@ -154,7 +154,7 @@ func (d *gitlabGroupsDataSource) Schema(ctx context.Context, req datasource.Sche
 							Sensitive:           true,
 						},
 						"default_branch_protection": schema.Int64Attribute{
-							MarkdownDescription: "Whether developers and maintainers can push to the applicable default branch. Deprecated, will be removed in 19.0.",
+							MarkdownDescription: "Whether developers and maintainers can push to the applicable default branch. Will be removed in 19.0.",
 							Computed:            true,
 							DeprecationMessage:  "Will be removed in 19.0.",
 						},

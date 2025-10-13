@@ -39,13 +39,21 @@ func init() {
 func NewGitlabProjectIntegrationCustomIssueTrackerResource() resource.Resource {
 	return &gitlabProjectIntegrationCustomIssueTrackerResource{
 		ResourceName: "_project_integration_custom_issue_tracker",
+		ResourceDescription: `The ` + "`" + `gitlab_project_integration_custom_issue_tracker` + "`" + ` resource manages the lifecycle of a project integration with a Custom Issue Tracker.
+
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#custom-issue-tracker)`,
 	}
 }
 
 // Remove in 19.0
 func NewGitlabIntegrationCustomIssueTrackerResource() resource.Resource {
 	return &gitlabProjectIntegrationCustomIssueTrackerResource{
-		ResourceName:       "_integration_custom_issue_tracker",
+		ResourceName: "_integration_custom_issue_tracker",
+		ResourceDescription: `The ` + "`" + `gitlab_integration_custom_issue_tracker` + "`" + ` resource manages the lifecycle of a project integration with a Custom Issue Tracker.
+
+~> This resource is deprecated and will be removed in 19.0. Use ` + "`" + `gitlab_project_integration_custom_issue_tracker` + "`" + `instead.
+
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#custom-issue-tracker)`,
 		DeprecationMessage: "This resource is deprecated and will be removed in 19.0. Use `gitlab_project_integration_custom_issue_tracker` instead.",
 	}
 }
@@ -77,10 +85,11 @@ func (r *gitlabProjectIntegrationCustomIssueTrackerResourceModel) customIssueTra
 type gitlabProjectIntegrationCustomIssueTrackerResource struct {
 	client *gitlab.Client
 
-	// Represents the name of the resource, since this resource uses both `gitlab_project_integration_custom_issue_tracker`
-	// and `gitlab_integration_custom_issue_tracker` for backwards compatibility reasons. Should be removed in %19.0
-	ResourceName       string
-	DeprecationMessage string
+	// Represents the name and description of the resource, since this resource uses both `gitlab_project_integration_custom_issue_tracker`
+	// and `gitlab_integration_custom_issue_tracker` for backwards compatibility reasons. Should be removed in v19.0
+	ResourceName        string
+	ResourceDescription string
+	DeprecationMessage  string
 }
 
 func (r *gitlabProjectIntegrationCustomIssueTrackerResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -89,11 +98,8 @@ func (r *gitlabProjectIntegrationCustomIssueTrackerResource) Metadata(_ context.
 
 func (r *gitlabProjectIntegrationCustomIssueTrackerResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `The ` + "`" + fmt.Sprintf(`gitlab%s`, r.ResourceName) + "`" + ` resource manages the lifecycle of a project integration with a Custom Issue Tracker.
-
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_integrations/#custom-issue-tracker)`,
-
-		DeprecationMessage: r.DeprecationMessage,
+		MarkdownDescription: r.ResourceDescription,
+		DeprecationMessage:  r.DeprecationMessage,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:            true,
