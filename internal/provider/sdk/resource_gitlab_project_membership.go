@@ -2,10 +2,12 @@ package sdk
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
 
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -64,7 +66,7 @@ func gitlabProjectMembershipSchemaV1() map[string]*schema.Schema {
 			Required:         true,
 		},
 		"member_role_id": {
-			Description: "The ID of a custom member role. Only available for Ultimate instances.",
+			Description: "The ID of a custom member role. Not including the member role ID will cause the role to update the membership to the base role if the custom role is current set. Only available for Ultimate instances.",
 			Type:        schema.TypeInt,
 			Optional:    true,
 		},
@@ -200,8 +202,9 @@ func resourceGitlabProjectMembershipUpdate(ctx context.Context, d *schema.Resour
 	accessLevelId := api.AccessLevelNameToValue[strings.ToLower(d.Get("access_level").(string))]
 
 	options := gitlab.EditProjectMemberOptions{
-		AccessLevel: &accessLevelId,
-		ExpiresAt:   &expiresAt,
+		AccessLevel:  &accessLevelId,
+		ExpiresAt:    &expiresAt,
+		MemberRoleID: nil,
 	}
 
 	if v, ok := d.GetOk("member_role_id"); v != nil && ok {
@@ -214,7 +217,29 @@ func resourceGitlabProjectMembershipUpdate(ctx context.Context, d *schema.Resour
 
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab project membership %v for %s", userId, project))
 
-	_, _, err := client.ProjectMembers.EditProjectMember(project, userId, &options, gitlab.WithContext(ctx))
+	_, _, err := client.ProjectMembers.EditProjectMember(project, userId, &options, gitlab.WithContext(ctx), func(request *retryablehttp.Request) error {
+		optionsStruct := struct {
+			MemberRoleID *int                     `url:"member_role_id" json:"member_role_id"`
+			ExpiresAt    *string                  `url:"expires_at,omitempty" json:"expires_at,omitempty"`
+			AccessLevel  *gitlab.AccessLevelValue `url:"access_level,omitempty" json:"access_level,omitempty"`
+		}{
+			MemberRoleID: options.MemberRoleID,
+			AccessLevel:  options.AccessLevel,
+			ExpiresAt:    options.ExpiresAt,
+		}
+
+		body, err := json.Marshal(optionsStruct)
+		if err != nil {
+			return err
+		}
+
+		err = request.SetBody(body)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
 	if err != nil {
 		return diag.FromErr(err)
 	}

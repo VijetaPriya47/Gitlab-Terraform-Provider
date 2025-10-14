@@ -167,6 +167,20 @@ func TestAccGitlabGroupMembership_useCustomRole(t *testing.T) {
 		ReadVulnerability: gitlab.Ptr(true),
 	})
 
+	checkGroupMembershipViaAPI := func(s *terraform.State) error {
+		group, _, err := testutil.TestGitlabClient.GroupMembers.GetGroupMember(group.ID, user.ID)
+		if err != nil {
+			return fmt.Errorf("Error getting group member via API: %v", err)
+		}
+
+		if group.MemberRole != nil {
+			return fmt.Errorf("API CHECK FAILED: MemberRoleID should be nil: got %v", group.MemberRole.ID)
+		}
+
+		// Return nil to indicate the check passed.
+		return nil
+	}
+
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabGroupMembershipDestroy,
@@ -212,6 +226,23 @@ func TestAccGitlabGroupMembership_useCustomRole(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("gitlab_group_membership.foo", "group_id", strconv.Itoa(group.ID)),
 					resource.TestCheckResourceAttr("gitlab_group_membership.foo", "member_role_id", strconv.Itoa(roleTwo.ID)),
+				),
+			},
+			{
+				Config: fmt.Sprintf(
+					`
+					resource "gitlab_group_membership" "foo" {
+						group_id        = "%d"
+						user_id         = "%d"
+						access_level    = "maintainer"
+					}
+					`, group.ID, user.ID,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_group_membership.foo", "group_id", strconv.Itoa(group.ID)),
+					// Assert that the member_role_id is no longer set in the state.
+					resource.TestCheckNoResourceAttr("gitlab_group_membership.foo", "member_role_id"),
+					checkGroupMembershipViaAPI,
 				),
 			},
 		},
