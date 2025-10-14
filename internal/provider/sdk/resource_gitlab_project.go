@@ -130,48 +130,49 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 		Computed:    true,
 	},
 	"issues_enabled": {
-		Description: "Enable issue tracking for the project.",
+		Description: "Enable issue tracking for the project. Use `issues_access_level` instead. To be removed in 19.0.",
 		Type:        schema.TypeBool,
 		Optional:    true,
 		Computed:    true,
+		Deprecated:  "Use `issues_access_level` instead. To be removed in 19.0.",
 	},
 	"merge_requests_enabled": {
-		Description: "Enable merge requests for the project.",
+		Description: "Enable merge requests for the project. Use `merge_requests_access_level` instead. To be removed in 19.0.",
 		Type:        schema.TypeBool,
 		Optional:    true,
 		Computed:    true,
+		Deprecated:  "Use `merge_requests_access_level` instead. To be removed in 19.0.",
 	},
 	"pipelines_enabled": {
-		Description: "Enable pipelines for the project. The `pipelines_enabled` field is being sent as `jobs_enabled` in the GitLab API calls.",
+		Description: "Enable pipelines for the project. The `pipelines_enabled` field is being sent as `jobs_enabled` in the GitLab API calls. Use `builds_access_level` instead. To be removed in 19.0.",
 		Type:        schema.TypeBool,
 		Optional:    true,
 		Computed:    true,
-		Deprecated:  "Deprecated in favor of `builds_access_level`",
+		Deprecated:  "Use `builds_access_level` instead. To be removed in 19.0.",
 	},
 	"approvals_before_merge": {
-		Description: `Number of merge request approvals required for merging. Default is 0.
-  This field **does not** work well in combination with the ` + "`gitlab_project_approval_rule`" + ` resource
-  and is most likely gonna be deprecated in a future GitLab version (see [this upstream epic](https://gitlab.com/groups/gitlab-org/-/epics/7572)).
-  In the meantime we recommend against using this attribute and use ` + "`gitlab_project_approval_rule`" + ` instead.
-`,
-		Type:     schema.TypeInt,
-		Optional: true,
+		Description: `Number of merge request approvals required for merging. Default is 0. This field **does not** work well in combination with the ` + "`gitlab_project_approval_rule`" + ` resource. We recommend you do not use this deprecated field and use ` + "`gitlab_project_approval_rule`" + ` instead. To be removed in 19.0.`,
+		Type:        schema.TypeInt,
+		Optional:    true,
+		Deprecated:  "Use the resource `gitlab_project_approval_rule` instead. To be removed in 19.0.",
 	},
 	"wiki_enabled": {
-		Description: "Enable wiki for the project.",
+		Description: "Enable wiki for the project. Use `wiki_access_level` instead. To be removed in 19.0.",
 		Type:        schema.TypeBool,
 		Optional:    true,
 		Computed:    true,
+		Deprecated:  "Use `wiki_access_level` instead. To be removed in 19.0.",
 	},
 	"snippets_enabled": {
-		Description: "Enable snippets for the project.",
+		Description: "Enable snippets for the project. Use `snippets_access_level` instead. To be removed in 19.0.",
 		Type:        schema.TypeBool,
 		Optional:    true,
 		Computed:    true,
+		Deprecated:  "Use `snippets_access_level` instead. To be removed in 19.0.",
 	},
 	"container_registry_enabled": {
-		Description: "Enable container registry for the project.",
-		Deprecated:  "Use `container_registry_access_level` instead.",
+		Description: "Enable container registry for the project. Use `container_registry_access_level` instead. To be removed in 19.0.",
+		Deprecated:  "Use `container_registry_access_level` instead. To be removed in 19.0.",
 		Type:        schema.TypeBool,
 		Optional:    true,
 		Computed:    true,
@@ -221,10 +222,11 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 		Computed:    true,
 	},
 	"restrict_user_defined_variables": {
-		Description: "Allow only users with the Maintainer role to pass user-defined variables when triggering a pipeline.",
+		Description: "Allow only users with the Maintainer role to pass user-defined variables when triggering a pipeline. Use `ci_pipeline_variables_minimum_override_role` instead. To be removed in 19.0.",
 		Type:        schema.TypeBool,
 		Optional:    true,
 		Computed:    true,
+		Deprecated:  "Use `ci_pipeline_variables_minimum_override_role` instead. To be removed in 19.0.",
 	},
 	"ssh_url_to_repo": {
 		Description: "URL that can be provided to `git clone` to clone the",
@@ -267,13 +269,14 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 		ValidateFunc: validation.StringInSlice(validResourceGroupProcessModeValues, true),
 	},
 	"tags": {
-		Description: "The list of tags for a project; put array of tags, that should be finally assigned to a project. Use topics instead.",
+		Description: "The list of tags for a project; put array of tags, that should be finally assigned to a project. Use `topics` instead. To be removed in 19.0.",
 		Type:        schema.TypeSet,
 		Optional:    true,
 		Computed:    true,
 		ForceNew:    false,
 		Elem:        &schema.Schema{Type: schema.TypeString},
 		Set:         schema.HashString,
+		Deprecated:  "Use `topics` instead. To be removed in 19.0.",
 	},
 	"empty_repo": {
 		Description: "Whether the project is empty.",
@@ -1010,8 +1013,6 @@ func resourceGitlabProjectSetToState(d *schema.ResourceData, project *gitlab.Pro
 	d.Set("merge_requests_access_level", string(project.MergeRequestsAccessLevel))
 
 	// First, try to set the public_jobs. If it's not available, fall back to public_builds.
-	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
-	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 	if err := d.Set("public_jobs", project.PublicJobs); err != nil {
 		if err := d.Set("public_builds", project.PublicJobs); err != nil {
 			return fmt.Errorf("error setting public_jobs: %v", err)

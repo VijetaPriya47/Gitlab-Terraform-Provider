@@ -349,10 +349,11 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 		},
 
 		"default_branch_protection": {
-			Description: "Determine if developers can push to the default branch. Can take: 0 (not protected, both users with the Developer role or Maintainer role can push new commits and force push), 1 (partially protected, users with the Developer role or Maintainer role can push new commits, but cannot force push) or 2 (fully protected, users with the Developer or Maintainer role cannot push new commits, but users with the Developer or Maintainer role can; no one can force push) as a parameter. Default is 2.",
+			Description: "Determine if developers can push to the default branch. Can take: 0 (not protected, both users with the Developer role or Maintainer role can push new commits and force push), 1 (partially protected, users with the Developer role or Maintainer role can push new commits, but cannot force push) or 2 (fully protected, users with the Developer or Maintainer role cannot push new commits, but users with the Developer or Maintainer role can; no one can force push) as a parameter. Default is 2. Use `default_branch_protection_defaults` instead. To be removed in 19.0.",
 			Type:        schema.TypeInt,
 			Optional:    true,
 			Computed:    true,
+			Deprecated:  "Use `default_branch_protection_defaults` instead. To be removed in 19.0.",
 		},
 
 		"default_branch_protection_defaults": {
