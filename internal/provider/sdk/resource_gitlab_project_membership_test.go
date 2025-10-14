@@ -4,7 +4,6 @@
 package sdk
 
 import (
-	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -79,38 +78,42 @@ func TestAccGitlabProjectMembership_UseCustomRole(t *testing.T) {
 	// custom roles only available to EE ultimate
 	testutil.SkipIfCE(t)
 
-	// Group level custom roles don't work on self managed, so we can't test them without a SaaS project.
-	// See https://gitlab.com/gitlab-org/gitlab/-/issues/439284 for more details
-	t.Skip()
-
 	// create a user
 	user := testutil.CreateUsers(t, 1)[0]
 	// create a group where we will define the custom role
 	group := testutil.CreateGroups(t, 1)[0]
 
 	// Create a custom role on that group which will be deleted when the test finishes
-	roleOne, _, errOne := testutil.TestGitlabClient.MemberRolesService.CreateMemberRole(group.ID, &gitlab.CreateMemberRoleOptions{
+	roleOne := testutil.CreateCustomInstanceRole(t, &gitlab.CreateMemberRoleOptions{
 		Name:              gitlab.Ptr("test-role"),
 		BaseAccessLevel:   gitlab.Ptr(gitlab.ReporterPermissions),
 		ReadVulnerability: gitlab.Ptr(true),
 	})
 
 	// Create a second custom role on that group (for testing update; will be deleted when the test finishes)
-	roleTwo, _, errTwo := testutil.TestGitlabClient.MemberRolesService.CreateMemberRole(group.ID, &gitlab.CreateMemberRoleOptions{
+	roleTwo := testutil.CreateCustomInstanceRole(t, &gitlab.CreateMemberRoleOptions{
 		Name:              gitlab.Ptr("test-role-update"),
 		BaseAccessLevel:   gitlab.Ptr(gitlab.DeveloperPermissions),
 		ReadVulnerability: gitlab.Ptr(true),
 		ReadCode:          gitlab.Ptr(false),
 	})
 
-	// If either of our role creations fail, short-circuit the test
-	err := errors.Join(errOne, errTwo)
-	if err != nil {
-		t.Fatalf("Failed to create one of the two testing roles. Error: %v", err)
-	}
-
 	// create a project in the group so we can grant the member access via the custom role
 	project := testutil.CreateProjectWithNamespace(t, group.ID)
+
+	checkProjectMembershipViaAPI := func(s *terraform.State) error {
+		member, _, err := testutil.TestGitlabClient.ProjectMembers.GetProjectMember(project.ID, user.ID)
+		if err != nil {
+			return fmt.Errorf("Error getting project member via API: %v", err)
+		}
+
+		if member.MemberRole != nil {
+			return fmt.Errorf("API CHECK FAILED: MemberRole should be nil: got %v", member.MemberRole)
+		}
+
+		// Return nil to indicate the check passed.
+		return nil
+	}
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: providerFactoriesV6,
@@ -157,6 +160,22 @@ func TestAccGitlabProjectMembership_UseCustomRole(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("gitlab_project_membership.foo", "project", strconv.Itoa(project.ID)),
 					resource.TestCheckResourceAttr("gitlab_project_membership.foo", "member_role_id", strconv.Itoa(roleTwo.ID)),
+				),
+			},
+			{
+				Config: fmt.Sprintf(
+					`
+					resource "gitlab_project_membership" "foo" {
+						project      = "%d"
+						user_id      = "%d"
+						access_level = "developer"
+					}
+					`, project.ID, user.ID,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project_membership.foo", "project", strconv.Itoa(project.ID)),
+					resource.TestCheckResourceAttr("gitlab_project_membership.foo", "member_role_id", "0"),
+					checkProjectMembershipViaAPI,
 				),
 			},
 		},

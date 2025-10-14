@@ -2,10 +2,12 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
 
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -88,10 +90,8 @@ func (r *gitlabGroupMembershipResource) Schema(ctc context.Context, req resource
 				Validators:          []validator.String{stringvalidator.OneOf(api.ValidGroupAccessLevelNames...)},
 			},
 			"member_role_id": schema.Int64Attribute{
-				MarkdownDescription: "The ID of a custom member role. Only available for Ultimate instances.",
-				PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
+				MarkdownDescription: "The ID of a custom member role. Not including the member role ID will cause the role to update the membership to the base role if the custom role is current set. Only available for Ultimate instances.",
 				Optional:            true,
-				Computed:            true,
 			},
 			"expires_at": schema.StringAttribute{
 				MarkdownDescription: "Expiration date for the group membership. Format: `YYYY-MM-DD`",
@@ -221,13 +221,36 @@ func (d *gitlabGroupMembershipResource) Update(ctx context.Context, req resource
 		ExpiresAt:   &expiresAt,
 	}
 
+	options.MemberRoleID = nil
 	if !data.MemberRoleID.IsNull() && !data.MemberRoleID.IsUnknown() {
 		options.MemberRoleID = gitlab.Ptr(int(data.MemberRoleID.ValueInt64()))
 	}
 
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab group membership %v for %v", userId, groupId))
 
-	groupMember, _, err := d.client.GroupMembers.EditGroupMember(groupId, userId, &options, gitlab.WithContext(ctx))
+	groupMember, _, err := d.client.GroupMembers.EditGroupMember(groupId, userId, &options, gitlab.WithContext(ctx), func(request *retryablehttp.Request) error {
+		optionsStruct := struct {
+			MemberRoleID *int                     `url:"member_role_id" json:"member_role_id"`
+			ExpiresAt    *string                  `url:"expires_at,omitempty" json:"expires_at,omitempty"`
+			AccessLevel  *gitlab.AccessLevelValue `url:"access_level,omitempty" json:"access_level,omitempty"`
+		}{
+			MemberRoleID: options.MemberRoleID,
+			AccessLevel:  options.AccessLevel,
+			ExpiresAt:    options.ExpiresAt,
+		}
+
+		body, err := json.Marshal(optionsStruct)
+		if err != nil {
+			return err
+		}
+
+		err = request.SetBody(body)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
 	if err != nil {
 		resp.Diagnostics.Append(diag.NewErrorDiagnostic("Error updating GitLab group membership", fmt.Sprintf("Error updating GitLab group membership: %v", err)))
 		return
