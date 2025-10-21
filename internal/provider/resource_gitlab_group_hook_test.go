@@ -282,11 +282,11 @@ func TestAccGitlabGroupHook_validations(t *testing.T) {
 	group := testutil.CreateGroups(t, 1)[0]
 
 	resource.ParallelTest(t, resource.TestCase{
-		CheckDestroy: testAccCheckGitlabProjectHookDestroy,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabProjectHookDestroy,
 		Steps: []resource.TestStep{
 			// Validate that URLs may not contain whitepaces
 			{
-				ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 				Config: fmt.Sprintf(`resource "gitlab_group_hook" "foo" {
 							group = "%d"
 							url = "https://example.com/hook-1234    " // Whitepaces at the end (invalid)
@@ -295,7 +295,6 @@ func TestAccGitlabGroupHook_validations(t *testing.T) {
 			},
 			// Validate the branch filter strategy validator
 			{
-				ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 				Config: fmt.Sprintf(`resource "gitlab_group_hook" "foo" {
 							group = "%d"
 							url = "https://example.com/hook-1234"

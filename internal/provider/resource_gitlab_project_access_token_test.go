@@ -332,7 +332,7 @@ func TestAccGitlabProjectAccessToken_rotationUsingExpiresAt(t *testing.T) {
 	secondUpdateExpires := testutil.GetCurrentTimePlusDays(t, 30).String()
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabProjectAccessTokenDestroy,
 		Steps: []resource.TestStep{
 			// Create a Project Access Token
@@ -416,7 +416,7 @@ func TestAccGitlabProjectAccessToken_rotationUsingExpiresAtTimeOffset(t *testing
 		`
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		ExternalProviders: map[string]resource.ExternalProvider{
 			"time": {
 				Source: "hashicorp/time",
@@ -475,7 +475,7 @@ func TestAccGitlabProjectAccessToken_rotationUsingDate(t *testing.T) {
 
 	// Not parallel since "os.Setenv" leaks test state otherwise.
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabProjectAccessTokenDestroy,
 		Steps: []resource.TestStep{
 			// Create a Project Access Token
@@ -572,7 +572,7 @@ func TestAccGitlabProjectAccessToken_rotationUsingSelfRotate(t *testing.T) {
 
 	// Not parallel since "os.Setenv" leaks test state otherwise.
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabProjectAccessTokenDestroy,
 		Steps: []resource.TestStep{
 			// Create a Project Access Token
@@ -898,7 +898,7 @@ func TestAccGitlabProjectAccessToken_rotateRevokedTokenGracefully(t *testing.T) 
 		`, project.ID)
 
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabProjectAccessTokenDestroy,
 		Steps: []resource.TestStep{
 			// Create a Project Access Token
@@ -977,7 +977,7 @@ func TestAccGitlabProjectAccessToken_revokedTokenWithPastExpiry(t *testing.T) {
 
 	// Not running in parallel since we're manipulating environment variables
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabProjectAccessTokenDestroy,
 		Steps: []resource.TestStep{
 			// Create a Project Access Token that will expire soon

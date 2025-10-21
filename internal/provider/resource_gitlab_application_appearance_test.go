@@ -25,7 +25,7 @@ func TestAcc_GitlabApplicationAppearance_basic(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAcc_GitlabApplicationAppearance_CheckDestroyResetsAppearance(),
 		Steps: []resource.TestStep{
 			{
@@ -111,7 +111,7 @@ func TestAcc_GitlabApplicationAppearance_attributeValidation(t *testing.T) {
 	title := acctest.RandString(10)
 
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`

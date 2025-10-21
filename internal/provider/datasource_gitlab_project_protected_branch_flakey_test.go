@@ -17,9 +17,9 @@ func TestAccDataGitlabProjectProtectedBranch_search(t *testing.T) {
 	project := testutil.CreateProject(t)
 	branch := testutil.CreateProtectedBranches(t, project, 1)[0]
 
-	//lintignore:AT001 // Data sources don't need check destroy in their tests
+	// lintignore:AT001 // Data sources don't need check destroy in their tests
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`				

@@ -13,7 +13,7 @@ func TestAccDataGitlabGroupProvisionedUsers_basic(t *testing.T) {
 	t.Skip("Skip this test since we can't automatically add provisioned users. This is usable locally after using rails to add a user.")
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: `
@@ -52,7 +52,7 @@ func TestAccDataGitlabGroupProvisionedUsers_search(t *testing.T) {
 	t.Skip("Skip this test since we can't automatically add provisioned users. This is usable locally after using rails to add a user.")
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: `

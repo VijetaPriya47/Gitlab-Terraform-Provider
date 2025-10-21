@@ -230,7 +230,7 @@ func TestAccGitlabGroupAccessToken_basic(t *testing.T) {
 	updatedExpiresAt := expiresAt.AddDate(0, 1, 0)
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabGroupAccessTokenDestroy,
 		Steps: []resource.TestStep{
 			// Create a Group and a Group Access Token
@@ -401,7 +401,7 @@ func TestAccGitlabGroupAccessToken_rotationUsingDate(t *testing.T) {
 
 	// Not parallel since "os.Setenv" leaks test state otherwise.
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabGroupAccessTokenDestroy,
 		Steps: []resource.TestStep{
 			// Create a Group Access Token
@@ -500,7 +500,7 @@ func TestAccGitlabGroupAccessToken_rotationUsingSelfRotate(t *testing.T) {
 
 	// Not parallel since "os.Setenv" leaks test state otherwise.
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabGroupAccessTokenDestroy,
 		Steps: []resource.TestStep{
 			// Create a Group Access Token
@@ -611,7 +611,7 @@ func TestAccGitlabGroupAccessToken_rotationUsingExpiresAt(t *testing.T) {
 	secondUpdateExpires := testutil.GetCurrentTimePlusDays(t, 30).String()
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabGroupAccessTokenDestroy,
 		Steps: []resource.TestStep{
 			// Create a Group and a Group Access Token
@@ -695,7 +695,7 @@ func TestAccGitlabGroupAccessToken_rotationUsingExpiresAtTimeOffset(t *testing.T
 		`
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		ExternalProviders: map[string]resource.ExternalProvider{
 			"time": {
 				Source: "hashicorp/time",
@@ -1104,7 +1104,7 @@ func TestAccGitlabGroupAccessToken_rotateRevokedTokenGracefully(t *testing.T) {
 		`, group.ID)
 
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabGroupAccessTokenDestroy,
 		Steps: []resource.TestStep{
 			// Create a Group Access Token
@@ -1183,7 +1183,7 @@ func TestAccGitlabGroupAccessToken_revokedTokenWithPastExpiry(t *testing.T) {
 
 	// Not running in parallel since we're manipulating environment variables
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabGroupAccessTokenDestroy,
 		Steps: []resource.TestStep{
 			// Create a Group Access Token that will expire soon

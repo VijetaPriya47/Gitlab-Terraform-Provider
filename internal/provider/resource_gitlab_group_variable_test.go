@@ -76,7 +76,7 @@ func TestAccGitlabGroupVariable_basic(t *testing.T) {
 
 	resource.ParallelTest(t, resource.TestCase{
 		CheckDestroy:             testAccCheckGitlabGroupVariableDestroy,
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			// Create a group and variable with default options
 			{
@@ -234,7 +234,7 @@ func TestAccGitlabGroupVariable_hidden(t *testing.T) {
 
 	resource.ParallelTest(t, resource.TestCase{
 		CheckDestroy:             testAccCheckGitlabGroupVariableDestroy,
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			// Update to be masked and hidden.
 			{
@@ -329,7 +329,7 @@ func TestAccGitlabGroupVariable_validationErrors(t *testing.T) {
 
 	resource.ParallelTest(t, resource.TestCase{
 		CheckDestroy:             testAccCheckGitlabGroupVariableDestroy,
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			// Try to update hidden without masked.
 			{
@@ -370,7 +370,7 @@ func TestAccGitlabGroupVariable_sameVariableDifferentEnvironments(t *testing.T) 
 	group := testutil.CreateGroups(t, 1)[0]
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabGroupVariableDestroy,
 		Steps: []resource.TestStep{
 			// Create a group with 2 variables with different env scopes but the same name
@@ -455,7 +455,7 @@ func TestAccGitlabGroupVariable_scope(t *testing.T) {
 	defaultValueA := fmt.Sprintf("value-%s-a", rString)
 	defaultValueB := fmt.Sprintf("value-%s-b", rString)
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabGroupVariableDestroy,
 		Steps: []resource.TestStep{
 			// Create a group and variables with same keys, different scopes

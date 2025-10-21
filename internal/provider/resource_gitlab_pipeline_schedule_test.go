@@ -64,7 +64,6 @@ func TestAccGitlabPipelineSchedule_StateUpgradeV0(t *testing.T) {
 				t.Fatalf("\n\nexpected:\n\n%#v\n\ngot:\n\n%#v\n\n", tc.expectedV1State, *actualV1State)
 			}
 		})
-
 	}
 }
 
@@ -82,7 +81,7 @@ func TestAccGitlabPipelineSchedule_takeOwnershipWithChanges(t *testing.T) {
 	userPAT := testutil.CreatePersonalAccessToken(t, user)
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabPipelineScheduleDestroy,
 		Steps: []resource.TestStep{
 			// Create a Pipeline Schedule with our custom user
@@ -150,7 +149,7 @@ func TestAccGitlabPipelineSchedule_takeOwnershipWithoutChanges(t *testing.T) {
 	userPAT := testutil.CreatePersonalAccessToken(t, user)
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabPipelineScheduleDestroy,
 		Steps: []resource.TestStep{
 			// Create a Pipeline Schedule with our custom user
@@ -261,7 +260,7 @@ func TestAccGitlabPipelineSchedule_basic(t *testing.T) {
 	project := testutil.CreateProject(t)
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabPipelineScheduleDestroy,
 		Steps: []resource.TestStep{
 			// Create a project and pipeline schedule with default options

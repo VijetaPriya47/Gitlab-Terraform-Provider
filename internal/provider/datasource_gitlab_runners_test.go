@@ -15,16 +15,15 @@ import (
 )
 
 func TestAccDataGitlabRunner_basic(t *testing.T) {
-
 	optsRunnerInstance := gitlab.CreateUserRunnerOptions{
 		RunnerType: gitlab.Ptr("instance_type"),
 		TagList:    gitlab.Ptr([]string{"cats", "are", "amazing"}),
 	}
 	runner := testutil.CreateRunnerWithOptions(t, &optsRunnerInstance)
 
-	//lintignore:AT001 // Data sources don't need check destroy in their tests
+	// lintignore:AT001 // Data sources don't need check destroy in their tests
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: `
@@ -57,7 +56,6 @@ func TestAccDataGitlabRunner_basic(t *testing.T) {
 }
 
 func TestAccDataGitlabRunner_filter(t *testing.T) {
-
 	optsRunnerInstance := gitlab.CreateUserRunnerOptions{
 		RunnerType: gitlab.Ptr("instance_type"),
 	}
@@ -77,9 +75,9 @@ func TestAccDataGitlabRunner_filter(t *testing.T) {
 	}
 	runnerPaused := testutil.CreateRunnerWithOptions(t, &optsRunnerPaused)
 
-	//lintignore:AT001 // Data sources don't need check destroy in their tests
+	// lintignore:AT001 // Data sources don't need check destroy in their tests
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(

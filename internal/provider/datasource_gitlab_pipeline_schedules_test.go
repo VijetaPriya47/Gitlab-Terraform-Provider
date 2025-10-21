@@ -19,7 +19,7 @@ func TestAccDataGitlabPipelineSchedules_basic(t *testing.T) {
 	schedule2, _ := testutil.CreateScheduledPipeline(t, project.ID, "main")
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(
