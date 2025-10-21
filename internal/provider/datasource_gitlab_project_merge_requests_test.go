@@ -18,7 +18,7 @@ func TestAcc_GitLabProjectMergeRequests_DataSource_Conflicts(t *testing.T) {
 	project := testutil.CreateProject(t)
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(
@@ -45,7 +45,7 @@ func TestAcc_GitLabProjectMergeRequests_DataSource_Basic(t *testing.T) {
 	mergeRequest := testutil.CreateMergeRequest(t, user, project, branch.Name, "main")
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(

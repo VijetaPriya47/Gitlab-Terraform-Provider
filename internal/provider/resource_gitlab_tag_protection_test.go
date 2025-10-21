@@ -25,7 +25,7 @@ func TestAccGitlabTagProtection_basic(t *testing.T) {
 	project := testutil.CreateProject(t)
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabTagProtectionDestroy,
 		Steps: []resource.TestStep{
 			// Create a project and Tag Protection with default options
@@ -109,7 +109,7 @@ func TestAccGitlabTagProtection_wildcard(t *testing.T) {
 	wildcard := "-*"
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabTagProtectionDestroy,
 		Steps: []resource.TestStep{
 			// Create a project and Tag Protection with default options
@@ -191,7 +191,7 @@ func TestAccGitlabTagProtection_customAccessLevel_allowedToCreateUnavailableInCe
 	testutil.AddProjectMembers(t, project.ID, myUser)
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabTagProtectionDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -238,7 +238,7 @@ func TestAccGitlabTagProtection_customAccessLevel_userIdAndGroupIdAreMutuallyExc
 	testutil.ProjectShareGroup(t, project.ID, myGroup[0].ID)
 
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabTagProtectionDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -265,7 +265,7 @@ func TestAccGitlabTagProtection_adminCreateAccessLevel(t *testing.T) {
 	project := testutil.CreateProject(t)
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabTagProtectionDestroy,
 		Steps: []resource.TestStep{
 			// Create a project and Tag Protection with admin create access level

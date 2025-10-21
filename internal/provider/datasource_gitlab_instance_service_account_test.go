@@ -19,7 +19,7 @@ func TestAcc_GitLabInstanceServiceAccount_DataSource_Basic(t *testing.T) {
 	serviceAccount := testutil.CreateInstanceServiceAccounts(t, 1)[0]
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			// Read testing
 			{

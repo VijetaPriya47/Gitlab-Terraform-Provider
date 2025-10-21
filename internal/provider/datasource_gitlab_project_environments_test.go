@@ -26,7 +26,7 @@ func TestAccDataProjectEnvironment_basic(t *testing.T) {
 
 	// lintignore:AT001 // Data sources don't need check destroy in their tests
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(
@@ -87,7 +87,7 @@ func TestAccDataProjectEnvironment_filter(t *testing.T) {
 
 	// lintignore:AT001 // Data sources don't need check destroy in their tests
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(
@@ -180,7 +180,7 @@ func TestAccDataProjectEnvironment_clusterAgent(t *testing.T) {
 
 	// lintignore:AT001 // Data sources don't need check destroy in their tests
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(

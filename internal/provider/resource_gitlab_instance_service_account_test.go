@@ -22,7 +22,7 @@ func TestAcc_GitlabInstanceServiceAccount_basic(t *testing.T) {
 	name := acctest.RandString(10)
 	username := acctest.RandString(10)
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAcc_GitlabInstanceServiceAccount_CheckDestroy(),
 		Steps: []resource.TestStep{
 			// Create a basic service account.
@@ -55,7 +55,7 @@ func TestAcc_GitlabInstanceServiceAccount_defaults(t *testing.T) {
 	username := acctest.RandString(10)
 
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAcc_GitlabInstanceServiceAccount_CheckDestroy(),
 		Steps: []resource.TestStep{
 			// Create a basic service account with just defaults.
@@ -159,7 +159,7 @@ func TestAcc_GitlabInstanceServiceAccount_WithEmail(t *testing.T) {
 	username := acctest.RandString(10)
 	email := fmt.Sprintf("%s@example.com", acctest.RandString(10))
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAcc_GitlabInstanceServiceAccount_CheckDestroy(),
 		Steps: []resource.TestStep{
 			// Create a service account with an email.
@@ -193,7 +193,7 @@ func TestAcc_GitlabInstanceServiceAccount_CreateWithoutEmail(t *testing.T) {
 	name := acctest.RandString(10)
 	username := acctest.RandString(10)
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAcc_GitlabInstanceServiceAccount_CheckDestroy(),
 		Steps: []resource.TestStep{
 			{

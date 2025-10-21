@@ -41,7 +41,7 @@ func TestAccGitlabBranchProtection_allowSpecificUserAndNoRoleToPush(t *testing.T
 	var pb gitlab.ProtectedBranch
 
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabBranchProtectionDestroyFlakey,
 		Steps: []resource.TestStep{
 			// Create a branch protection, with only user and no role allowed to push
@@ -134,7 +134,7 @@ func TestAccGitlabBranchProtection_allowSpecificDeployKeyToPush(t *testing.T) {
 	var pb gitlab.ProtectedBranch
 
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabBranchProtectionDestroyFlakey,
 		Steps: []resource.TestStep{
 			// Create a branch protection, with only a deploy-key allowed to push
@@ -223,7 +223,7 @@ func TestAccGitlabBranchProtection_createWithMultipleAccessLevels(t *testing.T) 
 	var pb gitlab.ProtectedBranch
 
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabBranchProtectionDestroyFlakey,
 		Steps: []resource.TestStep{
 			// Create a project, groups, users and Branch Protection with advanced allowed_to blocks
@@ -387,7 +387,7 @@ func TestAccGitlabBranchProtection_removeUsersAndGroupsFromAllowedTo(t *testing.
 	var pb gitlab.ProtectedBranch
 
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabBranchProtectionDestroyFlakey,
 		Steps: []resource.TestStep{
 			// Create a branch protection, with only user and no role allowed to push
