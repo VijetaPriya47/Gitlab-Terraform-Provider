@@ -51,12 +51,12 @@ resource "gitlab_deploy_key_enable" "foo" {
 ### Optional
 
 - `can_push` (Boolean) Can deploy key push to the project's repository.
-- `key` (String) Deploy key.
-- `title` (String) Deploy key's title.
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `id` (String) The ID of this terraform resource. In the format `<project:key-id>`.
+- `key` (String) Deploy key.
+- `title` (String) Deploy key's title.
 
 ## Import
 
