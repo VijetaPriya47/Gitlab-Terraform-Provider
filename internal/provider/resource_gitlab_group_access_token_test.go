@@ -738,7 +738,7 @@ func TestAccGitlabGroupAccessToken_rotationConfiguration(t *testing.T) {
 	group := testutil.CreateGroups(t, 1)[0]
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		CheckDestroy:             testAccCheckGitlabGroupAccessTokenDestroy,
 		Steps: []resource.TestStep{
 			// Create a basic access token.
