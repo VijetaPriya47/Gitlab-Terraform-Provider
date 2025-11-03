@@ -646,7 +646,7 @@ func TestAccGitlabPersonalAccessToken_rotationConfiguration(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		CheckDestroy:             testAccCheckGitlabPersonalAccessTokenDestroy,
 		Steps: []resource.TestStep{
 			// Create a Personal Access Token.

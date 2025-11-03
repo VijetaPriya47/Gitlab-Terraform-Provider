@@ -17,7 +17,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -151,7 +150,6 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Schema(ctx context.Contex
 				MarkdownDescription: "Wether to validate if the expiration date is in the future.",
 				Optional:            true,
 				Computed:            true,
-				Default:             booldefault.StaticBool(false),
 			},
 			"created_at": schema.StringAttribute{
 				MarkdownDescription: "Time the token has been created, RFC3339 format.",
@@ -593,7 +591,7 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Create(ctx context.Contex
 		return
 	}
 	if expiryDate != nil {
-		if data.ValidatePastExpirationDate.ValueBool() {
+		if !data.ValidatePastExpirationDate.IsNull() && data.ValidatePastExpirationDate.ValueBool() {
 			err := utils.ValidateISOTimeExpiryDate(*expiryDate)
 			if err != nil {
 				resp.Diagnostics.AddError(
@@ -602,9 +600,15 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Create(ctx context.Contex
 				)
 				return
 			}
+		} else {
+			// Default to `false` if it's not set in the config/plan.
+			data.ValidatePastExpirationDate = types.BoolValue(false)
 		}
 
 		options.ExpiresAt = expiryDate
+	} else {
+		// No expiration date, set validate_past_expiration_date to false
+		data.ValidatePastExpirationDate = types.BoolValue(false)
 	}
 
 	token, _, err := r.client.Groups.CreateServiceAccountPersonalAccessToken(data.Group.ValueString(), int(data.UserID.ValueInt64()), options, gitlab.WithContext(ctx))
@@ -670,7 +674,7 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Update(ctx context.Contex
 		return
 	}
 
-	if planData.ValidatePastExpirationDate.ValueBool() {
+	if !planData.ValidatePastExpirationDate.IsNull() && planData.ValidatePastExpirationDate.ValueBool() {
 		err := utils.ValidateISOTimeExpiryDate(expiresAt)
 		if err != nil {
 			resp.Diagnostics.AddError(
@@ -679,6 +683,9 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Update(ctx context.Contex
 			)
 			return
 		}
+	} else {
+		// Default to `false` if it's not set in the config/plan.
+		planData.ValidatePastExpirationDate = types.BoolValue(false)
 	}
 
 	// find out whether self_rotate is one of the scopes
