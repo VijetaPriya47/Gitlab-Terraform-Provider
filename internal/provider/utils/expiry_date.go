@@ -27,34 +27,46 @@ func ValidateExpiryDateValid(expiryDate time.Time) error {
 	return nil
 }
 
-func DetermineExpiryDate(expiresAt types.String, rotationConfiguration *GitlabAccessTokenRotationConfiguration, expirationDaysFallback *int) (*gitlab.ISOTime, error) {
+func DetermineExpiryDate(expiresAt types.String, rotationConfiguration *GitlabAccessTokenRotationConfiguration, expirationDaysFallback *int) (types.String, *gitlab.ISOTime, error) {
+	// Handle unknown values (e.g., from time_rotating resources during plan phase)
+	if expiresAt.IsUnknown() && rotationConfiguration == nil {
+		return types.StringUnknown(), nil, nil
+	}
+
+	// Handle known expiresAt value when rotation_configuration is not used
 	if !expiresAt.IsNull() && !expiresAt.IsUnknown() && rotationConfiguration == nil {
 		isoTime, err := gitlab.ParseISOTime(expiresAt.ValueString())
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse expiration date into ISOTime. Provided value: %s", expiresAt.ValueString())
+			return types.StringNull(), nil, fmt.Errorf("failed to parse expiration date into ISOTime. Provided value: %s", expiresAt.ValueString())
 		}
-		return &isoTime, nil
+		return types.StringValue(isoTime.String()), &isoTime, nil
 	}
 
+	// Handle rotation_configuration
 	if rotationConfiguration != nil {
 		if !rotationConfiguration.ExpirationDays.IsNull() && !rotationConfiguration.ExpirationDays.IsUnknown() {
 			now := api.CurrentTime()
 			expiryDate := now.AddDate(0, 0, int(rotationConfiguration.ExpirationDays.ValueInt64()))
 			expiryIsoTime, err := gitlab.ParseISOTime(expiryDate.Format(api.Iso8601))
-
-			return &expiryIsoTime, err
+			if err != nil {
+				return types.StringNull(), nil, err
+			}
+			return types.StringValue(expiryIsoTime.String()), &expiryIsoTime, nil
 		}
 
 		if expirationDaysFallback != nil {
 			now := api.CurrentTime()
 			expiryDate := now.AddDate(0, 0, *expirationDaysFallback)
 			expiryIsoTime, err := gitlab.ParseISOTime(expiryDate.Format(api.Iso8601))
-
-			return &expiryIsoTime, err
+			if err != nil {
+				return types.StringNull(), nil, err
+			}
+			return types.StringValue(expiryIsoTime.String()), &expiryIsoTime, nil
 		}
 	}
 
-	return nil, nil
+	// No expiration date could be determined
+	return types.StringNull(), nil, nil
 }
 
 func DetermineRFC3339ExpiryDate(expiresAt timetypes.RFC3339) (*time.Time, error) {

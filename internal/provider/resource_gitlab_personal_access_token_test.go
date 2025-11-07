@@ -949,6 +949,73 @@ func TestAccGitlabPersonalAccessToken_revokedTokenWithPastExpiry(t *testing.T) {
 	})
 }
 
+// TestAccGitlabPersonalAccessToken_withTimeRotating verifies when
+// expires_at is set via time_rotating. During plan this value is "unknown", and
+// when the token is revoked the provider must handle that unknown value without
+// segfaulting while computing a replacement expiry date.
+func TestAccGitlabPersonalAccessToken_withTimeRotating(t *testing.T) {
+	user := testutil.CreateUsers(t, 1)[0]
+	tokenName := "time-rotating-test"
+
+	config := fmt.Sprintf(`
+		resource "time_rotating" "example" {
+			rotation_days = 30
+		}
+
+		resource "gitlab_personal_access_token" "test" {
+			user_id    = %d
+			name       = %q
+			expires_at = split("T", time_rotating.example.rotation_rfc3339)[0]
+			scopes     = ["api"]
+		}
+	`, user.ID, tokenName)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		ExternalProviders: map[string]resource.ExternalProvider{
+			"time": {
+				Source: "hashicorp/time",
+			},
+		},
+		CheckDestroy: testAccCheckGitlabPersonalAccessTokenDestroy,
+		Steps: []resource.TestStep{
+			// Step 1: create token whose expires_at is unknown during plan.
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_personal_access_token.test", "active", "true"),
+					resource.TestCheckResourceAttrSet("gitlab_personal_access_token.test", "expires_at"),
+					resource.TestCheckResourceAttrSet("gitlab_personal_access_token.test", "token"),
+				),
+			},
+			// Step 2: revoke the token externally, then plan & apply. Without the fix this used to
+			// segfault when modifyPlanRevoked called DetermineExpiryDate with an unknown expires_at value.
+			{
+				PreConfig: func() {
+					if err := revokePersonalAccessToken(user.ID, tokenName); err != nil {
+						t.Fatalf("failed to revoke token: %v", err)
+					}
+				},
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_personal_access_token.test", "active", "true"),
+					resource.TestCheckResourceAttr("gitlab_personal_access_token.test", "revoked", "false"),
+					resource.TestCheckResourceAttrSet("gitlab_personal_access_token.test", "expires_at"),
+					resource.TestCheckResourceAttrSet("gitlab_personal_access_token.test", "token"),
+					resource.TestCheckResourceAttrSet("gitlab_personal_access_token.test", "created_at"),
+				),
+			},
+			// Step 3: verify import works with the expected ignores for sensitive fields.
+			{
+				ResourceName:            "gitlab_personal_access_token.test",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"token", "validate_past_expiration_date"},
+			},
+		},
+	})
+}
+
 func revokePersonalAccessToken(userID int, tokenName string) error {
 	tokenID, err := personalAccessTokenID(userID, tokenName)
 	if err != nil {
