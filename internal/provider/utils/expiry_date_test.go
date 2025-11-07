@@ -146,6 +146,7 @@ func TestDetermineExpiryDate(t *testing.T) {
 		fallback       *int
 		expectedDate   string // YYYY-MM-DD format for simple comparison
 		expectError    bool
+		expectUnknown  bool
 	}{
 		{
 			name:         "UsesExpiresAtWhenProvided",
@@ -175,32 +176,49 @@ func TestDetermineExpiryDate(t *testing.T) {
 			expectedDate: "2025-10-11",
 		},
 		{
-			name: "ReturnsNilWhenRotationDaysAndFallbackAreNull",
+			name: "ReturnsNullWhenRotationDaysAndFallbackAreNull",
 			rotationConfig: &GitlabAccessTokenRotationConfiguration{
 				ExpirationDays: types.Int64Null(),
 			},
 			fallback:     nil,
-			expectedDate: "", // Represents nil
+			expectedDate: "", // Represents null
 		},
 		{
-			name:         "ReturnsNilWhenAllInputsAreNil",
-			expectedDate: "", // Represents nil
+			name:         "ReturnsNullWhenAllInputsAreNil",
+			expectedDate: "", // Represents null
+		},
+		{
+			name:          "ReturnsUnknownWhenExpiresAtIsUnknown",
+			expiresAt:     types.StringUnknown(),
+			expectUnknown: true,
 		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			result, err := DetermineExpiryDate(tc.expiresAt, tc.rotationConfig, tc.fallback)
+			result, _, err := DetermineExpiryDate(tc.expiresAt, tc.rotationConfig, tc.fallback)
 			hasError := err != nil
 
 			if hasError != tc.expectError {
 				t.Fatalf("DetermineExpiryDate() FAILED, expected error -> %v, got -> %v", tc.expectError, err)
 			}
 
+			// Check if result is unknown (for time_rotating scenario)
+			if tc.expectUnknown {
+				if !result.IsUnknown() {
+					t.Fatalf("DetermineExpiryDate() FAILED, expected Unknown result, got -> %v", result)
+				}
+				return
+			}
+
 			var resultDate string
-			if result != nil {
-				// We format to a common standard for easy string comparison
-				resultDate = time.Time(*result).Format("2006-01-02")
+			if !result.IsNull() && !result.IsUnknown() {
+				// Parse the result and format to a common standard for easy string comparison
+				isoTime, parseErr := gitlab.ParseISOTime(result.ValueString())
+				if parseErr != nil {
+					t.Fatalf("DetermineExpiryDate() FAILED to parse result: %v", parseErr)
+				}
+				resultDate = time.Time(isoTime).Format("2006-01-02")
 			}
 
 			if resultDate != tc.expectedDate {
