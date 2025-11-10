@@ -13,6 +13,7 @@ import (
 
 func TestAccDataSourceGitlabClusterAgents_basic(t *testing.T) {
 	testProject := testutil.CreateProject(t)
+	testProject2 := testutil.CreateProject(t)
 	testClusterAgents := testutil.CreateClusterAgents(t, testProject.ID, 25)
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -40,6 +41,16 @@ func TestAccDataSourceGitlabClusterAgents_basic(t *testing.T) {
 						}
 						return nil
 					}),
+				),
+			},
+			{
+				Config: fmt.Sprintf(`
+					data "gitlab_cluster_agents" "this" {
+						project = "%d"
+					}
+				`, testProject2.ID),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("data.gitlab_cluster_agents.this", "cluster_agents.#", "0"),
 				),
 			},
 		},

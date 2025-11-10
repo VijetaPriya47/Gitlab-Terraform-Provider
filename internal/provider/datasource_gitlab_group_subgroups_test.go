@@ -14,9 +14,9 @@ import (
 func TestAccDataSourceGitlabSubGroups_basic(t *testing.T) {
 	t.Parallel()
 
-	group := testutil.CreateGroups(t, 1)
-	groupID := fmt.Sprint(group[0].ID)
-	subgroups := testutil.CreateSubGroups(t, group[0], 5)
+	groups := testutil.CreateGroups(t, 2)
+	groupID := fmt.Sprint(groups[0].ID)
+	subgroups := testutil.CreateSubGroups(t, groups[0], 5)
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
@@ -93,6 +93,16 @@ func TestAccDataSourceGitlabSubGroups_basic(t *testing.T) {
 						"path":      subgroups[4].Path,
 						"parent_id": groupID,
 					}),
+				),
+			},
+			{
+				Config: fmt.Sprintf(`
+					data "gitlab_group_subgroups" "subs_foo" {
+						group_id = %d
+					}
+				`, groups[1].ID),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("data.gitlab_group_subgroups.subs_foo", "subgroups.#", "0"),
 				),
 			},
 		},
