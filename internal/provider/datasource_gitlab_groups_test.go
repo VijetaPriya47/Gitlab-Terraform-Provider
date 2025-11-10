@@ -78,6 +78,17 @@ func TestAccDataSourceGitlabGroups_basic(t *testing.T) {
 			},
 			{
 				Config: `
+					data "gitlab_groups" "nonexistent" {
+						top_level_only = true
+						search = "jdbwurodqudf"
+					}
+				`,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("data.gitlab_groups.nonexistent", "groups.#", "0"),
+				),
+			},
+			{
+				Config: `
 					data "gitlab_groups" "sublevel" {
 						top_level_only = false
 						search = "acctest-group-parent"

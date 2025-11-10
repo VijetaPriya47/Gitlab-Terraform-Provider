@@ -154,6 +154,7 @@ func (d *gitlabReleaseLinksDataSource) Read(ctx context.Context, req datasource.
 	data.Project = types.StringValue(project)
 	data.TagName = types.StringValue(tagName)
 
+	data.ReleaseLinks = []gitlabReleaseLinksIndividualDataSourceModel{}
 	for _, releaseLink := range releaseLinks {
 		modelReleaseLink := gitlabReleaseLinksIndividualDataSourceModel{
 			Project:        types.StringValue(project),

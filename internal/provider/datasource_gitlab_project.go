@@ -673,7 +673,9 @@ func (d *gitlabProjectDataSource) Read(ctx context.Context, req datasource.ReadR
 			NameRegexKeep:   types.StringValue(found.ContainerExpirationPolicy.NameRegexKeep),
 			Enabled:         types.BoolValue(found.ContainerExpirationPolicy.Enabled),
 		}
-		if found.ContainerExpirationPolicy.NextRunAt != nil {
+		if found.ContainerExpirationPolicy.NextRunAt == nil {
+			policy.NextRunAt = types.StringNull()
+		} else {
 			policy.NextRunAt = types.StringValue(found.ContainerExpirationPolicy.NextRunAt.Format(time.RFC3339))
 		}
 		data.ContainerExpirationPolicy = append(data.ContainerExpirationPolicy, policy)

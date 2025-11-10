@@ -205,6 +205,8 @@ func (d *gitlabGroupHooksDataSource) Read(ctx context.Context, req datasource.Re
 	}
 
 	data.ID = types.StringValue(group)
+
+	data.Hooks = []gitlabGroupHooksIndividualDataSourceModel{}
 	for _, hook := range hooks {
 		modelHook := gitlabGroupHooksIndividualDataSourceModel{
 			Group:                    types.StringValue(group),

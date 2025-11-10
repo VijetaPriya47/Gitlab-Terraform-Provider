@@ -222,6 +222,7 @@ func (d *gitlabProjectMilestonesDataSource) Read(ctx context.Context, req dataso
 	tflog.Debug(ctx, fmt.Sprintf("get gitlab milestones from project: %s", project))
 	data.ID = types.StringValue(fmt.Sprintf("%s:%s", project, optionsHash.String()))
 
+	data.Milestones = []gitlabProjectMilestonesIndividualDataSourceModel{}
 	for _, milestone := range milestones {
 		modelMilestone := gitlabProjectMilestonesIndividualDataSourceModel{
 			IID:         types.Int64Value(int64(milestone.IID)),

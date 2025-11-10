@@ -13,6 +13,7 @@ import (
 
 func TestAccDataGitlabProjectMilestones_basic(t *testing.T) {
 	testProject := testutil.CreateProject(t)
+	testProject2 := testutil.CreateProject(t)
 	testMilestones := testutil.AddProjectMilestones(t, testProject, 2)
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -29,6 +30,15 @@ func TestAccDataGitlabProjectMilestones_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("data.gitlab_project_milestones.this", "milestones.0.description", testMilestones[1].Description),
 					resource.TestCheckResourceAttr("data.gitlab_project_milestones.this", "milestones.1.title", testMilestones[0].Title),
 					resource.TestCheckResourceAttr("data.gitlab_project_milestones.this", "milestones.1.description", testMilestones[0].Description),
+				),
+			},
+			{
+				Config: fmt.Sprintf(`
+				data "gitlab_project_milestones" "this" {
+					project = "%d"
+				}`, testProject2.ID),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("data.gitlab_project_milestones.this", "milestones.#", "0"),
 				),
 			},
 		},

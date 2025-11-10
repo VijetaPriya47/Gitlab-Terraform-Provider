@@ -326,6 +326,7 @@ func (d *gitlabUsersDataSource) Read(ctx context.Context, req datasource.ReadReq
 }
 
 func (data *gitlabUsersDataSourceModel) flattenGitlabUsers(users []*gitlab.User) {
+	data.Users = []gitlabUsersIndividualDataSourceModel{}
 	for _, user := range users {
 		modelUser := gitlabUsersIndividualDataSourceModel{
 			ID:               types.Int64Value(int64(user.ID)),

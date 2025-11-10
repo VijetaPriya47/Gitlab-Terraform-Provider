@@ -129,7 +129,7 @@ func (d *gitlabClusterAgentsDataSource) Read(ctx context.Context, req datasource
 	data.ID = types.StringValue(project)
 	data.Project = types.StringValue(project)
 
-	var agents []gitlabClusterAgentsIndividualDataSourceModel
+	data.ClusterAgents = []gitlabClusterAgentsIndividualDataSourceModel{}
 	for _, agent := range clusterAgents {
 		agentModel := gitlabClusterAgentsIndividualDataSourceModel{
 			Name:            types.StringValue(agent.Name),
@@ -143,8 +143,7 @@ func (d *gitlabClusterAgentsDataSource) Read(ctx context.Context, req datasource
 			return
 		}
 		agentModel.CreatedAt = createdAt
-		agents = append(agents, agentModel)
+		data.ClusterAgents = append(data.ClusterAgents, agentModel)
 	}
-	data.ClusterAgents = agents
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }

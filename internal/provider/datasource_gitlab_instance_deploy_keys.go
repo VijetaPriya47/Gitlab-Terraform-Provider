@@ -182,6 +182,7 @@ func (d *gitlabInstanceDeployKeysDataSource) Read(ctx context.Context, req datas
 	data.ID = types.StringValue(fmt.Sprintf("%b", options.Public))
 	data.Public = types.BoolValue(data.Public.ValueBool())
 
+	data.DeployKeys = []gitlabInstanceDeployKeysDataSourceNestedModel{}
 	for _, deployKey := range instanceDeployKeys {
 		modelKey := gitlabInstanceDeployKeysDataSourceNestedModel{
 			ID:          types.Int64Value(int64(deployKey.ID)),
@@ -191,6 +192,7 @@ func (d *gitlabInstanceDeployKeysDataSource) Read(ctx context.Context, req datas
 			Fingerprint: types.StringValue(deployKey.Fingerprint),
 		}
 
+		modelKey.ProjectsWithWriteAccess = []gitlabInstanceDeployKeysProjectWithWriteAccessModel{}
 		for _, project := range deployKey.ProjectsWithWriteAccess {
 			modelProject := gitlabInstanceDeployKeysProjectWithWriteAccessModel{
 				ID:                types.Int64Value(int64(project.ID)),

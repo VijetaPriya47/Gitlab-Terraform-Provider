@@ -123,6 +123,7 @@ func (d *gitlabInstanceVariablesDataSource) Read(ctx context.Context, req dataso
 
 	data.ID = types.StringValue("instance_variables")
 
+	data.Variables = []gitlabInstanceVariablesIndividualDataSourceModel{}
 	for _, variable := range variables {
 		modelVariable := gitlabInstanceVariablesIndividualDataSourceModel{
 			Key:          types.StringValue(variable.Key),
@@ -135,6 +136,5 @@ func (d *gitlabInstanceVariablesDataSource) Read(ctx context.Context, req dataso
 		}
 		data.Variables = append(data.Variables, modelVariable)
 	}
-
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
