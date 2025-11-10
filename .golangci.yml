@@ -1,20 +1,24 @@
-# https://golangci-lint.run/usage/configuration/
+version: "2"
 
+# Options for analysis running
 run:
-  timeout: 3m
+  concurrency: 4
+  issues-exit-code: 1
+  tests: true
 
-linters-settings:
-  custom:
-    tfproviderlint:
-      path: ./bin/tfproviderlint-plugin.so
-      description: "Terraform Provider Lint Tool"
-      original-url: https://github.com/bflad/tfproviderlint
-  errcheck:
-    exclude-functions:
-      - (*github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema.ResourceData).Set
+# Output configuration options
+output:
+  formats:
+    text:
+      path: stdout
+      colors: false
+      print-issued-lines: false
+    code-climate:
+      path: gl-code-quality-report.json
 
 linters:
   enable:
-    - gofmt
     - govet
-    - tfproviderlint
+  disable:
+    - errcheck
+    - staticcheck

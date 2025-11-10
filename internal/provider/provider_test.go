@@ -1,5 +1,4 @@
 //go:build acceptance || flakey || saas
-// +build acceptance flakey saas
 
 package provider
 

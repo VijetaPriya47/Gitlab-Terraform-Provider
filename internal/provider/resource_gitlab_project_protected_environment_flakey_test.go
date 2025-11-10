@@ -1,5 +1,4 @@
 //go:build flakey
-// +build flakey
 
 package provider
 
