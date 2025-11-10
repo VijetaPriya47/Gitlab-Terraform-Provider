@@ -1,5 +1,4 @@
 //go:build settings
-// +build settings
 
 package sdk
 

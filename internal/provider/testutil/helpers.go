@@ -1,5 +1,4 @@
 //go:build acceptance || flakey || settings || saas
-// +build acceptance flakey settings saas
 
 package testutil
 
