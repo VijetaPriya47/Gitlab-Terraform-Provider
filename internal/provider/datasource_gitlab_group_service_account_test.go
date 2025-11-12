@@ -1,5 +1,4 @@
 //go:build acceptance
-// +build acceptance
 
 package provider
 
@@ -20,9 +19,9 @@ func TestAcc_GitLabGroupServiceAccount_DataSource_Basic(t *testing.T) {
 	groupID := strconv.Itoa(group.ID)
 	serviceAccount := testutil.CreateGroupServiceAccounts(t, 1, groupID)[0]
 
-	//lintignore:AT001
+	// lintignore:AT001
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			// Read testing
 			{

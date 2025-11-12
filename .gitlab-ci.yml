@@ -21,7 +21,7 @@ stages:
 
 variables:
   # TODO(@timofurrer): verify if there is an option to read this version from either .tool-versions or go.mod
-  GOLANG_IMAGE_VERSION: "1.25.1"
+  GOLANG_IMAGE_VERSION: "1.25.4"
   # NOTE(@timofurrer): used for caching, see `cache.paths` settings
   GOPATH: ${CI_PROJECT_DIR}/.go
   IMAGE_TAG: latest
@@ -83,6 +83,7 @@ make:lint:
           - lint-examples-sh
           - lint-generated
           - lint-custom
+          - lint-tfprovider
 
 go:build:
   rules:
@@ -353,10 +354,13 @@ github-for-terraform-registry:
   script:
     # NOTE(@timofurrer): publish docs to GitHub, so that they end up in the GitHub release Source code assets,
     #                    ready for the Terraform Registry to discover.
+    # NOTE(@PatrickRice): We remove the whole docs folder before copying to make sure old resources that we've removed are 
+    #                     properly removed from the documentation.
     - |
       git clone --depth 1 https://gitlab-terraform-provider-bot:$GITHUB_TOKEN_FOR_SYNC@github.com/$GITHUB_ORG/$GITHUB_REPO.git /tmp/github-repo
       cp -rf docs CHANGELOG.md /tmp/github-repo
       cd /tmp/github-repo
+      rm -rf ./docs
       git config user.email "Terraform-Provider-Bot@gitlab.com"
       git config user.name "gitlab-terraform-provider-bot"
       git add docs CHANGELOG.md

@@ -1,5 +1,4 @@
 //go:build acceptance
-// +build acceptance
 
 package provider
 
@@ -17,7 +16,7 @@ func TestAccDataSourceGitlabProjectVariable_basic(t *testing.T) {
 	testProjectVariable := testutil.CreateProjectVariable(t, testProject.ID)
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
@@ -46,7 +45,7 @@ func TestAccDataSourceGitlabProjectVariable_noEnvironmentScope(t *testing.T) {
 	testProjectVariable := testutil.CreateProjectVariable(t, testProject.ID)
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`

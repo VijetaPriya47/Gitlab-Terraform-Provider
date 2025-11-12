@@ -328,7 +328,7 @@ func (r *gitlabPersonalAccessTokenResource) ModifyPlan(ctx context.Context, req 
 
 	if shouldSetExpiration {
 		// We need to re-calculate the expiryDate, and set it in the plan
-		expiryDate, err := utils.DetermineExpiryDate(planData.ExpiresAt, planData.RotationConfiguration, nil)
+		expiryDate, _, err := utils.DetermineExpiryDate(planData.ExpiresAt, planData.RotationConfiguration, nil)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Error determining new expiry date",
@@ -340,9 +340,9 @@ func (r *gitlabPersonalAccessTokenResource) ModifyPlan(ctx context.Context, req 
 		// If the newly calculated expiryDate is different than what's in state, modify the plan
 		// This check is required to prevent the ID being unknown on every apply with rotation_configuration even
 		// if the calculated date is exactly the same as it currently is
-		if stateData != nil && expiryDate != nil && expiryDate.String() != stateData.ExpiresAt.ValueString() {
+		if stateData != nil && !expiryDate.IsNull() && !expiryDate.IsUnknown() && expiryDate.ValueString() != stateData.ExpiresAt.ValueString() {
 			// Set the new expiration date in the plan
-			planData.ExpiresAt = types.StringValue(expiryDate.String())
+			planData.ExpiresAt = expiryDate
 
 			// Set several attributes to unknown since they will change as part of rotation
 			planData.ID = types.StringUnknown()
@@ -351,7 +351,7 @@ func (r *gitlabPersonalAccessTokenResource) ModifyPlan(ctx context.Context, req 
 
 			// Logs for assisting with support
 			tflog.Debug(ctx, "[PersonalAccessToken] Rotation is required, settings plan data", map[string]any{
-				"new_expires_at": expiryDate.String(),
+				"new_expires_at": expiryDate.ValueString(),
 				"expires_at":     stateData.ExpiresAt.ValueString(),
 				"user_id":        planData.UserId.ValueInt64(),
 				"name":           planData.Name.ValueString(),
@@ -388,7 +388,7 @@ func (r *gitlabPersonalAccessTokenResource) modifyPlanRevoked(ctx context.Contex
 	resp.RequiresReplace = append(resp.RequiresReplace, path.Root("revoked"))
 
 	// Calculate new expiration date
-	expiryDate, err := utils.DetermineExpiryDate(planData.ExpiresAt, planData.RotationConfiguration, nil)
+	expiryDate, _, err := utils.DetermineExpiryDate(planData.ExpiresAt, planData.RotationConfiguration, nil)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error determining new expiry date",
@@ -398,7 +398,7 @@ func (r *gitlabPersonalAccessTokenResource) modifyPlanRevoked(ctx context.Contex
 	}
 
 	// Set the planned values
-	planData.ExpiresAt = types.StringValue(expiryDate.String())
+	planData.ExpiresAt = expiryDate
 	planData.Revoked = types.BoolValue(false) // Expect the new token to be not revoked
 
 	resp.Diagnostics.Append(resp.Plan.Set(ctx, planData)...)
@@ -495,7 +495,7 @@ func (r *gitlabPersonalAccessTokenResource) Create(ctx context.Context, req reso
 	}
 
 	// // Get the valid expiry date from the `expires_at`
-	expiryDate, err := utils.DetermineExpiryDate(data.ExpiresAt, data.RotationConfiguration, nil)
+	_, expiryISOTime, err := utils.DetermineExpiryDate(data.ExpiresAt, data.RotationConfiguration, nil)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error determining expiry date",
@@ -504,8 +504,10 @@ func (r *gitlabPersonalAccessTokenResource) Create(ctx context.Context, req reso
 		return
 	}
 
-	if !data.ValidatePastExpirationDate.IsNull() && data.ValidatePastExpirationDate.ValueBool() {
-		err := utils.ValidateISOTimeExpiryDate(*expiryDate)
+	// Use the returned gitlab.ISOTime directly for API call
+	var expiryDatePtr *gitlab.ISOTime = expiryISOTime
+	if expiryISOTime != nil && !data.ValidatePastExpirationDate.IsNull() && data.ValidatePastExpirationDate.ValueBool() {
+		err := utils.ValidateISOTimeExpiryDate(*expiryISOTime)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Error creating GitLab PersonalAccessToken",
@@ -518,7 +520,7 @@ func (r *gitlabPersonalAccessTokenResource) Create(ctx context.Context, req reso
 		data.ValidatePastExpirationDate = types.BoolValue(false)
 	}
 
-	options.ExpiresAt = expiryDate
+	options.ExpiresAt = expiryDatePtr
 
 	token, _, err := r.client.Users.CreatePersonalAccessToken(int(data.UserId.ValueInt64()), options, gitlab.WithContext(ctx))
 	if err != nil {

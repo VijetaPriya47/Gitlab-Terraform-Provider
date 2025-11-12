@@ -1,5 +1,4 @@
 //go:build acceptance
-// +build acceptance
 
 package provider
 
@@ -444,7 +443,7 @@ func TestAccGitlabProjectHook_validations(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Validate that URLs may not contain whitepaces
 			{
-				ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 				Config: fmt.Sprintf(`resource "gitlab_project_hook" "foo" {
 					project = "%d"
 					url = "https://example.com/hook-1234     " // spaces in the URL are invalid

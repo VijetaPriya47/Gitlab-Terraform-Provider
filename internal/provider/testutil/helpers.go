@@ -1,5 +1,4 @@
 //go:build acceptance || flakey || settings || saas
-// +build acceptance flakey settings saas
 
 package testutil
 
@@ -1437,4 +1436,97 @@ func CreateProjectApprovalRule(t *testing.T, project int, ruleName string, appro
 	})
 
 	return approvalRule, err
+}
+
+func CreateMemberRole(t *testing.T) *api.GraphQLMemberRole {
+	t.Helper()
+
+	query := gitlab.GraphQLQuery{
+		Query: fmt.Sprintf(`
+			mutation {
+				memberRoleCreate(
+					input: {
+						name: "%s",
+						baseAccessLevel: REPORTER,
+						permissions: [READ_VULNERABILITY]
+					}
+				) {
+					memberRole {
+						baseAccessLevel {
+							stringValue
+						},
+						createdAt,
+						description,
+						editPath,
+						enabledPermissions {
+							nodes {
+								value
+							}
+						},
+						id,
+						name
+					}
+					errors
+				}
+			}`, acctest.RandomWithPrefix("acctest")),
+	}
+
+	type createMemberRoleResponse struct {
+		Data struct {
+			MemberRoleCreate struct {
+				MemberRole api.GraphQLMemberRole `json:"memberRole"`
+				Errors     []string              `json:"errors"`
+			} `json:"memberRoleCreate"`
+		} `json:"data"`
+		Errors []struct {
+			Message   string `json:"message"`
+			Locations []struct {
+				Line   int `json:"line"`
+				Column int `json:"column"`
+			} `json:"locations"`
+			Path []string `json:"path"`
+		} `json:"errors"`
+	}
+
+	var response createMemberRoleResponse
+	if _, err := TestGitlabClient.GraphQL.Do(query, &response); err != nil {
+		t.Fatalf("Unable to create member role: %s", err.Error())
+	}
+
+	// check response for errors
+	var allerr string
+	if len(response.Errors) > 0 {
+		for i, err := range response.Errors {
+			allerr += fmt.Sprintf("Error %d Message: %s\n", i, err.Message)
+		}
+	}
+	if len(response.Data.MemberRoleCreate.Errors) > 0 {
+		for i, err := range response.Data.MemberRoleCreate.Errors {
+			allerr += fmt.Sprintf("Error %d Message: %s\n", i, err)
+		}
+	}
+	if len(allerr) > 0 {
+		t.Fatalf("GitLab GraphQL error occurred: %s", allerr)
+	}
+
+	t.Cleanup(func() {
+		query := gitlab.GraphQLQuery{
+			Query: fmt.Sprintf(`
+				mutation {
+					memberRoleDelete(
+						input: {
+							id: "%s"
+						}
+					) {
+						errors
+					}
+				}`, response.Data.MemberRoleCreate.MemberRole.ID),
+		}
+
+		if _, err := TestGitlabClient.GraphQL.Do(query, nil); err != nil {
+			t.Fatalf("Unable to delete member role: %s", err.Error())
+		}
+	})
+
+	return &response.Data.MemberRoleCreate.MemberRole
 }

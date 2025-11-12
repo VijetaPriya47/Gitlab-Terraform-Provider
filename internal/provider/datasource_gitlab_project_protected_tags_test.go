@@ -1,5 +1,4 @@
 //go:build acceptance
-// +build acceptance
 
 package provider
 
@@ -22,7 +21,7 @@ func TestAccDataGitlabProjectProtectedTags_basic(t *testing.T) {
 
 	// lintignore:AT001 // Data sources don't need check destroy in their tests
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`			
@@ -90,7 +89,7 @@ func TestAccDataGitlabProjectProtectedTags_customAccessLevels(t *testing.T) {
 
 	// lintignore:AT001 // Data sources don't need check destroy in their tests
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`

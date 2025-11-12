@@ -1,5 +1,4 @@
 //go:build acceptance
-// +build acceptance
 
 package provider
 
@@ -26,7 +25,7 @@ func TestAccGitlabBranchProtection_basic(t *testing.T) {
 	project := testutil.CreateProject(t)
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabBranchProtectionDestroy,
 		Steps: []resource.TestStep{
 			// Create a project and Branch Protection with default options
@@ -214,7 +213,7 @@ func TestAccGitlabBranchProtection_createWithCodeOwnerApproval(t *testing.T) {
 	project := testutil.CreateProject(t)
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabBranchProtectionDestroy,
 		Steps: []resource.TestStep{
 			// Start with code owner approval required disabled
@@ -323,7 +322,7 @@ func TestAccGitlabBranchProtection_createWithAllowForcePush(t *testing.T) {
 	project := testutil.CreateProject(t)
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabBranchProtectionDestroy,
 		Steps: []resource.TestStep{
 			// Start with allow force push disabled
@@ -419,7 +418,7 @@ func TestAccGitlabBranchProtection_createWithUnprotectAccessLevel(t *testing.T) 
 	project := testutil.CreateProject(t)
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabBranchProtectionDestroy,
 		Steps: []resource.TestStep{
 			// Configure the Branch Protection access levels
@@ -516,7 +515,7 @@ func TestAccGitlabBranchProtection_createForProjectDefaultBranch(t *testing.T) {
 	project := testutil.CreateProject(t)
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabBranchProtectionDestroy,
 		Steps: []resource.TestStep{
 			// Create a project and protect its default branch with custom settings
@@ -820,7 +819,7 @@ func TestAccGitlabBranchProtection_adminPushAccessLevel(t *testing.T) {
 	project := testutil.CreateProject(t)
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabBranchProtectionDestroy,
 		Steps: []resource.TestStep{
 			// Create a project and Branch Protection with admin push access level

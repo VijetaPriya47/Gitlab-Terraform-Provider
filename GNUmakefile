@@ -34,8 +34,15 @@ fmt: tool-golangci-lint tool-terraform tool-shfmt tfproviderlint-plugin ## Forma
 	$(GOBIN)/terraform fmt -recursive -list ./examples
 	$(GOBIN)/shfmt -l -s -w ./examples
 
-lint-golangci: tool-golangci-lint tfproviderlint-plugin ## Run golangci-lint linter (same as fmt but without modifying files).
+lint-golangci: tool-golangci-lint ## Run the base golang-ci-lint.
 	$(GOBIN)/golangci-lint run --build-tags acceptance
+
+## Run the `tfprovider-lint` linter. Disabled rules are:
+##   -XS002: schema attributes should be in alphabetical order
+##   -XR001: ResourceData.GetOkExists() call should be avoided 
+lint-tfprovider: tool-tfprovider-lint
+	cd ./internal/provider/ && \
+	$(GOBIN)/tfproviderlintx -XS002=false -XR001=false ./...
 
 lint-examples-tf: tool-terraform ## Run terraform linter on examples (same as fmt but without modifying files).
 	$(GOBIN)/terraform fmt -recursive -check ./examples
@@ -96,7 +103,7 @@ certs: ## Generate certs for the GitLab container registry
 # Tool dependencies are installed into a project-local /bin folder.
 
 tool-golangci-lint:
-	@$(call install-tool, github.com/golangci/golangci-lint/cmd/golangci-lint)
+	@$(call install-tool, github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest)
 
 tool-tfplugindocs:
 	@$(call install-tool, github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs)
@@ -122,5 +129,5 @@ tool-terraform:
 clean: testacc-down
 	@rm -rf certs/
 
-tfproviderlint-plugin:
-	@cd tools && go build -buildmode=plugin -o $(GOBIN)/tfproviderlint-plugin.so ./cmd/tfproviderlint-plugin
+tool-tfprovider-lint:
+	@$(call install-tool, github.com/bflad/tfproviderlint/cmd/tfproviderlintx@latest)

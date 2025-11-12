@@ -194,7 +194,7 @@ func (r *gitlabMemberRoleResource) ModifyPlan(ctx context.Context, req resource.
 	}
 }
 
-func (r *gitlabMemberRoleResource) memberRoleToStateModel(response *MemberRole, groupPath string, data *gitlabMemberRoleResourceModel) {
+func (r *gitlabMemberRoleResource) memberRoleToStateModel(response *api.GraphQLMemberRole, groupPath string, data *gitlabMemberRoleResourceModel) {
 	data.Id = types.StringValue(response.ID)
 	data.Name = types.StringValue(response.Name)
 	data.Description = types.StringValue(response.Description)
@@ -516,33 +516,17 @@ func (r *gitlabMemberRoleResource) ImportState(ctx context.Context, req resource
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
-type MemberRole struct {
-	BaseAccessLevel struct {
-		StringValue string `json:"stringValue"`
-	} `json:"baseAccessLevel"`
-	CreatedAt          string `json:"createdAt"`
-	Description        string `json:"description"`
-	EditPath           string `json:"editPath"`
-	EnabledPermissions struct {
-		Nodes []struct {
-			Value string `json:"value"`
-		} `json:"nodes"`
-	} `json:"enabledPermissions"`
-	ID   string `json:"id"`
-	Name string `json:"name"`
-}
-
 type MemberRoleResponse struct {
 	Data struct {
-		MemberRole MemberRole `json:"memberRole"`
+		MemberRole api.GraphQLMemberRole `json:"memberRole"`
 	} `json:"data"`
 }
 
 type createMemberRoleResponse struct {
 	Data struct {
 		MemberRoleCreate struct {
-			MemberRole MemberRole `json:"memberRole"`
-			Errors     []string   `json:"errors"`
+			MemberRole api.GraphQLMemberRole `json:"memberRole"`
+			Errors     []string              `json:"errors"`
 		} `json:"memberRoleCreate"`
 	} `json:"data"`
 	Errors []struct {
@@ -558,8 +542,8 @@ type createMemberRoleResponse struct {
 type updateMemberRoleResponse struct {
 	Data struct {
 		MemberRoleUpdate struct {
-			MemberRole MemberRole `json:"memberRole"`
-			Errors     []string   `json:"errors"`
+			MemberRole api.GraphQLMemberRole `json:"memberRole"`
+			Errors     []string              `json:"errors"`
 		} `json:"memberRoleUpdate"`
 	} `json:"data"`
 	Errors []struct {
@@ -575,8 +559,8 @@ type updateMemberRoleResponse struct {
 type deleteMemberRoleResponse struct {
 	Data struct {
 		MemberRoleDelete struct {
-			MemberRole MemberRole `json:"memberRole"`
-			Errors     []string   `json:"errors"`
+			MemberRole api.GraphQLMemberRole `json:"memberRole"`
+			Errors     []string              `json:"errors"`
 		} `json:"memberRoleDelete"`
 	} `json:"data"`
 	Errors []struct {

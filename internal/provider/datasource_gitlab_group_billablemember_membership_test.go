@@ -1,5 +1,4 @@
 //go:build acceptance
-// +build acceptance
 
 package provider
 
@@ -25,7 +24,7 @@ func TestAccDataSourceGitlabGroupBillableMembership_basic(t *testing.T) {
 	testutil.AddGroupMembers(t, subgroups[2].ID, user)
 
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`

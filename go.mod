@@ -1,13 +1,13 @@
 module gitlab.com/gitlab-org/terraform-provider-gitlab
 
-go 1.25.1
+go 1.25.4
 
 require (
 	github.com/dcarbone/terraform-plugin-framework-utils/v3 v3.9.0
 	github.com/hashicorp/go-cty v1.5.0
 	github.com/hashicorp/go-retryablehttp v0.7.8
 	github.com/hashicorp/terraform-plugin-framework v1.16.1
-	github.com/hashicorp/terraform-plugin-framework-timeouts v0.6.0
+	github.com/hashicorp/terraform-plugin-framework-timeouts v0.7.0
 	github.com/hashicorp/terraform-plugin-framework-validators v0.19.0
 	github.com/hashicorp/terraform-plugin-go v0.29.0
 	github.com/hashicorp/terraform-plugin-log v0.9.0
@@ -17,7 +17,7 @@ require (
 	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/onsi/gomega v1.38.2
 	gitlab.com/gitlab-org/api/client-go v0.154.0
-	golang.org/x/oauth2 v0.31.0
+	golang.org/x/oauth2 v0.32.0
 )
 
 require go.yaml.in/yaml/v3 v3.0.4 // indirect

@@ -1,5 +1,4 @@
 //go:build acceptance
-// +build acceptance
 
 package provider
 
@@ -307,7 +306,7 @@ func TestAccGitlabPersonalAccessToken_rotationUsingExpiresAt(t *testing.T) {
 	secondUpdateExpires := testutil.GetCurrentTimePlusDays(t, 30).String()
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabPersonalAccessTokenDestroy,
 		Steps: []resource.TestStep{
 			// Create a Personal Access Token
@@ -384,7 +383,7 @@ func TestAccGitlabPersonalAccessToken_rotationUsingExpiresAtTimeOffset(t *testin
 		`
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		ExternalProviders: map[string]resource.ExternalProvider{
 			"time": {
 				Source: "hashicorp/time",
@@ -443,7 +442,7 @@ func TestAccGitlabPersonalAccessToken_rotationUsingDate(t *testing.T) {
 
 	// Not parallel since "os.Setenv" leaks test state otherwise.
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabPersonalAccessTokenDestroy,
 		Steps: []resource.TestStep{
 			// Create a Personal Access Token
@@ -538,7 +537,7 @@ func TestAccGitlabPersonalAccessToken_rotationUsingSelfRotate(t *testing.T) {
 
 	// Not parallel since "os.Setenv" leaks test state otherwise.
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabPersonalAccessTokenDestroy,
 		Steps: []resource.TestStep{
 			// Create a Personal Access Token
@@ -825,7 +824,7 @@ func TestAccGitlabPersonalAccessToken_rotateRevokedTokenGracefully(t *testing.T)
 		`, user.ID)
 
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabPersonalAccessTokenDestroy,
 		Steps: []resource.TestStep{
 			// Create a Personal Access Token
@@ -903,7 +902,7 @@ func TestAccGitlabPersonalAccessToken_revokedTokenWithPastExpiry(t *testing.T) {
 
 	// Not running in parallel since we're manipulating environment variables
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabPersonalAccessTokenDestroy,
 		Steps: []resource.TestStep{
 			// Create a Personal Access Token that will expire soon
@@ -941,6 +940,73 @@ func TestAccGitlabPersonalAccessToken_revokedTokenWithPastExpiry(t *testing.T) {
 			// Verify with import
 			{
 				ResourceName:            "gitlab_personal_access_token.expired",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"token", "validate_past_expiration_date"},
+			},
+		},
+	})
+}
+
+// TestAccGitlabPersonalAccessToken_withTimeRotating verifies when
+// expires_at is set via time_rotating. During plan this value is "unknown", and
+// when the token is revoked the provider must handle that unknown value without
+// segfaulting while computing a replacement expiry date.
+func TestAccGitlabPersonalAccessToken_withTimeRotating(t *testing.T) {
+	user := testutil.CreateUsers(t, 1)[0]
+	tokenName := "time-rotating-test"
+
+	config := fmt.Sprintf(`
+		resource "time_rotating" "example" {
+			rotation_days = 30
+		}
+
+		resource "gitlab_personal_access_token" "test" {
+			user_id    = %d
+			name       = %q
+			expires_at = split("T", time_rotating.example.rotation_rfc3339)[0]
+			scopes     = ["api"]
+		}
+	`, user.ID, tokenName)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		ExternalProviders: map[string]resource.ExternalProvider{
+			"time": {
+				Source: "hashicorp/time",
+			},
+		},
+		CheckDestroy: testAccCheckGitlabPersonalAccessTokenDestroy,
+		Steps: []resource.TestStep{
+			// Step 1: create token whose expires_at is unknown during plan.
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_personal_access_token.test", "active", "true"),
+					resource.TestCheckResourceAttrSet("gitlab_personal_access_token.test", "expires_at"),
+					resource.TestCheckResourceAttrSet("gitlab_personal_access_token.test", "token"),
+				),
+			},
+			// Step 2: revoke the token externally, then plan & apply. Without the fix this used to
+			// segfault when modifyPlanRevoked called DetermineExpiryDate with an unknown expires_at value.
+			{
+				PreConfig: func() {
+					if err := revokePersonalAccessToken(user.ID, tokenName); err != nil {
+						t.Fatalf("failed to revoke token: %v", err)
+					}
+				},
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_personal_access_token.test", "active", "true"),
+					resource.TestCheckResourceAttr("gitlab_personal_access_token.test", "revoked", "false"),
+					resource.TestCheckResourceAttrSet("gitlab_personal_access_token.test", "expires_at"),
+					resource.TestCheckResourceAttrSet("gitlab_personal_access_token.test", "token"),
+					resource.TestCheckResourceAttrSet("gitlab_personal_access_token.test", "created_at"),
+				),
+			},
+			// Step 3: verify import works with the expected ignores for sensitive fields.
+			{
+				ResourceName:            "gitlab_personal_access_token.test",
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"token", "validate_past_expiration_date"},

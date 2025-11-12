@@ -92,5 +92,56 @@ resource "gitlab_project_protected_environment" "example_with_multiple" {
   ]
 }
 
+# Example with deployment access level attribute
+resource "gitlab_project_protected_environment" "example_access_levels_attribute" {
+  project     = gitlab_project_environment.this.project
+  environment = gitlab_project_environment.this.name
 
+  deploy_access_levels_attribute = [
+    {
+      access_level = "developer"
+    }
+  ]
+}
 
+# Example with group-based deployment level attribute
+resource "gitlab_project_protected_environment" "example_access_levels_attribute_with_group" {
+  project     = gitlab_project_environment.this.project
+  environment = gitlab_project_environment.this.name
+
+  deploy_access_levels_attribute = [
+    {
+      group_id = 456
+    }
+  ]
+}
+
+# Example with user-based deployment level attribute
+resource "gitlab_project_protected_environment" "example_access_levels_attribute_with_user" {
+  project     = gitlab_project_environment.this.project
+  environment = gitlab_project_environment.this.name
+
+  deploy_access_levels_attribute = [
+    {
+      user_id = 789
+    }
+  ]
+}
+
+# Example with multiple deployment access levels attribute
+resource "gitlab_project_protected_environment" "example_access_levels_attribute_with_multiple" {
+  project     = gitlab_project_environment.this.project
+  environment = gitlab_project_environment.this.name
+
+  deploy_access_levels_attribute = [
+    {
+      access_level = "developer"
+    },
+    {
+      group_id = 456
+    },
+    {
+      user_id = 789
+    }
+  ]
+}

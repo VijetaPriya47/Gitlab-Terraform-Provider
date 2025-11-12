@@ -380,7 +380,7 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) ModifyPlan(ctx context.Co
 	if shouldSetExpiration {
 		// We need to re-calculate the expiryDate, and set it in the plan
 		fallbackExpirationDays := DEFAULT_EXPIRATION_DAYS
-		expiryDate, err := utils.DetermineExpiryDate(planData.ExpiresAt, planData.RotationConfiguration, &fallbackExpirationDays)
+		expiryDate, _, err := utils.DetermineExpiryDate(planData.ExpiresAt, planData.RotationConfiguration, &fallbackExpirationDays)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Error determining new expiry date",
@@ -392,13 +392,9 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) ModifyPlan(ctx context.Co
 		// If the newly calculated expiryDate is different than what's in state, modify the plan
 		// This check is required to prevent the ID being unknown on every apply with rotation_configuration even
 		// if the calculated date is exactly the same as it currently is
-		if stateData != nil && ((expiryDate != nil && expiryDate.String() != stateData.ExpiresAt.ValueString()) || (expiryDate == nil && !stateData.ExpiresAt.IsNull())) {
+		if stateData != nil && ((!expiryDate.IsNull() && !expiryDate.IsUnknown() && expiryDate.ValueString() != stateData.ExpiresAt.ValueString()) || (expiryDate.IsNull() && !stateData.ExpiresAt.IsNull())) {
 			// Set the new expiration date in the plan
-			if expiryDate == nil {
-				planData.ExpiresAt = types.StringNull()
-			} else {
-				planData.ExpiresAt = types.StringValue(expiryDate.String())
-			}
+			planData.ExpiresAt = expiryDate
 			// We need to re-create the token on apply because the expiration date has changed
 			// Set several attributes to unknown since they will change as part of rotation
 			planData.ID = types.StringUnknown()
@@ -445,7 +441,7 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) modifyPlanRevoked(ctx con
 
 	// Calculate new expiration date
 	fallbackExpirationDays := DEFAULT_EXPIRATION_DAYS
-	expiryDate, err := utils.DetermineExpiryDate(planData.ExpiresAt, planData.RotationConfiguration, &fallbackExpirationDays)
+	expiryDate, _, err := utils.DetermineExpiryDate(planData.ExpiresAt, planData.RotationConfiguration, &fallbackExpirationDays)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error determining new expiry date",
@@ -455,11 +451,7 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) modifyPlanRevoked(ctx con
 	}
 
 	// Set the planned values
-	if expiryDate == nil {
-		planData.ExpiresAt = types.StringNull()
-	} else {
-		planData.ExpiresAt = types.StringValue(expiryDate.String())
-	}
+	planData.ExpiresAt = expiryDate
 	planData.Revoked = types.BoolValue(false) // Expect the new token to be not revoked
 
 	resp.Diagnostics.Append(resp.Plan.Set(ctx, planData)...)
@@ -582,7 +574,7 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Create(ctx context.Contex
 
 	// Get the valid expiry date from the `expires_at` or `rotation_configuration`
 	fallbackExpirationDays := DEFAULT_EXPIRATION_DAYS
-	expiryDate, err := utils.DetermineExpiryDate(data.ExpiresAt, data.RotationConfiguration, &fallbackExpirationDays)
+	_, expiryISOTime, err := utils.DetermineExpiryDate(data.ExpiresAt, data.RotationConfiguration, &fallbackExpirationDays)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error determining expiry date",
@@ -590,26 +582,23 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Create(ctx context.Contex
 		)
 		return
 	}
-	if expiryDate != nil {
-		if !data.ValidatePastExpirationDate.IsNull() && data.ValidatePastExpirationDate.ValueBool() {
-			err := utils.ValidateISOTimeExpiryDate(*expiryDate)
-			if err != nil {
-				resp.Diagnostics.AddError(
-					"Error creating GitLab GroupServiceAccountAccessToken",
-					err.Error(),
-				)
-				return
-			}
-		} else {
-			// Default to `false` if it's not set in the config/plan.
-			data.ValidatePastExpirationDate = types.BoolValue(false)
+	// Use the returned gitlab.ISOTime directly for API call
+	var expiryDatePtr *gitlab.ISOTime = expiryISOTime
+	if expiryISOTime != nil && !data.ValidatePastExpirationDate.IsNull() && data.ValidatePastExpirationDate.ValueBool() {
+		err := utils.ValidateISOTimeExpiryDate(*expiryISOTime)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Error creating GitLab GroupServiceAccountAccessToken",
+				err.Error(),
+			)
+			return
 		}
-
-		options.ExpiresAt = expiryDate
 	} else {
-		// No expiration date, set validate_past_expiration_date to false
+		// Default to `false` if it's not set in the config/plan.
 		data.ValidatePastExpirationDate = types.BoolValue(false)
 	}
+
+	options.ExpiresAt = expiryDatePtr
 
 	token, _, err := r.client.Groups.CreateServiceAccountPersonalAccessToken(data.Group.ValueString(), int(data.UserID.ValueInt64()), options, gitlab.WithContext(ctx))
 	if err != nil {

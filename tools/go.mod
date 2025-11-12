@@ -1,10 +1,10 @@
 module gitlab.com/gitlab-org/terraform-provider-gitlab/tools
 
-go 1.25.1
+go 1.25.4
 
 require (
 	github.com/bflad/tfproviderlint v0.31.0
-	github.com/golangci/golangci-lint v1.64.8
+	github.com/golangci/golangci-lint/v2 v2.6.1
 	github.com/hashicorp/terraform-plugin-docs v0.24.0
 	golang.org/x/tools v0.37.0
 	mvdan.cc/sh/v3 v3.12.0

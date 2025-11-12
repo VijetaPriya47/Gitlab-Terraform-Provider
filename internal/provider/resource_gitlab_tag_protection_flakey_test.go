@@ -1,5 +1,4 @@
 //go:build flakey
-// +build flakey
 
 package provider
 
@@ -60,7 +59,7 @@ func TestAccGitlabTagProtection_customAccessLevel(t *testing.T) {
 	time.Sleep(60 * time.Second)
 
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabTagProtectionDestroyFlakey,
 		Steps: []resource.TestStep{
 			// Create a project and Tag Protection with default options

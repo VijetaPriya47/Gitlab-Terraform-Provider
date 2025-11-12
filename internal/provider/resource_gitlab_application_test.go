@@ -1,5 +1,4 @@
 //go:build acceptance
-// +build acceptance
 
 package provider
 
@@ -19,7 +18,7 @@ func TestAcc_GitlabApplication_basic(t *testing.T) {
 	name := acctest.RandString(10)
 	url := "https://my_website.com"
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAcc_GitlabApplication_CheckDestroy(),
 		Steps: []resource.TestStep{
 			// Create a basic application.
@@ -112,7 +111,6 @@ func TestAcc_GitlabApplication_EnsureRecreate(t *testing.T) {
 func testAcc_GitlabApplication_CheckDestroy() resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		for _, rs := range s.RootModule().Resources {
-
 			if rs.Type == "gitlab_application" {
 				application, err := findGitlabApplication(testutil.TestGitlabClient, rs.Primary.ID)
 				if err == nil {

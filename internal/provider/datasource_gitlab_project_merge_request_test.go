@@ -1,5 +1,4 @@
 //go:build acceptance
-// +build acceptance
 
 package provider
 
@@ -18,7 +17,7 @@ func TestAcc_GitLabProjectMergeRequest_DataSource_InvalidMRIID(t *testing.T) {
 	project := testutil.CreateProject(t)
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(
@@ -44,7 +43,7 @@ func TestAcc_GitLabProjectMergeRequest_DataSource_WithAssignee(t *testing.T) {
 	mergeRequest := testutil.CreateMergeRequest(t, user, project, branch.Name, "main")
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(
@@ -174,7 +173,7 @@ func TestAcc_GitLabProjectMergeRequest_DataSource_WithoutAssignee(t *testing.T) 
 	mergeRequest = testutil.CloseMergeRequest(t, project, mergeRequest)
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(

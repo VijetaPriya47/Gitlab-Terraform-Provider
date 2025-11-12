@@ -1,5 +1,4 @@
 //go:build acceptance
-// +build acceptance
 
 package provider
 
@@ -16,7 +15,7 @@ func TestAccDataSourceGitlabGroupMembership_basic(t *testing.T) {
 	user := testutil.CreateUsers(t, 1)[0]
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			// Create the group and one member
 			{
@@ -68,7 +67,7 @@ func TestAccDataSourceGitlabGroupMembership_inherited(t *testing.T) {
 	testutil.AddGroupMembers(t, parentGroup.ID, user)
 
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
@@ -91,7 +90,7 @@ func TestAccDataSourceGitlabGroupMembership_pagination(t *testing.T) {
 	testutil.AddGroupMembers(t, group.ID, users)
 
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`

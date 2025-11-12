@@ -1,5 +1,4 @@
 //go:build acceptance
-// +build acceptance
 
 package provider
 
@@ -27,7 +26,7 @@ func TestAcc_GitlabProjectPagesSettings_basic(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAcc_GitlabProjectPagesSettings_CheckDestroyResetsSettings(),
 		Steps: []resource.TestStep{
 			{

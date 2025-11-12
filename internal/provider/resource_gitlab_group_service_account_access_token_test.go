@@ -1,5 +1,4 @@
 //go:build acceptance
-// +build acceptance
 
 package provider
 
@@ -620,7 +619,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_rotationUsingDate(t *testing.T)
 
 	// Not parallel since "os.Setenv" leaks test state otherwise.
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabGroupAccessTokenDestroy,
 		Steps: []resource.TestStep{
 			// Create a Group Access Token
@@ -722,7 +721,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_rotationUsingSelfRotate(t *test
 
 	// Not parallel since "os.Setenv" leaks test state otherwise.
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabGroupAccessTokenDestroy,
 		Steps: []resource.TestStep{
 			// Create a Group Access Token
@@ -835,7 +834,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_rotationUsingExpiresAt(t *testi
 	secondUpdateExpires := testutil.GetCurrentTimePlusDays(t, 30).String()
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabGroupServiceAccountAccessTokenDestroy,
 		Steps: []resource.TestStep{
 			// Create Access Token
@@ -1158,7 +1157,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_rotateRevokedTokenGracefully(t 
 		`, groupID, serviceAccount.ID)
 
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabGroupServiceAccountAccessTokenDestroy,
 		Steps: []resource.TestStep{
 			// Create a Service Account Access Token
@@ -1242,7 +1241,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_revokedTokenWithPastExpiry(t *t
 
 	// Not running in parallel since we're manipulating environment variables
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabGroupServiceAccountAccessTokenDestroy,
 		Steps: []resource.TestStep{
 			// Create a Service Account Access Token that will expire soon

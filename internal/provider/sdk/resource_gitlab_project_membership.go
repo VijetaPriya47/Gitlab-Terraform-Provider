@@ -293,13 +293,16 @@ func validateProjectMembershipExpiry(d *schema.ResourceData) error {
 	}
 	expiresAtStr := expiresAt.(string)
 
-	expiryDate, err := utils.DetermineExpiryDate(types.StringValue(expiresAtStr), nil, nil)
+	_, expiryISOTime, err := utils.DetermineExpiryDate(types.StringValue(expiresAtStr), nil, nil)
 	if err != nil {
 		return err
 	}
 
-	if err := utils.ValidateISOTimeExpiryDate(*expiryDate); err != nil {
-		return err
+	// Use the returned gitlab.ISOTime directly for validation
+	if expiryISOTime != nil {
+		if err := utils.ValidateISOTimeExpiryDate(*expiryISOTime); err != nil {
+			return err
+		}
 	}
 
 	return nil

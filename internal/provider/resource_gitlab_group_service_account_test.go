@@ -1,5 +1,4 @@
 //go:build acceptance
-// +build acceptance
 
 package provider
 
@@ -24,7 +23,7 @@ func TestAcc_GitlabGroupServiceAccount_basic(t *testing.T) {
 	name := acctest.RandString(10)
 	username := acctest.RandString(10)
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAcc_GitlabGroupServiceAccount_CheckDestroy(),
 		Steps: []resource.TestStep{
 			// Create a basic service account.
@@ -67,7 +66,7 @@ func TestAcc_GitlabGroupServiceAccount_customEmail(t *testing.T) {
 	email := fmt.Sprintf("a%s@test.com", username)
 
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAcc_GitlabGroupServiceAccount_CheckDestroy(),
 		Steps: []resource.TestStep{
 			// Create a basic service account.
@@ -110,7 +109,7 @@ func TestAcc_GitlabGroupServiceAccount_EnsureRecreate(t *testing.T) {
 	name2 := acctest.RandString(10)
 	username2 := acctest.RandString(10)
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAcc_GitlabGroupServiceAccount_CheckDestroy(),
 		Steps: []resource.TestStep{
 			{

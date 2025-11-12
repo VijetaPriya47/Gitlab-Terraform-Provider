@@ -1,5 +1,4 @@
 //go:build acceptance
-// +build acceptance
 
 package provider
 
@@ -13,14 +12,13 @@ import (
 )
 
 func TestAccDataGitlabRelease_basic(t *testing.T) {
-
 	// Create a project and release
 	project := testutil.CreateProject(t)
 	release := testutil.CreateReleases(t, project, 1)[0]
 
-	//lintignore:AT001 // Data sources don't need check destroy in their tests
+	// lintignore:AT001 // Data sources don't need check destroy in their tests
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(
