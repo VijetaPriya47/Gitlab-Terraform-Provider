@@ -38,6 +38,7 @@ func TestAccDataSourceGitlabGroup_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("data.gitlab_group.foo", "request_access_enabled", fmt.Sprintf("%t", groups[2].RequestAccessEnabled)),
 					resource.TestCheckResourceAttr("data.gitlab_group.foo", "parent_id", fmt.Sprintf("%d", groups[2].ParentID)),
 					resource.TestCheckResourceAttr("data.gitlab_group.foo", "prevent_forking_outside_group", fmt.Sprintf("%t", groups[2].PreventForkingOutsideGroup)),
+					resource.TestCheckResourceAttr("data.gitlab_group.foo", "shared_with_groups.#", "0"),
 				),
 			},
 			// Get group using its full path
@@ -60,6 +61,7 @@ func TestAccDataSourceGitlabGroup_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("data.gitlab_group.sub_foo", "request_access_enabled", fmt.Sprintf("%t", subgroup.RequestAccessEnabled)),
 					resource.TestCheckResourceAttr("data.gitlab_group.sub_foo", "parent_id", fmt.Sprintf("%d", subgroup.ParentID)),
 					resource.TestCheckResourceAttr("data.gitlab_group.sub_foo", "prevent_forking_outside_group", fmt.Sprintf("%t", subgroup.PreventForkingOutsideGroup)),
+					resource.TestCheckResourceAttr("data.gitlab_group.sub_foo", "shared_with_groups.#", "0"),
 				),
 			},
 			// Group shared with another group

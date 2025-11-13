@@ -197,6 +197,7 @@ func (d *gitlabProjectBranchesDataSource) Read(ctx context.Context, req datasour
 
 	data.ID = types.StringValue(project)
 
+	data.Branches = []gitlabProjectBranchDataSourceModel{}
 	for _, branch := range allBranches {
 		commits := []gitlabBranchCommitDataSourceModel{}
 		if branch.Commit != nil {
@@ -232,6 +233,5 @@ func (d *gitlabProjectBranchesDataSource) Read(ctx context.Context, req datasour
 		}
 		data.Branches = append(data.Branches, modelBranch)
 	}
-
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }

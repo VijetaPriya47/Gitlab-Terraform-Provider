@@ -272,6 +272,7 @@ func (d *gitlabGroupDataSource) Read(ctx context.Context, req datasource.ReadReq
 	data.WikiAccessLevel = types.StringValue(string(group.WikiAccessLevel))
 	data.SharedRunnersSetting = types.StringValue(string(group.SharedRunnersSetting))
 
+	data.SharedWithGroups = []gitlabGroupSharedWithGroupDataSourceModel{}
 	for _, sharedGroup := range group.SharedWithGroups {
 		modelSharedGroup := gitlabGroupSharedWithGroupDataSourceModel{
 			GroupID:          types.Int64Value(int64(sharedGroup.GroupID)),

@@ -240,6 +240,7 @@ func (data *gitlabProjectMembershipDataSourceModel) modelToStateModel(project *g
 		data.Project = types.StringValue(fmt.Sprintf("%d", data.ProjectID.ValueInt64()))
 	}
 
+	data.Members = []gitlabProjectMembershipMemberDataSourceModel{}
 	for _, member := range allPMs {
 		modelMember := gitlabProjectMembershipMemberDataSourceModel{
 			ID:          types.Int64Value(int64(member.ID)),
@@ -250,7 +251,9 @@ func (data *gitlabProjectMembershipDataSourceModel) modelToStateModel(project *g
 			WebURL:      types.StringValue(member.WebURL),
 			AccessLevel: types.StringValue(api.AccessLevelValueToName[gitlab.AccessLevelValue(member.AccessLevel)]),
 		}
-		if member.ExpiresAt != nil {
+		if member.ExpiresAt == nil {
+			modelMember.ExpiresAt = types.StringNull()
+		} else {
 			modelMember.ExpiresAt = types.StringValue(member.ExpiresAt.String())
 		}
 		data.Members = append(data.Members, modelMember)

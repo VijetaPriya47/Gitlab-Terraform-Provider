@@ -338,7 +338,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_noExpiration(t *testing.T) {
 	serviceAccount := testutil.CreateGroupServiceAccounts(t, 1, groupID)[0]
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		CheckDestroy:             testAccCheckGitlabGroupServiceAccountAccessTokenDestroy,
 		Steps: []resource.TestStep{
 			// Create a basic access token.
@@ -429,7 +429,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_rotationConfiguration(t *testin
 	serviceAccount := testutil.CreateGroupServiceAccounts(t, 1, groupID)[0]
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		CheckDestroy:             testAccCheckGitlabGroupServiceAccountAccessTokenDestroy,
 		Steps: []resource.TestStep{
 			// Create a basic access token.

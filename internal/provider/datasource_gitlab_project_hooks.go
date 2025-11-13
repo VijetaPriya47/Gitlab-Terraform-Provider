@@ -196,6 +196,7 @@ func (d *gitlabProjectHooksDataSource) Read(ctx context.Context, req datasource.
 	}
 
 	data.ID = types.StringValue(project)
+	data.Hooks = []gitlabProjectHooksIndividualDataSourceModel{}
 	for _, hook := range hooks {
 		modelHook := gitlabProjectHooksIndividualDataSourceModel{
 			Project:                  types.StringValue(project),
@@ -221,6 +222,5 @@ func (d *gitlabProjectHooksDataSource) Read(ctx context.Context, req datasource.
 		}
 		data.Hooks = append(data.Hooks, modelHook)
 	}
-
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }

@@ -12,6 +12,7 @@ import (
 
 func TestAccDataSourceGitlabProjectHooks_basic(t *testing.T) {
 	testProject := testutil.CreateProject(t)
+	testProject2 := testutil.CreateProject(t)
 	testHooks := testutil.CreateProjectHooks(t, testProject.ID, 25)
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -27,6 +28,16 @@ func TestAccDataSourceGitlabProjectHooks_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("data.gitlab_project_hooks.this", "hooks.#", fmt.Sprintf("%d", len(testHooks))),
 					resource.TestCheckResourceAttr("data.gitlab_project_hooks.this", "hooks.0.url", testHooks[0].URL),
 					resource.TestCheckResourceAttr("data.gitlab_project_hooks.this", "hooks.1.url", testHooks[1].URL),
+				),
+			},
+			{
+				Config: fmt.Sprintf(`
+					data "gitlab_project_hooks" "this" {
+						project = "%s"
+					}
+				`, testProject2.PathWithNamespace),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("data.gitlab_project_hooks.this", "hooks.#", "0"),
 				),
 			},
 		},

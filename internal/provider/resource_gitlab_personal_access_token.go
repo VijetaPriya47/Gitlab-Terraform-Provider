@@ -16,7 +16,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
@@ -151,7 +150,6 @@ func (r *gitlabPersonalAccessTokenResource) Schema(ctx context.Context, req reso
 				MarkdownDescription: "Wether to validate if the expiration date is in the future.",
 				Optional:            true,
 				Computed:            true,
-				Default:             booldefault.StaticBool(false),
 			},
 			"created_at": schema.StringAttribute{
 				MarkdownDescription: "Time the token has been created, RFC3339 format.",
@@ -508,7 +506,7 @@ func (r *gitlabPersonalAccessTokenResource) Create(ctx context.Context, req reso
 
 	// Use the returned gitlab.ISOTime directly for API call
 	var expiryDatePtr *gitlab.ISOTime = expiryISOTime
-	if expiryISOTime != nil && data.ValidatePastExpirationDate.ValueBool() {
+	if expiryISOTime != nil && !data.ValidatePastExpirationDate.IsNull() && data.ValidatePastExpirationDate.ValueBool() {
 		err := utils.ValidateISOTimeExpiryDate(*expiryISOTime)
 		if err != nil {
 			resp.Diagnostics.AddError(
@@ -517,6 +515,9 @@ func (r *gitlabPersonalAccessTokenResource) Create(ctx context.Context, req reso
 			)
 			return
 		}
+	} else {
+		// Default to `false` if it's not set in the config/plan.
+		data.ValidatePastExpirationDate = types.BoolValue(false)
 	}
 
 	options.ExpiresAt = expiryDatePtr
@@ -566,7 +567,7 @@ func (r *gitlabPersonalAccessTokenResource) Update(ctx context.Context, req reso
 		return
 	}
 
-	if data.ValidatePastExpirationDate.ValueBool() {
+	if !data.ValidatePastExpirationDate.IsNull() && data.ValidatePastExpirationDate.ValueBool() {
 		err := utils.ValidateISOTimeExpiryDate(expiresAt)
 		if err != nil {
 			resp.Diagnostics.AddError(
@@ -575,6 +576,9 @@ func (r *gitlabPersonalAccessTokenResource) Update(ctx context.Context, req reso
 			)
 			return
 		}
+	} else {
+		// Default to `false` if it's not set in the config/plan.
+		data.ValidatePastExpirationDate = types.BoolValue(false)
 	}
 
 	// find out whether self_rotate is one of the scopes

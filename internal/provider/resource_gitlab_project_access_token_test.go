@@ -24,7 +24,7 @@ func TestAccGitlabProjectAccessToken_createWithPastExpiryDate_validationDisabled
 	pastDate := api.CurrentTime().Add(-24 * time.Hour).Format(api.Iso8601)
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		CheckDestroy:             testAccCheckGitlabProjectAccessTokenDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -51,7 +51,7 @@ func TestAccGitlabProjectAccessToken_updateWithPastExpiryDate_validationDisabled
 	pastDate := api.CurrentTime().Add(-24 * time.Hour).Format(api.Iso8601)
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		CheckDestroy:             testAccCheckGitlabProjectAccessTokenDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -99,7 +99,7 @@ func TestAccGitlabProjectAccessToken_failsWithPastExpiryDate_validationEnabled(t
 	pastDateForError := parsedDate.Format(time.RFC3339)
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		CheckDestroy:             testAccCheckGitlabProjectAccessTokenDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -133,7 +133,7 @@ func TestAccGitlabProjectAccessToken_failsToUpdateWithPastExpiryDate_validationE
 	pastDateForError := parsedDate.Format(time.RFC3339)
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		CheckDestroy:             testAccCheckGitlabProjectAccessTokenDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -222,7 +222,7 @@ func TestAccGitlabProjectAccessToken_basic(t *testing.T) {
 	project := testutil.CreateProject(t)
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		CheckDestroy:             testAccCheckGitlabProjectAccessTokenDestroy,
 		Steps: []resource.TestStep{
 			// Create a basic access token.
@@ -680,7 +680,7 @@ func TestAccGitlabProjectAccessToken_rotationConfiguration(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		CheckDestroy:             testAccCheckGitlabProjectAccessTokenDestroy,
 		Steps: []resource.TestStep{
 			// Create a basic access token.
@@ -781,7 +781,7 @@ func TestAccGitlabProjectAccessToken_attributeValidation(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		CheckDestroy:             testAccCheckGitlabProjectAccessTokenDestroy,
 		Steps: []resource.TestStep{
 			// Validate expires_at and rotation_configuration conflict

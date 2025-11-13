@@ -204,6 +204,7 @@ func (d *gitlabGroupsDataSource) Read(ctx context.Context, req datasource.ReadRe
 
 	data.ID = types.StringValue(id)
 
+	data.Groups = []gitlabGroupsIndividualDataSourceModel{}
 	for _, group := range groups {
 		modelGroup := gitlabGroupsIndividualDataSourceModel{
 			GroupID:                    types.Int64Value(int64(group.ID)),

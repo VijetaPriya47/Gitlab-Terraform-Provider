@@ -151,6 +151,7 @@ func (d *gitlabProjectVariablesDataSource) Read(ctx context.Context, req datasou
 
 	data.ID = types.StringValue(fmt.Sprintf("%s:%s", project, environmentScope))
 
+	data.Variables = []gitlabProjectVariablesIndividualDataSourceModel{}
 	for _, variable := range variables {
 		modelVariable := gitlabProjectVariablesIndividualDataSourceModel{
 			Project:          types.StringValue(project),

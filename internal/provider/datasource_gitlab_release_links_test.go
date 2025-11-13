@@ -59,7 +59,7 @@ func TestAccDataGitlabReleaseLinks_basic(t *testing.T) {
 					tag_name = "%s"
 				}`, project.PathWithNamespace, "error_tag"),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("data.gitlab_release_links.this", "release_links.#", fmt.Sprintf("%v", 0)),
+					resource.TestCheckResourceAttr("data.gitlab_release_links.this", "release_links.#", "0"),
 				),
 			},
 		},

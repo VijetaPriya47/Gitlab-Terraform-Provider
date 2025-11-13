@@ -156,7 +156,7 @@ func (d *gitlabRepositoryTreeDataSource) Read(ctx context.Context, req datasourc
 	}
 
 	data.ID = types.StringValue(optionsHash.String())
-
+	data.Tree = []gitlabRepositoryTreeIndividualDataSourceModel{}
 	for _, node := range nodes {
 		modelNode := gitlabRepositoryTreeIndividualDataSourceModel{
 			ID:     types.StringValue(project),

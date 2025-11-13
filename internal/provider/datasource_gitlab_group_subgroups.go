@@ -308,6 +308,7 @@ func (d *gitlabGroupSubgroupsDataSource) Read(ctx context.Context, req datasourc
 	}
 
 	data.ID = types.StringValue(strconv.Itoa(groupID))
+	data.Subgroups = []gitlabGroupSubgroupDataSourceModel{}
 	for _, subgroup := range subgroups {
 		modelSubgroup := gitlabGroupSubgroupDataSourceModel{
 			GroupID:                        types.Int64Value(int64(subgroup.ID)),
