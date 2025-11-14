@@ -50,7 +50,7 @@ resource "gitlab_release_link" "example" {
 
 - `direct_asset_url` (String) Full path for a [Direct Asset link](https://docs.gitlab.com/user/project/releases/index/#permanent-links-to-release-assets).
 - `external` (Boolean) External or internal link.
-- `id` (String) The ID of this resource.
+- `id` (String) The ID of this resource. In the format `<project:tag-name:release-id>`.
 - `link_id` (Number) The ID of the link.
 
 ## Import
