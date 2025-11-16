@@ -28,7 +28,7 @@ endif
 test: ## Run unit tests.
 	go test $(TESTARGS) $(PROVIDER_SRC_DIR)
 
-fmt: tool-golangci-lint tool-terraform tool-shfmt tfproviderlint-plugin ## Format files and fix issues.
+fmt: tool-golangci-lint tool-terraform tool-shfmt tool-tfprovider-lint ## Format files and fix issues.
 	gofmt -w -s .
 	$(GOBIN)/golangci-lint run --build-tags acceptance --fix
 	$(GOBIN)/terraform fmt -recursive -list ./examples
