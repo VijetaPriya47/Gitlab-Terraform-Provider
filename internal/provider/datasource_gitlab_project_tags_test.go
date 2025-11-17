@@ -1,14 +1,13 @@
 //go:build acceptance
 
-package sdk
+package provider
 
 import (
 	"fmt"
 	"sort"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
@@ -20,7 +19,7 @@ func TestAccDataGitlabProjectTags_basic(t *testing.T) {
 	})
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
