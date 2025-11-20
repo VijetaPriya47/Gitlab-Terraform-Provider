@@ -713,7 +713,7 @@ func resourceGitlabGroupRead(ctx context.Context, d *schema.ResourceData, meta a
 
 		pushRules, _, err := client.Groups.GetGroupPushRules(d.Id(), gitlab.WithContext(ctx))
 		if api.Is404(err) {
-			tflog.Error(ctx, "[ERROR] Failed to get push rules for group", map[string]any{
+			tflog.Debug(ctx, "[DEBUG] get push rules for group responded with 404", map[string]any{
 				"group_id": d.Id(),
 				"error":    err,
 			})
