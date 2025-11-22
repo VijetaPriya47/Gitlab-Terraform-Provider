@@ -354,13 +354,13 @@ github-for-terraform-registry:
   script:
     # NOTE(@timofurrer): publish docs to GitHub, so that they end up in the GitHub release Source code assets,
     #                    ready for the Terraform Registry to discover.
-    # NOTE(@PatrickRice): We remove the whole docs folder before copying to make sure old resources that we've removed are 
+    # NOTE(@PatrickRice): We remove the whole docs folder before copying to make sure old resources that we've removed are
     #                     properly removed from the documentation.
     - |
       git clone --depth 1 https://gitlab-terraform-provider-bot:$GITHUB_TOKEN_FOR_SYNC@github.com/$GITHUB_ORG/$GITHUB_REPO.git /tmp/github-repo
+      rm -rf /tmp/github-repo/docs
       cp -rf docs CHANGELOG.md /tmp/github-repo
       cd /tmp/github-repo
-      rm -rf ./docs
       git config user.email "Terraform-Provider-Bot@gitlab.com"
       git config user.name "gitlab-terraform-provider-bot"
       git add docs CHANGELOG.md
@@ -409,7 +409,6 @@ github-for-terraform-registry:
         -H "Authorization: token $GITHUB_TOKEN_FOR_SYNC" \
         https://api.github.com/repos/$GITHUB_ORG/$GITHUB_REPO/releases/$gh_release_id \
         -d '{"prerelease":false}'
-
 
 # NOTE: this is temporary until we verified that this job really works.
 # There is no proper way to test this, so we allow a failure to not
