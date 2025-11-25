@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
@@ -419,27 +420,40 @@ func TestAccGitlabMemberRole_EnsureErrorOnSaaS(t *testing.T) {
 	// This should run only on SaaS
 	t.Skip("integration tests are skipped")
 
-	notPermittedOnSaaSRegex, err := regexp.Compile(
-		fmt.Sprintf("`%s` permission is not available when using GitLab SaaS", ReadAdminCICDPermission),
-	)
-	if err != nil {
-		t.Errorf("Unable to format attribute not permitted on SaaS error regex: %s", err)
+	notPermittedOnSaaSRegex := func(perms ...string) *regexp.Regexp {
+		regex, err := regexp.Compile(fmt.Sprintf(`Permission\(s\) %s is\/are not available when using GitLab SaaS`, strings.Join(perms, ", ")))
+		if err != nil {
+			t.Errorf("Unable to format attribute not permitted on SaaS error regex: %s", err)
+		}
+		return regex
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
-			// READ_ADMIN_CICD is not permitted for SaaS
+			// READ_ADMIN_.* are not permitted for SaaS
 			{
-				Config: fmt.Sprintf(`
+				Config: `
 					resource "gitlab_member_role" "foo" {
 						name                = "Test role"
 						base_access_level   = "REPORTER"
-						enabled_permissions = ["READ_VULNERABILITY", "%s"]
+						enabled_permissions = ["READ_VULNERABILITY", "READ_ADMIN_CICD", "READ_ADMIN_PROJECTS"]
 						group_path          = "test-group"
 					}
-				`, ReadAdminCICDPermission),
-				ExpectError: notPermittedOnSaaSRegex,
+				`,
+				ExpectError: notPermittedOnSaaSRegex("'READ_ADMIN_CICD'", "'READ_ADMIN_PROJECTS'"),
+			},
+			// READ_ADMIN_.* are not permitted for SaaS
+			{
+				Config: `
+					resource "gitlab_member_role" "foo" {
+						name                = "Test role"
+						base_access_level   = "REPORTER"
+						enabled_permissions = ["READ_VULNERABILITY", "READ_ADMIN_GROUPS"]
+						group_path          = "test-group"
+					}
+				`,
+				ExpectError: notPermittedOnSaaSRegex("'READ_ADMIN_GROUPS'"),
 			},
 		},
 	})
