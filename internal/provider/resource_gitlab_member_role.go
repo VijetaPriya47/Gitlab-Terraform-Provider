@@ -3,7 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
-	"slices"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -31,7 +31,7 @@ var (
 )
 
 // https://docs.gitlab.com/user/custom_roles/abilities/#admin
-const ReadAdminCICDPermission = "READ_ADMIN_CICD"
+const PrefixReadAdmin = "READ_ADMIN_"
 
 func init() {
 	registerResource(NewGitLabMemberRoleResource)
@@ -69,11 +69,38 @@ func (r *gitlabMemberRoleResource) Schema(ctx context.Context, req resource.Sche
 
 	// similarly, these are also required to all be in uppercase.
 	allowedEnabledPermissions := []string{
-		"ADMIN_CICD_VARIABLES", "ADMIN_COMPLIANCE_FRAMEWORK", "ADMIN_GROUP_MEMBER",
-		"ADMIN_INTEGRATIONS", "ADMIN_MERGE_REQUEST", "ADMIN_PROTECTED_BRANCH", "ADMIN_PUSH_RULES", "ADMIN_RUNNERS", "ADMIN_TERRAFORM_STATE",
-		"ADMIN_VULNERABILITY", "ADMIN_WEB_HOOK", "ARCHIVE_PROJECT", "MANAGE_DEPLOY_TOKENS", "MANAGE_GROUP_ACCESS_TOKENS",
-		"MANAGE_MERGE_REQUEST_SETTINGS", "MANAGE_PROJECT_ACCESS_TOKENS", "MANAGE_SECURITY_POLICY_LINK", "READ_ADMIN_CICD", "READ_ADMIN_DASHBOARD",
-		"READ_CODE", "READ_COMPLIANCE_DASHBOARD", "READ_CRM_CONTACT", "READ_DEPENDENCY", "READ_RUNNERS", "READ_VULNERABILITY", "REMOVE_GROUP",
+		"ADMIN_CICD_VARIABLES",
+		"ADMIN_COMPLIANCE_FRAMEWORK",
+		"ADMIN_GROUP_MEMBER",
+		"ADMIN_INTEGRATIONS",
+		"ADMIN_MERGE_REQUEST",
+		"ADMIN_PROTECTED_BRANCH",
+		"ADMIN_PROTECTED_ENVIRONMENTS",
+		"ADMIN_PUSH_RULES",
+		"ADMIN_RUNNERS",
+		"ADMIN_TERRAFORM_STATE",
+		"ADMIN_VULNERABILITY",
+		"ADMIN_WEB_HOOK",
+		"ARCHIVE_PROJECT",
+		"MANAGE_DEPLOY_TOKENS",
+		"MANAGE_GROUP_ACCESS_TOKENS",
+		"MANAGE_MERGE_REQUEST_SETTINGS",
+		"MANAGE_PROJECT_ACCESS_TOKENS",
+		"MANAGE_SECURITY_POLICY_LINK",
+		"READ_ADMIN_CICD",
+		"READ_ADMIN_GROUPS",
+		"READ_ADMIN_PROJECTS",
+		"READ_ADMIN_SUBSCRIPTION",
+		"READ_ADMIN_MONITORING",
+		"READ_ADMIN_USERS",
+		"READ_ADMIN_DASHBOARD",
+		"READ_CODE",
+		"READ_COMPLIANCE_DASHBOARD",
+		"READ_CRM_CONTACT",
+		"READ_DEPENDENCY",
+		"READ_RUNNERS",
+		"READ_VULNERABILITY",
+		"REMOVE_GROUP",
 		"REMOVE_PROJECT",
 	}
 
@@ -176,13 +203,17 @@ func (r *gitlabMemberRoleResource) ModifyPlan(ctx context.Context, req resource.
 			return
 		}
 
-		found := slices.ContainsFunc(planData.EnabledPermissions, func(v types.String) bool { return v.ValueString() == ReadAdminCICDPermission })
-
-		if found {
+		found := make([]string, 0, len(planData.EnabledPermissions))
+		for _, v := range planData.EnabledPermissions {
+			if strings.HasPrefix(v.ValueString(), PrefixReadAdmin) {
+				found = append(found, "'"+v.ValueString()+"'")
+			}
+		}
+		if len(found) > 0 {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("enabled_permissions"),
 				"Attribute Not Permitted",
-				fmt.Sprintf("`%s` permission is not available when using GitLab SaaS", ReadAdminCICDPermission),
+				fmt.Sprintf("Permission(s) %s is/are not available when using GitLab SaaS", strings.Join(found, ", ")),
 			)
 			return
 		}
