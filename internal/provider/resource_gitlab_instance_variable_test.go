@@ -1,15 +1,15 @@
 //go:build acceptance
 
-package sdk
+package provider
 
 import (
 	"fmt"
 	"regexp"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 
@@ -21,7 +21,7 @@ func TestAccGitlabInstanceVariable_basic(t *testing.T) {
 	rString := acctest.RandString(5)
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabInstanceVariableDestroy,
 		Steps: []resource.TestStep{
 			// Create a variable with default options
@@ -101,7 +101,7 @@ func TestAccGitlabInstanceVariable_basic(t *testing.T) {
 					}),
 				),
 				ExpectError: regexp.MustCompile(regexp.QuoteMeta(
-					"Invalid value for a masked variable. Check the masked variable requirements: https://docs.gitlab.com/ci/variables/#masked-variable-requirements",
+					"Invalid value for a masked variable. Check the masked variable requirements: https://docs.gitlab.com/ci/variables/#mask-a-cicd-variable",
 				)),
 			},
 			// Update the instance variable to to enable "masked" and meet masking requirements
@@ -161,6 +161,52 @@ func TestAccGitlabInstanceVariable_basic(t *testing.T) {
 						Description: fmt.Sprintf("description-%s", rString),
 					}),
 				),
+			},
+		},
+	})
+}
+
+func TestAccGitlabInstanceVariable_migrateFromSDKToFramework(t *testing.T) {
+	rString := acctest.RandString(5)
+
+	resource.ParallelTest(t, resource.TestCase{
+		CheckDestroy: testAccCheckGitlabInstanceVariableDestroy,
+		Steps: []resource.TestStep{
+			// Create a variable with default options
+			{
+				ExternalProviders: map[string]resource.ExternalProvider{
+					"gitlab": {
+						VersionConstraint: "~> 18.6",
+						Source:            "gitlabhq/gitlab",
+					},
+				},
+				Config: fmt.Sprintf(`
+					resource "gitlab_instance_variable" "foo" {
+				  		key = "key_%s"
+				  		value = "value-%s"
+				  		variable_type = "file"
+				  		masked = false
+					}
+				`, rString, rString),
+				Check: resource.TestCheckResourceAttrSet("gitlab_instance_variable.foo", "id"),
+			},
+			{
+				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+				Config: fmt.Sprintf(`
+					resource "gitlab_instance_variable" "foo" {
+				  		key = "key_%s"
+				  		value = "value-%s"
+				  		variable_type = "file"
+				  		masked = false
+					}
+				`, rString, rString),
+				Check: resource.TestCheckResourceAttrSet("gitlab_instance_variable.foo", "id"),
+			},
+			{
+				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+				ResourceName:             "gitlab_instance_variable.foo",
+				ImportState:              true,
+				ImportStateVerify:        true,
 			},
 		},
 	})
