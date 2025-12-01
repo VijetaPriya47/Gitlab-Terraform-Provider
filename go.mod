@@ -17,7 +17,7 @@ require (
 	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/onsi/gomega v1.38.2
 	gitlab.com/gitlab-org/api/client-go v0.154.0
-	golang.org/x/oauth2 v0.32.0
+	golang.org/x/oauth2 v0.33.0
 )
 
 require go.yaml.in/yaml/v3 v3.0.4 // indirect
