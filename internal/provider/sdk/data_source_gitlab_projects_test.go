@@ -337,7 +337,7 @@ func TestAccDataGitlabProjects_CIDeletePipelinesInSeconds(t *testing.T) {
 	group := testutil.CreateGroups(t, 1)[0]
 	project := testutil.CreateProjectWithNamespace(t, group.ID)
 
-	ciDeletePipelinesInSeconds1Month := 30 * 24 * 60 * 60
+	ciDeletePipelinesInSeconds1Month := int64(30 * 24 * 60 * 60)
 
 	_, _, err := client.Projects.EditProject(project.ID, &gitlab.EditProjectOptions{
 		CIDeletePipelinesInSeconds: &ciDeletePipelinesInSeconds1Month,
@@ -360,7 +360,7 @@ func TestAccDataGitlabProjects_CIDeletePipelinesInSeconds(t *testing.T) {
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccDataSourceGitlabProjectsContainsProjects("data.gitlab_projects.this", project),
-					resource.TestCheckResourceAttr("data.gitlab_projects.this", "projects.0.ci_delete_pipelines_in_seconds", strconv.Itoa(ciDeletePipelinesInSeconds1Month)),
+					resource.TestCheckResourceAttr("data.gitlab_projects.this", "projects.0.ci_delete_pipelines_in_seconds", strconv.FormatInt(ciDeletePipelinesInSeconds1Month, 10)),
 				),
 			},
 		},
@@ -372,19 +372,19 @@ func testAccDataSourceGitlabProjectsContainsProjects(dsPath string, projects ...
 		search := s.RootModule().Resources[dsPath]
 		searchResource := search.Primary.Attributes
 
-		projectsNumber, err := strconv.Atoi(searchResource["projects.#"])
+		projectsNumber, err := strconv.ParseInt(searchResource["projects.#"], 10, 64)
 		if err != nil {
 			return fmt.Errorf("datasource returned no 'projects' attribute, got: %s", searchResource)
 		}
 
-		if projectsNumber != len(projects) {
+		if projectsNumber != int64(len(projects)) {
 			return fmt.Errorf("datasource contains unexpected number of projects, want: %d, got: %d", len(projects), projectsNumber)
 		}
 
 		for _, p := range projects {
 			foundMatch := false
-			for i := 0; i < projectsNumber; i++ {
-				if searchResource[fmt.Sprintf("projects.%d.id", i)] != strconv.Itoa(p.ID) {
+			for i := int64(0); i < projectsNumber; i++ {
+				if searchResource[fmt.Sprintf("projects.%d.id", i)] != strconv.FormatInt(p.ID, 10) {
 					continue
 				}
 				if searchResource[fmt.Sprintf("projects.%d.name", i)] != p.Name {

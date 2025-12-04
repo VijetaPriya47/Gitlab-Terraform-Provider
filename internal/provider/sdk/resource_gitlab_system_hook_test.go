@@ -84,7 +84,7 @@ func testAccCheckGitlabSystemHookExists(n string, hook *gitlab.Hook) resource.Te
 			return fmt.Errorf("Not Found: %s", n)
 		}
 
-		hookID, err := strconv.Atoi(rs.Primary.ID)
+		hookID, err := strconv.ParseInt(rs.Primary.ID, 10, 64)
 		if err != nil {
 			return err
 		}
@@ -103,7 +103,7 @@ func testAccCheckGitlabSystemHookDestroy(s *terraform.State) error {
 		if rs.Type != "gitlab_system_hook" {
 			continue
 		}
-		hookID, err := strconv.Atoi(rs.Primary.ID)
+		hookID, err := strconv.ParseInt(rs.Primary.ID, 10, 64)
 		if err != nil {
 			return err
 		}

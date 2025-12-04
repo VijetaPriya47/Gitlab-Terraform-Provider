@@ -154,7 +154,7 @@ func testAccCheckGitlabTopicExists(n string, assign *gitlab.Topic) resource.Test
 			return fmt.Errorf("not Found: %s", n)
 		}
 
-		id, err := strconv.Atoi(rs.Primary.ID)
+		id, err := strconv.ParseInt(rs.Primary.ID, 10, 64)
 		if err != nil {
 			return err
 		}
@@ -197,7 +197,7 @@ func testAccCheckGitlabTopicDestroy(s *terraform.State) (err error) {
 			continue
 		}
 
-		id, err := strconv.Atoi(rs.Primary.ID)
+		id, err := strconv.ParseInt(rs.Primary.ID, 10, 64)
 		if err != nil {
 			return err
 		}

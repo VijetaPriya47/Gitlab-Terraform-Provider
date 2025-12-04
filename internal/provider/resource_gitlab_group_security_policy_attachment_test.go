@@ -37,8 +37,8 @@ func TestAcc_GitlabGroupSecurityPolicyAttachment_basic(t *testing.T) {
 					policy_project = %d
 				}`, group.ID, policyProject.ID),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("gitlab_group_security_policy_attachment.this", "group", strconv.Itoa(group.ID)),
-					resource.TestCheckResourceAttr("gitlab_group_security_policy_attachment.this", "policy_project", strconv.Itoa(policyProject.ID)),
+					resource.TestCheckResourceAttr("gitlab_group_security_policy_attachment.this", "group", strconv.FormatInt(group.ID, 10)),
+					resource.TestCheckResourceAttr("gitlab_group_security_policy_attachment.this", "policy_project", strconv.FormatInt(policyProject.ID, 10)),
 				),
 			},
 			// Verify upstream attributes with an import.
@@ -55,8 +55,8 @@ func TestAcc_GitlabGroupSecurityPolicyAttachment_basic(t *testing.T) {
 					policy_project = %d
 				}`, group.ID, secondSecurityPolicyProject.ID),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("gitlab_group_security_policy_attachment.this", "group", strconv.Itoa(group.ID)),
-					resource.TestCheckResourceAttr("gitlab_group_security_policy_attachment.this", "policy_project", strconv.Itoa(secondSecurityPolicyProject.ID)),
+					resource.TestCheckResourceAttr("gitlab_group_security_policy_attachment.this", "group", strconv.FormatInt(group.ID, 10)),
+					resource.TestCheckResourceAttr("gitlab_group_security_policy_attachment.this", "policy_project", strconv.FormatInt(secondSecurityPolicyProject.ID, 10)),
 				),
 			},
 			// Verify upstream attributes with an import.

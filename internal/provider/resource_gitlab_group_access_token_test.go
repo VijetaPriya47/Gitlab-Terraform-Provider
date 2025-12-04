@@ -973,9 +973,9 @@ func testAccCheckGitlabGroupAccessTokenExists(n string, gat *testAccGitlabGroupA
 		if err != nil {
 			return fmt.Errorf("Error parsing ID: %s", rs.Primary.ID)
 		}
-		groupAccessTokenID, err := strconv.Atoi(tokenString)
+		groupAccessTokenID, err := strconv.ParseInt(tokenString, 10, 64)
 		if err != nil {
-			return fmt.Errorf("%s cannot be converted to int", tokenString)
+			return fmt.Errorf("%s cannot be converted to int64", tokenString)
 		}
 
 		groupId := rs.Primary.Attributes["group"]
@@ -1229,18 +1229,18 @@ func TestAccGitlabGroupAccessToken_revokedTokenWithPastExpiry(t *testing.T) {
 }
 
 // Helper function to revoke a group access token
-func revokeGroupAccessToken(groupID int, tokenName string) error {
+func revokeGroupAccessToken(groupID int64, tokenName string) error {
 	tokenID, err := groupAccessTokenID(groupID, tokenName)
 	if err != nil {
 		return err
 	}
 
-	_, err = testutil.TestGitlabClient.GroupAccessTokens.RevokeGroupAccessToken(groupID, tokenID, nil)
+	_, err = testutil.TestGitlabClient.GroupAccessTokens.RevokeGroupAccessToken(groupID, int64(tokenID), nil)
 	return err
 }
 
 // Helper function to get the ID of a group access token
-func groupAccessTokenID(groupID int, tokenName string) (int, error) {
+func groupAccessTokenID(groupID int64, tokenName string) (int64, error) {
 	tokens, _, err := testutil.TestGitlabClient.GroupAccessTokens.ListGroupAccessTokens(fmt.Sprintf("%d", groupID), nil)
 	if err != nil {
 		return 0, err

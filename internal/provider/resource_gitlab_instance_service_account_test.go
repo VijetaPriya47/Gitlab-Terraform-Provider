@@ -236,9 +236,9 @@ func testAcc_GitlabInstanceServiceAccount_CheckDestroy() resource.TestCheckFunc 
 	return func(s *terraform.State) error {
 		for _, rs := range s.RootModule().Resources {
 			if rs.Type == "gitlab_instance_service_account" {
-				serviceAccountID, err := strconv.Atoi(rs.Primary.ID)
+				serviceAccountID, err := strconv.ParseInt(rs.Primary.ID, 10, 64)
 				if err != nil {
-					return fmt.Errorf("Could not convert id to int")
+					return fmt.Errorf("Could not convert id to int64")
 				}
 
 				serviceAccount, _, err := testutil.TestGitlabClient.Users.GetUser(serviceAccountID, gitlab.GetUsersOptions{})

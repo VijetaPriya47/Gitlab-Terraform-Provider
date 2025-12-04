@@ -81,7 +81,7 @@ func resourceGitlabUserGPGKeyCreate(ctx context.Context, d *schema.ResourceData,
 		if !isAdmin {
 			return diag.Errorf("current user needs to be admin for configuring GPG keys for a user")
 		}
-		key, _, err = client.Users.AddGPGKeyForUser(userID.(int), options, gitlab.WithContext(ctx))
+		key, _, err = client.Users.AddGPGKeyForUser(int64(userID.(int)), options, gitlab.WithContext(ctx))
 	} else {
 		key, _, err = client.Users.AddGPGKey(options, gitlab.WithContext(ctx))
 	}
@@ -148,7 +148,7 @@ func resourceGitlabUserGPGKeyDelete(ctx context.Context, d *schema.ResourceData,
 		if !isAdmin {
 			return diag.Errorf("current user needs to be admin for configuring GPG keys for a user")
 		}
-		_, err = client.Users.DeleteGPGKeyForUser(userID.(int), keyID, gitlab.WithContext(ctx))
+		_, err = client.Users.DeleteGPGKeyForUser(int64(userID.(int)), keyID, gitlab.WithContext(ctx))
 	} else {
 		_, err = client.Users.DeleteGPGKey(keyID, gitlab.WithContext(ctx))
 	}
@@ -159,21 +159,21 @@ func resourceGitlabUserGPGKeyDelete(ctx context.Context, d *schema.ResourceData,
 	return nil
 }
 
-func resourceGitlabUserGPGKeyParseID(id string) (int, int, error) {
+func resourceGitlabUserGPGKeyParseID(id string) (int64, int64, error) {
 	userIDFromID, keyIDFromID, err := utils.ParseTwoPartID(id)
 	if err != nil {
-		keyID, errKeyID := strconv.Atoi(id)
+		keyID, errKeyID := strconv.ParseInt(id, 10, 64)
 		if errKeyID != nil {
 			return 0, 0, err
 		} else {
 			return 0, keyID, nil
 		}
 	}
-	userID, err := strconv.Atoi(userIDFromID)
+	userID, err := strconv.ParseInt(userIDFromID, 10, 64)
 	if err != nil {
 		return 0, 0, err
 	}
-	keyID, err := strconv.Atoi(keyIDFromID)
+	keyID, err := strconv.ParseInt(keyIDFromID, 10, 64)
 	if err != nil {
 		return 0, 0, err
 	}

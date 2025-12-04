@@ -10,7 +10,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	"gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
@@ -632,7 +632,7 @@ func TestAcc_GitlabGroupProtectedEnvironment_EnsureDeployAccessLevelsAreUnordere
 	})
 }
 
-func testAcc_GitlabGroupProtectedEnvironment_CheckDestroy(groupID int, environmentName string) resource.TestCheckFunc {
+func testAcc_GitlabGroupProtectedEnvironment_CheckDestroy(groupID int64, environmentName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		_, _, err := testutil.TestGitlabClient.GroupProtectedEnvironments.GetGroupProtectedEnvironment(groupID, environmentName)
 		if err == nil {

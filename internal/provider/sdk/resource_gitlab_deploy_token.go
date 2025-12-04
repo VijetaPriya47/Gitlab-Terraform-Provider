@@ -137,7 +137,7 @@ func resourceGitlabDeployTokenStateUpgradeV0(ctx context.Context, rawState map[s
 
 	oldId := rawState["id"].(string)
 
-	deployTokenId, err := strconv.Atoi(oldId)
+	deployTokenId, err := strconv.ParseInt(oldId, 10, 64)
 	if err != nil {
 		return nil, fmt.Errorf("cannot migrate state from V0 to V1 because id %q cannot be converted into an integer: %w", oldId, err)
 	}
@@ -148,17 +148,17 @@ func resourceGitlabDeployTokenStateUpgradeV0(ctx context.Context, rawState map[s
 	return rawState, nil
 }
 
-func resourceGitlabDeployTokenBuildId(deployTokenType string, typeId string, deployTokenId int) string {
+func resourceGitlabDeployTokenBuildId(deployTokenType string, typeId string, deployTokenId int64) string {
 	return fmt.Sprintf("%s:%s:%d", deployTokenType, typeId, deployTokenId)
 }
 
-func resourceGitlabDeployTokenParseId(id string) (string, string, int, error) {
+func resourceGitlabDeployTokenParseId(id string) (string, string, int64, error) {
 	parts := strings.SplitN(id, ":", 3)
 	if len(parts) != 3 {
 		return "", "", 0, fmt.Errorf("unexpected ID format (%q). Expected deployKeyType:typeId:key", id)
 	}
 
-	deployTokenId, err := strconv.Atoi(parts[2])
+	deployTokenId, err := strconv.ParseInt(parts[2], 10, 64)
 	if err != nil {
 		return "", "", 0, err
 	}

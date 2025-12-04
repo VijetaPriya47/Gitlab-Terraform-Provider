@@ -51,17 +51,17 @@ func resourceGitlabProjectIssueBoardCreate(ctx context.Context, d *schema.Resour
 
 	updateOptions := gitlab.UpdateIssueBoardOptions{}
 	if v, ok := d.GetOk("milestone_id"); ok {
-		updateOptions.MilestoneID = gitlab.Ptr(v.(int))
+		updateOptions.MilestoneID = gitlab.Ptr(int64(v.(int)))
 	}
 	if v, ok := d.GetOk("assignee_id"); ok {
-		updateOptions.AssigneeID = gitlab.Ptr(v.(int))
+		updateOptions.AssigneeID = gitlab.Ptr(int64(v.(int)))
 	}
 	if v, ok := d.GetOk("labels"); ok {
 		gitlabLabels := gitlab.LabelOptions(*stringSetToStringSlice(v.(*schema.Set)))
 		updateOptions.Labels = &gitlabLabels
 	}
 	if v, ok := d.GetOk("weight"); ok {
-		updateOptions.Weight = gitlab.Ptr(v.(int))
+		updateOptions.Weight = gitlab.Ptr(int64(v.(int)))
 	}
 
 	if (gitlab.UpdateIssueBoardOptions{}) != updateOptions {
@@ -118,17 +118,17 @@ func resourceGitlabProjectIssueBoardUpdate(ctx context.Context, d *schema.Resour
 		options.Name = gitlab.Ptr(d.Get("name").(string))
 	}
 	if d.HasChange("milestone_id") {
-		options.MilestoneID = gitlab.Ptr(d.Get("milestone_id").(int))
+		options.MilestoneID = gitlab.Ptr(int64(d.Get("milestone_id").(int)))
 	}
 	if d.HasChange("assignee_id") {
-		options.AssigneeID = gitlab.Ptr(d.Get("assignee_id").(int))
+		options.AssigneeID = gitlab.Ptr(int64(d.Get("assignee_id").(int)))
 	}
 	if d.HasChange("labels") {
 		gitlabLabels := gitlab.LabelOptions(*stringSetToStringSlice(d.Get("labels").(*schema.Set)))
 		options.Labels = &gitlabLabels
 	}
 	if d.HasChange("weight") {
-		options.Weight = gitlab.Ptr(d.Get("weight").(int))
+		options.Weight = gitlab.Ptr(int64(d.Get("weight").(int)))
 	}
 
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update Project Issue Board %q in project %q", issueBoardID, project))
@@ -172,17 +172,17 @@ func resourceGitlabProjectIssueBoardDelete(ctx context.Context, d *schema.Resour
 	return nil
 }
 
-func resourceGitlabProjectIssueBoardBuildID(project string, issueBoardID int) string {
+func resourceGitlabProjectIssueBoardBuildID(project string, issueBoardID int64) string {
 	return fmt.Sprintf("%s:%d", project, issueBoardID)
 }
 
-func resourceGitlabProjectIssueBoardParseID(id string) (string, int, error) {
+func resourceGitlabProjectIssueBoardParseID(id string) (string, int64, error) {
 	project, rawIssueBoardID, err := utils.ParseTwoPartID(id)
 	if err != nil {
 		return "", 0, err
 	}
 
-	issueBoardID, err := strconv.Atoi(rawIssueBoardID)
+	issueBoardID, err := strconv.ParseInt(rawIssueBoardID, 10, 64)
 	if err != nil {
 		return "", 0, err
 	}
@@ -200,13 +200,13 @@ func resourceGitlabProjectIssueBoardCreateLists(ctx context.Context, client *git
 		if listData != nil {
 			l := listData.(map[string]any)
 			if v, ok := l["label_id"]; ok && v != 0 {
-				listOptions.LabelID = gitlab.Ptr(v.(int))
+				listOptions.LabelID = gitlab.Ptr(int64(v.(int)))
 			}
 			if v, ok := l["assignee_id"]; ok && v != 0 {
-				listOptions.AssigneeID = gitlab.Ptr(v.(int))
+				listOptions.AssigneeID = gitlab.Ptr(int64(v.(int)))
 			}
 			if v, ok := l["milestone_id"]; ok && v != 0 {
-				listOptions.MilestoneID = gitlab.Ptr(v.(int))
+				listOptions.MilestoneID = gitlab.Ptr(int64(v.(int)))
 			}
 		}
 

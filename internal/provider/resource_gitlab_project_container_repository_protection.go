@@ -187,7 +187,7 @@ func (r *gitlabContainerRepositoryProtectionResource) Read(ctx context.Context, 
 		return
 	}
 
-	ruleID, err := strconv.Atoi(rawRuleID)
+	ruleID, err := strconv.ParseInt(rawRuleID, 10, 64)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Invalid container repository protection rule ID provided, container repository protection rule ID should be an Int",
@@ -245,7 +245,7 @@ func (r *gitlabContainerRepositoryProtectionResource) Update(ctx context.Context
 
 	projectID := data.Project.ValueString()
 	ruleID := data.ProtectionRuleID.ValueInt64()
-	rule, _, err := r.client.ContainerRegistryProtectionRules.UpdateContainerRegistryProtectionRule(projectID, int(ruleID), options, gitlab.WithContext(ctx))
+	rule, _, err := r.client.ContainerRegistryProtectionRules.UpdateContainerRegistryProtectionRule(projectID, ruleID, options, gitlab.WithContext(ctx))
 
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -284,7 +284,7 @@ func (r *gitlabContainerRepositoryProtectionResource) Delete(ctx context.Context
 		return
 	}
 
-	ruleID, err := strconv.Atoi(rawRuleID)
+	ruleID, err := strconv.ParseInt(rawRuleID, 10, 64)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Invalid container repository protection rule ID provided, container repository protection rule ID should be an Int",
@@ -308,7 +308,7 @@ func (r *gitlabContainerRepositoryProtectionResource) ImportState(ctx context.Co
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
-func (r *gitlabContainerRepositoryProtectionResource) containsID(rules []*gitlab.ContainerRegistryProtectionRule, ruleID int) (bool, *gitlab.ContainerRegistryProtectionRule) {
+func (r *gitlabContainerRepositoryProtectionResource) containsID(rules []*gitlab.ContainerRegistryProtectionRule, ruleID int64) (bool, *gitlab.ContainerRegistryProtectionRule) {
 	for _, rule := range rules {
 		if rule.ID == ruleID {
 			return true, rule

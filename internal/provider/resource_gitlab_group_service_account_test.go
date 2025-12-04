@@ -18,7 +18,7 @@ func TestAcc_GitlabGroupServiceAccount_basic(t *testing.T) {
 	testutil.SkipIfCE(t)
 
 	group := testutil.CreateGroups(t, 1)[0]
-	groupID := strconv.Itoa(group.ID)
+	groupID := strconv.FormatInt(group.ID, 10)
 
 	name := acctest.RandString(10)
 	username := acctest.RandString(10)
@@ -59,7 +59,7 @@ func TestAcc_GitlabGroupServiceAccount_customEmail(t *testing.T) {
 	testutil.SkipIfCE(t)
 
 	group := testutil.CreateGroups(t, 1)[0]
-	groupID := strconv.Itoa(group.ID)
+	groupID := strconv.FormatInt(group.ID, 10)
 
 	name := acctest.RandString(10)
 	username := acctest.RandString(10)
@@ -103,7 +103,7 @@ func TestAcc_GitlabGroupServiceAccount_EnsureRecreate(t *testing.T) {
 	testutil.SkipIfCE(t)
 
 	group := testutil.CreateGroups(t, 1)[0]
-	groupID := strconv.Itoa(group.ID)
+	groupID := strconv.FormatInt(group.ID, 10)
 	name := acctest.RandString(10)
 	username := acctest.RandString(10)
 	name2 := acctest.RandString(10)

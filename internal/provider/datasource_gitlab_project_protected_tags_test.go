@@ -106,7 +106,7 @@ func TestAccDataGitlabProjectProtectedTags_customAccessLevels(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"data.gitlab_project_protected_tags.test",
 						"protected_tags.0.create_access_levels.1.group_id",
-						strconv.Itoa(myGroup[0].ID),
+						strconv.FormatInt(myGroup[0].ID, 10),
 					),
 					resource.TestCheckResourceAttr(
 						"data.gitlab_project_protected_tags.test",
@@ -116,7 +116,7 @@ func TestAccDataGitlabProjectProtectedTags_customAccessLevels(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"data.gitlab_project_protected_tags.test",
 						"protected_tags.1.create_access_levels.1.group_id",
-						strconv.Itoa(myGroup[0].ID),
+						strconv.FormatInt(myGroup[0].ID, 10),
 					),
 				),
 			},

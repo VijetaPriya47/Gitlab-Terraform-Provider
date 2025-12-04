@@ -106,7 +106,7 @@ func TestAcc_GitlabProjectIntegrationYouTrack_basic_validation(t *testing.T) {
 	})
 }
 
-func testAccCheckGitlabProjectIntegrationYouTrackDestroy(projectID int) resource.TestCheckFunc {
+func testAccCheckGitlabProjectIntegrationYouTrackDestroy(projectID int64) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		service, _, err := testutil.TestGitlabClient.Services.GetYouTrackService(projectID)
 		if err != nil {

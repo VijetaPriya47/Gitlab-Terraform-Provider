@@ -31,7 +31,7 @@ func TestAccDataGitlabPipelineSchedule_basic(t *testing.T) {
 					schedule.ID,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("data.gitlab_pipeline_schedule.this", "project", strconv.Itoa(project.ID)),
+					resource.TestCheckResourceAttr("data.gitlab_pipeline_schedule.this", "project", strconv.FormatInt(project.ID, 10)),
 					resource.TestCheckResourceAttr("data.gitlab_pipeline_schedule.this", "description", schedule.Description),
 					resource.TestCheckResourceAttr("data.gitlab_pipeline_schedule.this", "ref", schedule.Ref),
 					resource.TestCheckResourceAttr("data.gitlab_pipeline_schedule.this", "cron", schedule.Cron),
@@ -40,7 +40,7 @@ func TestAccDataGitlabPipelineSchedule_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("data.gitlab_pipeline_schedule.this", "active", strconv.FormatBool(schedule.Active)),
 					resource.TestCheckResourceAttr("data.gitlab_pipeline_schedule.this", "created_at", schedule.CreatedAt.Format(time.RFC3339)),
 					resource.TestCheckResourceAttr("data.gitlab_pipeline_schedule.this", "updated_at", schedule.UpdatedAt.Format(time.RFC3339)),
-					resource.TestCheckResourceAttr("data.gitlab_pipeline_schedule.this", "owner.id", strconv.Itoa(schedule.Owner.ID)),
+					resource.TestCheckResourceAttr("data.gitlab_pipeline_schedule.this", "owner.id", strconv.FormatInt(schedule.Owner.ID, 10)),
 					resource.TestCheckResourceAttr("data.gitlab_pipeline_schedule.this", "owner.name", schedule.Owner.Name),
 					resource.TestCheckResourceAttr("data.gitlab_pipeline_schedule.this", "owner.username", schedule.Owner.Username),
 					resource.TestCheckResourceAttr("data.gitlab_pipeline_schedule.this", "owner.state", schedule.Owner.State),

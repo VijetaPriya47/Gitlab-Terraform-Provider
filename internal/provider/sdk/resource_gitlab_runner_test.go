@@ -228,7 +228,7 @@ func testAccCheckRunnerDestroy(state *terraform.State) error {
 			continue
 		}
 
-		id, _ := strconv.Atoi(rs.Primary.ID)
+		id, _ := strconv.ParseInt(rs.Primary.ID, 10, 64)
 
 		runner, _, err := testutil.TestGitlabClient.Runners.GetRunnerDetails(id)
 		if err == nil {

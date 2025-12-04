@@ -159,7 +159,7 @@ func (r *gitlabClusterAgentTokenResource) Create(ctx context.Context, req resour
 	}
 
 	tflog.Debug(ctx, fmt.Sprintf("create token for GitLab Agent for Kubernetes %d in project %s with name '%v'", agentID, project, options.Name))
-	clusterAgentToken, _, err := r.client.ClusterAgents.CreateAgentToken(project, int(agentID), options, gitlab.WithContext(ctx))
+	clusterAgentToken, _, err := r.client.ClusterAgents.CreateAgentToken(project, agentID, options, gitlab.WithContext(ctx))
 	if err != nil {
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to create token: %s", err.Error()))
 		return
@@ -253,17 +253,17 @@ func (d *gitlabClusterAgentTokenResourceModel) modelToStateModel(project string,
 	return nil
 }
 
-func resourceGitlabClusterAgentTokenParseID(id string) (string, int, int, error) {
+func resourceGitlabClusterAgentTokenParseID(id string) (string, int64, int64, error) {
 	parts := strings.Split(id, ":")
 	if len(parts) != 3 {
 		return "", 0, 0, fmt.Errorf("invalid cluster agent token id %q, expected format '{project}:{agent_id}:{token_id}", id)
 	}
 	project, rawAgentID, rawTokenID := parts[0], parts[1], parts[2]
-	agentID, err := strconv.Atoi(rawAgentID)
+	agentID, err := strconv.ParseInt(rawAgentID, 10, 64)
 	if err != nil {
 		return "", 0, 0, fmt.Errorf("invalid cluster agent token id %q with 'agent_id' %q, expected integer", id, rawAgentID)
 	}
-	tokenID, err := strconv.Atoi(rawTokenID)
+	tokenID, err := strconv.ParseInt(rawTokenID, 10, 64)
 	if err != nil {
 		return "", 0, 0, fmt.Errorf("invalid cluster agent token id %q with 'token_id' %q, expected integer", id, rawTokenID)
 	}

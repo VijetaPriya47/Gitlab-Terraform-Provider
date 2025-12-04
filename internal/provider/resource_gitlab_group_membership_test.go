@@ -197,8 +197,8 @@ func TestAccGitlabGroupMembership_useCustomRole(t *testing.T) {
 					`, group.ID, user.ID, roleOne.ID,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("gitlab_group_membership.foo", "group_id", strconv.Itoa(group.ID)),
-					resource.TestCheckResourceAttr("gitlab_group_membership.foo", "member_role_id", strconv.Itoa(roleOne.ID)),
+					resource.TestCheckResourceAttr("gitlab_group_membership.foo", "group_id", strconv.FormatInt(group.ID, 10)),
+					resource.TestCheckResourceAttr("gitlab_group_membership.foo", "member_role_id", strconv.FormatInt(roleOne.ID, 10)),
 				),
 			},
 			{
@@ -223,8 +223,8 @@ func TestAccGitlabGroupMembership_useCustomRole(t *testing.T) {
 					`, group.ID, user.ID, roleTwo.ID,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("gitlab_group_membership.foo", "group_id", strconv.Itoa(group.ID)),
-					resource.TestCheckResourceAttr("gitlab_group_membership.foo", "member_role_id", strconv.Itoa(roleTwo.ID)),
+					resource.TestCheckResourceAttr("gitlab_group_membership.foo", "group_id", strconv.FormatInt(group.ID, 10)),
+					resource.TestCheckResourceAttr("gitlab_group_membership.foo", "member_role_id", strconv.FormatInt(roleTwo.ID, 10)),
 				),
 			},
 			{
@@ -238,7 +238,7 @@ func TestAccGitlabGroupMembership_useCustomRole(t *testing.T) {
 					`, group.ID, user.ID,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("gitlab_group_membership.foo", "group_id", strconv.Itoa(group.ID)),
+					resource.TestCheckResourceAttr("gitlab_group_membership.foo", "group_id", strconv.FormatInt(group.ID, 10)),
 					// Assert that the member_role_id is no longer set in the state.
 					resource.TestCheckNoResourceAttr("gitlab_group_membership.foo", "member_role_id"),
 					checkGroupMembershipViaAPI,
@@ -261,7 +261,7 @@ func testAccCheckGitlabGroupMembershipExists(n string, membership *gitlab.GroupM
 		}
 
 		userIdString := rs.Primary.Attributes["user_id"]
-		userId, _ := strconv.Atoi(userIdString)
+		userId, _ := strconv.ParseInt(userIdString, 10, 64)
 		if userIdString == "" {
 			return fmt.Errorf("No user userId is set")
 		}
@@ -303,10 +303,10 @@ func testAccCheckGitlabGroupMembershipDestroy(s *terraform.State) error {
 		groupId := rs.Primary.Attributes["group_id"]
 		userIdString := rs.Primary.Attributes["user_id"]
 
-		// GetGroupMember needs int type for userIdString
-		userId, err := strconv.Atoi(userIdString)
+		// GetGroupMember needs int64 type for userIdString
+		userId, err := strconv.ParseInt(userIdString, 10, 64)
 		if err != nil {
-			return fmt.Errorf("Error when checking destroy. Unable to convert user_id to integer: %v", err)
+			return fmt.Errorf("Error when checking destroy. Unable to convert user_id to int64: %v", err)
 		}
 		groupMember, _, err := testutil.TestGitlabClient.GroupMembers.GetGroupMember(groupId, userId)
 		if err != nil {

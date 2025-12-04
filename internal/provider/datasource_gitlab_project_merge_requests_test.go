@@ -62,15 +62,15 @@ func TestAcc_GitLabProjectMergeRequests_DataSource_Basic(t *testing.T) {
 					),
 					resource.TestCheckResourceAttr(
 						"data.gitlab_project_merge_requests.int_project",
-						"merge_requests.0.id", strconv.Itoa(mergeRequest.ID),
+						"merge_requests.0.id", strconv.FormatInt(mergeRequest.ID, 10),
 					),
 					resource.TestCheckResourceAttr(
 						"data.gitlab_project_merge_requests.int_project",
-						"merge_requests.0.iid", strconv.Itoa(mergeRequest.IID),
+						"merge_requests.0.iid", strconv.FormatInt(mergeRequest.IID, 10),
 					),
 					resource.TestCheckResourceAttr(
 						"data.gitlab_project_merge_requests.int_project",
-						"merge_requests.0.assignee.id", strconv.Itoa(user.ID),
+						"merge_requests.0.assignee.id", strconv.FormatInt(user.ID, 10),
 					),
 					resource.TestCheckResourceAttr(
 						"data.gitlab_project_merge_requests.int_project",
@@ -94,7 +94,7 @@ func TestAcc_GitLabProjectMergeRequests_DataSource_Basic(t *testing.T) {
 					),
 					resource.TestCheckResourceAttr(
 						"data.gitlab_project_merge_requests.int_project",
-						"merge_requests.0.assignees.0.id", strconv.Itoa(user.ID),
+						"merge_requests.0.assignees.0.id", strconv.FormatInt(user.ID, 10),
 					),
 					resource.TestCheckResourceAttr(
 						"data.gitlab_project_merge_requests.int_project",
@@ -118,7 +118,7 @@ func TestAcc_GitLabProjectMergeRequests_DataSource_Basic(t *testing.T) {
 					),
 					resource.TestCheckResourceAttr(
 						"data.gitlab_project_merge_requests.int_project",
-						"merge_requests.0.author.id", strconv.Itoa(mergeRequest.Author.ID),
+						"merge_requests.0.author.id", strconv.FormatInt(mergeRequest.Author.ID, 10),
 					),
 					resource.TestCheckResourceAttr(
 						"data.gitlab_project_merge_requests.int_project",

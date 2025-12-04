@@ -162,7 +162,7 @@ func TestAccGitlabProjectIntegrationHarbor_validation(t *testing.T) {
 	})
 }
 
-func testAccCheckGitlabProjectIntegrationHarborDestroy(projectId int) resource.TestCheckFunc {
+func testAccCheckGitlabProjectIntegrationHarborDestroy(projectId int64) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		service, _, err := testutil.TestGitlabClient.Services.GetHarborService(projectId)
 		if err != nil {

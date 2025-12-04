@@ -228,7 +228,7 @@ func (r *gitlabGroupServiceAccountResource) Delete(ctx context.Context, req reso
 		return
 	}
 
-	serviceAccountIDInt, err := strconv.Atoi(serviceAccountID)
+	serviceAccountIDInt, err := strconv.ParseInt(serviceAccountID, 10, 64)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Internal provider error",
@@ -278,7 +278,7 @@ func (r *gitlabGroupServiceAccountResource) ImportState(ctx context.Context, req
 
 func (r *gitlabGroupServiceAccountResourceModel) serviceAccountToStateModel(serviceAccount *gitlab.GroupServiceAccount, group string) {
 	// attributes from api response
-	serviceAccountIDStr := strconv.Itoa(serviceAccount.ID)
+	serviceAccountIDStr := strconv.FormatInt(serviceAccount.ID, 10)
 	r.ID = types.StringValue(utils.BuildTwoPartID(&group, &serviceAccountIDStr))
 	r.ServiceAccountID = types.StringValue(serviceAccountIDStr)
 	r.Group = types.StringValue(group)
@@ -289,7 +289,7 @@ func (r *gitlabGroupServiceAccountResourceModel) serviceAccountToStateModel(serv
 
 // waitForServiceAccountDeletion waits for a service account to be deleted by polling the Users API
 // Returns nil when the service account returns a 404 (truly deleted)
-func (r *gitlabGroupServiceAccountResource) waitForServiceAccountDeletion(ctx context.Context, group, serviceAccountID string, serviceAccountIDInt int) error {
+func (r *gitlabGroupServiceAccountResource) waitForServiceAccountDeletion(ctx context.Context, group, serviceAccountID string, serviceAccountIDInt int64) error {
 	// Use 10-second polling interval for detection
 	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
@@ -383,7 +383,7 @@ func findGitlabServiceAccount(client *gitlab.Client, group, desiredId string) (*
 		}
 
 		for i := range paginatedServiceAccounts {
-			if strconv.Itoa(paginatedServiceAccounts[i].ID) == desiredId {
+			if strconv.FormatInt(paginatedServiceAccounts[i].ID, 10) == desiredId {
 				return paginatedServiceAccounts[i], nil
 			}
 		}

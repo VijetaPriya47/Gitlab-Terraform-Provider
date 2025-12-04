@@ -95,7 +95,7 @@ func (d *gitlabClusterAgentDataSource) Read(ctx context.Context, req datasource.
 	}
 
 	project := data.Project.ValueString()
-	agentID := int(data.AgentID.ValueInt64())
+	agentID := data.AgentID.ValueInt64()
 
 	agent, _, err := d.client.ClusterAgents.GetAgent(project, agentID, gitlab.WithContext(ctx))
 	if err != nil {
@@ -103,7 +103,7 @@ func (d *gitlabClusterAgentDataSource) Read(ctx context.Context, req datasource.
 		return
 	}
 
-	agentIDStr := strconv.Itoa(agentID)
+	agentIDStr := strconv.FormatInt(agentID, 10)
 	data.ID = types.StringValue(utils.BuildTwoPartID(&project, &agentIDStr))
 	data.Project = types.StringValue(project)
 	data.Name = types.StringValue(agent.Name)

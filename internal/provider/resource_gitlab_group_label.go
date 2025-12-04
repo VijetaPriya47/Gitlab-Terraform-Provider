@@ -93,7 +93,7 @@ func (r *gitlabGroupLabelResource) Create(ctx context.Context, req resource.Crea
 		return
 	}
 
-	labelID := strconv.Itoa(label.ID)
+	labelID := strconv.FormatInt(label.ID, 10)
 	data.ID = types.StringValue(utils.BuildTwoPartID(&group, &labelID))
 	data.modelToStateModel(label, color, group)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

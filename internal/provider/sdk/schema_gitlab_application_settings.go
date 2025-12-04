@@ -2658,7 +2658,7 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("asciidoc_max_includes") {
-		options.ASCIIDocMaxIncludes = gitlab.Ptr(d.Get("asciidoc_max_includes").(int))
+		options.ASCIIDocMaxIncludes = gitlab.Ptr(int64(d.Get("asciidoc_max_includes").(int)))
 	}
 
 	if d.HasChange("asset_proxy_enabled") {
@@ -2698,7 +2698,7 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("bulk_import_concurrent_pipeline_batch_limit") {
-		options.BulkImportConcurrentPipelineBatchLimit = gitlab.Ptr(d.Get("bulk_import_concurrent_pipeline_batch_limit").(int))
+		options.BulkImportConcurrentPipelineBatchLimit = gitlab.Ptr(int64(d.Get("bulk_import_concurrent_pipeline_batch_limit").(int)))
 	}
 
 	if d.HasChange("bulk_import_enabled") {
@@ -2706,7 +2706,7 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("bulk_import_max_download_file_size") {
-		options.BulkImportMaxDownloadFileSize = gitlab.Ptr(d.Get("bulk_import_max_download_file_size").(int))
+		options.BulkImportMaxDownloadFileSize = gitlab.Ptr(int64(d.Get("bulk_import_max_download_file_size").(int)))
 	}
 
 	if d.HasChange("can_create_group") {
@@ -2718,11 +2718,11 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("ci_max_includes") {
-		options.CIMaxIncludes = gitlab.Ptr(d.Get("ci_max_includes").(int))
+		options.CIMaxIncludes = gitlab.Ptr(int64(d.Get("ci_max_includes").(int)))
 	}
 
 	if d.HasChange("ci_max_total_yaml_size_bytes") {
-		options.CIMaxTotalYAMLSizeBytes = gitlab.Ptr(d.Get("ci_max_total_yaml_size_bytes").(int))
+		options.CIMaxTotalYAMLSizeBytes = gitlab.Ptr(int64(d.Get("ci_max_total_yaml_size_bytes").(int)))
 	}
 
 	if d.HasChange("commit_email_hostname") {
@@ -2730,15 +2730,15 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("concurrent_bitbucket_import_jobs_limit") {
-		options.ConcurrentBitbucketImportJobsLimit = gitlab.Ptr(d.Get("concurrent_bitbucket_import_jobs_limit").(int))
+		options.ConcurrentBitbucketImportJobsLimit = gitlab.Ptr(int64(d.Get("concurrent_bitbucket_import_jobs_limit").(int)))
 	}
 
 	if d.HasChange("concurrent_bitbucket_server_import_jobs_limit") {
-		options.ConcurrentBitbucketServerImportJobsLimit = gitlab.Ptr(d.Get("concurrent_bitbucket_server_import_jobs_limit").(int))
+		options.ConcurrentBitbucketServerImportJobsLimit = gitlab.Ptr(int64(d.Get("concurrent_bitbucket_server_import_jobs_limit").(int)))
 	}
 
 	if d.HasChange("concurrent_github_import_jobs_limit") {
-		options.ConcurrentGitHubImportJobsLimit = gitlab.Ptr(d.Get("concurrent_github_import_jobs_limit").(int))
+		options.ConcurrentGitHubImportJobsLimit = gitlab.Ptr(int64(d.Get("concurrent_github_import_jobs_limit").(int)))
 	}
 
 	if d.HasChange("container_expiration_policies_enable_historic_entries") {
@@ -2746,11 +2746,11 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("container_registry_cleanup_tags_service_max_list_size") {
-		options.ContainerRegistryCleanupTagsServiceMaxListSize = gitlab.Ptr(d.Get("container_registry_cleanup_tags_service_max_list_size").(int))
+		options.ContainerRegistryCleanupTagsServiceMaxListSize = gitlab.Ptr(int64(d.Get("container_registry_cleanup_tags_service_max_list_size").(int)))
 	}
 
 	if d.HasChange("container_registry_delete_tags_service_timeout") {
-		options.ContainerRegistryDeleteTagsServiceTimeout = gitlab.Ptr(d.Get("container_registry_delete_tags_service_timeout").(int))
+		options.ContainerRegistryDeleteTagsServiceTimeout = gitlab.Ptr(int64(d.Get("container_registry_delete_tags_service_timeout").(int)))
 	}
 
 	if d.HasChange("container_registry_expiration_policies_caching") {
@@ -2758,19 +2758,19 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("container_registry_expiration_policies_worker_capacity") {
-		options.ContainerRegistryExpirationPoliciesWorkerCapacity = gitlab.Ptr(d.Get("container_registry_expiration_policies_worker_capacity").(int))
+		options.ContainerRegistryExpirationPoliciesWorkerCapacity = gitlab.Ptr(int64(d.Get("container_registry_expiration_policies_worker_capacity").(int)))
 	}
 
 	if d.HasChange("container_registry_token_expire_delay") {
-		options.ContainerRegistryTokenExpireDelay = gitlab.Ptr(d.Get("container_registry_token_expire_delay").(int))
+		options.ContainerRegistryTokenExpireDelay = gitlab.Ptr(int64(d.Get("container_registry_token_expire_delay").(int)))
 	}
 
 	if d.HasChange("package_registry_cleanup_policies_worker_capacity") {
-		options.PackageRegistryCleanupPoliciesWorkerCapacity = gitlab.Ptr(d.Get("package_registry_cleanup_policies_worker_capacity").(int))
+		options.PackageRegistryCleanupPoliciesWorkerCapacity = gitlab.Ptr(int64(d.Get("package_registry_cleanup_policies_worker_capacity").(int)))
 	}
 
 	if d.HasChange("package_metadata_purl_types") {
-		options.PackageMetadataPURLTypes = intListToIntSlice(d.Get("package_metadata_purl_types").([]any))
+		options.PackageMetadataPURLTypes = intListToInt64Slice(d.Get("package_metadata_purl_types").([]any))
 	}
 
 	if d.HasChange("deactivate_dormant_users") {
@@ -2778,11 +2778,11 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("deactivate_dormant_users_period") {
-		options.DeactivateDormantUsersPeriod = gitlab.Ptr(d.Get("deactivate_dormant_users_period").(int))
+		options.DeactivateDormantUsersPeriod = gitlab.Ptr(int64(d.Get("deactivate_dormant_users_period").(int)))
 	}
 
 	if d.HasChange("decompress_archive_file_timeout") {
-		options.DecompressArchiveFileTimeout = gitlab.Ptr(d.Get("decompress_archive_file_timeout").(int))
+		options.DecompressArchiveFileTimeout = gitlab.Ptr(int64(d.Get("decompress_archive_file_timeout").(int)))
 	}
 
 	if d.HasChange("default_artifacts_expire_in") {
@@ -2794,7 +2794,7 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("default_branch_protection") {
-		options.DefaultBranchProtection = gitlab.Ptr(d.Get("default_branch_protection").(int)) //nolint:staticcheck
+		options.DefaultBranchProtection = gitlab.Ptr(int64(d.Get("default_branch_protection").(int))) //nolint:staticcheck
 	}
 
 	if d.HasChange("default_branch_protection_defaults") {
@@ -2841,7 +2841,7 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("default_project_creation") {
-		options.DefaultProjectCreation = gitlab.Ptr(d.Get("default_project_creation").(int))
+		options.DefaultProjectCreation = gitlab.Ptr(int64(d.Get("default_project_creation").(int)))
 	}
 
 	if d.HasChange("default_project_visibility") {
@@ -2849,7 +2849,7 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("default_projects_limit") {
-		options.DefaultProjectsLimit = gitlab.Ptr(d.Get("default_projects_limit").(int))
+		options.DefaultProjectsLimit = gitlab.Ptr(int64(d.Get("default_projects_limit").(int)))
 	}
 
 	if d.HasChange("default_snippet_visibility") {
@@ -2857,7 +2857,7 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("default_syntax_highlighting_theme") {
-		options.DefaultSyntaxHighlightingTheme = gitlab.Ptr(d.Get("default_syntax_highlighting_theme").(int))
+		options.DefaultSyntaxHighlightingTheme = gitlab.Ptr(int64(d.Get("default_syntax_highlighting_theme").(int)))
 	}
 
 	if d.HasChange("delete_inactive_projects") {
@@ -2869,7 +2869,7 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("deletion_adjourned_period") {
-		options.DeletionAdjournedPeriod = gitlab.Ptr(d.Get("deletion_adjourned_period").(int))
+		options.DeletionAdjournedPeriod = gitlab.Ptr(int64(d.Get("deletion_adjourned_period").(int)))
 	}
 
 	if d.HasChange("diagramsnet_enabled") {
@@ -2881,15 +2881,15 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("diff_max_patch_bytes") {
-		options.DiffMaxPatchBytes = gitlab.Ptr(d.Get("diff_max_patch_bytes").(int))
+		options.DiffMaxPatchBytes = gitlab.Ptr(int64(d.Get("diff_max_patch_bytes").(int)))
 	}
 
 	if d.HasChange("diff_max_files") {
-		options.DiffMaxFiles = gitlab.Ptr(d.Get("diff_max_files").(int))
+		options.DiffMaxFiles = gitlab.Ptr(int64(d.Get("diff_max_files").(int)))
 	}
 
 	if d.HasChange("diff_max_lines") {
-		options.DiffMaxLines = gitlab.Ptr(d.Get("diff_max_lines").(int))
+		options.DiffMaxLines = gitlab.Ptr(int64(d.Get("diff_max_lines").(int)))
 	}
 
 	if d.HasChange("disable_admin_oauth_scopes") {
@@ -2925,7 +2925,7 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("downstream_pipeline_trigger_limit_per_project_user_sha") {
-		options.DownstreamPipelineTriggerLimitPerProjectUserSHA = gitlab.Ptr(d.Get("downstream_pipeline_trigger_limit_per_project_user_sha").(int))
+		options.DownstreamPipelineTriggerLimitPerProjectUserSHA = gitlab.Ptr(int64(d.Get("downstream_pipeline_trigger_limit_per_project_user_sha").(int)))
 	}
 
 	if d.HasChange("duo_features_enabled") {
@@ -2933,23 +2933,23 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("dsa_key_restriction") {
-		options.DSAKeyRestriction = gitlab.Ptr(d.Get("dsa_key_restriction").(int))
+		options.DSAKeyRestriction = gitlab.Ptr(int64(d.Get("dsa_key_restriction").(int)))
 	}
 
 	if d.HasChange("ecdsa_key_restriction") {
-		options.ECDSAKeyRestriction = gitlab.Ptr(d.Get("ecdsa_key_restriction").(int))
+		options.ECDSAKeyRestriction = gitlab.Ptr(int64(d.Get("ecdsa_key_restriction").(int)))
 	}
 
 	if d.HasChange("ecdsa_sk_key_restriction") {
-		options.ECDSASKKeyRestriction = gitlab.Ptr(d.Get("ecdsa_sk_key_restriction").(int))
+		options.ECDSASKKeyRestriction = gitlab.Ptr(int64(d.Get("ecdsa_sk_key_restriction").(int)))
 	}
 
 	if d.HasChange("ed25519_key_restriction") {
-		options.Ed25519KeyRestriction = gitlab.Ptr(d.Get("ed25519_key_restriction").(int))
+		options.Ed25519KeyRestriction = gitlab.Ptr(int64(d.Get("ed25519_key_restriction").(int)))
 	}
 
 	if d.HasChange("ed25519_sk_key_restriction") {
-		options.Ed25519SKKeyRestriction = gitlab.Ptr(d.Get("ed25519_sk_key_restriction").(int))
+		options.Ed25519SKKeyRestriction = gitlab.Ptr(int64(d.Get("ed25519_sk_key_restriction").(int)))
 	}
 
 	if d.HasChange("eks_access_key_id") {
@@ -2985,11 +2985,11 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("elasticsearch_indexed_field_length_limit") {
-		options.ElasticsearchIndexedFieldLengthLimit = gitlab.Ptr(d.Get("elasticsearch_indexed_field_length_limit").(int))
+		options.ElasticsearchIndexedFieldLengthLimit = gitlab.Ptr(int64(d.Get("elasticsearch_indexed_field_length_limit").(int)))
 	}
 
 	if d.HasChange("elasticsearch_indexed_file_size_limit_kb") {
-		options.ElasticsearchIndexedFileSizeLimitKB = gitlab.Ptr(d.Get("elasticsearch_indexed_file_size_limit_kb").(int))
+		options.ElasticsearchIndexedFileSizeLimitKB = gitlab.Ptr(int64(d.Get("elasticsearch_indexed_file_size_limit_kb").(int)))
 	}
 
 	if d.HasChange("elasticsearch_indexing") {
@@ -3001,19 +3001,19 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("elasticsearch_max_bulk_concurrency") {
-		options.ElasticsearchMaxBulkConcurrency = gitlab.Ptr(d.Get("elasticsearch_max_bulk_concurrency").(int))
+		options.ElasticsearchMaxBulkConcurrency = gitlab.Ptr(int64(d.Get("elasticsearch_max_bulk_concurrency").(int)))
 	}
 
 	if d.HasChange("elasticsearch_max_bulk_size_mb") {
-		options.ElasticsearchMaxBulkSizeMB = gitlab.Ptr(d.Get("elasticsearch_max_bulk_size_mb").(int))
+		options.ElasticsearchMaxBulkSizeMB = gitlab.Ptr(int64(d.Get("elasticsearch_max_bulk_size_mb").(int)))
 	}
 
 	if d.HasChange("elasticsearch_namespace_ids") {
-		options.ElasticsearchNamespaceIDs = intListToIntSlice(d.Get("elasticsearch_namespace_ids").([]any))
+		options.ElasticsearchNamespaceIDs = intListToInt64Slice(d.Get("elasticsearch_namespace_ids").([]any))
 	}
 
 	if d.HasChange("elasticsearch_project_ids") {
-		options.ElasticsearchProjectIDs = intListToIntSlice(d.Get("elasticsearch_project_ids").([]any))
+		options.ElasticsearchProjectIDs = intListToInt64Slice(d.Get("elasticsearch_project_ids").([]any))
 	}
 
 	if d.HasChange("elasticsearch_search") {
@@ -3090,15 +3090,15 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("external_pipeline_validation_service_timeout") {
-		options.ExternalPipelineValidationServiceTimeout = gitlab.Ptr(d.Get("external_pipeline_validation_service_timeout").(int))
+		options.ExternalPipelineValidationServiceTimeout = gitlab.Ptr(int64(d.Get("external_pipeline_validation_service_timeout").(int)))
 	}
 
 	if d.HasChange("file_template_project_id") {
-		options.FileTemplateProjectID = gitlab.Ptr(d.Get("file_template_project_id").(int))
+		options.FileTemplateProjectID = gitlab.Ptr(int64(d.Get("file_template_project_id").(int)))
 	}
 
 	if d.HasChange("first_day_of_week") {
-		options.FirstDayOfWeek = gitlab.Ptr(d.Get("first_day_of_week").(int))
+		options.FirstDayOfWeek = gitlab.Ptr(int64(d.Get("first_day_of_week").(int)))
 	}
 
 	if d.HasChange("geo_node_allowed_ips") {
@@ -3106,23 +3106,23 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("geo_status_timeout") {
-		options.GeoStatusTimeout = gitlab.Ptr(d.Get("geo_status_timeout").(int))
+		options.GeoStatusTimeout = gitlab.Ptr(int64(d.Get("geo_status_timeout").(int)))
 	}
 
 	if d.HasChange("git_two_factor_session_expiry") {
-		options.GitTwoFactorSessionExpiry = gitlab.Ptr(d.Get("git_two_factor_session_expiry").(int))
+		options.GitTwoFactorSessionExpiry = gitlab.Ptr(int64(d.Get("git_two_factor_session_expiry").(int)))
 	}
 
 	if d.HasChange("gitaly_timeout_default") {
-		options.GitalyTimeoutDefault = gitlab.Ptr(d.Get("gitaly_timeout_default").(int))
+		options.GitalyTimeoutDefault = gitlab.Ptr(int64(d.Get("gitaly_timeout_default").(int)))
 	}
 
 	if d.HasChange("gitaly_timeout_fast") {
-		options.GitalyTimeoutFast = gitlab.Ptr(d.Get("gitaly_timeout_fast").(int))
+		options.GitalyTimeoutFast = gitlab.Ptr(int64(d.Get("gitaly_timeout_fast").(int)))
 	}
 
 	if d.HasChange("gitaly_timeout_medium") {
-		options.GitalyTimeoutMedium = gitlab.Ptr(d.Get("gitaly_timeout_medium").(int))
+		options.GitalyTimeoutMedium = gitlab.Ptr(int64(d.Get("gitaly_timeout_medium").(int)))
 	}
 
 	if d.HasChange("grafana_enabled") {
@@ -3170,7 +3170,7 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("housekeeping_optimize_repository_period") {
-		options.HousekeepingOptimizeRepositoryPeriod = gitlab.Ptr(d.Get("housekeeping_optimize_repository_period").(int))
+		options.HousekeepingOptimizeRepositoryPeriod = gitlab.Ptr(int64(d.Get("housekeeping_optimize_repository_period").(int)))
 	}
 
 	if d.HasChange("html_emails_enabled") {
@@ -3186,15 +3186,15 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("inactive_projects_delete_after_months") {
-		options.InactiveProjectsDeleteAfterMonths = gitlab.Ptr(d.Get("inactive_projects_delete_after_months").(int))
+		options.InactiveProjectsDeleteAfterMonths = gitlab.Ptr(int64(d.Get("inactive_projects_delete_after_months").(int)))
 	}
 
 	if d.HasChange("inactive_projects_min_size_mb") {
-		options.InactiveProjectsMinSizeMB = gitlab.Ptr(d.Get("inactive_projects_min_size_mb").(int))
+		options.InactiveProjectsMinSizeMB = gitlab.Ptr(int64(d.Get("inactive_projects_min_size_mb").(int)))
 	}
 
 	if d.HasChange("inactive_projects_send_warning_email_after_months") {
-		options.InactiveProjectsSendWarningEmailAfterMonths = gitlab.Ptr(d.Get("inactive_projects_send_warning_email_after_months").(int))
+		options.InactiveProjectsSendWarningEmailAfterMonths = gitlab.Ptr(int64(d.Get("inactive_projects_send_warning_email_after_months").(int)))
 	}
 
 	if d.HasChange("invisible_captcha_enabled") {
@@ -3202,7 +3202,7 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("issues_create_limit") {
-		options.IssuesCreateLimit = gitlab.Ptr(d.Get("issues_create_limit").(int))
+		options.IssuesCreateLimit = gitlab.Ptr(int64(d.Get("issues_create_limit").(int)))
 	}
 
 	if d.HasChange("keep_latest_artifact") {
@@ -3210,7 +3210,7 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("local_markdown_version") {
-		options.LocalMarkdownVersion = gitlab.Ptr(d.Get("local_markdown_version").(int))
+		options.LocalMarkdownVersion = gitlab.Ptr(int64(d.Get("local_markdown_version").(int)))
 	}
 
 	if d.HasChange("lock_memberships_to_ldap") {
@@ -3234,47 +3234,47 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("max_artifacts_size") {
-		options.MaxArtifactsSize = gitlab.Ptr(d.Get("max_artifacts_size").(int))
+		options.MaxArtifactsSize = gitlab.Ptr(int64(d.Get("max_artifacts_size").(int)))
 	}
 
 	if d.HasChange("max_attachment_size") {
-		options.MaxAttachmentSize = gitlab.Ptr(d.Get("max_attachment_size").(int))
+		options.MaxAttachmentSize = gitlab.Ptr(int64(d.Get("max_attachment_size").(int)))
 	}
 
 	if d.HasChange("max_export_size") {
-		options.MaxExportSize = gitlab.Ptr(d.Get("max_export_size").(int))
+		options.MaxExportSize = gitlab.Ptr(int64(d.Get("max_export_size").(int)))
 	}
 
 	if d.HasChange("max_import_size") {
-		options.MaxImportSize = gitlab.Ptr(d.Get("max_import_size").(int))
+		options.MaxImportSize = gitlab.Ptr(int64(d.Get("max_import_size").(int)))
 	}
 
 	if d.HasChange("max_pages_size") {
-		options.MaxPagesSize = gitlab.Ptr(d.Get("max_pages_size").(int))
+		options.MaxPagesSize = gitlab.Ptr(int64(d.Get("max_pages_size").(int)))
 	}
 
 	if d.HasChange("max_personal_access_token_lifetime") {
-		options.MaxPersonalAccessTokenLifetime = gitlab.Ptr(d.Get("max_personal_access_token_lifetime").(int))
+		options.MaxPersonalAccessTokenLifetime = gitlab.Ptr(int64(d.Get("max_personal_access_token_lifetime").(int)))
 	}
 
 	if d.HasChange("max_ssh_key_lifetime") {
-		options.MaxSSHKeyLifetime = gitlab.Ptr(d.Get("max_ssh_key_lifetime").(int))
+		options.MaxSSHKeyLifetime = gitlab.Ptr(int64(d.Get("max_ssh_key_lifetime").(int)))
 	}
 
 	if d.HasChange("max_terraform_state_size_bytes") {
-		options.MaxTerraformStateSizeBytes = gitlab.Ptr(d.Get("max_terraform_state_size_bytes").(int))
+		options.MaxTerraformStateSizeBytes = gitlab.Ptr(int64(d.Get("max_terraform_state_size_bytes").(int)))
 	}
 
 	if d.HasChange("metrics_method_call_threshold") {
-		options.MetricsMethodCallThreshold = gitlab.Ptr(d.Get("metrics_method_call_threshold").(int))
+		options.MetricsMethodCallThreshold = gitlab.Ptr(int64(d.Get("metrics_method_call_threshold").(int)))
 	}
 
 	if d.HasChange("max_number_of_repository_downloads") {
-		options.MaxNumberOfRepositoryDownloads = gitlab.Ptr(d.Get("max_number_of_repository_downloads").(int))
+		options.MaxNumberOfRepositoryDownloads = gitlab.Ptr(int64(d.Get("max_number_of_repository_downloads").(int)))
 	}
 
 	if d.HasChange("max_number_of_repository_downloads_within_time_period") {
-		options.MaxNumberOfRepositoryDownloadsWithinTimePeriod = gitlab.Ptr(d.Get("max_number_of_repository_downloads_within_time_period").(int))
+		options.MaxNumberOfRepositoryDownloadsWithinTimePeriod = gitlab.Ptr(int64(d.Get("max_number_of_repository_downloads_within_time_period").(int)))
 	}
 
 	if d.HasChange("git_rate_limit_users_allowlist") {
@@ -3286,15 +3286,15 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("mirror_capacity_threshold") {
-		options.MirrorCapacityThreshold = gitlab.Ptr(d.Get("mirror_capacity_threshold").(int))
+		options.MirrorCapacityThreshold = gitlab.Ptr(int64(d.Get("mirror_capacity_threshold").(int)))
 	}
 
 	if d.HasChange("mirror_max_capacity") {
-		options.MirrorMaxCapacity = gitlab.Ptr(d.Get("mirror_max_capacity").(int))
+		options.MirrorMaxCapacity = gitlab.Ptr(int64(d.Get("mirror_max_capacity").(int)))
 	}
 
 	if d.HasChange("mirror_max_delay") {
-		options.MirrorMaxDelay = gitlab.Ptr(d.Get("mirror_max_delay").(int))
+		options.MirrorMaxDelay = gitlab.Ptr(int64(d.Get("mirror_max_delay").(int)))
 	}
 
 	if d.HasChange("npm_package_requests_forwarding") {
@@ -3322,7 +3322,7 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("minimum_password_length") {
-		options.MinimumPasswordLength = gitlab.Ptr(d.Get("minimum_password_length").(int))
+		options.MinimumPasswordLength = gitlab.Ptr(int64(d.Get("minimum_password_length").(int)))
 	}
 
 	if d.HasChange("password_number_required") {
@@ -3350,7 +3350,7 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("pipeline_limit_per_project_user_sha") {
-		options.PipelineLimitPerProjectUserSha = gitlab.Ptr(d.Get("pipeline_limit_per_project_user_sha").(int))
+		options.PipelineLimitPerProjectUserSha = gitlab.Ptr(int64(d.Get("pipeline_limit_per_project_user_sha").(int)))
 	}
 
 	if d.HasChange("plantuml_enabled") {
@@ -3371,11 +3371,11 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("project_jobs_api_rate_limit") {
-		options.ProjectJobsAPIRateLimit = gitlab.Ptr(d.Get("project_jobs_api_rate_limit").(int))
+		options.ProjectJobsAPIRateLimit = gitlab.Ptr(int64(d.Get("project_jobs_api_rate_limit").(int)))
 	}
 
 	if d.HasChange("projects_api_rate_limit_unauthenticated") {
-		options.ProjectsAPIRateLimitUnauthenticated = gitlab.Ptr(d.Get("projects_api_rate_limit_unauthenticated").(int))
+		options.ProjectsAPIRateLimitUnauthenticated = gitlab.Ptr(int64(d.Get("projects_api_rate_limit_unauthenticated").(int)))
 	}
 
 	if d.HasChange("prometheus_metrics_enabled") {
@@ -3387,11 +3387,11 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("push_event_activities_limit") {
-		options.PushEventActivitiesLimit = gitlab.Ptr(d.Get("push_event_activities_limit").(int))
+		options.PushEventActivitiesLimit = gitlab.Ptr(int64(d.Get("push_event_activities_limit").(int)))
 	}
 
 	if d.HasChange("push_event_hooks_limit") {
-		options.PushEventHooksLimit = gitlab.Ptr(d.Get("push_event_hooks_limit").(int))
+		options.PushEventHooksLimit = gitlab.Ptr(int64(d.Get("push_event_hooks_limit").(int)))
 	}
 
 	if d.HasChange("rate_limiting_response_text") {
@@ -3399,15 +3399,15 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("raw_blob_request_limit") {
-		options.RawBlobRequestLimit = gitlab.Ptr(d.Get("raw_blob_request_limit").(int))
+		options.RawBlobRequestLimit = gitlab.Ptr(int64(d.Get("raw_blob_request_limit").(int)))
 	}
 
 	if d.HasChange("search_rate_limit") {
-		options.SearchRateLimit = gitlab.Ptr(d.Get("search_rate_limit").(int))
+		options.SearchRateLimit = gitlab.Ptr(int64(d.Get("search_rate_limit").(int)))
 	}
 
 	if d.HasChange("search_rate_limit_unauthenticated") {
-		options.SearchRateLimitUnauthenticated = gitlab.Ptr(d.Get("search_rate_limit_unauthenticated").(int))
+		options.SearchRateLimitUnauthenticated = gitlab.Ptr(int64(d.Get("search_rate_limit_unauthenticated").(int)))
 	}
 
 	if d.HasChange("recaptcha_enabled") {
@@ -3423,7 +3423,7 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("receive_max_input_size") {
-		options.ReceiveMaxInputSize = gitlab.Ptr(d.Get("receive_max_input_size").(int))
+		options.ReceiveMaxInputSize = gitlab.Ptr(int64(d.Get("receive_max_input_size").(int)))
 	}
 
 	if d.HasChange("receptive_cluster_agents_enabled") {
@@ -3439,11 +3439,11 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("repository_size_limit") {
-		options.RepositorySizeLimit = gitlab.Ptr(d.Get("repository_size_limit").(int))
+		options.RepositorySizeLimit = gitlab.Ptr(int64(d.Get("repository_size_limit").(int)))
 	}
 
 	if d.HasChange("repository_storages_weighted") {
-		gv := fromIntegerMap(d.Get("repository_storages_weighted"))
+		gv := fromIntegerMapToInt64(d.Get("repository_storages_weighted"))
 		options.RepositoryStoragesWeighted = &gv
 	}
 
@@ -3468,11 +3468,11 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("rsa_key_restriction") {
-		options.RSAKeyRestriction = gitlab.Ptr(d.Get("rsa_key_restriction").(int))
+		options.RSAKeyRestriction = gitlab.Ptr(int64(d.Get("rsa_key_restriction").(int)))
 	}
 
 	if d.HasChange("security_approval_policies_limit") {
-		options.SecurityApprovalPoliciesLimit = gitlab.Ptr(d.Get("security_approval_policies_limit").(int))
+		options.SecurityApprovalPoliciesLimit = gitlab.Ptr(int64(d.Get("security_approval_policies_limit").(int)))
 	}
 
 	if d.HasChange("security_policy_global_group_approvers_enabled") {
@@ -3492,7 +3492,7 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("session_expire_delay") {
-		options.SessionExpireDelay = gitlab.Ptr(d.Get("session_expire_delay").(int))
+		options.SessionExpireDelay = gitlab.Ptr(int64(d.Get("session_expire_delay").(int)))
 	}
 
 	if d.HasChange("shared_runners_enabled") {
@@ -3500,7 +3500,7 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("shared_runners_minutes") {
-		options.SharedRunnersMinutes = gitlab.Ptr(d.Get("shared_runners_minutes").(int))
+		options.SharedRunnersMinutes = gitlab.Ptr(int64(d.Get("shared_runners_minutes").(int)))
 	}
 
 	if d.HasChange("shared_runners_text") {
@@ -3512,11 +3512,11 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("sidekiq_job_limiter_compression_threshold_bytes") {
-		options.SidekiqJobLimiterCompressionThresholdBytes = gitlab.Ptr(d.Get("sidekiq_job_limiter_compression_threshold_bytes").(int))
+		options.SidekiqJobLimiterCompressionThresholdBytes = gitlab.Ptr(int64(d.Get("sidekiq_job_limiter_compression_threshold_bytes").(int)))
 	}
 
 	if d.HasChange("sidekiq_job_limiter_limit_bytes") {
-		options.SidekiqJobLimiterLimitBytes = gitlab.Ptr(d.Get("sidekiq_job_limiter_limit_bytes").(int))
+		options.SidekiqJobLimiterLimitBytes = gitlab.Ptr(int64(d.Get("sidekiq_job_limiter_limit_bytes").(int)))
 	}
 
 	if d.HasChange("sign_in_text") {
@@ -3556,7 +3556,7 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("snippet_size_limit") {
-		options.SnippetSizeLimit = gitlab.Ptr(d.Get("snippet_size_limit").(int))
+		options.SnippetSizeLimit = gitlab.Ptr(int64(d.Get("snippet_size_limit").(int)))
 	}
 
 	if d.HasChange("snowplow_app_id") {
@@ -3616,7 +3616,7 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("terminal_max_session_time") {
-		options.TerminalMaxSessionTime = gitlab.Ptr(d.Get("terminal_max_session_time").(int))
+		options.TerminalMaxSessionTime = gitlab.Ptr(int64(d.Get("terminal_max_session_time").(int)))
 	}
 
 	if d.HasChange("terms") {
@@ -3628,11 +3628,11 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("throttle_authenticated_api_period_in_seconds") {
-		options.ThrottleAuthenticatedAPIPeriodInSeconds = gitlab.Ptr(d.Get("throttle_authenticated_api_period_in_seconds").(int))
+		options.ThrottleAuthenticatedAPIPeriodInSeconds = gitlab.Ptr(int64(d.Get("throttle_authenticated_api_period_in_seconds").(int)))
 	}
 
 	if d.HasChange("throttle_authenticated_api_requests_per_period") {
-		options.ThrottleAuthenticatedAPIRequestsPerPeriod = gitlab.Ptr(d.Get("throttle_authenticated_api_requests_per_period").(int))
+		options.ThrottleAuthenticatedAPIRequestsPerPeriod = gitlab.Ptr(int64(d.Get("throttle_authenticated_api_requests_per_period").(int)))
 	}
 
 	if d.HasChange("throttle_authenticated_packages_api_enabled") {
@@ -3640,11 +3640,11 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("throttle_authenticated_packages_api_period_in_seconds") {
-		options.ThrottleAuthenticatedPackagesAPIPeriodInSeconds = gitlab.Ptr(d.Get("throttle_authenticated_packages_api_period_in_seconds").(int))
+		options.ThrottleAuthenticatedPackagesAPIPeriodInSeconds = gitlab.Ptr(int64(d.Get("throttle_authenticated_packages_api_period_in_seconds").(int)))
 	}
 
 	if d.HasChange("throttle_authenticated_packages_api_requests_per_period") {
-		options.ThrottleAuthenticatedPackagesAPIRequestsPerPeriod = gitlab.Ptr(d.Get("throttle_authenticated_packages_api_requests_per_period").(int))
+		options.ThrottleAuthenticatedPackagesAPIRequestsPerPeriod = gitlab.Ptr(int64(d.Get("throttle_authenticated_packages_api_requests_per_period").(int)))
 	}
 
 	if d.HasChange("throttle_authenticated_web_enabled") {
@@ -3652,11 +3652,11 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("throttle_authenticated_web_period_in_seconds") {
-		options.ThrottleAuthenticatedWebPeriodInSeconds = gitlab.Ptr(d.Get("throttle_authenticated_web_period_in_seconds").(int))
+		options.ThrottleAuthenticatedWebPeriodInSeconds = gitlab.Ptr(int64(d.Get("throttle_authenticated_web_period_in_seconds").(int)))
 	}
 
 	if d.HasChange("throttle_authenticated_web_requests_per_period") {
-		options.ThrottleAuthenticatedWebRequestsPerPeriod = gitlab.Ptr(d.Get("throttle_authenticated_web_requests_per_period").(int))
+		options.ThrottleAuthenticatedWebRequestsPerPeriod = gitlab.Ptr(int64(d.Get("throttle_authenticated_web_requests_per_period").(int)))
 	}
 
 	if d.HasChange("throttle_unauthenticated_api_enabled") {
@@ -3664,11 +3664,11 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("throttle_unauthenticated_api_period_in_seconds") {
-		options.ThrottleUnauthenticatedAPIPeriodInSeconds = gitlab.Ptr(d.Get("throttle_unauthenticated_api_period_in_seconds").(int))
+		options.ThrottleUnauthenticatedAPIPeriodInSeconds = gitlab.Ptr(int64(d.Get("throttle_unauthenticated_api_period_in_seconds").(int)))
 	}
 
 	if d.HasChange("throttle_unauthenticated_api_requests_per_period") {
-		options.ThrottleUnauthenticatedAPIRequestsPerPeriod = gitlab.Ptr(d.Get("throttle_unauthenticated_api_requests_per_period").(int))
+		options.ThrottleUnauthenticatedAPIRequestsPerPeriod = gitlab.Ptr(int64(d.Get("throttle_unauthenticated_api_requests_per_period").(int)))
 	}
 
 	if d.HasChange("throttle_unauthenticated_packages_api_enabled") {
@@ -3676,11 +3676,11 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("throttle_unauthenticated_packages_api_period_in_seconds") {
-		options.ThrottleUnauthenticatedPackagesAPIPeriodInSeconds = gitlab.Ptr(d.Get("throttle_unauthenticated_packages_api_period_in_seconds").(int))
+		options.ThrottleUnauthenticatedPackagesAPIPeriodInSeconds = gitlab.Ptr(int64(d.Get("throttle_unauthenticated_packages_api_period_in_seconds").(int)))
 	}
 
 	if d.HasChange("throttle_unauthenticated_packages_api_requests_per_period") {
-		options.ThrottleUnauthenticatedPackagesAPIRequestsPerPeriod = gitlab.Ptr(d.Get("throttle_unauthenticated_packages_api_requests_per_period").(int))
+		options.ThrottleUnauthenticatedPackagesAPIRequestsPerPeriod = gitlab.Ptr(int64(d.Get("throttle_unauthenticated_packages_api_requests_per_period").(int)))
 	}
 
 	if d.HasChange("throttle_unauthenticated_web_enabled") {
@@ -3688,11 +3688,11 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("throttle_unauthenticated_web_period_in_seconds") {
-		options.ThrottleUnauthenticatedWebPeriodInSeconds = gitlab.Ptr(d.Get("throttle_unauthenticated_web_period_in_seconds").(int))
+		options.ThrottleUnauthenticatedWebPeriodInSeconds = gitlab.Ptr(int64(d.Get("throttle_unauthenticated_web_period_in_seconds").(int)))
 	}
 
 	if d.HasChange("throttle_unauthenticated_web_requests_per_period") {
-		options.ThrottleUnauthenticatedWebRequestsPerPeriod = gitlab.Ptr(d.Get("throttle_unauthenticated_web_requests_per_period").(int))
+		options.ThrottleUnauthenticatedWebRequestsPerPeriod = gitlab.Ptr(int64(d.Get("throttle_unauthenticated_web_requests_per_period").(int)))
 	}
 
 	if d.HasChange("time_tracking_limit_to_hours") {
@@ -3700,11 +3700,11 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("two_factor_grace_period") {
-		options.TwoFactorGracePeriod = gitlab.Ptr(d.Get("two_factor_grace_period").(int))
+		options.TwoFactorGracePeriod = gitlab.Ptr(int64(d.Get("two_factor_grace_period").(int)))
 	}
 
 	if d.HasChange("unconfirmed_users_delete_after_days") {
-		options.UnconfirmedUsersDeleteAfterDays = gitlab.Ptr(d.Get("unconfirmed_users_delete_after_days").(int))
+		options.UnconfirmedUsersDeleteAfterDays = gitlab.Ptr(int64(d.Get("unconfirmed_users_delete_after_days").(int)))
 	}
 
 	if d.HasChange("unique_ips_limit_enabled") {
@@ -3712,11 +3712,11 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("unique_ips_limit_per_user") {
-		options.UniqueIPsLimitPerUser = gitlab.Ptr(d.Get("unique_ips_limit_per_user").(int))
+		options.UniqueIPsLimitPerUser = gitlab.Ptr(int64(d.Get("unique_ips_limit_per_user").(int)))
 	}
 
 	if d.HasChange("unique_ips_limit_time_window") {
-		options.UniqueIPsLimitTimeWindow = gitlab.Ptr(d.Get("unique_ips_limit_time_window").(int))
+		options.UniqueIPsLimitTimeWindow = gitlab.Ptr(int64(d.Get("unique_ips_limit_time_window").(int)))
 	}
 
 	if d.HasChange("update_runner_versions_enabled") {
@@ -3777,7 +3777,7 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("wiki_page_max_content_bytes") {
-		options.WikiPageMaxContentBytes = gitlab.Ptr(d.Get("wiki_page_max_content_bytes").(int))
+		options.WikiPageMaxContentBytes = gitlab.Ptr(int64(d.Get("wiki_page_max_content_bytes").(int)))
 	}
 	return &options
 }

@@ -41,7 +41,7 @@ func TestAccDataGitlabRunner_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("data.gitlab_runners.this", "type", "instance_type"),
 					resource.TestCheckResourceAttrSet("data.gitlab_runners.this", "runners.0.%"),
 					// check runner attributes
-					resource.TestCheckResourceAttr("data.gitlab_runners.this", "runners.0.id", strconv.Itoa(runner.ID)),
+					resource.TestCheckResourceAttr("data.gitlab_runners.this", "runners.0.id", strconv.FormatInt(runner.ID, 10)),
 					resource.TestCheckResourceAttr("data.gitlab_runners.this", "runners.0.description", ""),
 					resource.TestCheckResourceAttrSet("data.gitlab_runners.this", "runners.0.paused"),
 					resource.TestCheckResourceAttrSet("data.gitlab_runners.this", "runners.0.is_shared"),
@@ -96,7 +96,7 @@ func TestAccDataGitlabRunner_filter(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"data.gitlab_runners.this",
 						"runners.0.id",
-						strconv.Itoa(runnerInstance.ID),
+						strconv.FormatInt(runnerInstance.ID, 10),
 					),
 					resource.TestCheckNoResourceAttr(
 						"data.gitlab_runners.this",
@@ -117,7 +117,7 @@ func TestAccDataGitlabRunner_filter(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"data.gitlab_runners.this",
 						"runners.0.id",
-						strconv.Itoa(runnerProject.ID),
+						strconv.FormatInt(runnerProject.ID, 10),
 					),
 					resource.TestCheckNoResourceAttr(
 						"data.gitlab_runners.this",
@@ -138,7 +138,7 @@ func TestAccDataGitlabRunner_filter(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"data.gitlab_runners.this",
 						"runners.0.id",
-						strconv.Itoa(runnerPaused.ID),
+						strconv.FormatInt(runnerPaused.ID, 10),
 					),
 					resource.TestCheckResourceAttr(
 						"data.gitlab_runners.this",

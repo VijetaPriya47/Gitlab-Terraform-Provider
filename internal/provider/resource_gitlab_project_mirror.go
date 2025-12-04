@@ -288,7 +288,7 @@ func (r *gitlabProjectMirrorResource) Delete(ctx context.Context, req resource.D
 		return
 	}
 
-	_, err = r.client.ProjectMirrors.DeleteProjectMirror(project, int(mirrorId), gitlab.WithContext(ctx))
+	_, err = r.client.ProjectMirrors.DeleteProjectMirror(project, mirrorId, gitlab.WithContext(ctx))
 	if err != nil {
 		resp.Diagnostics.AddError("Error deleting GitLab project mirror", err.Error())
 		return
@@ -392,7 +392,7 @@ func (d *gitlabProjectMirrorResource) ImportState(ctx context.Context, req resou
 
 // modelToStateModel maps the API response to the Terraform state.
 func (d *gitlabProjectMirrorResourceModel) modelToStateModel(a *gitlab.ProjectMirror) {
-	d.ID = types.StringValue(utils.BuildTwoPartID(d.Project.ValueStringPointer(), gitlab.Ptr(strconv.Itoa(a.ID))))
+	d.ID = types.StringValue(utils.BuildTwoPartID(d.Project.ValueStringPointer(), gitlab.Ptr(strconv.FormatInt(a.ID, 10))))
 	d.MirrorID = types.Int64Value(int64(a.ID))
 
 	d.URL = types.StringValue(a.URL)
@@ -405,7 +405,7 @@ func (d *gitlabProjectMirrorResourceModel) modelToStateModel(a *gitlab.ProjectMi
 }
 
 // ResourceGitlabProjectMirrorParseId parses the resource ID into project and mirror ID components.
-func (d *gitlabProjectMirrorResourceModel) ResourceGitlabProjectMirrorParseId(id string) (string, int, error) {
+func (d *gitlabProjectMirrorResourceModel) ResourceGitlabProjectMirrorParseId(id string) (string, int64, error) {
 	if id == "" {
 		return "", 0, fmt.Errorf("Invalid ID format (\"\"). Expected <project>:<mirror_id>")
 	}
@@ -415,7 +415,7 @@ func (d *gitlabProjectMirrorResourceModel) ResourceGitlabProjectMirrorParseId(id
 		return "", 0, fmt.Errorf("Invalid ID format (%s). Expected <project>:<mirror_id>", id)
 	}
 
-	mirrorId, err := strconv.Atoi(rawMirrorId)
+	mirrorId, err := strconv.ParseInt(rawMirrorId, 10, 64)
 	if err != nil {
 		return "", 0, fmt.Errorf("Invalid mirror ID (%s): %s", rawMirrorId, err)
 	}

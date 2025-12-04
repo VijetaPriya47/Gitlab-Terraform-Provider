@@ -116,8 +116,10 @@ func (d *gitlabGroupVariablesDataSource) Read(ctx context.Context, req datasourc
 	group := state.Group.ValueString()
 	environmentScope := state.EnvironmentScope.ValueString()
 	options := &gitlab.ListGroupVariablesOptions{
-		Page:    1,
-		PerPage: 20,
+		ListOptions: gitlab.ListOptions{
+			Page:    1,
+			PerPage: 20,
+		},
 	}
 
 	var variables []*gitlab.GroupVariable

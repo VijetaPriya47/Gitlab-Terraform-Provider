@@ -101,20 +101,20 @@ func TestAcc_GitlabProjectJobTokenScope_StateUpgradeV0(t *testing.T) {
 func TestAcc_GitlabProjectJobTokenScope_basic(t *testing.T) {
 	// Set up project environment.
 	project := testutil.CreateProject(t)
-	projectIDStr := strconv.Itoa(project.ID)
+	projectIDStr := strconv.FormatInt(project.ID, 10)
 	// Target Types
 	targetTypeProject := "project"
 	targetTypeGroup := "group"
 	// Target Projects
 	targetProject1 := testutil.CreateProject(t)
-	targetProject1IDStr := strconv.Itoa(targetProject1.ID)
+	targetProject1IDStr := strconv.FormatInt(targetProject1.ID, 10)
 	targetProject2 := testutil.CreateProject(t)
-	targetProject2IDStr := strconv.Itoa(targetProject2.ID)
+	targetProject2IDStr := strconv.FormatInt(targetProject2.ID, 10)
 	// Target Groups
 	targetGroup1 := testutil.CreateGroups(t, 1)[0]
-	targetGroup1IDStr := strconv.Itoa(targetGroup1.ID)
+	targetGroup1IDStr := strconv.FormatInt(targetGroup1.ID, 10)
 	targetGroup2 := testutil.CreateGroups(t, 1)[0]
-	targetGroup2IDStr := strconv.Itoa(targetGroup2.ID)
+	targetGroup2IDStr := strconv.FormatInt(targetGroup2.ID, 10)
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
@@ -269,10 +269,10 @@ func testAcc_GitlabProjectJobTokenScope_CheckDestroy(s *terraform.State) error {
 			projectID := rs.Primary.Attributes["project"]
 
 			// Only try to parse IDs if they exist
-			var targetProjectID, targetGroupID int
+			var targetProjectID, targetGroupID int64
 			if targetProjectIDStr := rs.Primary.Attributes["target_project_id"]; targetProjectIDStr != "" {
 				var err error
-				targetProjectID, err = strconv.Atoi(targetProjectIDStr)
+				targetProjectID, err = strconv.ParseInt(targetProjectIDStr, 10, 64)
 				if err != nil {
 					return fmt.Errorf("Failed to parse target project ID: %w", err)
 				}
@@ -280,7 +280,7 @@ func testAcc_GitlabProjectJobTokenScope_CheckDestroy(s *terraform.State) error {
 
 			if targetGroupIDStr := rs.Primary.Attributes["target_group_id"]; targetGroupIDStr != "" {
 				var err error
-				targetGroupID, err = strconv.Atoi(targetGroupIDStr)
+				targetGroupID, err = strconv.ParseInt(targetGroupIDStr, 10, 64)
 				if err != nil {
 					return fmt.Errorf("Failed to parse target group ID: %w", err)
 				}

@@ -79,7 +79,7 @@ func resourceGitlabProjectBadgeCreate(ctx context.Context, d *schema.ResourceDat
 		return diag.FromErr(err)
 	}
 
-	badgeID := strconv.Itoa(badge.ID)
+	badgeID := strconv.FormatInt(badge.ID, 10)
 
 	d.SetId(utils.BuildTwoPartID(&projectID, &badgeID))
 
@@ -158,13 +158,13 @@ func resourceGitlabProjectBadgeSetToState(d *schema.ResourceData, badge *gitlab.
 	d.Set("project", projectID)
 }
 
-func resourceGitlabProjectBadgeParseID(id string) (string, int, error) {
+func resourceGitlabProjectBadgeParseID(id string) (string, int64, error) {
 	ids := strings.Split(id, ":")
 	if len(ids) != 2 {
 		return "", 0, fmt.Errorf("unexpected format of ID (%s), expected 'project:badge_id'", id)
 	}
 	projectID := ids[0]
-	badgeID, err := strconv.Atoi(ids[1])
+	badgeID, err := strconv.ParseInt(ids[1], 10, 64)
 	if err != nil {
 		return "", 0, fmt.Errorf("unexpected format of ID (%s), expected 'project:badge_id'", id)
 	}

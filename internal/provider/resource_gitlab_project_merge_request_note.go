@@ -201,15 +201,15 @@ func (r *gitlabProjectMergeRequestNoteResource) Create(ctx context.Context, req 
 	}
 
 	project := data.Project.ValueString()
-	mergeRequestIID := int(data.MergeRequestIID.ValueInt64())
+	mergeRequestIID := data.MergeRequestIID.ValueInt64()
 
-	note, _, err := r.client.Notes.CreateMergeRequestNote(project, int(mergeRequestIID), options, gitlab.WithContext(ctx))
+	note, _, err := r.client.Notes.CreateMergeRequestNote(project, mergeRequestIID, options, gitlab.WithContext(ctx))
 	if err != nil {
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to create project merge request note: %s", err.Error()))
 		return
 	}
 
-	data.ID = types.StringValue(utils.BuildThreePartID(&project, gitlab.Ptr(strconv.Itoa(mergeRequestIID)), gitlab.Ptr(strconv.Itoa(note.ID))))
+	data.ID = types.StringValue(utils.BuildThreePartID(&project, gitlab.Ptr(strconv.FormatInt(mergeRequestIID, 10)), gitlab.Ptr(strconv.FormatInt(note.ID, 10))))
 	resp.Diagnostics.Append(data.modelToStateModel(note, project, mergeRequestIID)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -246,8 +246,8 @@ func (r *gitlabProjectMergeRequestNoteResource) Update(ctx context.Context, req 
 		return
 	}
 	project := data.Project.ValueString()
-	mergeRequestIID := int(data.MergeRequestIID.ValueInt64())
-	noteID := int(data.NoteID.ValueInt64())
+	mergeRequestIID := data.MergeRequestIID.ValueInt64()
+	noteID := data.NoteID.ValueInt64()
 	options := &gitlab.UpdateMergeRequestNoteOptions{
 		Body: data.Body.ValueStringPointer(),
 	}
@@ -257,7 +257,7 @@ func (r *gitlabProjectMergeRequestNoteResource) Update(ctx context.Context, req 
 		return
 	}
 
-	data.ID = types.StringValue(utils.BuildThreePartID(&project, gitlab.Ptr(strconv.Itoa(mergeRequestIID)), gitlab.Ptr(strconv.Itoa(note.ID))))
+	data.ID = types.StringValue(utils.BuildThreePartID(&project, gitlab.Ptr(strconv.FormatInt(mergeRequestIID, 10)), gitlab.Ptr(strconv.FormatInt(note.ID, 10))))
 	resp.Diagnostics.Append(data.modelToStateModel(note, project, mergeRequestIID)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -281,9 +281,9 @@ func (r *gitlabProjectMergeRequestNoteResource) Delete(ctx context.Context, req 
 	resp.State.RemoveResource(ctx)
 }
 
-func (data *gitlabProjectMergeRequestNoteResourceModel) modelToStateModel(note *gitlab.Note, project string, mergeRequestIID int) diag.Diagnostics {
+func (data *gitlabProjectMergeRequestNoteResourceModel) modelToStateModel(note *gitlab.Note, project string, mergeRequestIID int64) diag.Diagnostics {
 	data.Project = types.StringValue(project)
-	data.MergeRequestIID = types.Int64Value(int64(mergeRequestIID))
+	data.MergeRequestIID = types.Int64Value(mergeRequestIID)
 	data.NoteID = types.Int64Value(int64(note.ID))
 	data.Body = types.StringValue(note.Body)
 	createdAt, diags := timetypes.NewRFC3339Value(note.CreatedAt.Format(time.RFC3339))
@@ -302,19 +302,19 @@ func (data *gitlabProjectMergeRequestNoteResourceModel) modelToStateModel(note *
 	return diags
 }
 
-func resourceGitlabProjectMergeRequestNoteParseID(id string) (string, int, int, error) {
+func resourceGitlabProjectMergeRequestNoteParseID(id string) (string, int64, int64, error) {
 	project, mergeRequestIID, noteID, err := utils.ParseThreePartID(id)
 	if err != nil {
 		return "", 0, 0, fmt.Errorf("failed to parse ID: %w", err)
 	}
 	// convert mergeRequestIID into an int64
-	mergeRequestIIDInt, err := strconv.Atoi(mergeRequestIID)
+	mergeRequestIIDInt, err := strconv.ParseInt(mergeRequestIID, 10, 64)
 	if err != nil {
 		return "", 0, 0, fmt.Errorf("failed to convert merge request IID to int64: %w", err)
 	}
 
 	// convert noteID into an int64
-	noteIDInt, err := strconv.Atoi(noteID)
+	noteIDInt, err := strconv.ParseInt(noteID, 10, 64)
 	if err != nil {
 		return "", 0, 0, fmt.Errorf("failed to convert note ID to int64: %w", err)
 	}

@@ -228,7 +228,7 @@ func (r *gitlabGroupLevelMRApprovalsResource) Delete(ctx context.Context, req re
 			return
 		}
 
-		options := &gitlab.UpdateMergeRequestApprovalSettingsOptions{
+		options := &gitlab.UpdateGroupMergeRequestApprovalSettingsOptions{
 			AllowAuthorApproval:                         gitlab.Ptr(settings.AllowAuthorApproval),
 			AllowCommitterApproval:                      gitlab.Ptr(settings.AllowCommitterApproval),
 			AllowOverridesToApproverListPerMergeRequest: gitlab.Ptr(settings.AllowOverridesToApproverListPerMergeRequest),
@@ -272,7 +272,7 @@ func (r *gitlabGroupLevelMRApprovalsResource) storeOriginalSettings(ctx context.
 }
 
 func (r *gitlabGroupLevelMRApprovalsResource) changeSettings(ctx context.Context, data *gitlabGroupLevelMRApprovalsResourceModel, group string) (*gitlab.MergeRequestApprovalSettings, error) {
-	options := &gitlab.UpdateMergeRequestApprovalSettingsOptions{}
+	options := &gitlab.UpdateGroupMergeRequestApprovalSettingsOptions{}
 
 	if !data.AllowAuthorApproval.IsNull() && !data.AllowAuthorApproval.IsUnknown() {
 		options.AllowAuthorApproval = data.AllowAuthorApproval.ValueBoolPointer()

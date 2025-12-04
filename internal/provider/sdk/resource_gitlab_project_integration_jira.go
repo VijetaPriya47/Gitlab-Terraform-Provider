@@ -163,7 +163,7 @@ func resourceGitlabProjectIntegrationJiraCreate(ctx context.Context, d *schema.R
 	opts := &gitlab.SetJiraServiceOptions{}
 	opts.ProjectKeys = stringListToStringSlice(d.Get("project_keys").([]any))
 
-	jiraAuthType := gitlab.Ptr(d.Get("jira_auth_type").(int))
+	jiraAuthType := gitlab.Ptr(int64(d.Get("jira_auth_type").(int)))
 	if *jiraAuthType == 0 {
 		opts.Username = gitlab.Ptr(d.Get("username").(string))
 		opts.Password = gitlab.Ptr(d.Get("password").(string))

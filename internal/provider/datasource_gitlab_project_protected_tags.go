@@ -145,7 +145,7 @@ func (d *gitLabProjectProtectedTagsDataSource) Read(ctx context.Context, req dat
 	}
 
 	var allProtectedTags []*gitlab.ProtectedTag
-	totalPages := -1
+	totalPages := int64(-1)
 	opts := &gitlab.ListProtectedTagsOptions{}
 	for opts.Page = 0; opts.Page != totalPages; opts.Page++ {
 		// Get protected tag by project ID/path and tag name
@@ -160,7 +160,7 @@ func (d *gitLabProjectProtectedTagsDataSource) Read(ctx context.Context, req dat
 	}
 
 	state.ProtectedTags = populateProtectedTags(allProtectedTags)
-	state.Id = types.StringValue(strconv.Itoa(projectDetails.ID))
+	state.Id = types.StringValue(strconv.FormatInt(projectDetails.ID, 10))
 
 	diags := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)

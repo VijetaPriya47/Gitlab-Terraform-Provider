@@ -99,7 +99,7 @@ func (d *gitlabInstanceServiceAccountDataSource) Read(ctx context.Context, req d
 		return
 	}
 
-	serviceAccountID, err := strconv.Atoi(state.ServiceAccountID.ValueString())
+	serviceAccountID, err := strconv.ParseInt(state.ServiceAccountID.ValueString(), 10, 64)
 	if err != nil {
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to convert resource ID: %s", err.Error()))
 		return
@@ -112,7 +112,7 @@ func (d *gitlabInstanceServiceAccountDataSource) Read(ctx context.Context, req d
 	}
 
 	// Set the ID
-	serviceAccountIDStr := strconv.Itoa(serviceAccount.ID)
+	serviceAccountIDStr := strconv.FormatInt(serviceAccount.ID, 10)
 	state.ID = types.StringValue(serviceAccountIDStr)
 	state.ServiceAccountID = types.StringValue(serviceAccountIDStr)
 	state.Name = types.StringValue(serviceAccount.Name)

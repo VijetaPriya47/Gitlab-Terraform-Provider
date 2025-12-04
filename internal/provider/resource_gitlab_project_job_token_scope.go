@@ -150,7 +150,7 @@ func (r *gitlabProjectJobTokenScopeResource) Create(ctx context.Context, req res
 	// Add the target project or group to the CI/CD Job Token inbound allowlist
 	switch {
 	case !data.TargetProjectID.IsNull():
-		targetID := int(data.TargetProjectID.ValueInt64())
+		targetID := data.TargetProjectID.ValueInt64()
 		options := &gitlab.JobTokenInboundAllowOptions{TargetProjectID: gitlab.Ptr(targetID)}
 		addTokenResponse, _, err := r.client.JobTokenScope.AddProjectToJobScopeAllowList(projectID, options, gitlab.WithContext(ctx))
 
@@ -158,7 +158,7 @@ func (r *gitlabProjectJobTokenScopeResource) Create(ctx context.Context, req res
 			resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to add the target project to CI/CD Job Token inbound allowlist: %s", err.Error()))
 			return
 		}
-		targetIDStr = strconv.Itoa(addTokenResponse.TargetProjectID)
+		targetIDStr = strconv.FormatInt(addTokenResponse.TargetProjectID, 10)
 		targetType = targetTypeProject
 
 		// Log the creation of the resource
@@ -167,14 +167,14 @@ func (r *gitlabProjectJobTokenScopeResource) Create(ctx context.Context, req res
 		})
 
 	case !data.TargetGroupID.IsNull():
-		targetID := int(data.TargetGroupID.ValueInt64())
+		targetID := data.TargetGroupID.ValueInt64()
 		options := &gitlab.AddGroupToJobTokenAllowlistOptions{TargetGroupID: gitlab.Ptr(targetID)}
 		addTokenResponse, _, err := r.client.JobTokenScope.AddGroupToJobTokenAllowlist(projectID, options, gitlab.WithContext(ctx))
 		if err != nil {
 			resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to add the target group to CI/CD Job Token inbound allowlist: %s", err.Error()))
 			return
 		}
-		targetIDStr = strconv.Itoa(addTokenResponse.TargetGroupID)
+		targetIDStr = strconv.FormatInt(addTokenResponse.TargetGroupID, 10)
 		targetType = targetTypeGroup
 		// Log the creation of the resource
 		tflog.Debug(ctx, "Added the target group to CI/CD Job Token inbound allowlist", map[string]any{
@@ -212,10 +212,10 @@ func (r *gitlabProjectJobTokenScopeResource) Read(ctx context.Context, req resou
 	// Check which type of target exists
 	switch targetType {
 	case targetTypeProject:
-		targetID := int(data.TargetProjectID.ValueInt64())
+		targetID := data.TargetProjectID.ValueInt64()
 		err, found = findProjectJobTokenInboundAllowlist(r.client, ctx, projectID, targetID)
 	case targetTypeGroup:
-		targetID := int(data.TargetGroupID.ValueInt64())
+		targetID := data.TargetGroupID.ValueInt64()
 		err, found = findGroupJobTokenInboundAllowlist(r.client, ctx, projectID, targetID)
 	}
 	if err != nil {
@@ -256,10 +256,10 @@ func (r *gitlabProjectJobTokenScopeResource) Delete(ctx context.Context, req res
 
 	switch targetType {
 	case targetTypeProject:
-		targetID := int(data.TargetProjectID.ValueInt64())
+		targetID := data.TargetProjectID.ValueInt64()
 		_, err = r.client.JobTokenScope.RemoveProjectFromJobScopeAllowList(projectID, targetID, gitlab.WithContext(ctx))
 	case targetTypeGroup:
-		targetID := int(data.TargetGroupID.ValueInt64())
+		targetID := data.TargetGroupID.ValueInt64()
 		_, err = r.client.JobTokenScope.RemoveGroupFromJobTokenAllowlist(projectID, targetID, gitlab.WithContext(ctx))
 	}
 
@@ -403,7 +403,7 @@ func (r *gitlabProjectJobTokenScopeResource) ImportState(ctx context.Context, re
 }
 
 // findProjectJobTokenInboundAllowlist finds the target project in the CI/CD Job Token inbound allowlist
-func findProjectJobTokenInboundAllowlist(client *gitlab.Client, ctx context.Context, projectID string, targetProjectID int) (error, bool) {
+func findProjectJobTokenInboundAllowlist(client *gitlab.Client, ctx context.Context, projectID string, targetProjectID int64) (error, bool) {
 	options := gitlab.GetJobTokenInboundAllowListOptions{
 		ListOptions: gitlab.ListOptions{
 			PerPage: 20,
@@ -430,7 +430,7 @@ func findProjectJobTokenInboundAllowlist(client *gitlab.Client, ctx context.Cont
 }
 
 // findGroupJobTokenInboundAllowlist finds the target group in the CI/CD Job Token inbound allowlist
-func findGroupJobTokenInboundAllowlist(client *gitlab.Client, ctx context.Context, projectID string, targetGroupID int) (error, bool) {
+func findGroupJobTokenInboundAllowlist(client *gitlab.Client, ctx context.Context, projectID string, targetGroupID int64) (error, bool) {
 	options := gitlab.GetJobTokenAllowlistGroupsOptions{
 		ListOptions: gitlab.ListOptions{
 			PerPage: 20,

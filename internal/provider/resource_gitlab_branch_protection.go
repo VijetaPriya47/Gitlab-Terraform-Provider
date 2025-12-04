@@ -716,10 +716,10 @@ func populateBranchPermissionOptionsData(currentAllowedTos []*gitlab.BranchAcces
 			allowedToBranchPermissionOptionData.AccessLevel = gitlab.Ptr(api.AccessLevelNameToValue[allowedTo.AccessLevel.ValueString()])
 		}
 		if !allowedTo.UserId.IsNull() && allowedTo.UserId.ValueInt64() != 0 {
-			allowedToBranchPermissionOptionData.UserID = gitlab.Ptr(int(allowedTo.UserId.ValueInt64()))
+			allowedToBranchPermissionOptionData.UserID = gitlab.Ptr(allowedTo.UserId.ValueInt64())
 		}
 		if !allowedTo.GroupId.IsNull() && allowedTo.GroupId.ValueInt64() != 0 {
-			allowedToBranchPermissionOptionData.GroupID = gitlab.Ptr(int(allowedTo.GroupId.ValueInt64()))
+			allowedToBranchPermissionOptionData.GroupID = gitlab.Ptr(allowedTo.GroupId.ValueInt64())
 		}
 	}
 
@@ -747,13 +747,13 @@ func populateBranchPermissionOptionsDataForPush(currentAllowedTos []*gitlab.Bran
 			allowedToBranchPermissionOptionData.AccessLevel = gitlab.Ptr(api.AccessLevelNameToValue[allowedTo.AccessLevel.ValueString()])
 		}
 		if !allowedTo.UserId.IsNull() && allowedTo.UserId.ValueInt64() != 0 {
-			allowedToBranchPermissionOptionData.UserID = gitlab.Ptr(int(allowedTo.UserId.ValueInt64()))
+			allowedToBranchPermissionOptionData.UserID = gitlab.Ptr(allowedTo.UserId.ValueInt64())
 		}
 		if !allowedTo.GroupId.IsNull() && allowedTo.GroupId.ValueInt64() != 0 {
-			allowedToBranchPermissionOptionData.GroupID = gitlab.Ptr(int(allowedTo.GroupId.ValueInt64()))
+			allowedToBranchPermissionOptionData.GroupID = gitlab.Ptr(allowedTo.GroupId.ValueInt64())
 		}
 		if !allowedTo.DeployKeyId.IsNull() && allowedTo.DeployKeyId.ValueInt64() != 0 {
-			allowedToBranchPermissionOptionData.DeployKeyID = gitlab.Ptr(int(allowedTo.DeployKeyId.ValueInt64()))
+			allowedToBranchPermissionOptionData.DeployKeyID = gitlab.Ptr(allowedTo.DeployKeyId.ValueInt64())
 		}
 	}
 

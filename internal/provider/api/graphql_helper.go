@@ -37,7 +37,7 @@ type getProjectIDStruct struct {
 
 // A type including all the relevant idenfiers for a project
 type ProjectIdentifiers struct {
-	ProjectID       int
+	ProjectID       int64
 	ProjectFullPath string
 	ProjectGQLID    string
 }
@@ -72,7 +72,7 @@ type getGroupIDStruct struct {
 
 // A type including all the relevant idenfiers for a project
 type GroupIdentifiers struct {
-	GroupID       int
+	GroupID       int64
 	GroupFullPath string
 	GroupGQLID    string
 }

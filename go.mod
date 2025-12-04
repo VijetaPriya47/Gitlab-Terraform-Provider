@@ -16,8 +16,8 @@ require (
 	github.com/hashicorp/terraform-plugin-testing v1.14.0
 	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/onsi/gomega v1.38.2
-	gitlab.com/gitlab-org/api/client-go v0.154.0
-	golang.org/x/oauth2 v0.33.0
+	gitlab.com/gitlab-org/api/client-go v1.0.1
+	golang.org/x/oauth2 v0.32.0
 )
 
 require go.yaml.in/yaml/v3 v3.0.4 // indirect
@@ -27,7 +27,7 @@ require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.10-20250912141014-52f32327d4b0.1 // indirect
 	buf.build/go/protovalidate v0.14.0 // indirect
 	buf.build/go/protoyaml v0.6.0 // indirect
-	cel.dev/expr v0.24.0 // indirect
+	cel.dev/expr v0.25.1 // indirect
 	github.com/ProtonMail/go-crypto v1.1.6 // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
@@ -35,7 +35,7 @@ require (
 	github.com/cloudflare/circl v1.6.1 // indirect
 	github.com/danieljoos/wincred v1.2.3 // indirect
 	github.com/fatih/color v1.18.0 // indirect
-	github.com/godbus/dbus/v5 v5.1.0 // indirect
+	github.com/godbus/dbus/v5 v5.2.0 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/cel-go v0.26.1 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect

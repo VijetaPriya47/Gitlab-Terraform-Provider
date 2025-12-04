@@ -44,10 +44,10 @@ func TestAcc_GitLabApplication_DataSource_Basic(t *testing.T) {
 			{
 				Config: fmt.Sprintf(`data "gitlab_application" "test" {
 					id = %q
-				}`, strconv.Itoa(application.ID)),
+				}`, strconv.FormatInt(application.ID, 10)),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// Verify id attribute
-					resource.TestCheckResourceAttr("data.gitlab_application.test", "id", strconv.Itoa(application.ID)),
+					resource.TestCheckResourceAttr("data.gitlab_application.test", "id", strconv.FormatInt(application.ID, 10)),
 					resource.TestCheckResourceAttr("data.gitlab_application.test", "name", name),
 					resource.TestCheckResourceAttr("data.gitlab_application.test", "redirect_url", url),
 				),

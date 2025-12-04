@@ -185,7 +185,7 @@ func (d *gitlabProjectMilestonesDataSource) Read(ctx context.Context, req dataso
 	var optionsHash strings.Builder
 
 	if !data.IIDs.IsNull() && !data.IIDs.IsUnknown() {
-		var IIDs []int
+		var IIDs []int64
 		data.IIDs.ElementsAs(ctx, &IIDs, true)
 		options.IIDs = &IIDs
 		optionsHash.WriteString(fmt.Sprint(IIDs))

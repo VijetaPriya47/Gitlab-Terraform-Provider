@@ -99,7 +99,7 @@ func TestAccGitlabMemberRole_UpdateWithMemberAssigned(t *testing.T) {
 	rint := acctest.RandInt()
 	testGroup := testutil.CreateGroups(t, 1)[0]
 	user := testutil.CreateUsers(t, 1)[0]
-	var memberRoleIid int
+	var memberRoleIid int64
 
 	memberExistsErrRegex, err := regexp.Compile("Role is assigned to one or more group members")
 	if err != nil {
@@ -125,7 +125,7 @@ func TestAccGitlabMemberRole_UpdateWithMemberAssigned(t *testing.T) {
 					resource.TestCheckResourceAttrSet("gitlab_member_role.foo", "edit_path"),
 					resource.TestCheckResourceAttrWith("gitlab_member_role.foo", "iid", func(value string) error {
 						// Capture the member role iid that we have in state
-						memberRoleIid, _ = strconv.Atoi(value)
+						memberRoleIid, _ = strconv.ParseInt(value, 10, 64)
 						return nil
 					}),
 				),

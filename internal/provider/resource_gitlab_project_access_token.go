@@ -432,7 +432,7 @@ func (r *gitlabProjectAccessTokenResource) Read(ctx context.Context, req resourc
 	tflog.Debug(ctx, fmt.Sprintf("Read gitlab ProjectAccessToken %s, project ID %s", accessTokenId, project))
 
 	// Make sure the token ID is an int
-	accessTokenIdInt, err := strconv.Atoi(accessTokenId)
+	accessTokenIdInt, err := strconv.ParseInt(accessTokenId, 10, 64)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error parsing access token ID",
@@ -536,7 +536,7 @@ func (r *gitlabProjectAccessTokenResource) Create(ctx context.Context, req resou
 	}
 
 	// Set the ID for the resource
-	data.ID = types.StringValue(utils.BuildTwoPartID(data.Project.ValueStringPointer(), gitlab.Ptr(strconv.Itoa(token.ID))))
+	data.ID = types.StringValue(utils.BuildTwoPartID(data.Project.ValueStringPointer(), gitlab.Ptr(strconv.FormatInt(token.ID, 10))))
 
 	r.projectAccessTokenToStateModel(ctx, data, token, data.Project.ValueString())
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -551,7 +551,7 @@ func (r *gitlabProjectAccessTokenResource) Update(ctx context.Context, req resou
 
 	// Read the ID from state since it may be `unknown` in the plan.
 	project, patId, err := utils.ParseTwoPartID(state.ID.ValueString())
-	intPatId, parseErr := strconv.Atoi(patId)
+	intPatId, parseErr := strconv.ParseInt(patId, 10, 64)
 	if joinedErr := errors.Join(err, parseErr); joinedErr != nil {
 		resp.Diagnostics.AddError(
 			"Error parsing resource ID",
@@ -629,7 +629,7 @@ func (r *gitlabProjectAccessTokenResource) Update(ctx context.Context, req resou
 	}
 
 	// Updating an access token changes the primary key, so we need to re-set the ID of the resource
-	data.ID = types.StringValue(utils.BuildTwoPartID(data.Project.ValueStringPointer(), gitlab.Ptr(strconv.Itoa(token.ID))))
+	data.ID = types.StringValue(utils.BuildTwoPartID(data.Project.ValueStringPointer(), gitlab.Ptr(strconv.FormatInt(token.ID, 10))))
 
 	r.projectAccessTokenToStateModel(ctx, data, token, data.Project.ValueString())
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -649,7 +649,7 @@ func (r *gitlabProjectAccessTokenResource) Delete(ctx context.Context, req resou
 		return
 	}
 
-	projectAccessTokenID, err := strconv.Atoi(patId)
+	projectAccessTokenID, err := strconv.ParseInt(patId, 10, 64)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error parsing access token ID",

@@ -119,7 +119,7 @@ func (d *gitlabReleaseLinkDataSource) Read(ctx context.Context, req datasource.R
 	tagName := data.TagName.ValueString()
 	linkID := data.LinkID.ValueInt64()
 
-	releaseLink, _, err := d.client.ReleaseLinks.GetReleaseLink(project, tagName, int(linkID), gitlab.WithContext(ctx))
+	releaseLink, _, err := d.client.ReleaseLinks.GetReleaseLink(project, tagName, linkID, gitlab.WithContext(ctx))
 	if err != nil {
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to read project release links: %s", err.Error()))
 		return

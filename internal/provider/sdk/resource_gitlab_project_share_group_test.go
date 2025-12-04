@@ -132,7 +132,7 @@ func TestAccGitlabProjectShareGroup_modifiedOutsideTerraform(t *testing.T) {
 	})
 }
 
-func testAccCheckGitlabProjectSharedWithGroup(projectID int, groupID int, accessLevel gitlab.AccessLevelValue) resource.TestCheckFunc {
+func testAccCheckGitlabProjectSharedWithGroup(projectID int64, groupID int64, accessLevel gitlab.AccessLevelValue) resource.TestCheckFunc {
 	return func(_ *terraform.State) error {
 		project, _, err := testutil.TestGitlabClient.Projects.GetProject(projectID, nil)
 		if err != nil {
@@ -157,7 +157,7 @@ func testAccCheckGitlabProjectSharedWithGroup(projectID int, groupID int, access
 	}
 }
 
-func testAccCheckGitlabProjectIsNotShared(projectID int) resource.TestCheckFunc {
+func testAccCheckGitlabProjectIsNotShared(projectID int64) resource.TestCheckFunc {
 	return func(_ *terraform.State) error {
 		project, _, err := testutil.TestGitlabClient.Projects.GetProject(projectID, nil)
 		if err != nil {
@@ -174,7 +174,7 @@ func testAccCheckGitlabProjectIsNotShared(projectID int) resource.TestCheckFunc 
 
 func testAccCheckGitlabProjectShareGroupDestroy(s *terraform.State) error {
 	var projectId string
-	var groupId int
+	var groupId int64
 	var err error
 
 	for _, rs := range s.RootModule().Resources {

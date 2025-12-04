@@ -320,7 +320,7 @@ func (r *gitlabProjectPushRulesResource) Create(ctx context.Context, req resourc
 		}
 
 		if !data.MaxFileSize.IsNull() && !data.MaxFileSize.IsUnknown() {
-			options.MaxFileSize = gitlab.Ptr(int(data.MaxFileSize.ValueInt64()))
+			options.MaxFileSize = gitlab.Ptr(data.MaxFileSize.ValueInt64())
 		}
 
 		if !data.MemberCheck.IsNull() && !data.MemberCheck.IsUnknown() {
@@ -441,7 +441,7 @@ func (r *gitlabProjectPushRulesResource) update(ctx context.Context, data *gitla
 	}
 
 	if !data.MaxFileSize.IsNull() && !data.MaxFileSize.IsUnknown() {
-		options.MaxFileSize = gitlab.Ptr(int(data.MaxFileSize.ValueInt64()))
+		options.MaxFileSize = gitlab.Ptr(data.MaxFileSize.ValueInt64())
 	}
 
 	if !data.MemberCheck.IsNull() && !data.MemberCheck.IsUnknown() {

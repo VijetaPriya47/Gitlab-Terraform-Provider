@@ -175,7 +175,7 @@ func gitlabProjectAccessTokenToObjectValue(ctx context.Context, project string, 
 	}
 
 	return types.ObjectValueMust(projectAccessTokenDataAttributes(), map[string]attr.Value{
-		"id":           types.StringValue(strconv.Itoa((accessToken.ID))),
+		"id":           types.StringValue(strconv.FormatInt(accessToken.ID, 10)),
 		"project":      types.StringValue(project),
 		"name":         types.StringValue(accessToken.Name),
 		"description":  types.StringValue(accessToken.Description),

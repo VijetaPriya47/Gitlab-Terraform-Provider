@@ -160,7 +160,7 @@ func gitlabGroupAccessTokenToObjectValue(ctx context.Context, group string, acce
 	scopes, diags := types.SetValueFrom(ctx, types.StringType, accessToken.Scopes)
 
 	return types.ObjectValueMust(accessTokenDataAttibutes(), map[string]attr.Value{
-		"id":           types.StringValue(strconv.Itoa((accessToken.ID))),
+		"id":           types.StringValue(strconv.FormatInt(accessToken.ID, 10)),
 		"group":        types.StringValue(group),
 		"name":         types.StringValue(accessToken.Name),
 		"user_id":      types.Int64Value(int64(accessToken.UserID)),

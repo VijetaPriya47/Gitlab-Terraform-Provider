@@ -169,13 +169,13 @@ func resourceGitlabProjectMilestoneDelete(ctx context.Context, d *schema.Resourc
 	return nil
 }
 
-func resourceGitLabProjectMilestoneParseId(id string) (string, int, error) {
+func resourceGitLabProjectMilestoneParseId(id string) (string, int64, error) {
 	project, milestone, err := utils.ParseTwoPartID(id)
 	if err != nil {
 		return "", 0, err
 	}
 
-	milestoneID, err := strconv.Atoi(milestone)
+	milestoneID, err := strconv.ParseInt(milestone, 10, 64)
 	if err != nil {
 		return "", 0, err
 	}
@@ -183,7 +183,7 @@ func resourceGitLabProjectMilestoneParseId(id string) (string, int, error) {
 	return project, milestoneID, nil
 }
 
-func resourceGitLabProjectMilestoneBuildId(project string, milestoneID int) string {
+func resourceGitLabProjectMilestoneBuildId(project string, milestoneID int64) string {
 	stringMilestoneID := fmt.Sprintf("%d", milestoneID)
 	return utils.BuildTwoPartID(&project, &stringMilestoneID)
 }

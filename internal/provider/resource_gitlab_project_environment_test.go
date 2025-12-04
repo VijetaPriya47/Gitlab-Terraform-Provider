@@ -417,9 +417,9 @@ func testAccCheckGitlabProjectEnvironmentExists(n string, env *gitlab.Environmen
 			return fmt.Errorf("Error in Splitting Project ID and Environment Name")
 		}
 
-		environmentID, err := strconv.Atoi(environment)
+		environmentID, err := strconv.ParseInt(environment, 10, 64)
 		if err != nil {
-			return fmt.Errorf("error converting environment ID to int: %v", err)
+			return fmt.Errorf("error converting environment ID to int64: %v", err)
 		}
 
 		if e, _, err := testutil.TestGitlabClient.Environments.GetEnvironment(project, environmentID); err != nil {
@@ -468,7 +468,7 @@ func testAccCheckGitlabProjectEnvironmentAttributes(env *gitlab.Environment, wan
 func testAccCheckGitlabProjectEnvironmentDestroy(s *terraform.State) error {
 	var project string
 	var environmentIDString string
-	var environmentIDInt int
+	var environmentIDInt int64
 	var err error
 	for _, rs := range s.RootModule().Resources {
 		switch rs.Type {
@@ -480,9 +480,9 @@ func testAccCheckGitlabProjectEnvironmentDestroy(s *terraform.State) error {
 				return fmt.Errorf("[ERROR] cannot get project and environmentID from input: %v", rs.Primary.ID)
 			}
 
-			environmentIDInt, err = strconv.Atoi(environmentIDString)
+			environmentIDInt, err = strconv.ParseInt(environmentIDString, 10, 64)
 			if err != nil {
-				return fmt.Errorf("[ERROR] cannot convert environment ID to int: %v", err)
+				return fmt.Errorf("[ERROR] cannot convert environment ID to int64: %v", err)
 			}
 		}
 	}

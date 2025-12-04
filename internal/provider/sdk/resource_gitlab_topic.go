@@ -88,7 +88,7 @@ func resourceGitlabTopicCreate(ctx context.Context, d *schema.ResourceData, meta
 func resourceGitlabTopicRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
-	topicID, err := strconv.Atoi(d.Id())
+	topicID, err := strconv.ParseInt(d.Id(), 10, 64)
 	if err != nil {
 		return diag.Errorf("Failed to convert topic id %s to int: %s", d.Id(), err)
 	}
@@ -141,7 +141,7 @@ func resourceGitlabTopicUpdate(ctx context.Context, d *schema.ResourceData, meta
 
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab topic %s", d.Id()))
 
-	topicID, err := strconv.Atoi(d.Id())
+	topicID, err := strconv.ParseInt(d.Id(), 10, 64)
 	if err != nil {
 		return diag.Errorf("Failed to convert topic id %s to int: %s", d.Id(), err)
 	}
@@ -154,7 +154,7 @@ func resourceGitlabTopicUpdate(ctx context.Context, d *schema.ResourceData, meta
 
 func resourceGitlabTopicDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
-	topicID, err := strconv.Atoi(d.Id())
+	topicID, err := strconv.ParseInt(d.Id(), 10, 64)
 	if err != nil {
 		return diag.Errorf("Failed to convert topic id %s to int: %s", d.Id(), err)
 	}

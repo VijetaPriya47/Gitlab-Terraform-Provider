@@ -146,7 +146,7 @@ func (d *gitlabGroupBillableMemberMembershipsDataSource) Read(ctx context.Contex
 	}
 
 	tflog.Info(ctx, "[INFO] Reading Gitlab user memberships")
-	membership, err := d.fetchAllOfListMembershipsForBillableGroupMember(state.GroupId.ValueString(), int(state.UserId.ValueInt64()), ctx)
+	membership, err := d.fetchAllOfListMembershipsForBillableGroupMember(state.GroupId.ValueString(), state.UserId.ValueInt64(), ctx)
 
 	if err != nil {
 		resp.Diagnostics.AddError("API call to ListMembershipsForBillableGroupMember failed", err.Error())
@@ -160,12 +160,14 @@ func (d *gitlabGroupBillableMemberMembershipsDataSource) Read(ctx context.Contex
 	resp.Diagnostics.Append(diags...)
 }
 
-func (d *gitlabGroupBillableMemberMembershipsDataSource) fetchAllOfListMembershipsForBillableGroupMember(groupId any, userId int, ctx context.Context) ([]*gitlab.BillableUserMembership, error) {
+func (d *gitlabGroupBillableMemberMembershipsDataSource) fetchAllOfListMembershipsForBillableGroupMember(groupId any, userId int64, ctx context.Context) ([]*gitlab.BillableUserMembership, error) {
 	var membership []*gitlab.BillableUserMembership
 
 	listOptions := &gitlab.ListMembershipsForBillableGroupMemberOptions{
-		PerPage: 20,
-		Page:    1,
+		ListOptions: gitlab.ListOptions{
+			PerPage: 20,
+			Page:    1,
+		},
 	}
 
 	for listOptions.Page != 0 {

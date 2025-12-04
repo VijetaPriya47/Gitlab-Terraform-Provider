@@ -177,7 +177,7 @@ func (d *gitlabGroupHookDataSource) Read(ctx context.Context, req datasource.Rea
 		return
 	}
 	group := data.Group.ValueString()
-	hookID := int(data.HookID.ValueInt64())
+	hookID := data.HookID.ValueInt64()
 
 	hook, _, err := d.client.Groups.GetGroupHook(group, hookID, gitlab.WithContext(ctx))
 	if err != nil {

@@ -687,7 +687,7 @@ func testAccCheckGitlabUserExists(n string, user *gitlab.User) resource.TestChec
 		if userID == "" {
 			return fmt.Errorf("No user ID is set")
 		}
-		id, _ := strconv.Atoi(userID)
+		id, _ := strconv.ParseInt(userID, 10, 64)
 
 		gotUser, _, err := testutil.TestGitlabClient.Users.GetUser(id, gitlab.GetUsersOptions{})
 		if err != nil {
@@ -702,8 +702,8 @@ type testAccGitlabUserExpectedAttributes struct {
 	Email          string
 	Username       string
 	Name           string
-	NamespaceID    int
-	ProjectsLimit  int
+	NamespaceID    int64
+	ProjectsLimit  int64
 	Admin          bool
 	CanCreateGroup bool
 	External       bool
@@ -759,7 +759,7 @@ func testAccCheckGitlabUserDestroy(s *terraform.State) error {
 			continue
 		}
 
-		id, _ := strconv.Atoi(rs.Primary.ID)
+		id, _ := strconv.ParseInt(rs.Primary.ID, 10, 64)
 
 		user, _, err := testutil.TestGitlabClient.Users.GetUser(id, gitlab.GetUsersOptions{})
 		if err == nil {

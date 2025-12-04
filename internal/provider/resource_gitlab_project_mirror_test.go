@@ -85,7 +85,7 @@ func testAccCheckGitlabProjectMirrorExists(n string, mirror *gitlab.ProjectMirro
 			return err
 		}
 
-		mirrorID, err := strconv.Atoi(rawMirrorId)
+		mirrorID, err := strconv.ParseInt(rawMirrorId, 10, 64)
 		if err != nil {
 			return err
 		}
@@ -110,7 +110,7 @@ func testAccCheckGitlabProjectMirrorDestroy(s *terraform.State) error {
 			return err
 		}
 
-		mirrorID, err := strconv.Atoi(mirrorId)
+		mirrorID, err := strconv.ParseInt(mirrorId, 10, 64)
 		if err != nil {
 			return err
 		}

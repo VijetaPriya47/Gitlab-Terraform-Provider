@@ -174,7 +174,7 @@ func resourceGitlabInstanceClusterCreate(ctx context.Context, d *schema.Resource
 func resourceGitlabInstanceClusterRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
-	clusterId, err := strconv.Atoi(d.Id())
+	clusterId, err := strconv.ParseInt(d.Id(), 10, 64)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -207,7 +207,7 @@ func resourceGitlabInstanceClusterRead(ctx context.Context, d *schema.ResourceDa
 	if cluster.ManagementProject == nil {
 		d.Set("management_project_id", "")
 	} else {
-		d.Set("management_project_id", strconv.Itoa(cluster.ManagementProject.ID))
+		d.Set("management_project_id", strconv.FormatInt(cluster.ManagementProject.ID, 10))
 	}
 
 	return nil
@@ -216,7 +216,7 @@ func resourceGitlabInstanceClusterRead(ctx context.Context, d *schema.ResourceDa
 func resourceGitlabInstanceClusterUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
-	clusterId, err := strconv.Atoi(d.Id())
+	clusterId, err := strconv.ParseInt(d.Id(), 10, 64)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -274,7 +274,7 @@ func resourceGitlabInstanceClusterUpdate(ctx context.Context, d *schema.Resource
 
 func resourceGitlabInstanceClusterDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
-	clusterId, err := strconv.Atoi(d.Id())
+	clusterId, err := strconv.ParseInt(d.Id(), 10, 64)
 	if err != nil {
 		return diag.FromErr(err)
 	}

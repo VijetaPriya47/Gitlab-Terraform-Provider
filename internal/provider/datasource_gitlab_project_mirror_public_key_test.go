@@ -33,7 +33,7 @@ func TestAccDataGitlabProjectMirrorPublicKey_SSH(t *testing.T) {
 				}
 				`, project.ID, projectMirror.ID),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("data.gitlab_project_mirror_public_key.test", "mirror_id", strconv.Itoa(projectMirror.ID)),
+					resource.TestCheckResourceAttr("data.gitlab_project_mirror_public_key.test", "mirror_id", strconv.FormatInt(projectMirror.ID, 10)),
 					resource.TestCheckResourceAttrSet("data.gitlab_project_mirror_public_key.test", "public_key"),
 				),
 			},

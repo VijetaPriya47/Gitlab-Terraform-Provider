@@ -31,9 +31,9 @@ func TestAccDataSourceGitlabGroupAccessTokens_basic(t *testing.T) {
 				`, testGroup.ID),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("data.gitlab_group_access_tokens.this", "access_tokens.#", fmt.Sprintf("%d", len(testAccessTokens))),
-					resource.TestCheckResourceAttr("data.gitlab_group_access_tokens.this", "access_tokens.0.id", strconv.Itoa(testAccessTokens[0].ID)),
+					resource.TestCheckResourceAttr("data.gitlab_group_access_tokens.this", "access_tokens.0.id", strconv.FormatInt(testAccessTokens[0].ID, 10)),
 					resource.TestCheckResourceAttr("data.gitlab_group_access_tokens.this", "access_tokens.0.name", testAccessTokens[0].Name),
-					resource.TestCheckResourceAttr("data.gitlab_group_access_tokens.this", "access_tokens.24.id", strconv.Itoa(testAccessTokens[24].ID)),
+					resource.TestCheckResourceAttr("data.gitlab_group_access_tokens.this", "access_tokens.24.id", strconv.FormatInt(testAccessTokens[24].ID, 10)),
 					resource.TestCheckResourceAttr("data.gitlab_group_access_tokens.this", "access_tokens.24.name", testAccessTokens[24].Name),
 				),
 			},

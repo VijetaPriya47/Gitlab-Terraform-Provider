@@ -57,19 +57,19 @@ func TestAcc_GitLabProjectMergeRequest_DataSource_WithAssignee(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
 						"data.gitlab_project_merge_request.int_project",
-						"id", strconv.Itoa(mergeRequest.ID),
+						"id", strconv.FormatInt(mergeRequest.ID, 10),
 					),
 					resource.TestCheckResourceAttr(
 						"data.gitlab_project_merge_request.int_project",
-						"iid", strconv.Itoa(mergeRequest.IID),
+						"iid", strconv.FormatInt(mergeRequest.IID, 10),
 					),
 					resource.TestCheckResourceAttr(
 						"data.gitlab_project_merge_request.int_project",
-						"project", strconv.Itoa(project.ID),
+						"project", strconv.FormatInt(project.ID, 10),
 					),
 					resource.TestCheckResourceAttr(
 						"data.gitlab_project_merge_request.int_project",
-						"assignee.id", strconv.Itoa(user.ID),
+						"assignee.id", strconv.FormatInt(user.ID, 10),
 					),
 					resource.TestCheckResourceAttr(
 						"data.gitlab_project_merge_request.int_project",
@@ -93,7 +93,7 @@ func TestAcc_GitLabProjectMergeRequest_DataSource_WithAssignee(t *testing.T) {
 					),
 					resource.TestCheckResourceAttr(
 						"data.gitlab_project_merge_request.int_project",
-						"assignees.0.id", strconv.Itoa(user.ID),
+						"assignees.0.id", strconv.FormatInt(user.ID, 10),
 					),
 					resource.TestCheckResourceAttr(
 						"data.gitlab_project_merge_request.int_project",
@@ -117,7 +117,7 @@ func TestAcc_GitLabProjectMergeRequest_DataSource_WithAssignee(t *testing.T) {
 					),
 					resource.TestCheckResourceAttr(
 						"data.gitlab_project_merge_request.int_project",
-						"author.id", strconv.Itoa(mergeRequest.Author.ID),
+						"author.id", strconv.FormatInt(mergeRequest.Author.ID, 10),
 					),
 					resource.TestCheckResourceAttr(
 						"data.gitlab_project_merge_request.int_project",
@@ -187,11 +187,11 @@ func TestAcc_GitLabProjectMergeRequest_DataSource_WithoutAssignee(t *testing.T) 
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
 						"data.gitlab_project_merge_request.str_project",
-						"id", strconv.Itoa(mergeRequest.ID),
+						"id", strconv.FormatInt(mergeRequest.ID, 10),
 					),
 					resource.TestCheckResourceAttr(
 						"data.gitlab_project_merge_request.str_project",
-						"iid", strconv.Itoa(mergeRequest.IID),
+						"iid", strconv.FormatInt(mergeRequest.IID, 10),
 					),
 					resource.TestCheckResourceAttr(
 						"data.gitlab_project_merge_request.str_project",
@@ -207,7 +207,7 @@ func TestAcc_GitLabProjectMergeRequest_DataSource_WithoutAssignee(t *testing.T) 
 					),
 					resource.TestCheckResourceAttr(
 						"data.gitlab_project_merge_request.str_project",
-						"author.id", strconv.Itoa(mergeRequest.Author.ID),
+						"author.id", strconv.FormatInt(mergeRequest.Author.ID, 10),
 					),
 					resource.TestCheckResourceAttr(
 						"data.gitlab_project_merge_request.str_project",
@@ -244,7 +244,7 @@ func TestAcc_GitLabProjectMergeRequest_DataSource_WithoutAssignee(t *testing.T) 
 					),
 					resource.TestCheckResourceAttr(
 						"data.gitlab_project_merge_request.str_project",
-						"closed_by.id", strconv.Itoa(mergeRequest.ClosedBy.ID),
+						"closed_by.id", strconv.FormatInt(mergeRequest.ClosedBy.ID, 10),
 					),
 					resource.TestCheckResourceAttr(
 						"data.gitlab_project_merge_request.str_project",

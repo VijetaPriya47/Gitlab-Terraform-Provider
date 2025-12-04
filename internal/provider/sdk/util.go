@@ -222,24 +222,24 @@ func stringSetToStringSlice(stringSet *schema.Set) *[]string {
 	return &ret
 }
 
-func intSetToIntSlice(intSet *schema.Set) *[]int {
-	ret := []int{}
+func intSetToInt64Slice(intSet *schema.Set) *[]int64 {
+	ret := []int64{}
 	if intSet == nil {
 		return &ret
 	}
 	for _, envVal := range intSet.List() {
-		ret = append(ret, envVal.(int))
+		ret = append(ret, int64(envVal.(int)))
 	}
 	return &ret
 }
 
-func intListToIntSlice(intList []any) *[]int {
-	ret := []int{}
+func intListToInt64Slice(intList []any) *[]int64 {
+	ret := []int64{}
 	if intList == nil {
 		return &ret
 	}
 	for _, envVal := range intList {
-		ret = append(ret, envVal.(int))
+		ret = append(ret, int64(envVal.(int)))
 	}
 	return &ret
 }
@@ -260,10 +260,10 @@ func stringListToCommaSeparatedString(stringList []any) *string {
 	return &ret
 }
 
-func fromIntegerMap(value any) map[string]int {
-	integerMap := make(map[string]int)
+func fromIntegerMapToInt64(value any) map[string]int64 {
+	integerMap := make(map[string]int64)
 	for k, v := range value.(map[string]any) {
-		integerMap[k] = v.(int)
+		integerMap[k] = int64(v.(int))
 	}
 	return integerMap
 }

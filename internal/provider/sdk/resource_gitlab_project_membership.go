@@ -127,7 +127,7 @@ func resourceGitlabProjectMembershipStateUpgradeV0(ctx context.Context, rawState
 func resourceGitlabProjectMembershipCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
-	userId := d.Get("user_id").(int)
+	userId := int64(d.Get("user_id").(int))
 	project := d.Get("project").(string)
 	expiresAt := d.Get("expires_at").(string)
 	accessLevelId := api.AccessLevelNameToValue[d.Get("access_level").(string)]
@@ -139,7 +139,7 @@ func resourceGitlabProjectMembershipCreate(ctx context.Context, d *schema.Resour
 	}
 
 	if v, ok := d.GetOk("member_role_id"); v != nil && ok {
-		options.MemberRoleID = gitlab.Ptr(v.(int))
+		options.MemberRoleID = gitlab.Ptr(int64(v.(int)))
 	}
 
 	if diags := validateProjectMembershipExpiry(d); diags != nil {
@@ -152,7 +152,7 @@ func resourceGitlabProjectMembershipCreate(ctx context.Context, d *schema.Resour
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	userIdString := strconv.Itoa(userId)
+	userIdString := strconv.FormatInt(userId, 10)
 	d.SetId(utils.BuildTwoPartID(&project, &userIdString))
 	return resourceGitlabProjectMembershipRead(ctx, d, meta)
 }
@@ -181,9 +181,9 @@ func resourceGitlabProjectMembershipRead(ctx context.Context, d *schema.Resource
 	return nil
 }
 
-func projectAndUserIdFromId(ctx context.Context, id string) (string, int, error) {
+func projectAndUserIdFromId(ctx context.Context, id string) (string, int64, error) {
 	project, userIdString, err := utils.ParseTwoPartID(id)
-	userId, e := strconv.Atoi(userIdString)
+	userId, e := strconv.ParseInt(userIdString, 10, 64)
 	if err != nil {
 		e = err
 	}
@@ -196,7 +196,7 @@ func projectAndUserIdFromId(ctx context.Context, id string) (string, int, error)
 func resourceGitlabProjectMembershipUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
-	userId := d.Get("user_id").(int)
+	userId := int64(d.Get("user_id").(int))
 	project := d.Get("project").(string)
 	expiresAt := d.Get("expires_at").(string)
 	accessLevelId := api.AccessLevelNameToValue[strings.ToLower(d.Get("access_level").(string))]
@@ -208,7 +208,7 @@ func resourceGitlabProjectMembershipUpdate(ctx context.Context, d *schema.Resour
 	}
 
 	if v, ok := d.GetOk("member_role_id"); v != nil && ok {
-		options.MemberRoleID = gitlab.Ptr(v.(int))
+		options.MemberRoleID = gitlab.Ptr(int64(v.(int)))
 	}
 
 	if diags := validateProjectMembershipExpiry(d); diags != nil {
@@ -219,7 +219,7 @@ func resourceGitlabProjectMembershipUpdate(ctx context.Context, d *schema.Resour
 
 	_, _, err := client.ProjectMembers.EditProjectMember(project, userId, &options, gitlab.WithContext(ctx), func(request *retryablehttp.Request) error {
 		optionsStruct := struct {
-			MemberRoleID *int                     `url:"member_role_id" json:"member_role_id"`
+			MemberRoleID *int64                   `url:"member_role_id" json:"member_role_id"`
 			ExpiresAt    *string                  `url:"expires_at,omitempty" json:"expires_at,omitempty"`
 			AccessLevel  *gitlab.AccessLevelValue `url:"access_level,omitempty" json:"access_level,omitempty"`
 		}{
@@ -282,7 +282,7 @@ func resourceGitlabProjectMembershipSetToState(d *schema.ResourceData, projectMe
 	} else {
 		d.Set("expires_at", "")
 	}
-	userId := strconv.Itoa(projectMember.ID)
+	userId := strconv.FormatInt(projectMember.ID, 10)
 	d.SetId(utils.BuildTwoPartID(projectId, &userId))
 }
 

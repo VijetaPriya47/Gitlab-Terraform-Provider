@@ -98,22 +98,22 @@ func resourceGitlabPipelineScheduleVariableStateUpgradeV0(ctx context.Context, r
 	oldId := rawState["id"].(string)
 
 	tflog.Debug(ctx, "attempting state migration from V0 to V1 - changing the `id` attribute format", map[string]any{"project": project, "pipeline_schedule_id": pipelineScheduleId, "key": key, "v0-id": oldId})
-	rawState["id"] = resourceGitlabPipelineScheduleVariableBuildId(project, pipelineScheduleId, key)
+	rawState["id"] = resourceGitlabPipelineScheduleVariableBuildId(project, int64(pipelineScheduleId), key)
 	tflog.Debug(ctx, "migrated `id` attribute for V0 to V1", map[string]any{"v0-id": oldId, "v1-id": rawState["id"]})
 	return rawState, nil
 }
 
-func resourceGitlabPipelineScheduleVariableBuildId(project string, pipelineScheduleId int, key string) string {
+func resourceGitlabPipelineScheduleVariableBuildId(project string, pipelineScheduleId int64, key string) string {
 	return fmt.Sprintf("%s:%d:%s", project, pipelineScheduleId, key)
 }
 
-func resourceGitlabPipelineScheduleVariableParseId(id string) (string, int, string, error) {
+func resourceGitlabPipelineScheduleVariableParseId(id string) (string, int64, string, error) {
 	parts := strings.SplitN(id, ":", 3)
 	if len(parts) != 3 {
 		return "", 0, "", fmt.Errorf("unexpected ID format (%q). Expected project:pipelineScheduleId:key", id)
 	}
 
-	pipelineScheduleId, err := strconv.Atoi(parts[1])
+	pipelineScheduleId, err := strconv.ParseInt(parts[1], 10, 64)
 	if err != nil {
 		return "", 0, "", err
 	}
@@ -124,7 +124,7 @@ func resourceGitlabPipelineScheduleVariableParseId(id string) (string, int, stri
 func resourceGitlabPipelineScheduleVariableCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	project := d.Get("project").(string)
-	scheduleID := d.Get("pipeline_schedule_id").(int)
+	scheduleID := int64(d.Get("pipeline_schedule_id").(int))
 
 	options := &gitlab.CreatePipelineScheduleVariableOptions{
 		Key:   gitlab.Ptr(d.Get("key").(string)),

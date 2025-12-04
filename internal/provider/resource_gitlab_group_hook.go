@@ -175,7 +175,7 @@ func (r *gitlabGroupHookResource) Create(ctx context.Context, req resource.Creat
 		return
 	}
 
-	data.ID = types.StringValue(utils.BuildTwoPartID(data.Group.ValueStringPointer(), gitlab.Ptr(strconv.Itoa(hook.ID))))
+	data.ID = types.StringValue(utils.BuildTwoPartID(data.Group.ValueStringPointer(), gitlab.Ptr(strconv.FormatInt(hook.ID, 10))))
 	data.modelToStateModel(hook)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, data)...)
@@ -574,13 +574,13 @@ func (d *gitlabGroupHookResourceModel) modelToStateModel(a *gitlab.GroupHook) {
 
 // Not bound to the resource model because it's used in the tests, so this
 // makes accessing it easier
-func (d *gitlabGroupHookResourceModel) ResourceGitlabGroupHookParseID(id string) (string, int, error) {
+func (d *gitlabGroupHookResourceModel) ResourceGitlabGroupHookParseID(id string) (string, int64, error) {
 	group, rawHookId, err := utils.ParseTwoPartID(id)
 	if err != nil {
 		return "", 0, err
 	}
 
-	hookId, err := strconv.Atoi(rawHookId)
+	hookId, err := strconv.ParseInt(rawHookId, 10, 64)
 	if err != nil {
 		return "", 0, err
 	}

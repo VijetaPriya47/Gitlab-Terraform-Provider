@@ -257,9 +257,9 @@ func (d *gitlabProjectMergeRequestsDataSource) Read(ctx context.Context, req dat
 
 	options := &gitlab.ListProjectMergeRequestsOptions{}
 	if len(config.IIDs) > 0 {
-		var iids []int
+		var iids []int64
 		for _, iid := range config.IIDs {
-			iids = append(iids, int(iid.ValueInt64()))
+			iids = append(iids, iid.ValueInt64())
 		}
 		options.IIDs = &iids
 	}
@@ -311,7 +311,7 @@ func (d *gitlabProjectMergeRequestsDataSource) Read(ctx context.Context, req dat
 		options.Scope = config.Scope.ValueStringPointer()
 	}
 	if !config.AuthorID.IsNull() {
-		options.AuthorID = gitlab.Ptr(int(config.AuthorID.ValueInt64()))
+		options.AuthorID = gitlab.Ptr(config.AuthorID.ValueInt64())
 	}
 	if !config.AuthorUsername.IsNull() {
 		options.AuthorUsername = config.AuthorUsername.ValueStringPointer()

@@ -164,7 +164,7 @@ func (d *gitlabProjectMergeRequestDataSource) Read(ctx context.Context, req data
 
 	mr, _, err := d.client.MergeRequests.GetMergeRequest(
 		config.Project.ValueString(),
-		int(config.IID.ValueInt32()),
+		int64(config.IID.ValueInt32()),
 		&gitlab.GetMergeRequestsOptions{},
 	)
 	if err != nil {

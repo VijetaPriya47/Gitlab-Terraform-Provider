@@ -111,7 +111,7 @@ func TestAccGitlabProjectRunnerEnablement_basic(t *testing.T) {
 	})
 }
 
-func testAccCheckGitlabProjectRunnerEnablementCreate(pid int, rid int) resource.TestCheckFunc {
+func testAccCheckGitlabProjectRunnerEnablementCreate(pid int64, rid int64) resource.TestCheckFunc {
 	return func(_ *terraform.State) error {
 		runnerdetails, _, err := testutil.TestGitlabClient.Runners.GetRunnerDetails(rid)
 		if err != nil {
@@ -129,7 +129,7 @@ func testAccCheckGitlabProjectRunnerEnablementCreate(pid int, rid int) resource.
 	}
 }
 
-func testAccCheckGitlabProjectRunnerEnablementDestroy(pid int, rid int) resource.TestCheckFunc {
+func testAccCheckGitlabProjectRunnerEnablementDestroy(pid int64, rid int64) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		testCreate := testAccCheckGitlabProjectRunnerEnablementCreate(pid, rid)
 		err := testCreate(s)

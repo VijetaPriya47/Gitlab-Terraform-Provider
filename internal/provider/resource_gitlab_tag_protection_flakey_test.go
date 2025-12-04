@@ -281,7 +281,7 @@ func testAccCheckGitlabTagProtectionAttributesFlakey(pt *gitlab.ProtectedTag, wa
 			remainingWantedAccessLevelsAllowedToCreate[int(api.AccessLevelNameToValue[v])] = struct{}{}
 		}
 
-		remainingWantedUserIDsAllowedToCreate := map[int]struct{}{}
+		remainingWantedUserIDsAllowedToCreate := map[int64]struct{}{}
 		for _, v := range want.UsersAllowedToCreate {
 			users, _, err := testutil.TestGitlabClient.Users.ListUsers(&gitlab.ListUsersOptions{
 				Username: gitlab.Ptr(v),
@@ -294,7 +294,7 @@ func testAccCheckGitlabTagProtectionAttributesFlakey(pt *gitlab.ProtectedTag, wa
 			}
 			remainingWantedUserIDsAllowedToCreate[users[0].ID] = struct{}{}
 		}
-		remainingWantedGroupIDsAllowedToCreate := map[int]struct{}{}
+		remainingWantedGroupIDsAllowedToCreate := map[int64]struct{}{}
 		for _, v := range want.GroupsAllowedToCreate {
 			group, _, err := testutil.TestGitlabClient.Groups.GetGroup(v, nil)
 			if err != nil {

@@ -42,9 +42,9 @@ func TestAcc_GitlabProjectJobTokenScopes_basic(t *testing.T) {
 					]
 				}`, project.ID, linkProject.ID, linkTwoProject.ID),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "id", strconv.Itoa(project.ID)),
-					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "project", strconv.Itoa(project.ID)),
-					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "project_id", strconv.Itoa(project.ID)),
+					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "id", strconv.FormatInt(project.ID, 10)),
+					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "project", strconv.FormatInt(project.ID, 10)),
+					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "project_id", strconv.FormatInt(project.ID, 10)),
 					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "enabled", "true"),
 					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "target_project_ids.#", "2"),
 					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "target_group_ids.#", "0"),
@@ -199,9 +199,9 @@ func TestAcc_GitlabProjectJobTokenScopes_destroyRevertsToApplicationSettings(t *
 					enabled = false
 				}`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "id", strconv.Itoa(project.ID)),
-					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "project", strconv.Itoa(project.ID)),
-					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "project_id", strconv.Itoa(project.ID)),
+					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "id", strconv.FormatInt(project.ID, 10)),
+					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "project", strconv.FormatInt(project.ID, 10)),
+					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "project_id", strconv.FormatInt(project.ID, 10)),
 					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "enabled", "false"),
 				),
 			},
@@ -270,9 +270,9 @@ func TestAcc_GitlabProjectJobTokenScopes_basic_deprecated(t *testing.T) {
 					]
 				}`, project.ID, linkProject.ID, linkTwoProject.ID),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "id", strconv.Itoa(project.ID)),
-					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "project", strconv.Itoa(project.ID)),
-					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "project_id", strconv.Itoa(project.ID)),
+					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "id", strconv.FormatInt(project.ID, 10)),
+					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "project", strconv.FormatInt(project.ID, 10)),
+					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "project_id", strconv.FormatInt(project.ID, 10)),
 					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "target_project_ids.#", "2"),
 					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "target_group_ids.#", "0"),
 				),
@@ -459,9 +459,9 @@ func TestAcc_GitlabProjectJobTokenScopes_migrateProjectIdToProject(t *testing.T)
 					]
 				}`, project.ID, linkProject.ID, linkTwoProject.ID),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "id", strconv.Itoa(project.ID)),
-					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "project", strconv.Itoa(project.ID)),
-					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "project_id", strconv.Itoa(project.ID)),
+					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "id", strconv.FormatInt(project.ID, 10)),
+					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "project", strconv.FormatInt(project.ID, 10)),
+					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "project_id", strconv.FormatInt(project.ID, 10)),
 					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "target_project_ids.#", "2"),
 					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "target_group_ids.#", "0"),
 				),
@@ -484,9 +484,9 @@ func TestAcc_GitlabProjectJobTokenScopes_migrateProjectIdToProject(t *testing.T)
 				}`, project.ID, linkProject.ID, linkTwoProject.ID),
 				// After apply, the same 2 projects should be present.
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "id", strconv.Itoa(project.ID)),
-					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "project", strconv.Itoa(project.ID)),
-					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "project_id", strconv.Itoa(project.ID)),
+					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "id", strconv.FormatInt(project.ID, 10)),
+					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "project", strconv.FormatInt(project.ID, 10)),
+					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "project_id", strconv.FormatInt(project.ID, 10)),
 					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "target_project_ids.#", "2"),
 					resource.TestCheckResourceAttr("gitlab_project_job_token_scopes.this", "target_group_ids.#", "0"),
 				),

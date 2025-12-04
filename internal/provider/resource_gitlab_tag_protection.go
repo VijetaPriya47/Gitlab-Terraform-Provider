@@ -176,10 +176,10 @@ func (r *gitlabTagProtectionResource) Create(ctx context.Context, req resource.C
 			allowedToTagsPermissionOptionData.AccessLevel = gitlab.Ptr(api.AccessLevelNameToValue[plannedAllowedTo.AccessLevel.ValueString()])
 		}
 		if !plannedAllowedTo.UserId.IsNull() && plannedAllowedTo.UserId.ValueInt64() != 0 {
-			allowedToTagsPermissionOptionData.UserID = gitlab.Ptr(int(plannedAllowedTo.UserId.ValueInt64()))
+			allowedToTagsPermissionOptionData.UserID = gitlab.Ptr(plannedAllowedTo.UserId.ValueInt64())
 		}
 		if !plannedAllowedTo.GroupId.IsNull() && plannedAllowedTo.GroupId.ValueInt64() != 0 {
-			allowedToTagsPermissionOptionData.GroupID = gitlab.Ptr(int(plannedAllowedTo.GroupId.ValueInt64()))
+			allowedToTagsPermissionOptionData.GroupID = gitlab.Ptr(plannedAllowedTo.GroupId.ValueInt64())
 		}
 		allowedToCreate = append(allowedToCreate, allowedToTagsPermissionOptionData)
 	}

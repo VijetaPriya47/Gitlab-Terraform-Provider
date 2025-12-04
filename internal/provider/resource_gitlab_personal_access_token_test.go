@@ -782,9 +782,9 @@ func testAccCheckGitlabPersonalAccessTokenDestroy(s *terraform.State) error {
 		name := rs.Primary.Attributes["name"]
 		userId := rs.Primary.Attributes["user_id"]
 
-		userIdInt, err := strconv.Atoi(userId)
+		userIdInt, err := strconv.ParseInt(userId, 10, 64)
 		if err != nil {
-			return fmt.Errorf("Error converting user ID to string: %v", userId)
+			return fmt.Errorf("Error converting user ID to int64: %v", userId)
 		}
 
 		tokens, _, err := testutil.TestGitlabClient.PersonalAccessTokens.ListPersonalAccessTokens(&gitlab.ListPersonalAccessTokensOptions{UserID: &userIdInt})
@@ -1015,7 +1015,7 @@ func TestAccGitlabPersonalAccessToken_withTimeRotating(t *testing.T) {
 	})
 }
 
-func revokePersonalAccessToken(userID int, tokenName string) error {
+func revokePersonalAccessToken(userID int64, tokenName string) error {
 	tokenID, err := personalAccessTokenID(userID, tokenName)
 	if err != nil {
 		return err
@@ -1025,7 +1025,7 @@ func revokePersonalAccessToken(userID int, tokenName string) error {
 	return err
 }
 
-func personalAccessTokenID(userID int, tokenName string) (int, error) {
+func personalAccessTokenID(userID int64, tokenName string) (int64, error) {
 	tokens, _, err := testutil.TestGitlabClient.PersonalAccessTokens.ListPersonalAccessTokens(&gitlab.ListPersonalAccessTokensOptions{
 		UserID: gitlab.Ptr(userID),
 	})

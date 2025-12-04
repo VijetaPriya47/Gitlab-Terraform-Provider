@@ -294,7 +294,7 @@ func (d *gitlabGroupSubgroupsDataSource) Read(ctx context.Context, req datasourc
 
 	options := &gitlab.ListSubGroupsOptions{}
 	if !data.SkipGroups.IsNull() && !data.SkipGroups.IsUnknown() {
-		var skipGroups []int
+		var skipGroups []int64
 		data.SkipGroups.ElementsAs(ctx, &skipGroups, true)
 		options.SkipGroups = &skipGroups
 	}

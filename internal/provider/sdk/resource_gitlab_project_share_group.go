@@ -81,7 +81,7 @@ func gitlabProjectShareGroupSchema() map[string]*schema.Schema {
 func resourceGitlabProjectShareGroupCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 
-	groupId := d.Get("group_id").(int)
+	groupId := int64(d.Get("group_id").(int))
 	project := d.Get("project").(string)
 
 	var groupAccess gitlab.AccessLevelValue
@@ -103,7 +103,7 @@ func resourceGitlabProjectShareGroupCreate(ctx context.Context, d *schema.Resour
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	groupIdString := strconv.Itoa(groupId)
+	groupIdString := strconv.FormatInt(groupId, 10)
 	d.SetId(utils.BuildTwoPartID(&project, &groupIdString))
 	return resourceGitlabProjectShareGroupRead(ctx, d, meta)
 }
@@ -145,13 +145,13 @@ func resourceGitlabProjectShareGroupRead(ctx context.Context, d *schema.Resource
 	return nil
 }
 
-func projectAndGroupIdFromId(id string) (string, int, error) {
+func projectAndGroupIdFromId(id string) (string, int64, error) {
 	project, groupIdString, err := utils.ParseTwoPartID(id)
 	if err != nil {
 		return "", 0, fmt.Errorf("error parsing ID: %s", id)
 	}
 
-	groupId, err := strconv.Atoi(groupIdString)
+	groupId, err := strconv.ParseInt(groupIdString, 10, 64)
 	if err != nil {
 		return "", 0, fmt.Errorf("can not determine group id: %v", id)
 	}
@@ -178,12 +178,7 @@ func resourceGitlabProjectShareGroupDelete(ctx context.Context, d *schema.Resour
 	return nil
 }
 
-func resourceGitlabProjectShareGroupSetToState(d *schema.ResourceData, group struct {
-	GroupID          int    `json:"group_id"`
-	GroupName        string `json:"group_name"`
-	GroupFullPath    string `json:"group_full_path"`
-	GroupAccessLevel int    `json:"group_access_level"`
-}, projectId *string,
+func resourceGitlabProjectShareGroupSetToState(d *schema.ResourceData, group gitlab.ProjectSharedWithGroup, projectId *string,
 ) {
 	// This cast is needed due to an inconsistency in the upstream API
 	// GroupAccessLevel is returned as an int but the map we lookup is sorted by the int alias AccessLevelValue
@@ -193,7 +188,7 @@ func resourceGitlabProjectShareGroupSetToState(d *schema.ResourceData, group str
 	d.Set("group_id", group.GroupID)
 	d.Set("group_access", api.AccessLevelValueToName[convertedAccessLevel])
 
-	groupId := strconv.Itoa(group.GroupID)
+	groupId := strconv.FormatInt(group.GroupID, 10)
 	d.SetId(utils.BuildTwoPartID(projectId, &groupId))
 }
 

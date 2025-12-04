@@ -134,7 +134,7 @@ func TestAcc_GitlabPagesDomain_conflictingError(t *testing.T) {
 	})
 }
 
-func testAcc_GitlabPagesDomain_CheckDestroy(projectID int, domain string) resource.TestCheckFunc {
+func testAcc_GitlabPagesDomain_CheckDestroy(projectID int64, domain string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		_, _, err := testutil.TestGitlabClient.PagesDomains.GetPagesDomain(projectID, domain)
 		if err == nil {

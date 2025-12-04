@@ -33,9 +33,9 @@ func TestAccDataSourceGitlabProjectAccessTokens_basic(t *testing.T) {
 				`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("data.gitlab_project_access_tokens.this", "access_tokens.#", fmt.Sprintf("%d", len(projectAccessTokens))),
-					resource.TestCheckResourceAttr("data.gitlab_project_access_tokens.this", "access_tokens.0.id", strconv.Itoa(projectAccessTokens[0].ID)),
+					resource.TestCheckResourceAttr("data.gitlab_project_access_tokens.this", "access_tokens.0.id", strconv.FormatInt(projectAccessTokens[0].ID, 10)),
 					resource.TestCheckResourceAttr("data.gitlab_project_access_tokens.this", "access_tokens.0.name", projectAccessTokens[0].Name),
-					resource.TestCheckResourceAttr("data.gitlab_project_access_tokens.this", "access_tokens.4.id", strconv.Itoa(projectAccessTokens[4].ID)),
+					resource.TestCheckResourceAttr("data.gitlab_project_access_tokens.this", "access_tokens.4.id", strconv.FormatInt(projectAccessTokens[4].ID, 10)),
 				),
 			},
 		},
@@ -107,7 +107,7 @@ func TestAccDataSourceGitlabProjectAccessTokens_state(t *testing.T) {
 				`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("data.gitlab_project_access_tokens.this", "access_tokens.#", fmt.Sprintf("%d", len(projectAccessTokens))),
-					resource.TestCheckResourceAttr("data.gitlab_project_access_tokens.this", "access_tokens.0.id", strconv.Itoa(projectAccessTokens[0].ID)),
+					resource.TestCheckResourceAttr("data.gitlab_project_access_tokens.this", "access_tokens.0.id", strconv.FormatInt(projectAccessTokens[0].ID, 10)),
 					resource.TestCheckResourceAttr("data.gitlab_project_access_tokens.this", "access_tokens.0.active", "false"),
 					resource.TestCheckResourceAttr("data.gitlab_project_access_tokens.this", "access_tokens.0.revoked", "true"),
 					resource.TestCheckResourceAttr("data.gitlab_project_access_tokens.this", "access_tokens.1.active", "true"),
@@ -123,7 +123,7 @@ func TestAccDataSourceGitlabProjectAccessTokens_state(t *testing.T) {
 				`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("data.gitlab_project_access_tokens.this", "access_tokens.#", fmt.Sprintf("%d", len(projectAccessTokens)-1)),
-					resource.TestCheckResourceAttr("data.gitlab_project_access_tokens.this", "access_tokens.0.id", strconv.Itoa(projectAccessTokens[0].ID)),
+					resource.TestCheckResourceAttr("data.gitlab_project_access_tokens.this", "access_tokens.0.id", strconv.FormatInt(projectAccessTokens[0].ID, 10)),
 					resource.TestCheckResourceAttr("data.gitlab_project_access_tokens.this", "access_tokens.0.active", "false"),
 					resource.TestCheckResourceAttr("data.gitlab_project_access_tokens.this", "access_tokens.0.revoked", "true"),
 				),
@@ -137,7 +137,7 @@ func TestAccDataSourceGitlabProjectAccessTokens_state(t *testing.T) {
 				`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("data.gitlab_project_access_tokens.this", "access_tokens.#", fmt.Sprintf("%d", len(projectAccessTokens)-1)),
-					resource.TestCheckResourceAttr("data.gitlab_project_access_tokens.this", "access_tokens.0.id", strconv.Itoa(projectAccessTokens[1].ID)),
+					resource.TestCheckResourceAttr("data.gitlab_project_access_tokens.this", "access_tokens.0.id", strconv.FormatInt(projectAccessTokens[1].ID, 10)),
 					resource.TestCheckResourceAttr("data.gitlab_project_access_tokens.this", "access_tokens.0.active", "true"),
 					resource.TestCheckResourceAttr("data.gitlab_project_access_tokens.this", "access_tokens.0.revoked", "false"),
 				),

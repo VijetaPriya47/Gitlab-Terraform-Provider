@@ -226,7 +226,7 @@ func (r *gitlabApplicationResource) Delete(ctx context.Context, req resource.Del
 		return
 	}
 
-	id, err := strconv.Atoi(data.Id.ValueString())
+	id, err := strconv.ParseInt(data.Id.ValueString(), 10, 64)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Internal provider error",
@@ -254,7 +254,7 @@ func (r *gitlabApplicationResource) applicationModelToState(application *gitlab.
 	if application.Secret != "" {
 		data.Secret = types.StringValue(application.Secret)
 	}
-	data.Id = types.StringValue(strconv.Itoa(application.ID))
+	data.Id = types.StringValue(strconv.FormatInt(application.ID, 10))
 	data.Confidential = types.BoolValue(application.Confidential)
 	data.Name = types.StringValue(application.ApplicationName)
 	data.RedirectURL = types.StringValue(application.CallbackURL)
@@ -263,8 +263,10 @@ func (r *gitlabApplicationResource) applicationModelToState(application *gitlab.
 
 func findGitlabApplication(client *gitlab.Client, desiredId string) (*gitlab.Application, error) {
 	options := gitlab.ListApplicationsOptions{
-		PerPage: 20,
-		Page:    1,
+		ListOptions: gitlab.ListOptions{
+			PerPage: 20,
+			Page:    1,
+		},
 	}
 
 	for options.Page != 0 {
@@ -274,7 +276,7 @@ func findGitlabApplication(client *gitlab.Client, desiredId string) (*gitlab.App
 		}
 
 		for i := range paginatedApplications {
-			if strconv.Itoa(paginatedApplications[i].ID) == desiredId {
+			if strconv.FormatInt(paginatedApplications[i].ID, 10) == desiredId {
 				return paginatedApplications[i], nil
 			}
 		}

@@ -101,7 +101,7 @@ func (d *gitLabProjectMirrorPublicKeyDataSource) Read(ctx context.Context, req d
 	}
 
 	// call get project mirror public key API
-	mirrorPublicKey, _, err := d.client.ProjectMirrors.GetProjectMirrorPublicKey(state.ProjectId.ValueString(), int(state.MirrorId.ValueInt64()), gitlab.WithContext(ctx))
+	mirrorPublicKey, _, err := d.client.ProjectMirrors.GetProjectMirrorPublicKey(state.ProjectId.ValueString(), state.MirrorId.ValueInt64(), gitlab.WithContext(ctx))
 	if err != nil {
 		resp.Diagnostics.AddError("GitLab API error occured", fmt.Sprintf("Unable to read project mirror public key: %s", err.Error()))
 		return

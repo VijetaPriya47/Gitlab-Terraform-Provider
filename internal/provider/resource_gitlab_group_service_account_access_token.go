@@ -508,7 +508,7 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Read(ctx context.Context,
 	tflog.Debug(ctx, "Read gitlab GroupServiceAccountAccessToken", map[string]any{"token_id": accessTokenID, "user_id": userID, "group": group})
 
 	// Make sure the token ID is an int
-	accessTokenIDInt, err := strconv.Atoi(accessTokenID)
+	accessTokenIDInt, err := strconv.ParseInt(accessTokenID, 10, 64)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error parsing access token ID",
@@ -600,7 +600,7 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Create(ctx context.Contex
 
 	options.ExpiresAt = expiryDatePtr
 
-	token, _, err := r.client.Groups.CreateServiceAccountPersonalAccessToken(data.Group.ValueString(), int(data.UserID.ValueInt64()), options, gitlab.WithContext(ctx))
+	token, _, err := r.client.Groups.CreateServiceAccountPersonalAccessToken(data.Group.ValueString(), data.UserID.ValueInt64(), options, gitlab.WithContext(ctx))
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error creating GitLab GroupServiceAccountAccessToken",
@@ -633,7 +633,7 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Update(ctx context.Contex
 	userID := splitedID[1]
 	accessTokenID := splitedID[2]
 
-	userIDInt, err := strconv.Atoi(userID)
+	userIDInt, err := strconv.ParseInt(userID, 10, 64)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error parsing user ID",
@@ -642,7 +642,7 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Update(ctx context.Contex
 		return
 	}
 
-	accessTokenIDInt, err := strconv.Atoi(accessTokenID)
+	accessTokenIDInt, err := strconv.ParseInt(accessTokenID, 10, 64)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error parsing access token ID",
@@ -743,7 +743,7 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Delete(ctx context.Contex
 	accessTokenID := splitedID[2]
 	tflog.Debug(ctx, "Read gitlab GroupServiceAccountAccessToken", map[string]any{"token_id": accessTokenID, "user_id": userID, "group": group})
 
-	accessTokenIDInt, err := strconv.Atoi(accessTokenID)
+	accessTokenIDInt, err := strconv.ParseInt(accessTokenID, 10, 64)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error parsing access token ID",

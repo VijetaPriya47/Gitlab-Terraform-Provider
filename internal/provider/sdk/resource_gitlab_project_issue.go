@@ -60,10 +60,10 @@ func resourceGitlabProjectIssueCreate(ctx context.Context, d *schema.ResourceDat
 		Title: gitlab.Ptr(d.Get("title").(string)),
 	}
 	if iid, ok := d.GetOk("iid"); ok {
-		options.IID = gitlab.Ptr(iid.(int))
+		options.IID = gitlab.Ptr(int64(iid.(int)))
 	}
 	if assigneeIDs, ok := d.GetOk("assignee_ids"); ok {
-		options.AssigneeIDs = intSetToIntSlice(assigneeIDs.(*schema.Set))
+		options.AssigneeIDs = intSetToInt64Slice(assigneeIDs.(*schema.Set))
 	}
 	if confidential, ok := d.GetOk("confidential"); ok {
 		options.Confidential = gitlab.Ptr(confidential.(bool))
@@ -96,13 +96,13 @@ func resourceGitlabProjectIssueCreate(ctx context.Context, d *schema.ResourceDat
 		options.Labels = &gitlabLabels
 	}
 	if mergeRequestToResolveDiscussionsOf, ok := d.GetOk("merge_request_to_resolve_discussions_of"); ok {
-		options.MergeRequestToResolveDiscussionsOf = gitlab.Ptr(mergeRequestToResolveDiscussionsOf.(int))
+		options.MergeRequestToResolveDiscussionsOf = gitlab.Ptr(int64(mergeRequestToResolveDiscussionsOf.(int)))
 	}
 	if milestoneID, ok := d.GetOk("milestone_id"); ok {
-		options.MilestoneID = gitlab.Ptr(milestoneID.(int))
+		options.MilestoneID = gitlab.Ptr(int64(milestoneID.(int)))
 	}
 	if weight, ok := d.GetOk("weight"); ok {
-		options.Weight = gitlab.Ptr(weight.(int))
+		options.Weight = gitlab.Ptr(int64(weight.(int)))
 	}
 
 	issue, _, err := client.Issues.CreateIssue(project, options, gitlab.WithContext(ctx))
@@ -164,7 +164,7 @@ func resourceGitlabProjectIssueUpdate(ctx context.Context, d *schema.ResourceDat
 		options.Title = gitlab.Ptr(d.Get("title").(string))
 	}
 	if d.HasChange("assignee_ids") {
-		options.AssigneeIDs = intSetToIntSlice(d.Get("assignee_ids").(*schema.Set))
+		options.AssigneeIDs = intSetToInt64Slice(d.Get("assignee_ids").(*schema.Set))
 	}
 	if d.HasChange("confidential") {
 		options.Confidential = gitlab.Ptr(d.Get("confidential").(bool))
@@ -189,10 +189,10 @@ func resourceGitlabProjectIssueUpdate(ctx context.Context, d *schema.ResourceDat
 		options.Labels = &gitlabLabels
 	}
 	if d.HasChange("milestone_id") {
-		options.MilestoneID = gitlab.Ptr(d.Get("milestone_id").(int))
+		options.MilestoneID = gitlab.Ptr(int64(d.Get("milestone_id").(int)))
 	}
 	if d.HasChange("weight") {
-		options.Weight = gitlab.Ptr(d.Get("weight").(int))
+		options.Weight = gitlab.Ptr(int64(d.Get("weight").(int)))
 	}
 	if d.HasChange("state") {
 		options.StateEvent = gitlab.Ptr(issueStateToStateEvent[d.Get("state").(string)])
@@ -235,13 +235,13 @@ func resourceGitlabProjectIssueDelete(ctx context.Context, d *schema.ResourceDat
 	return nil
 }
 
-func resourceGitLabProjectIssueParseId(id string) (string, int, error) {
+func resourceGitLabProjectIssueParseId(id string) (string, int64, error) {
 	project, issue, err := utils.ParseTwoPartID(id)
 	if err != nil {
 		return "", 0, err
 	}
 
-	issueIID, err := strconv.Atoi(issue)
+	issueIID, err := strconv.ParseInt(issue, 10, 64)
 	if err != nil {
 		return "", 0, err
 	}
@@ -249,7 +249,7 @@ func resourceGitLabProjectIssueParseId(id string) (string, int, error) {
 	return project, issueIID, nil
 }
 
-func resourceGitLabProjectIssueBuildId(project string, issueIID int) string {
+func resourceGitLabProjectIssueBuildId(project string, issueIID int64) string {
 	stringIssueIID := fmt.Sprintf("%d", issueIID)
 	return utils.BuildTwoPartID(&project, &stringIssueIID)
 }

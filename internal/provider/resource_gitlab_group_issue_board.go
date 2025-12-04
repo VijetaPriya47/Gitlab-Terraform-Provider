@@ -170,7 +170,7 @@ func (r *gitlabGroupIssueBoardResource) Read(ctx context.Context, req resource.R
 		return
 	}
 
-	boardId, err := strconv.Atoi(boardID)
+	boardId, err := strconv.ParseInt(boardID, 10, 64)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Invalid board ID provided, board ID should be an Int",
@@ -220,7 +220,7 @@ func (r *gitlabGroupIssueBoardResource) Update(ctx context.Context, req resource
 		return
 	}
 
-	boardId, err := strconv.Atoi(boardID)
+	boardId, err := strconv.ParseInt(boardID, 10, 64)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Internal provider error",
@@ -238,7 +238,7 @@ func (r *gitlabGroupIssueBoardResource) Update(ctx context.Context, req resource
 	}
 
 	if !data.MilestoneId.IsNull() && !data.MilestoneId.IsUnknown() {
-		optionsUpdate.MilestoneID = gitlab.Ptr(int(data.MilestoneId.ValueInt64()))
+		optionsUpdate.MilestoneID = gitlab.Ptr(data.MilestoneId.ValueInt64())
 	}
 
 	if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
@@ -301,7 +301,7 @@ func (r *gitlabGroupIssueBoardResource) Update(ctx context.Context, req resource
 	})
 	for i, v := range data.Lists {
 		listOptions := &gitlab.CreateGroupIssueBoardListOptions{}
-		listOptions.LabelID = gitlab.Ptr(int(v.LabelId.ValueInt64()))
+		listOptions.LabelID = gitlab.Ptr(v.LabelId.ValueInt64())
 		issueBoardList, _, err := r.client.GroupIssueBoards.CreateGroupIssueBoardList(groupID, issueBoard.ID, listOptions, gitlab.WithContext(ctx))
 		if err != nil {
 			if api.Is404(err) {
@@ -351,7 +351,7 @@ func (r *gitlabGroupIssueBoardResource) Delete(ctx context.Context, req resource
 		return
 	}
 
-	boardId, err := strconv.Atoi(boardID)
+	boardId, err := strconv.ParseInt(boardID, 10, 64)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Internal provider error",
@@ -403,7 +403,7 @@ func (r *gitlabGroupIssueBoardResource) Create(ctx context.Context, req resource
 	}
 
 	if !data.MilestoneId.IsNull() && !data.MilestoneId.IsUnknown() {
-		optionsUpdate.MilestoneID = gitlab.Ptr(int(data.MilestoneId.ValueInt64()))
+		optionsUpdate.MilestoneID = gitlab.Ptr(data.MilestoneId.ValueInt64())
 	}
 
 	if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
@@ -486,7 +486,7 @@ func (r *gitlabGroupIssueBoardResource) Create(ctx context.Context, req resource
 	})
 	for i, v := range data.Lists {
 		listOptions := &gitlab.CreateGroupIssueBoardListOptions{}
-		listOptions.LabelID = gitlab.Ptr(int(v.LabelId.ValueInt64()))
+		listOptions.LabelID = gitlab.Ptr(v.LabelId.ValueInt64())
 		issueBoardList, _, err := r.client.GroupIssueBoards.CreateGroupIssueBoardList(groupID, issueBoard.ID, listOptions, gitlab.WithContext(ctx))
 		if err != nil {
 			if api.Is404(err) {

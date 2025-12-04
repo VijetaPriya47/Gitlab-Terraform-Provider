@@ -1158,9 +1158,9 @@ func dataSourceGitlabProjectsRead(ctx context.Context, d *schema.ResourceData, m
 
 	// Permanent parameters
 
-	page := d.Get("page").(int)
-	perPage := d.Get("per_page").(int)
-	maxQueryablePages := d.Get("max_queryable_pages").(int)
+	page := int64(d.Get("page").(int))
+	perPage := int64(d.Get("per_page").(int))
+	maxQueryablePages := int64(d.Get("max_queryable_pages").(int))
 
 	// Conditional parameters
 	// Only way I found to conditionally pass a search parameter to the List(Group/Project)Options
