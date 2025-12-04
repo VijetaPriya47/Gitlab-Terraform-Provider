@@ -343,7 +343,7 @@ github-for-terraform-registry:
   stage: publish
   only:
     - tags
-  image: alpine:3.22
+  image: alpine:3.23
   variables:
     GIT_STRATEGY: none
     GITHUB_ORG: gitlabhq
