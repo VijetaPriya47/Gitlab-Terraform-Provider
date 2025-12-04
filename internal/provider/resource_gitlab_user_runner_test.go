@@ -116,7 +116,7 @@ func TestAcc_GitlabUserRunner_basicProjectRunner(t *testing.T) {
 					`, project.ID),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("gitlab_user_runner.this", "token"),
-					resource.TestCheckResourceAttr("gitlab_user_runner.this", "project_id", strconv.Itoa(project.ID)),
+					resource.TestCheckResourceAttr("gitlab_user_runner.this", "project_id", strconv.FormatInt(project.ID, 10)),
 				),
 			},
 			// Verify Import
@@ -194,7 +194,7 @@ func TestAcc_GitlabUserRunner_basicGroupRunner(t *testing.T) {
 					`, group.ID),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("gitlab_user_runner.this", "token"),
-					resource.TestCheckResourceAttr("gitlab_user_runner.this", "group_id", strconv.Itoa(group.ID)),
+					resource.TestCheckResourceAttr("gitlab_user_runner.this", "group_id", strconv.FormatInt(group.ID, 10)),
 				),
 			},
 			// Verify Import
@@ -223,7 +223,7 @@ func TestAcc_GitlabUserRunner_basicGroupRunner(t *testing.T) {
 					`, group.ID),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("gitlab_user_runner.this", "token"), // rest of attributes checked by import
-					resource.TestCheckResourceAttr("gitlab_user_runner.this", "group_id", strconv.Itoa(group.ID)),
+					resource.TestCheckResourceAttr("gitlab_user_runner.this", "group_id", strconv.FormatInt(group.ID, 10)),
 				),
 			},
 			// Verify Import
@@ -405,7 +405,7 @@ func TestAcc_GitlabUserRunner_importAndManageTags(t *testing.T) {
 					 }
 					`,
 				ResourceName:       "gitlab_user_runner.instance_runner",
-				ImportStateId:      strconv.Itoa(runner.ID),
+				ImportStateId:      strconv.FormatInt(runner.ID, 10),
 				ImportStatePersist: true,
 				ImportState:        true,
 			},

@@ -89,7 +89,7 @@ func TestAccGitlabGroup_basic(t *testing.T) {
 						LFSEnabled:           gitlab.Ptr(false),
 						RequestAccessEnabled: gitlab.Ptr(true),
 						RequireTwoFactorAuth: gitlab.Ptr(true),
-						TwoFactorGracePeriod: gitlab.Ptr(56),
+						TwoFactorGracePeriod: gitlab.Ptr(int64(56)),
 						AutoDevopsEnabled:    gitlab.Ptr(true),
 						EmailsDisabled:       gitlab.Ptr(true),
 						ShareWithGroupLock:   gitlab.Ptr(true),
@@ -135,7 +135,7 @@ func TestAccGitlabGroup_basic(t *testing.T) {
 						LFSEnabled:           gitlab.Ptr(false),
 						RequestAccessEnabled: gitlab.Ptr(true),
 						RequireTwoFactorAuth: gitlab.Ptr(true),
-						TwoFactorGracePeriod: gitlab.Ptr(56),
+						TwoFactorGracePeriod: gitlab.Ptr(int64(56)),
 						AutoDevopsEnabled:    gitlab.Ptr(true),
 						EmailsDisabled:       gitlab.Ptr(true),
 						ShareWithGroupLock:   gitlab.Ptr(true),
@@ -181,7 +181,7 @@ func TestAccGitlabGroup_basic(t *testing.T) {
 						LFSEnabled:           gitlab.Ptr(false),
 						RequestAccessEnabled: gitlab.Ptr(true),
 						RequireTwoFactorAuth: gitlab.Ptr(true),
-						TwoFactorGracePeriod: gitlab.Ptr(56),
+						TwoFactorGracePeriod: gitlab.Ptr(int64(56)),
 						AutoDevopsEnabled:    gitlab.Ptr(true),
 						EmailsDisabled:       gitlab.Ptr(true),
 						ShareWithGroupLock:   gitlab.Ptr(true),
@@ -227,7 +227,7 @@ func TestAccGitlabGroup_basic(t *testing.T) {
 						LFSEnabled:           gitlab.Ptr(false),
 						RequestAccessEnabled: gitlab.Ptr(true),
 						RequireTwoFactorAuth: gitlab.Ptr(true),
-						TwoFactorGracePeriod: gitlab.Ptr(56),
+						TwoFactorGracePeriod: gitlab.Ptr(int64(56)),
 						AutoDevopsEnabled:    gitlab.Ptr(true),
 						EmailsDisabled:       gitlab.Ptr(true),
 						ShareWithGroupLock:   gitlab.Ptr(true),
@@ -491,11 +491,11 @@ func TestAccGitlabGroup_basic_deprecated(t *testing.T) {
 						LFSEnabled:              gitlab.Ptr(false),
 						RequestAccessEnabled:    gitlab.Ptr(true),
 						RequireTwoFactorAuth:    gitlab.Ptr(true),
-						TwoFactorGracePeriod:    gitlab.Ptr(56),
+						TwoFactorGracePeriod:    gitlab.Ptr(int64(56)),
 						AutoDevopsEnabled:       gitlab.Ptr(true),
 						EmailsDisabled:          gitlab.Ptr(true),
 						ShareWithGroupLock:      gitlab.Ptr(true),
-						DefaultBranchProtection: gitlab.Ptr(1),
+						DefaultBranchProtection: gitlab.Ptr(int64(1)),
 					}),
 				),
 			},
@@ -539,11 +539,11 @@ func TestAccGitlabGroup_basic_deprecated(t *testing.T) {
 						LFSEnabled:              gitlab.Ptr(false),
 						RequestAccessEnabled:    gitlab.Ptr(true),
 						RequireTwoFactorAuth:    gitlab.Ptr(true),
-						TwoFactorGracePeriod:    gitlab.Ptr(56),
+						TwoFactorGracePeriod:    gitlab.Ptr(int64(56)),
 						AutoDevopsEnabled:       gitlab.Ptr(true),
 						EmailsDisabled:          gitlab.Ptr(true),
 						ShareWithGroupLock:      gitlab.Ptr(true),
-						DefaultBranchProtection: gitlab.Ptr(0),
+						DefaultBranchProtection: gitlab.Ptr(int64(0)),
 					}),
 				),
 			},
@@ -587,11 +587,11 @@ func TestAccGitlabGroup_basic_deprecated(t *testing.T) {
 						LFSEnabled:              gitlab.Ptr(false),
 						RequestAccessEnabled:    gitlab.Ptr(true),
 						RequireTwoFactorAuth:    gitlab.Ptr(true),
-						TwoFactorGracePeriod:    gitlab.Ptr(56),
+						TwoFactorGracePeriod:    gitlab.Ptr(int64(56)),
 						AutoDevopsEnabled:       gitlab.Ptr(true),
 						EmailsDisabled:          gitlab.Ptr(true),
 						ShareWithGroupLock:      gitlab.Ptr(true),
-						DefaultBranchProtection: gitlab.Ptr(4),
+						DefaultBranchProtection: gitlab.Ptr(int64(4)),
 					}),
 				),
 			},
@@ -1309,7 +1309,7 @@ func TestAccGitlabGroup_nested(t *testing.T) {
 	var group gitlab.Group
 	var group2 gitlab.Group
 	var nestedGroup gitlab.Group
-	var lastGid int
+	var lastGid int64
 	testGidNotChanged := func(s *terraform.State) error {
 		if lastGid == 0 {
 			lastGid = nestedGroup.ID
@@ -1851,8 +1851,8 @@ type testAccGitlabGroupExpectedAttributes struct {
 	ProjectCreationLevel            gitlab.ProjectCreationLevelValue
 	SubGroupCreationLevel           gitlab.SubGroupCreationLevelValue
 	RequireTwoFactorAuth            *bool
-	TwoFactorGracePeriod            *int
-	DefaultBranchProtection         *int
+	TwoFactorGracePeriod            *int64
+	DefaultBranchProtection         *int64
 	DefaultBranchProtectionDefaults *testDefaultBranchProtectionDefaults
 	IPRestrictionRanges             string
 	AllowedEmailDomainsList         string
@@ -2071,7 +2071,7 @@ func testAccCheckGitlabGroupPushRules(name string, wantPushRules *testAccGitlabG
 				gotPushRules.RejectNonDCOCommits, *wantPushRules.RejectNonDCOCommits))
 		}
 
-		if wantPushRules.MaxFileSize != nil && gotPushRules.MaxFileSize != *wantPushRules.MaxFileSize {
+		if wantPushRules.MaxFileSize != nil && gotPushRules.MaxFileSize != int64(*wantPushRules.MaxFileSize) {
 			messages = append(messages, fmt.Sprintf("max_file_size (got: %d, wanted: %d)",
 				gotPushRules.MaxFileSize, *wantPushRules.MaxFileSize))
 		}

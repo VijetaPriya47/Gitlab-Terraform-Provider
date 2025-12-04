@@ -366,7 +366,7 @@ func flattenAssigneeIds(assignees []*gitlab.IssueAssignee) (result []int) {
 	}
 
 	for _, assignee := range assignees {
-		result = append(result, assignee.ID)
+		result = append(result, int(assignee.ID))
 	}
 	return result
 }

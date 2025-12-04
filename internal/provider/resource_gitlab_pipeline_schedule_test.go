@@ -345,13 +345,13 @@ func TestAccGitlabPipelineSchedule_basic(t *testing.T) {
 	})
 }
 
-func resourceGitlabPipelineScheduleParseID(id string) (string, int, error) {
+func resourceGitlabPipelineScheduleParseID(id string) (string, int64, error) {
 	project, rawPipelineScheduleID, err := utils.ParseTwoPartID(id)
 	if err != nil {
 		return "", 0, err
 	}
 
-	pipelineScheduleID, err := strconv.Atoi(rawPipelineScheduleID)
+	pipelineScheduleID, err := strconv.ParseInt(rawPipelineScheduleID, 10, 64)
 	if err != nil {
 		return "", 0, err
 	}

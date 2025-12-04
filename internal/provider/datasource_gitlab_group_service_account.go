@@ -108,7 +108,7 @@ func (d *gitlabGroupServiceAccountDataSource) Read(ctx context.Context, req data
 
 	// Set the ID
 	state.ID = types.StringValue(utils.BuildTwoPartID(state.Group.ValueStringPointer(), state.ServiceAccountID.ValueStringPointer()))
-	state.ServiceAccountID = types.StringValue(strconv.Itoa(serviceAccount.ID))
+	state.ServiceAccountID = types.StringValue(strconv.FormatInt(serviceAccount.ID, 10))
 	state.Group = types.StringValue(state.Group.ValueString())
 	state.Name = types.StringValue(serviceAccount.Name)
 	state.Username = types.StringValue(serviceAccount.UserName)

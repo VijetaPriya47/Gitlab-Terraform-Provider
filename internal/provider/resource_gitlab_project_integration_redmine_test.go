@@ -153,7 +153,7 @@ func TestAccGitlabProjectIntegrationRedmine_validation(t *testing.T) {
 	})
 }
 
-func testAccCheckGitlabProjectIntegrationRedmineDestroy(projectId int) resource.TestCheckFunc {
+func testAccCheckGitlabProjectIntegrationRedmineDestroy(projectId int64) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		service, _, err := testutil.TestGitlabClient.Services.GetRedmineService(projectId)
 		if err != nil {

@@ -132,7 +132,7 @@ func (r *gitlabGroupBadgeResource) Create(ctx context.Context, req resource.Crea
 		return
 	}
 
-	badgeID := strconv.Itoa(badge.ID)
+	badgeID := strconv.FormatInt(badge.ID, 10)
 	data.ID = types.StringValue(utils.BuildTwoPartID(&group, &badgeID))
 	data.modelToStateModel(badge, group)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -234,13 +234,13 @@ func (r *gitlabGroupBadgeResourceModel) modelToStateModel(b *gitlab.GroupBadge, 
 	r.RenderedImageURL = types.StringValue(b.RenderedImageURL)
 }
 
-func (d *gitlabGroupBadgeResourceModel) ResourceGitlabGroupBadgeParseID(id string) (string, int, error) {
+func (d *gitlabGroupBadgeResourceModel) ResourceGitlabGroupBadgeParseID(id string) (string, int64, error) {
 	group, rawBadgeId, err := utils.ParseTwoPartID(id)
 	if err != nil {
 		return "", 0, err
 	}
 
-	badgeId, err := strconv.Atoi(rawBadgeId)
+	badgeId, err := strconv.ParseInt(rawBadgeId, 10, 64)
 	if err != nil {
 		return "", 0, err
 	}

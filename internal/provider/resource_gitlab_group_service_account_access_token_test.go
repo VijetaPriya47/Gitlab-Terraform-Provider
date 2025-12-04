@@ -23,7 +23,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_createWithPastExpiryDate_valida
 	testutil.SkipIfCE(t)
 
 	group := testutil.CreateGroups(t, 1)[0]
-	groupID := strconv.Itoa(group.ID)
+	groupID := strconv.FormatInt(group.ID, 10)
 	serviceAccount := testutil.CreateGroupServiceAccounts(t, 1, groupID)[0]
 
 	pastDate := api.CurrentTime().Add(-24 * time.Hour).Format(api.Iso8601)
@@ -56,7 +56,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_updateWithPastExpiryDate_valida
 	testutil.SkipIfCE(t)
 
 	group := testutil.CreateGroups(t, 1)[0]
-	groupID := strconv.Itoa(group.ID)
+	groupID := strconv.FormatInt(group.ID, 10)
 	serviceAccount := testutil.CreateGroupServiceAccounts(t, 1, groupID)[0]
 
 	futureDate := api.CurrentTime().Add(48 * time.Hour).Format(api.Iso8601)
@@ -105,7 +105,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_failsWithPastExpiryDate_validat
 	testutil.SkipIfCE(t)
 
 	group := testutil.CreateGroups(t, 1)[0]
-	groupID := strconv.Itoa(group.ID)
+	groupID := strconv.FormatInt(group.ID, 10)
 	serviceAccount := testutil.CreateGroupServiceAccounts(t, 1, groupID)[0]
 
 	pastDateForConfig := api.CurrentTime().Add(-24 * time.Hour).Format(api.Iso8601)
@@ -142,7 +142,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_failsToUpdateWithPastExpiryDate
 	testutil.SkipIfCE(t)
 
 	group := testutil.CreateGroups(t, 1)[0]
-	groupID := strconv.Itoa(group.ID)
+	groupID := strconv.FormatInt(group.ID, 10)
 	serviceAccount := testutil.CreateGroupServiceAccounts(t, 1, groupID)[0]
 
 	futureDate := api.CurrentTime().Add(48 * time.Hour).Format(api.Iso8601)
@@ -197,7 +197,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_basic(t *testing.T) {
 	testutil.SkipIfCE(t)
 
 	group := testutil.CreateGroups(t, 1)[0]
-	groupID := strconv.Itoa(group.ID)
+	groupID := strconv.FormatInt(group.ID, 10)
 
 	serviceAccount := testutil.CreateGroupServiceAccounts(t, 1, groupID)[0]
 
@@ -287,7 +287,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_regression6537(t *testing.T) {
 	testutil.SkipIfCE(t)
 
 	group := testutil.CreateGroups(t, 1)[0]
-	groupID := strconv.Itoa(group.ID)
+	groupID := strconv.FormatInt(group.ID, 10)
 
 	serviceAccount := testutil.CreateGroupServiceAccounts(t, 1, groupID)[0]
 
@@ -333,7 +333,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_noExpiration(t *testing.T) {
 	testutil.SkipIfCE(t)
 
 	group := testutil.CreateGroups(t, 1)[0]
-	groupID := strconv.Itoa(group.ID)
+	groupID := strconv.FormatInt(group.ID, 10)
 
 	serviceAccount := testutil.CreateGroupServiceAccounts(t, 1, groupID)[0]
 
@@ -424,7 +424,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_rotationConfiguration(t *testin
 	testutil.SkipIfCE(t)
 
 	group := testutil.CreateGroups(t, 1)[0]
-	groupID := strconv.Itoa(group.ID)
+	groupID := strconv.FormatInt(group.ID, 10)
 
 	serviceAccount := testutil.CreateGroupServiceAccounts(t, 1, groupID)[0]
 
@@ -521,7 +521,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_attributeValidation(t *testing.
 	testutil.SkipIfCE(t)
 
 	group := testutil.CreateGroups(t, 1)[0]
-	groupID := strconv.Itoa(group.ID)
+	groupID := strconv.FormatInt(group.ID, 10)
 
 	serviceAccount := testutil.CreateGroupServiceAccounts(t, 1, groupID)[0]
 
@@ -610,7 +610,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_rotationUsingDate(t *testing.T)
 	testutil.SkipIfCE(t)
 
 	group := testutil.CreateGroups(t, 1)[0]
-	groupID := strconv.Itoa(group.ID)
+	groupID := strconv.FormatInt(group.ID, 10)
 
 	serviceAccount := testutil.CreateGroupServiceAccounts(t, 1, groupID)[0]
 
@@ -701,7 +701,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_rotationUsingSelfRotate(t *test
 	testutil.SkipIfCE(t)
 
 	group := testutil.CreateGroups(t, 1)[0]
-	groupID := strconv.Itoa(group.ID)
+	groupID := strconv.FormatInt(group.ID, 10)
 
 	serviceAccount := testutil.CreateGroupServiceAccounts(t, 1, groupID)[0]
 
@@ -825,7 +825,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_rotationUsingExpiresAt(t *testi
 	testutil.SkipIfCE(t)
 
 	group := testutil.CreateGroups(t, 1)[0]
-	groupID := strconv.Itoa(group.ID)
+	groupID := strconv.FormatInt(group.ID, 10)
 
 	serviceAccount := testutil.CreateGroupServiceAccounts(t, 1, groupID)[0]
 
@@ -906,7 +906,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_nonAdminTokenExpired(t *testing
 	token := testutil.CreatePersonalAccessToken(t, ownerUser)
 
 	group := testutil.CreateGroups(t, 1)[0]
-	groupID := strconv.Itoa(group.ID)
+	groupID := strconv.FormatInt(group.ID, 10)
 
 	// Add the user to the group with owner permissions
 	testutil.AddGroupMembersWithAccessLevel(t, groupID, []*gitlab.User{ownerUser}, gitlab.OwnerPermissions)
@@ -1010,7 +1010,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_nonAdminToken(t *testing.T) {
 	token := testutil.CreatePersonalAccessToken(t, ownerUser)
 
 	group := testutil.CreateGroups(t, 1)[0]
-	groupID := strconv.Itoa(group.ID)
+	groupID := strconv.FormatInt(group.ID, 10)
 
 	// Add the user to the group with owner permissions
 	testutil.AddGroupMembersWithAccessLevel(t, groupID, []*gitlab.User{ownerUser}, gitlab.OwnerPermissions)
@@ -1108,9 +1108,9 @@ func testAccCheckGitlabGroupServiceAccountAccessTokenDestroy(s *terraform.State)
 		name := rs.Primary.Attributes["name"]
 		userId := rs.Primary.Attributes["user_id"]
 
-		userIdInt, err := strconv.Atoi(userId)
+		userIdInt, err := strconv.ParseInt(userId, 10, 64)
 		if err != nil {
-			return fmt.Errorf("Error converting user ID to string: %v", userId)
+			return fmt.Errorf("Error converting user ID to int64: %v", userId)
 		}
 
 		tokens, _, err := testutil.TestGitlabClient.PersonalAccessTokens.ListPersonalAccessTokens(&gitlab.ListPersonalAccessTokensOptions{UserID: &userIdInt})
@@ -1120,7 +1120,7 @@ func testAccCheckGitlabGroupServiceAccountAccessTokenDestroy(s *terraform.State)
 
 		for _, token := range tokens {
 			// index 2 is the access token ID
-			if strconv.Itoa(token.ID) == splitedID[2] && !token.Revoked {
+			if strconv.FormatInt(token.ID, 10) == splitedID[2] && !token.Revoked {
 				return fmt.Errorf("service account access token with name %q is not in a revoked state", name)
 			}
 		}
@@ -1135,7 +1135,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_rotateRevokedTokenGracefully(t 
 	testutil.SkipIfCE(t)
 
 	group := testutil.CreateGroups(t, 1)[0]
-	groupID := strconv.Itoa(group.ID)
+	groupID := strconv.FormatInt(group.ID, 10)
 
 	serviceAccount := testutil.CreateGroupServiceAccounts(t, 1, groupID)[0]
 	tokenToCheck := ""
@@ -1218,7 +1218,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_revokedTokenWithPastExpiry(t *t
 	testutil.SkipIfCE(t)
 
 	group := testutil.CreateGroups(t, 1)[0]
-	groupID := strconv.Itoa(group.ID)
+	groupID := strconv.FormatInt(group.ID, 10)
 
 	serviceAccount := testutil.CreateGroupServiceAccounts(t, 1, groupID)[0]
 
@@ -1288,7 +1288,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_revokedTokenWithPastExpiry(t *t
 }
 
 // Helper function to revoke a service account access token
-func revokeServiceAccountAccessToken(userID int, tokenName string) error {
+func revokeServiceAccountAccessToken(userID int64, tokenName string) error {
 	tokenID, err := serviceAccountAccessTokenID(userID, tokenName)
 	if err != nil {
 		return err
@@ -1299,7 +1299,7 @@ func revokeServiceAccountAccessToken(userID int, tokenName string) error {
 }
 
 // Helper function to get the ID of a service account access token
-func serviceAccountAccessTokenID(userID int, tokenName string) (int, error) {
+func serviceAccountAccessTokenID(userID int64, tokenName string) (int64, error) {
 	tokens, _, err := testutil.TestGitlabClient.PersonalAccessTokens.ListPersonalAccessTokens(&gitlab.ListPersonalAccessTokensOptions{
 		UserID: gitlab.Ptr(userID),
 	})

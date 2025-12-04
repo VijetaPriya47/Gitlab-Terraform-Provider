@@ -30,7 +30,7 @@ resource "gitlab_group_custom_attribute" "attr" {
 	value = "bar"
 }`, group.ID),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("gitlab_group_custom_attribute.attr", "group", strconv.Itoa(group.ID)),
+					resource.TestCheckResourceAttr("gitlab_group_custom_attribute.attr", "group", strconv.FormatInt(group.ID, 10)),
 					resource.TestCheckResourceAttr("gitlab_group_custom_attribute.attr", "key", "foo"),
 					resource.TestCheckResourceAttr("gitlab_group_custom_attribute.attr", "value", "bar"),
 				),
@@ -44,7 +44,7 @@ resource "gitlab_group_custom_attribute" "attr" {
 	value = "updated"
 }`, group.ID),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("gitlab_group_custom_attribute.attr", "group", strconv.Itoa(group.ID)),
+					resource.TestCheckResourceAttr("gitlab_group_custom_attribute.attr", "group", strconv.FormatInt(group.ID, 10)),
 					resource.TestCheckResourceAttr("gitlab_group_custom_attribute.attr", "key", "foo"),
 					resource.TestCheckResourceAttr("gitlab_group_custom_attribute.attr", "value", "updated"),
 				),
@@ -69,7 +69,7 @@ func testAccCheckGitlabGroupCustomAttributesDestroy(s *terraform.State) error {
 			return fmt.Errorf("unexpected ID format (%q). Expected group-id:key", rs.Primary.ID)
 		}
 
-		groupID, err := strconv.Atoi(parts[0])
+		groupID, err := strconv.ParseInt(parts[0], 10, 64)
 		if err != nil {
 			return fmt.Errorf("Unable to parse group id (%q) into an integer", rs.Primary.ID)
 		}

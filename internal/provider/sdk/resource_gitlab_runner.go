@@ -151,7 +151,7 @@ func resourceGitLabRunnerCreate(ctx context.Context, d *schema.ResourceData, met
 	}
 
 	if v, ok := d.GetOk("maximum_timeout"); ok {
-		options.MaximumTimeout = gitlab.Ptr(v.(int))
+		options.MaximumTimeout = gitlab.Ptr(int64(v.(int)))
 	}
 
 	if v, ok := d.GetOk("maintenance_note"); ok {
@@ -165,7 +165,7 @@ func resourceGitLabRunnerCreate(ctx context.Context, d *schema.ResourceData, met
 		return diag.FromErr(err)
 	}
 
-	d.SetId(strconv.Itoa(runner.ID))
+	d.SetId(strconv.FormatInt(runner.ID, 10))
 
 	// The authentication_token will ONLY exist during creation, and will not return during "read", so we need to set it here.
 	d.Set("authentication_token", runner.Token)
@@ -185,7 +185,7 @@ func resourceGitLabRunnerRead(ctx context.Context, d *schema.ResourceData, meta 
 		return diag.FromErr(err)
 	}
 
-	d.SetId(strconv.Itoa(runner.ID))
+	d.SetId(strconv.FormatInt(runner.ID, 10))
 	d.Set("description", runner.Description)
 	d.Set("paused", runner.Paused)
 	d.Set("locked", runner.Locked)
@@ -239,7 +239,7 @@ func resourceGitLabRunnerUpdate(ctx context.Context, d *schema.ResourceData, met
 	}
 
 	if v, ok := d.GetOk("maximum_timeout"); ok {
-		options.MaximumTimeout = gitlab.Ptr(v.(int))
+		options.MaximumTimeout = gitlab.Ptr(int64(v.(int)))
 	}
 	if v, ok := d.GetOk("maintenance_note"); ok {
 		options.MaintenanceNote = gitlab.Ptr(v.(string))
@@ -256,7 +256,7 @@ func resourceGitLabRunnerUpdate(ctx context.Context, d *schema.ResourceData, met
 
 func resourceGitLabRunnerDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
-	runnerID, err := strconv.Atoi(d.Id())
+	runnerID, err := strconv.ParseInt(d.Id(), 10, 64)
 	if err != nil {
 		return diag.FromErr(err)
 	}

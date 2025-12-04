@@ -16,7 +16,7 @@ func TestAcc_GitLabGroupServiceAccount_DataSource_Basic(t *testing.T) {
 
 	// Create group and service account
 	group := testutil.CreateGroups(t, 1)[0]
-	groupID := strconv.Itoa(group.ID)
+	groupID := strconv.FormatInt(group.ID, 10)
 	serviceAccount := testutil.CreateGroupServiceAccounts(t, 1, groupID)[0]
 
 	// lintignore:AT001
@@ -32,12 +32,12 @@ func TestAcc_GitLabGroupServiceAccount_DataSource_Basic(t *testing.T) {
 						group = %s
 					}
 					`,
-					strconv.Itoa(serviceAccount.ID),
+					strconv.FormatInt(serviceAccount.ID, 10),
 					groupID,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// Verify id attribute
-					resource.TestCheckResourceAttr("data.gitlab_group_service_account.test", "service_account_id", strconv.Itoa(serviceAccount.ID)),
+					resource.TestCheckResourceAttr("data.gitlab_group_service_account.test", "service_account_id", strconv.FormatInt(serviceAccount.ID, 10)),
 					resource.TestCheckResourceAttr("data.gitlab_group_service_account.test", "group", groupID),
 					resource.TestCheckResourceAttr("data.gitlab_group_service_account.test", "name", serviceAccount.Name),
 					resource.TestCheckResourceAttr("data.gitlab_group_service_account.test", "username", serviceAccount.UserName),

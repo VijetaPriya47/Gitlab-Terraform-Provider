@@ -280,13 +280,13 @@ func TestAccGitlabGroupIssueBoard_LabelPositions(t *testing.T) {
 	})
 }
 
-func resourceGitlabGroupIssueBoardParseID(id string) (string, int, error) {
+func resourceGitlabGroupIssueBoardParseID(id string) (string, int64, error) {
 	group, rawIssueBoardID, err := utils.ParseTwoPartID(id)
 	if err != nil {
 		return "", 0, err
 	}
 
-	issueBoardID, err := strconv.Atoi(rawIssueBoardID)
+	issueBoardID, err := strconv.ParseInt(rawIssueBoardID, 10, 64)
 	if err != nil {
 		return "", 0, err
 	}

@@ -370,7 +370,7 @@ func TestAcc_GitlabProjectProtectedEnvironment_deprecatedDeployAndApprovalRules(
 	})
 }
 
-func testAcc_GitlabProjectProtectedEnvironmentFlakey_CheckDestroy(projectID int, environmentName string) resource.TestCheckFunc {
+func testAcc_GitlabProjectProtectedEnvironmentFlakey_CheckDestroy(projectID int64, environmentName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		_, _, err := testutil.TestGitlabClient.ProtectedEnvironments.GetProtectedEnvironment(projectID, environmentName)
 		if err == nil {

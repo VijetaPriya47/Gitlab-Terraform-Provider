@@ -32,7 +32,7 @@ func TestAcc_GitLabInstanceServiceAccount_DataSource_Basic(t *testing.T) {
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// Verify id attribute
-					resource.TestCheckResourceAttr("data.gitlab_instance_service_account.test", "service_account_id", strconv.Itoa(serviceAccount.ID)),
+					resource.TestCheckResourceAttr("data.gitlab_instance_service_account.test", "service_account_id", strconv.FormatInt(serviceAccount.ID, 10)),
 					resource.TestCheckResourceAttr("data.gitlab_instance_service_account.test", "name", serviceAccount.Name),
 					resource.TestCheckResourceAttr("data.gitlab_instance_service_account.test", "username", serviceAccount.Username),
 					resource.TestCheckResourceAttr("data.gitlab_instance_service_account.test", "email", serviceAccount.Email),

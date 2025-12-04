@@ -195,7 +195,7 @@ func TestAccGitlabProjectPushRules_ExistingPushRules(t *testing.T) {
 func testAcc_GitlabProjectPushRules_CheckDestroy(s *terraform.State) error {
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type == "gitlab_project_push_rules" {
-			id, _ := strconv.Atoi(rs.Primary.ID)
+			id, _ := strconv.ParseInt(rs.Primary.ID, 10, 64)
 			pushRules, _, err := testutil.TestGitlabClient.Projects.GetProjectPushRules(rs.Primary.ID)
 			if err == nil && pushRules != nil && pushRules.ProjectID == id {
 				return fmt.Errorf("gitlab_project_push_rules resource '%s' still exists", rs.Primary.ID)

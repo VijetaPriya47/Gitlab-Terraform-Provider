@@ -232,13 +232,13 @@ func (d *gitlabPipelineScheduleDataSource) Read(ctx context.Context, req datasou
 	}
 
 	// Make API call to read pipeline schedules
-	schedule, _, err := d.client.PipelineSchedules.GetPipelineSchedule(state.Project.ValueString(), int(state.PipelineScheduleID.ValueInt64()))
+	schedule, _, err := d.client.PipelineSchedules.GetPipelineSchedule(state.Project.ValueString(), state.PipelineScheduleID.ValueInt64())
 	if err != nil {
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to read pipeline schedule details: %s", err.Error()))
 		return
 	}
 
-	state.ID = types.StringValue(utils.BuildTwoPartID(state.Project.ValueStringPointer(), gitlab.Ptr(strconv.Itoa(int(state.PipelineScheduleID.ValueInt64())))))
+	state.ID = types.StringValue(utils.BuildTwoPartID(state.Project.ValueStringPointer(), gitlab.Ptr(strconv.FormatInt(state.PipelineScheduleID.ValueInt64(), 10))))
 	state.Description = types.StringValue(schedule.Description)
 	state.Ref = types.StringValue(schedule.Ref)
 	state.Cron = types.StringValue(schedule.Cron)

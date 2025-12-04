@@ -154,7 +154,7 @@ func (r *gitlabProjectHookResource) Create(ctx context.Context, req resource.Cre
 		return
 	}
 
-	data.ID = types.StringValue(utils.BuildTwoPartID(data.Project.ValueStringPointer(), gitlab.Ptr(strconv.Itoa(hook.ID))))
+	data.ID = types.StringValue(utils.BuildTwoPartID(data.Project.ValueStringPointer(), gitlab.Ptr(strconv.FormatInt(hook.ID, 10))))
 	data.modelToStateModel(hook)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, data)...)
@@ -545,13 +545,13 @@ func (d *gitlabProjectHookResourceModel) v0StateUpgrade(ctx context.Context) {
 	d.ID = types.StringValue(utils.BuildTwoPartID(d.Project.ValueStringPointer(), oldIdValue))
 }
 
-func (d *gitlabProjectHookResourceModel) ResourceGitlabProjectHookParseId(id string) (string, int, error) {
+func (d *gitlabProjectHookResourceModel) ResourceGitlabProjectHookParseId(id string) (string, int64, error) {
 	project, rawHookId, err := utils.ParseTwoPartID(id)
 	if err != nil {
 		return "", 0, err
 	}
 
-	hookId, err := strconv.Atoi(rawHookId)
+	hookId, err := strconv.ParseInt(rawHookId, 10, 64)
 	if err != nil {
 		return "", 0, err
 	}

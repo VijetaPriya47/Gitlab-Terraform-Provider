@@ -96,7 +96,7 @@ func TestAcc_GitlabGroupLevelMRApprovals_noResetOnDestroy(t *testing.T) {
 func TestAcc_GitlabGroupMRApprovalSettings_resetOnDestroy(t *testing.T) {
 	testutil.SkipIfCE(t)
 	group := testutil.CreateGroups(t, 1)[0]
-	opt := &gitlab.UpdateMergeRequestApprovalSettingsOptions{
+	opt := &gitlab.UpdateGroupMergeRequestApprovalSettingsOptions{
 		AllowAuthorApproval: gitlab.Ptr(true),
 	}
 	_, _, err := testutil.TestGitlabClient.MergeRequestApprovalSettings.UpdateGroupMergeRequestApprovalSettings(group.ID, opt)

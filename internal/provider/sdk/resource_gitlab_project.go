@@ -986,7 +986,7 @@ func resourceGitlabProjectSetToState(d *schema.ResourceData, project *gitlab.Pro
 	}
 	d.Set("ci_forward_deployment_enabled", project.CIForwardDeploymentEnabled)
 	d.Set("ci_forward_deployment_rollback_allowed", project.CIForwardDeploymentRollbackAllowed)
-	d.Set("ci_separated_caches", project.CISeperateCache)
+	d.Set("ci_separated_caches", project.CISeparatedCaches)
 	d.Set("ci_restrict_pipeline_cancellation_role", project.CIRestrictPipelineCancellationRole)
 	d.Set("ci_pipeline_variables_minimum_override_role", project.CIPipelineVariablesMinimumOverrideRole)
 	d.Set("keep_latest_artifact", project.KeepLatestArtifact)
@@ -1357,7 +1357,7 @@ func resourceGitlabProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	if d.HasChange("approvals_before_merge") {
-		options.ApprovalsBeforeMerge = gitlab.Ptr(d.Get("approvals_before_merge").(int)) //nolint:staticcheck
+		options.ApprovalsBeforeMerge = gitlab.Ptr(int64(d.Get("approvals_before_merge").(int))) //nolint:staticcheck
 	}
 
 	if d.HasChange("wiki_enabled") {
@@ -1528,7 +1528,7 @@ func resourceGitlabProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	if d.HasChange("build_timeout") {
-		options.BuildTimeout = gitlab.Ptr(d.Get("build_timeout").(int))
+		options.BuildTimeout = gitlab.Ptr(int64(d.Get("build_timeout").(int)))
 	}
 
 	if d.HasChange("builds_access_level") {
@@ -1611,7 +1611,7 @@ func resourceGitlabProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	if d.HasChange("ci_default_git_depth") {
-		options.CIDefaultGitDepth = gitlab.Ptr(d.Get("ci_default_git_depth").(int))
+		options.CIDefaultGitDepth = gitlab.Ptr(int64(d.Get("ci_default_git_depth").(int)))
 	}
 
 	if d.HasChange("ci_delete_pipelines_in_seconds") {
@@ -1622,12 +1622,12 @@ func resourceGitlabProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 			}
 			options.CIDeletePipelinesInSeconds = nil
 		} else {
-			options.CIDeletePipelinesInSeconds = gitlab.Ptr(d.Get("ci_delete_pipelines_in_seconds").(int))
+			options.CIDeletePipelinesInSeconds = gitlab.Ptr(int64(d.Get("ci_delete_pipelines_in_seconds").(int)))
 		}
 	}
 
 	if d.HasChange("ci_separated_caches") {
-		options.CISeperateCache = gitlab.Ptr(d.Get("ci_separated_caches").(bool))
+		options.CISeparatedCaches = gitlab.Ptr(d.Get("ci_separated_caches").(bool))
 	}
 
 	if d.HasChange("keep_latest_artifact") {
@@ -1744,7 +1744,7 @@ func resourceGitlabProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 		// Add fork relationship
 		if createRelation {
 			// Add fork relation
-			if _, _, err := client.Projects.CreateProjectForkRelation(d.Id(), newValue, gitlab.WithContext(ctx)); err != nil {
+			if _, _, err := client.Projects.CreateProjectForkRelation(d.Id(), int64(newValue), gitlab.WithContext(ctx)); err != nil {
 				return diag.Errorf("unable to add fork relation to project %q (to project %d): %v", d.Id(), newValue, err)
 			}
 		}
@@ -1993,7 +1993,7 @@ func expandEditProjectPushRuleOptions(d *schema.ResourceData, currentPushRules *
 	}
 
 	if d.Get("push_rules.0.max_file_size") != currentPushRules.MaxFileSize {
-		options.MaxFileSize = gitlab.Ptr(d.Get("push_rules.0.max_file_size").(int))
+		options.MaxFileSize = gitlab.Ptr(int64(d.Get("push_rules.0.max_file_size").(int)))
 	}
 
 	return options
@@ -2051,7 +2051,7 @@ func expandAddProjectPushRuleOptions(d *schema.ResourceData) gitlab.AddProjectPu
 	}
 
 	if v, ok := d.GetOk("push_rules.0.max_file_size"); ok {
-		options.MaxFileSize = gitlab.Ptr(v.(int))
+		options.MaxFileSize = gitlab.Ptr(int64(v.(int)))
 	}
 
 	return options
@@ -2111,7 +2111,7 @@ func expandContainerExpirationPolicyAttributes(d *schema.ResourceData) *gitlab.C
 	}
 
 	if v, ok := d.GetOk("container_expiration_policy.0.keep_n"); ok {
-		policy.KeepN = gitlab.Ptr(v.(int))
+		policy.KeepN = gitlab.Ptr(int64(v.(int)))
 	}
 
 	if v, ok := d.GetOk("container_expiration_policy.0.older_than"); ok {
@@ -2204,7 +2204,7 @@ func createProject(ctx context.Context, d *schema.ResourceData, client *gitlab.C
 	}
 
 	if v, ok := d.GetOk("namespace_id"); ok {
-		options.NamespaceID = gitlab.Ptr(v.(int))
+		options.NamespaceID = gitlab.Ptr(int64(v.(int)))
 	}
 
 	if v, ok := d.GetOk("description"); ok {
@@ -2254,7 +2254,7 @@ func createProject(ctx context.Context, d *schema.ResourceData, client *gitlab.C
 	}
 
 	if v, ok := d.GetOk("template_project_id"); ok {
-		options.TemplateProjectID = gitlab.Ptr(v.(int))
+		options.TemplateProjectID = gitlab.Ptr(int64(v.(int)))
 	}
 
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
@@ -2269,7 +2269,7 @@ func createProject(ctx context.Context, d *schema.ResourceData, client *gitlab.C
 	}
 
 	if v, ok := d.GetOk("group_with_project_templates_id"); ok {
-		options.GroupWithProjectTemplatesID = gitlab.Ptr(v.(int))
+		options.GroupWithProjectTemplatesID = gitlab.Ptr(int64(v.(int)))
 	}
 
 	if v, ok := d.GetOk("pages_access_level"); ok {
@@ -2315,7 +2315,7 @@ func createProject(ctx context.Context, d *schema.ResourceData, client *gitlab.C
 	}
 
 	if v, ok := d.GetOk("build_timeout"); ok {
-		options.BuildTimeout = gitlab.Ptr(v.(int))
+		options.BuildTimeout = gitlab.Ptr(int64(v.(int)))
 	}
 
 	if v, ok := d.GetOk("builds_access_level"); ok {
@@ -2419,7 +2419,7 @@ func createProject(ctx context.Context, d *schema.ResourceData, client *gitlab.C
 	}
 
 	if v, ok := d.GetOk("approvals_before_merge"); ok {
-		options.ApprovalsBeforeMerge = gitlab.Ptr(v.(int)) //nolint:staticcheck
+		options.ApprovalsBeforeMerge = gitlab.Ptr(int64(v.(int))) //nolint:staticcheck
 	}
 
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
@@ -2568,7 +2568,7 @@ func createForkedProject(ctx context.Context, forkedFromProjectID int, d *schema
 		options.Path = gitlab.Ptr(v.(string))
 	}
 	if v, ok := d.GetOk("namespace_id"); ok {
-		options.NamespaceID = gitlab.Ptr(v.(int))
+		options.NamespaceID = gitlab.Ptr(int64(v.(int)))
 	}
 	if v, ok := d.GetOk("visibility_level"); ok {
 		options.Visibility = stringToVisibilityLevel(v.(string))
@@ -2642,7 +2642,7 @@ func updatePostCreateEditOptions(editProjectOptions *gitlab.EditProjectOptions, 
 	}
 
 	if v, ok := d.GetOk("ci_default_git_depth"); ok {
-		editProjectOptions.CIDefaultGitDepth = gitlab.Ptr(v.(int))
+		editProjectOptions.CIDefaultGitDepth = gitlab.Ptr(int64(v.(int)))
 	}
 
 	if v, ok := d.GetOk("ci_id_token_sub_claim_components"); ok {
@@ -2650,7 +2650,7 @@ func updatePostCreateEditOptions(editProjectOptions *gitlab.EditProjectOptions, 
 	}
 
 	if v, ok := d.GetOk("ci_delete_pipelines_in_seconds"); ok {
-		editProjectOptions.CIDeletePipelinesInSeconds = gitlab.Ptr(v.(int))
+		editProjectOptions.CIDeletePipelinesInSeconds = gitlab.Ptr(int64(v.(int)))
 	}
 
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
@@ -2668,7 +2668,7 @@ func updatePostCreateEditOptions(editProjectOptions *gitlab.EditProjectOptions, 
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 	if v, ok := d.GetOkExists("ci_separated_caches"); ok {
-		editProjectOptions.CISeperateCache = gitlab.Ptr(v.(bool))
+		editProjectOptions.CISeparatedCaches = gitlab.Ptr(v.(bool))
 	}
 
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
@@ -2768,7 +2768,7 @@ func updatePostCreateEditOptions(editProjectOptions *gitlab.EditProjectOptions, 
 		}
 
 		if v, ok := d.GetOk("approvals_before_merge"); ok {
-			editProjectOptions.ApprovalsBeforeMerge = gitlab.Ptr(v.(int)) //nolint:staticcheck
+			editProjectOptions.ApprovalsBeforeMerge = gitlab.Ptr(int64(v.(int))) //nolint:staticcheck
 		}
 
 		// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
@@ -2884,7 +2884,7 @@ func updatePostCreateEditOptions(editProjectOptions *gitlab.EditProjectOptions, 
 		}
 
 		if v, ok := d.GetOk("build_timeout"); ok {
-			editProjectOptions.BuildTimeout = gitlab.Ptr(v.(int))
+			editProjectOptions.BuildTimeout = gitlab.Ptr(int64(v.(int)))
 		}
 
 		if v, ok := d.GetOk("builds_access_level"); ok {

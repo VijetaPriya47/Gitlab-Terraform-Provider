@@ -24,7 +24,7 @@ func TestAccDataGitlabProjectIDs_basic(t *testing.T) {
 				}
 				`, project.PathWithNamespace),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("data.gitlab_project_ids.foo", "project_id", strconv.Itoa(project.ID)),
+					resource.TestCheckResourceAttr("data.gitlab_project_ids.foo", "project_id", strconv.FormatInt(project.ID, 10)),
 					resource.TestCheckResourceAttr("data.gitlab_project_ids.foo", "project_full_path", project.PathWithNamespace),
 					resource.TestCheckResourceAttr("data.gitlab_project_ids.foo", "project_graphql_id", fmt.Sprintf("gid://gitlab/Project/%d", project.ID)),
 				),

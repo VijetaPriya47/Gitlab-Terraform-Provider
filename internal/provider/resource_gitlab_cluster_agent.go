@@ -208,13 +208,13 @@ func (d *gitlabClusterAgentResourceModel) modelToStateModel(project string, clus
 	return nil
 }
 
-func resourceGitlabClusterAgentParseID(id string) (string, int, error) {
+func resourceGitlabClusterAgentParseID(id string) (string, int64, error) {
 	parts := strings.Split(id, ":")
 	if len(parts) != 2 {
 		return "", 0, fmt.Errorf("invalid cluster agent id %q, expected format '{project}:{agent_id}'", id)
 	}
 	project, rawAgentID := parts[0], parts[1]
-	agentID, err := strconv.Atoi(rawAgentID)
+	agentID, err := strconv.ParseInt(rawAgentID, 10, 64)
 	if err != nil {
 		return "", 0, fmt.Errorf("invalid cluster agent id %q with 'agent_id' %q, expected integer", id, rawAgentID)
 	}

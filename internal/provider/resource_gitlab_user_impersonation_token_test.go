@@ -95,7 +95,7 @@ func TestAccGitlabUserImpersonationToken_basic(t *testing.T) {
 				// Check computed and default attributes.
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("gitlab_user_impersonation_token.this", "id"),
-					resource.TestCheckResourceAttr("gitlab_user_impersonation_token.this", "user_id", strconv.Itoa(user.ID)),
+					resource.TestCheckResourceAttr("gitlab_user_impersonation_token.this", "user_id", strconv.FormatInt(user.ID, 10)),
 					resource.TestCheckResourceAttrSet("gitlab_user_impersonation_token.this", "token_id"),
 					resource.TestCheckResourceAttr("gitlab_user_impersonation_token.this", "name", "this"),
 					resource.TestCheckResourceAttr("gitlab_user_impersonation_token.this", "expires_at", expiresAt),
@@ -129,7 +129,7 @@ func TestAccGitlabUserImpersonationToken_basic(t *testing.T) {
 				// Check computed and default attributes.
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("gitlab_user_impersonation_token.this", "id"),
-					resource.TestCheckResourceAttr("gitlab_user_impersonation_token.this", "user_id", strconv.Itoa(user.ID)),
+					resource.TestCheckResourceAttr("gitlab_user_impersonation_token.this", "user_id", strconv.FormatInt(user.ID, 10)),
 					resource.TestCheckResourceAttrSet("gitlab_user_impersonation_token.this", "token_id"),
 					resource.TestCheckResourceAttr("gitlab_user_impersonation_token.this", "name", "this2"),
 					resource.TestCheckResourceAttr("gitlab_user_impersonation_token.this", "expires_at", expiresAt),
@@ -163,9 +163,9 @@ func testAccCheckGitlabUserImpersonationToken_destroy(s *terraform.State) error 
 		name := rs.Primary.Attributes["name"]
 		userId := rs.Primary.Attributes["user_id"]
 
-		userIdInt, err := strconv.Atoi(userId)
+		userIdInt, err := strconv.ParseInt(userId, 10, 64)
 		if err != nil {
-			return fmt.Errorf("Error converting user ID to string: %v", userId)
+			return fmt.Errorf("Error converting user ID to int64: %v", userId)
 		}
 
 		tokens, _, err := testutil.TestGitlabClient.Users.GetAllImpersonationTokens(userIdInt, nil)

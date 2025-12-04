@@ -222,7 +222,7 @@ func dataSourceGitlabProjectIssuesRead(ctx context.Context, d *schema.ResourceDa
 	}
 
 	if v, ok := d.GetOk("iids"); ok {
-		options.IIDs = intSetToIntSlice(v.(*schema.Set))
+		options.IIDs = intSetToInt64Slice(v.(*schema.Set))
 	}
 
 	if v, ok := d.GetOk("state"); ok {
@@ -256,19 +256,19 @@ func dataSourceGitlabProjectIssuesRead(ctx context.Context, d *schema.ResourceDa
 	}
 
 	if v, ok := d.GetOk("author_id"); ok {
-		options.AuthorID = gitlab.Ptr(v.(int))
+		options.AuthorID = gitlab.Ptr(int64(v.(int)))
 	}
 
 	if v, ok := d.GetOk("not_author_id"); ok {
-		options.NotAuthorID = gitlab.Ptr(v.(int))
+		options.NotAuthorID = gitlab.Ptr(int64(v.(int)))
 	}
 
 	if v, ok := d.GetOk("assignee_id"); ok {
-		options.AssigneeID = gitlab.Ptr(v.(int))
+		options.AssigneeID = gitlab.AssigneeID(int64(v.(int)))
 	}
 
 	if v, ok := d.GetOk("not_assignee_id"); ok {
-		options.NotAssigneeID = gitlab.Ptr(v.(int))
+		options.NotAssigneeID = gitlab.Ptr(int64(v.(int)))
 	}
 
 	if v, ok := d.GetOk("assignee_username"); ok {

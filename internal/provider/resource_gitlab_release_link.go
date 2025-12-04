@@ -269,13 +269,13 @@ func (r *gitlabReleaseLinkResource) Delete(ctx context.Context, req resource.Del
 	}
 }
 
-func resourceGitLabReleaseLinkParseId(id string) (string, string, int, error) {
+func resourceGitLabReleaseLinkParseId(id string) (string, string, int64, error) {
 	parts := strings.SplitN(id, ":", 3)
 	if len(parts) != 3 {
 		return "", "", 0, fmt.Errorf("unexpected ID format (%q). Expected project:tagName:linkID", id)
 	}
 
-	linkID, err := strconv.Atoi(parts[2])
+	linkID, err := strconv.ParseInt(parts[2], 10, 64)
 	if err != nil {
 		return "", "", 0, err
 	}
@@ -283,7 +283,7 @@ func resourceGitLabReleaseLinkParseId(id string) (string, string, int, error) {
 	return parts[0], parts[1], linkID, nil
 }
 
-func resourceGitLabReleaseLinkBuildId(project string, tagName string, linkID int) string {
+func resourceGitLabReleaseLinkBuildId(project string, tagName string, linkID int64) string {
 	id := fmt.Sprintf("%s:%s:%d", project, tagName, linkID)
 	return id
 }

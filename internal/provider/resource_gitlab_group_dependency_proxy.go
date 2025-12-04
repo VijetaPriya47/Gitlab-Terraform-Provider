@@ -213,7 +213,7 @@ func (r *gitlabGroupDependencyProxyResource) Read(ctx context.Context, req resou
 
 	// Note - the below items don't use the `modelToStateModel` because the response from the `Read` API is different from the mutate.
 	// Set the ID
-	data.ID = types.StringValue(strconv.Itoa(group.ID))
+	data.ID = types.StringValue(strconv.FormatInt(group.ID, 10))
 
 	// Update the model with the values from the API response
 	if response.Data.Group.DependencyProxySettings.Enabled {
@@ -292,7 +292,7 @@ func (r *gitlabGroupDependencyProxyResource) Delete(ctx context.Context, req res
 
 // Update the model with values from the API response
 func (r *gitlabGroupDependencyProxyResource) modelToStateModel(data *gitlabGroupDependencyProxyResourceModel, group *gitlab.Group, response updateGroupDependencyProxyGraphQLResponse) {
-	data.ID = types.StringValue(strconv.Itoa(group.ID))
+	data.ID = types.StringValue(strconv.FormatInt(group.ID, 10))
 	data.Enabled = types.BoolValue(response.Data.UpdateDependencyProxySettings.DependencyProxySettings.Enabled)
 	data.Identity = types.StringValue(response.Data.UpdateDependencyProxySettings.DependencyProxySettings.Identity)
 	// Secret is not returned in the response, but we keep the value from the model

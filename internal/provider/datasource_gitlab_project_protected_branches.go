@@ -138,7 +138,7 @@ func (d *gitLabProjectProtectedBranchesDataSource) Read(ctx context.Context, req
 	}
 
 	var allProtectedBranches []*gitlab.ProtectedBranch
-	totalPages := -1
+	totalPages := int64(-1)
 	opts := &gitlab.ListProtectedBranchesOptions{}
 	for opts.Page = 0; opts.Page != totalPages; opts.Page++ {
 		// Get protected branch by project ID/path and branch name

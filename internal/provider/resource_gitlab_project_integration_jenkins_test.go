@@ -90,7 +90,7 @@ func TestAccGitlabProjectIntegrationJenkins_basic_deprecated(t *testing.T) {
 	})
 }
 
-func testAccCheckGitlabProjectIntegrationJenkinsDestroy(projectId int) resource.TestCheckFunc {
+func testAccCheckGitlabProjectIntegrationJenkinsDestroy(projectId int64) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		service, _, err := testutil.TestGitlabClient.Services.GetJenkinsCIService(projectId)
 		if err != nil {

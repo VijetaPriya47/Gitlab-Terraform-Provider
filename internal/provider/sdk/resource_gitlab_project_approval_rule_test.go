@@ -63,9 +63,9 @@ func TestAccGitLabProjectApprovalRule_Basic(t *testing.T) {
 					testAccCheckGitlabProjectApprovalRuleAttributes_Basic(&projectApprovalRule, &testAccGitlabProjectApprovalRuleExpectedAttributes_Basic{
 						Name:                "foo",
 						ApprovalsRequired:   3,
-						EligibleApproverIDs: []int{currentUser.ID, projectUsers[0].ID, group0Users[0].ID},
-						GroupIDs:            []int{groups[0].ID},
-						ProtectedBranchIDs:  []int{branches[0].ID},
+						EligibleApproverIDs: []int64{currentUser.ID, projectUsers[0].ID, group0Users[0].ID},
+						GroupIDs:            []int64{groups[0].ID},
+						ProtectedBranchIDs:  []int64{branches[0].ID},
 					}),
 				),
 			},
@@ -86,9 +86,9 @@ func TestAccGitLabProjectApprovalRule_Basic(t *testing.T) {
 					testAccCheckGitlabProjectApprovalRuleAttributes_Basic(&projectApprovalRule, &testAccGitlabProjectApprovalRuleExpectedAttributes_Basic{
 						Name:                "foo",
 						ApprovalsRequired:   2,
-						EligibleApproverIDs: []int{currentUser.ID, projectUsers[1].ID, group1Users[0].ID},
-						GroupIDs:            []int{groups[1].ID},
-						ProtectedBranchIDs:  []int{branches[1].ID},
+						EligibleApproverIDs: []int64{currentUser.ID, projectUsers[1].ID, group1Users[0].ID},
+						GroupIDs:            []int64{groups[1].ID},
+						ProtectedBranchIDs:  []int64{branches[1].ID},
 					}),
 				),
 			},
@@ -116,8 +116,8 @@ func TestAccGitLabProjectApprovalRule_Basic(t *testing.T) {
 					testAccCheckGitlabProjectApprovalRuleAttributes_Basic(&projectApprovalRule, &testAccGitlabProjectApprovalRuleExpectedAttributes_Basic{
 						Name:                          "bar",
 						ApprovalsRequired:             3,
-						EligibleApproverIDs:           []int{currentUser.ID, projectUsers[0].ID, group0Users[0].ID},
-						GroupIDs:                      []int{groups[0].ID},
+						EligibleApproverIDs:           []int64{currentUser.ID, projectUsers[0].ID, group0Users[0].ID},
+						GroupIDs:                      []int64{groups[0].ID},
 						AppliesToAllProtectedBranches: true,
 					}),
 				),
@@ -367,7 +367,7 @@ func TestAccGitLabProjectApprovalRule_AnyApproverAutoImport(t *testing.T) {
 	_, _, err := testutil.TestGitlabClient.Projects.CreateProjectApprovalRule(project.ID, &gitlab.CreateProjectLevelRuleOptions{
 		Name:              gitlab.Ptr("any_approver"),
 		RuleType:          gitlab.Ptr("any_approver"),
-		ApprovalsRequired: gitlab.Ptr(0),
+		ApprovalsRequired: gitlab.Ptr(int64(0)),
 	})
 	if err != nil {
 		t.Fatal("Failed to create approval rule prior to testing", err)
@@ -424,7 +424,7 @@ func TestAccGitLabProjectApprovalRule_AnyApproverAutoImportWithOneApprover(t *te
 	_, _, err := testutil.TestGitlabClient.Projects.CreateProjectApprovalRule(project.ID, &gitlab.CreateProjectLevelRuleOptions{
 		Name:              gitlab.Ptr("any_approver"),
 		RuleType:          gitlab.Ptr("any_approver"),
-		ApprovalsRequired: gitlab.Ptr(1),
+		ApprovalsRequired: gitlab.Ptr(int64(1)),
 	})
 	if err != nil {
 		t.Fatal("Failed to create approval rule prior to testing", err)
@@ -474,7 +474,7 @@ func TestAccGitLabProjectApprovalRule_AnyApproverDisableAutoImport(t *testing.T)
 	_, _, err := testutil.TestGitlabClient.Projects.CreateProjectApprovalRule(project.ID, &gitlab.CreateProjectLevelRuleOptions{
 		Name:              gitlab.Ptr("any_approver"),
 		RuleType:          gitlab.Ptr("any_approver"),
-		ApprovalsRequired: gitlab.Ptr(0),
+		ApprovalsRequired: gitlab.Ptr(int64(0)),
 	})
 	if err != nil {
 		t.Fatal("Failed to create approval rule prior to testing", err)
@@ -532,22 +532,22 @@ func TestAccGitLabProjectApprovalRule_AppliesAllProtectedBranchesConflictBranchI
 
 type testAccGitlabProjectApprovalRuleExpectedAttributes_Basic struct {
 	Name                          string
-	ApprovalsRequired             int
-	EligibleApproverIDs           []int
-	GroupIDs                      []int
-	ProtectedBranchIDs            []int
+	ApprovalsRequired             int64
+	EligibleApproverIDs           []int64
+	GroupIDs                      []int64
+	ProtectedBranchIDs            []int64
 	AppliesToAllProtectedBranches bool
 }
 
 type testAccGitlabProjectApprovalRuleExpectedAttributes_AnyApprover struct {
 	Name              string
-	ApprovalsRequired int
+	ApprovalsRequired int64
 	RuleType          string
 }
 
 type testAccGitlabProjectApprovalRuleExpectedAttributes_ReportType struct {
 	Name              string
-	ApprovalsRequired int
+	ApprovalsRequired int64
 	RuleType          string
 	ReportType        string
 }
@@ -558,20 +558,20 @@ func testAccCheckGitlabProjectApprovalRuleAttributes_Basic(got *gitlab.ProjectAp
 			Expect(got.Name).To(Equal(want.Name), "name")
 			Expect(got.ApprovalsRequired).To(Equal(want.ApprovalsRequired), "approvals_required")
 
-			var approverIDs []int
+			var approverIDs []int64
 			for _, approver := range got.EligibleApprovers {
 				approverIDs = append(approverIDs, approver.ID)
 			}
 			Expect(approverIDs).To(ConsistOf(want.EligibleApproverIDs), "eligible_approvers")
 
-			var groupIDs []int
+			var groupIDs []int64
 			for _, group := range got.Groups {
 				groupIDs = append(groupIDs, group.ID)
 			}
 			Expect(groupIDs).To(ConsistOf(want.GroupIDs), "groups")
 
 			if want.ProtectedBranchIDs != nil {
-				var protectedBranchIDs []int
+				var protectedBranchIDs []int64
 				for _, branch := range got.ProtectedBranches {
 					protectedBranchIDs = append(protectedBranchIDs, branch.ID)
 				}
@@ -616,7 +616,7 @@ func testAccCheckGitlabProjectApprovalRuleExists(n string, projectApprovalRule *
 			return err
 		}
 
-		ruleIDInt, err := strconv.Atoi(ruleID)
+		ruleIDInt, err := strconv.ParseInt(ruleID, 10, 64)
 		if err != nil {
 			return err
 		}

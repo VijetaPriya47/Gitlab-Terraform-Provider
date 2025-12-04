@@ -6,7 +6,6 @@ import (
 	"slices"
 	"strconv"
 
-	"github.com/dcarbone/terraform-plugin-framework-utils/v3/conv"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -325,12 +324,14 @@ func (r *gitlabProjectJobTokenScopesResource) setAllowedTargetProjects(ctx conte
 		)
 	}
 
-	currentProjectsIDs := make([]int, 0, len(projects))
+	currentProjectsIDs := make([]int64, 0, len(projects))
 	for _, p := range projects {
 		currentProjectsIDs = append(currentProjectsIDs, p.ID)
 	}
 
-	createTargetProjects, deleteTargetProjects := r.compareAndGenerateActions(conv.Int64SetToInts(data.TargetProjectIDs), currentProjectsIDs)
+	var desiredProjectIDs []int64
+	data.TargetProjectIDs.ElementsAs(ctx, &desiredProjectIDs, false)
+	createTargetProjects, deleteTargetProjects := r.compareAndGenerateActions(desiredProjectIDs, currentProjectsIDs)
 	for _, currentProjectID := range deleteTargetProjects {
 		_, err := r.client.JobTokenScope.RemoveProjectFromJobScopeAllowList(project, currentProjectID, gitlab.WithContext(ctx))
 		if err != nil {
@@ -365,12 +366,14 @@ func (r *gitlabProjectJobTokenScopesResource) setAllowedTargetGroups(ctx context
 		)
 	}
 
-	groupsIDs := make([]int, 0, len(groups))
+	groupsIDs := make([]int64, 0, len(groups))
 	for _, g := range groups {
 		groupsIDs = append(groupsIDs, g.ID)
 	}
 
-	createTargetGroups, deleteTargetGroups := r.compareAndGenerateActions(conv.Int64SetToInts(data.TargetGroupIDs), groupsIDs)
+	var desiredGroupIDs []int64
+	data.TargetGroupIDs.ElementsAs(ctx, &desiredGroupIDs, false)
+	createTargetGroups, deleteTargetGroups := r.compareAndGenerateActions(desiredGroupIDs, groupsIDs)
 	for _, groupID := range deleteTargetGroups {
 		_, err := r.client.JobTokenScope.RemoveGroupFromJobTokenAllowlist(project, groupID, gitlab.WithContext(ctx))
 		if err != nil {
@@ -397,7 +400,7 @@ func (r *gitlabProjectJobTokenScopesResource) setAllowedTargetGroups(ctx context
 
 // compareAndGenerateActions compares the difference between the desired slice and the current slice of IDs,
 // and returns slices of IDs that need to be created and deleted.
-func (r *gitlabProjectJobTokenScopesResource) compareAndGenerateActions(desiredIDs []int, currentIDs []int) (create []int, delete []int) {
+func (r *gitlabProjectJobTokenScopesResource) compareAndGenerateActions(desiredIDs []int64, currentIDs []int64) (create []int64, delete []int64) {
 	for _, cid := range currentIDs {
 		shouldDelete := true
 		if slices.Contains(desiredIDs, cid) {
@@ -451,7 +454,7 @@ func (r *gitlabProjectJobTokenScopesResource) getProjectCIJobScopes(ctx context.
 
 	// Remove itself from the list, which will cause issues during the "set" operation, and during post-apply calculations.
 	for i, p := range projectScopes {
-		if p.PathWithNamespace == project || strconv.Itoa(p.ID) == project {
+		if p.PathWithNamespace == project || strconv.FormatInt(p.ID, 10) == project {
 			projectScopes = slices.Delete(projectScopes, i, i+1)
 			break
 		}
@@ -506,7 +509,7 @@ func (r *gitlabProjectJobTokenScopesResource) readIntoState(ctx context.Context,
 	// build the slice of projects
 	projectIds := []types.Int64{}
 	for _, p := range projects {
-		projectIds = append(projectIds, types.Int64Value(int64(p.ID)))
+		projectIds = append(projectIds, types.Int64Value(p.ID))
 	}
 	// convert the slice to a set, and assign it
 	projectIdSet, diags := types.SetValueFrom(ctx, types.Int64Type, projectIds)
@@ -524,7 +527,7 @@ func (r *gitlabProjectJobTokenScopesResource) readIntoState(ctx context.Context,
 	// build the slice of groups
 	groupIds := []types.Int64{}
 	for _, p := range groups {
-		groupIds = append(groupIds, types.Int64Value(int64(p.ID)))
+		groupIds = append(groupIds, types.Int64Value(p.ID))
 	}
 	// convert the slice to a set, and assign it
 	groupIdSet, diags := types.SetValueFrom(ctx, types.Int64Type, groupIds)

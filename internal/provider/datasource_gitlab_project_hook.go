@@ -167,7 +167,7 @@ func (d *gitlabProjectHookDataSource) Read(ctx context.Context, req datasource.R
 		return
 	}
 	project := data.Project.ValueString()
-	hookID := int(data.HookID.ValueInt64())
+	hookID := data.HookID.ValueInt64()
 
 	hook, _, err := d.client.Projects.GetProjectHook(project, hookID, gitlab.WithContext(ctx))
 	if err != nil {

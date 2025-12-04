@@ -37,8 +37,8 @@ func TestAccGitlabGroupProjectFileTemplate_basic(t *testing.T) {
 					// Note - we can't use the testAccCheckGitlabGroupAttributes, because that checks the TF
 					// state attributes, and file project template explicitly doesn't exist there.
 					testAccCheckGitlabGroupFileTemplateValue(baseGroup, firstProject),
-					resource.TestCheckResourceAttr("gitlab_group_project_file_template.linking_template", "group_id", strconv.Itoa(baseGroup.ID)),
-					resource.TestCheckResourceAttr("gitlab_group_project_file_template.linking_template", "file_template_project_id", strconv.Itoa(firstProject.ID)),
+					resource.TestCheckResourceAttr("gitlab_group_project_file_template.linking_template", "group_id", strconv.FormatInt(baseGroup.ID, 10)),
+					resource.TestCheckResourceAttr("gitlab_group_project_file_template.linking_template", "file_template_project_id", strconv.FormatInt(firstProject.ID, 10)),
 				),
 			},
 			{
@@ -52,8 +52,8 @@ func TestAccGitlabGroupProjectFileTemplate_basic(t *testing.T) {
 				`, baseGroup.ID, secondProject.ID),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabGroupFileTemplateValue(baseGroup, secondProject),
-					resource.TestCheckResourceAttr("gitlab_group_project_file_template.linking_template", "group_id", strconv.Itoa(baseGroup.ID)),
-					resource.TestCheckResourceAttr("gitlab_group_project_file_template.linking_template", "file_template_project_id", strconv.Itoa(secondProject.ID)),
+					resource.TestCheckResourceAttr("gitlab_group_project_file_template.linking_template", "group_id", strconv.FormatInt(baseGroup.ID, 10)),
+					resource.TestCheckResourceAttr("gitlab_group_project_file_template.linking_template", "file_template_project_id", strconv.FormatInt(secondProject.ID, 10)),
 				),
 			},
 		},

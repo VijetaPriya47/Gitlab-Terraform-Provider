@@ -32,7 +32,7 @@ func TestAccDataGitlabRelease_basic(t *testing.T) {
 					release.TagName,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("data.gitlab_release.this", "project_id", strconv.Itoa(project.ID)),
+					resource.TestCheckResourceAttr("data.gitlab_release.this", "project_id", strconv.FormatInt(project.ID, 10)),
 					resource.TestCheckResourceAttr("data.gitlab_release.this", "tag_name", release.TagName),
 					resource.TestCheckResourceAttrSet("data.gitlab_release.this", "name"),
 					resource.TestCheckResourceAttrSet("data.gitlab_release.this", "created_at"),

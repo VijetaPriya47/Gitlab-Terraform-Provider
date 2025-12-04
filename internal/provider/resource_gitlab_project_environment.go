@@ -226,7 +226,7 @@ func (r *gitlabProjectEnvironmentResource) Create(ctx context.Context, req resou
 	}
 
 	if !data.ClusterAgentID.IsNull() && !data.ClusterAgentID.IsUnknown() {
-		options.ClusterAgentID = gitlab.Ptr(int(data.ClusterAgentID.ValueInt64()))
+		options.ClusterAgentID = gitlab.Ptr(data.ClusterAgentID.ValueInt64())
 	}
 
 	if !data.KubernetesNamespace.IsNull() && !data.KubernetesNamespace.IsUnknown() {
@@ -254,7 +254,7 @@ func (r *gitlabProjectEnvironmentResource) Create(ctx context.Context, req resou
 		return
 	}
 
-	environmentID := strconv.Itoa(environment.ID)
+	environmentID := strconv.FormatInt(environment.ID, 10)
 	data.ID = types.StringValue(utils.BuildTwoPartID(&project, &environmentID))
 	resp.Diagnostics.Append(data.modelToStateModel(project, environment)...)
 	if resp.Diagnostics.HasError() {
@@ -332,7 +332,7 @@ func (r *gitlabProjectEnvironmentResource) Update(ctx context.Context, req resou
 	}
 
 	if !data.ClusterAgentID.IsNull() && !data.ClusterAgentID.IsUnknown() {
-		options.ClusterAgentID = gitlab.Ptr(int(data.ClusterAgentID.ValueInt64()))
+		options.ClusterAgentID = gitlab.Ptr(data.ClusterAgentID.ValueInt64())
 	}
 
 	if !data.KubernetesNamespace.IsNull() && !data.KubernetesNamespace.IsUnknown() {
@@ -363,7 +363,7 @@ func (r *gitlabProjectEnvironmentResource) Update(ctx context.Context, req resou
 		}
 	}
 
-	environmentIDStr := strconv.Itoa(environment.ID)
+	environmentIDStr := strconv.FormatInt(environment.ID, 10)
 	data.ID = types.StringValue(utils.BuildTwoPartID(&project, &environmentIDStr))
 	resp.Diagnostics.Append(data.modelToStateModel(project, environment)...)
 	if resp.Diagnostics.HasError() {
@@ -372,11 +372,11 @@ func (r *gitlabProjectEnvironmentResource) Update(ctx context.Context, req resou
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *gitlabProjectEnvironmentResource) updateNullableClusterAgentID(ctx context.Context, project string, environmentID int) (*gitlab.Environment, error) {
+func (r *gitlabProjectEnvironmentResource) updateNullableClusterAgentID(ctx context.Context, project string, environmentID int64) (*gitlab.Environment, error) {
 	options := &gitlab.EditEnvironmentOptions{}
 	environment, _, err := r.client.Environments.EditEnvironment(project, environmentID, options, gitlab.WithContext(ctx), func(request *retryablehttp.Request) error {
 		optionsStruct := struct {
-			ClusterAgentID      *int    `url:"cluster_agent_id" json:"cluster_agent_id"`
+			ClusterAgentID      *int64  `url:"cluster_agent_id" json:"cluster_agent_id"`
 			KubernetesNamespace *string `url:"kubernetes_namespace" json:"kubernetes_namespace"`
 			FluxResourcePath    *string `url:"flux_resource_path" json:"flux_resource_path"`
 		}{
@@ -560,12 +560,12 @@ func (d *gitlabProjectEnvironmentResourceModel) modelToStateModel(project string
 	return nil
 }
 
-func resourceGitlabProjectEnvironmentParseID(id string) (string, int, error) {
+func resourceGitlabProjectEnvironmentParseID(id string) (string, int64, error) {
 	project, rawEnvironmentID, err := utils.ParseTwoPartID(id)
 	if err != nil {
 		return "", 0, err
 	}
-	environmentID, err := strconv.Atoi(rawEnvironmentID)
+	environmentID, err := strconv.ParseInt(rawEnvironmentID, 10, 64)
 	if err != nil {
 		return "", 0, err
 	}

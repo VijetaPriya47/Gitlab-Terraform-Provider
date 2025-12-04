@@ -69,7 +69,7 @@ func testAccCheckGitlabProjectCustomAttributeDestroy(s *terraform.State) error {
 			return fmt.Errorf("unexpected ID format (%q). Expected project-id:key", rs.Primary.ID)
 		}
 
-		projectID, err := strconv.Atoi(parts[0])
+		projectID, err := strconv.ParseInt(parts[0], 10, 64)
 		if err != nil {
 			return fmt.Errorf("Unable to parse project id (%q) into an integer", rs.Primary.ID)
 		}

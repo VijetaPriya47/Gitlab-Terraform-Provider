@@ -131,8 +131,8 @@ func TestAccGitlabProjectMembership_UseCustomRole(t *testing.T) {
 					`, project.ID, user.ID, roleOne.ID,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("gitlab_project_membership.foo", "project", strconv.Itoa(project.ID)),
-					resource.TestCheckResourceAttr("gitlab_project_membership.foo", "member_role_id", strconv.Itoa(roleOne.ID)),
+					resource.TestCheckResourceAttr("gitlab_project_membership.foo", "project", strconv.FormatInt(project.ID, 10)),
+					resource.TestCheckResourceAttr("gitlab_project_membership.foo", "member_role_id", strconv.FormatInt(roleOne.ID, 10)),
 				),
 			},
 			{
@@ -157,8 +157,8 @@ func TestAccGitlabProjectMembership_UseCustomRole(t *testing.T) {
 					`, project.ID, user.ID, roleTwo.ID,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("gitlab_project_membership.foo", "project", strconv.Itoa(project.ID)),
-					resource.TestCheckResourceAttr("gitlab_project_membership.foo", "member_role_id", strconv.Itoa(roleTwo.ID)),
+					resource.TestCheckResourceAttr("gitlab_project_membership.foo", "project", strconv.FormatInt(project.ID, 10)),
+					resource.TestCheckResourceAttr("gitlab_project_membership.foo", "member_role_id", strconv.FormatInt(roleTwo.ID, 10)),
 				),
 			},
 			{
@@ -172,7 +172,7 @@ func TestAccGitlabProjectMembership_UseCustomRole(t *testing.T) {
 					`, project.ID, user.ID,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("gitlab_project_membership.foo", "project", strconv.Itoa(project.ID)),
+					resource.TestCheckResourceAttr("gitlab_project_membership.foo", "project", strconv.FormatInt(project.ID, 10)),
 					resource.TestCheckResourceAttr("gitlab_project_membership.foo", "member_role_id", "0"),
 					checkProjectMembershipViaAPI,
 				),
@@ -194,7 +194,7 @@ func testAccCheckGitlabProjectMembershipExists(n string, membership *gitlab.Proj
 		}
 
 		userID := rs.Primary.Attributes["user_id"]
-		id, _ := strconv.Atoi(userID)
+		id, _ := strconv.ParseInt(userID, 10, 64)
 		if userID == "" {
 			return fmt.Errorf("No user id is set")
 		}
@@ -237,7 +237,7 @@ func testAccCheckGitlabProjectMembershipDestroy(s *terraform.State) error {
 		userID := rs.Primary.Attributes["user_id"]
 
 		// GetProjectMember needs int type for userID
-		userIDI, err := strconv.Atoi(userID)
+		userIDI, err := strconv.ParseInt(userID, 10, 64)
 		if err != nil {
 			return err
 		}

@@ -200,7 +200,7 @@ func (d *gitlabProjectMembershipDataSource) Read(ctx context.Context, req dataso
 	}
 
 	if !data.UserIDs.IsNull() && !data.UserIDs.IsUnknown() {
-		var userIDs []int
+		var userIDs []int64
 		data.UserIDs.ElementsAs(ctx, &userIDs, true)
 		listOptions.UserIDs = &userIDs
 	}
@@ -224,7 +224,7 @@ func (d *gitlabProjectMembershipDataSource) Read(ctx context.Context, req dataso
 
 func (data *gitlabProjectMembershipDataSourceModel) modelToStateModel(project *gitlab.Project, allPMs []*gitlab.ProjectMember) {
 	var optionsHash strings.Builder
-	optionsHash.WriteString(strconv.Itoa(project.ID))
+	optionsHash.WriteString(strconv.FormatInt(project.ID, 10))
 
 	if !data.Query.IsNull() && !data.Query.IsUnknown() {
 		optionsHash.WriteString(data.Query.ValueString())

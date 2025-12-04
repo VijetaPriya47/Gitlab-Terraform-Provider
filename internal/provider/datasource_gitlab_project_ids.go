@@ -101,7 +101,7 @@ func (d *gitlabProjectIDsDataSource) Read(ctx context.Context, req datasource.Re
 	}
 
 	data.ProjectFullPath = types.StringValue(ids.ProjectFullPath)
-	data.ProjectId = types.StringValue(strconv.Itoa(ids.ProjectID))
+	data.ProjectId = types.StringValue(strconv.FormatInt(ids.ProjectID, 10))
 	data.ProjectGraphQLID = types.StringValue(ids.ProjectGQLID)
 
 	diags := resp.State.Set(ctx, &data)

@@ -44,7 +44,7 @@ var _ = registerResource("gitlab_project_runner_enablement", func() *schema.Reso
 func resourceGitlabProjectRunnerEnablementCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
 	projectID := d.Get("project").(string)
-	runnerID := d.Get("runner_id").(int)
+	runnerID := int64(d.Get("runner_id").(int))
 	options := &gitlab.EnableProjectRunnerOptions{
 		RunnerID: runnerID,
 	}
@@ -56,7 +56,7 @@ func resourceGitlabProjectRunnerEnablementCreate(ctx context.Context, d *schema.
 		return diag.FromErr(err)
 	}
 
-	runnerIDString := strconv.Itoa(runnerID)
+	runnerIDString := strconv.FormatInt(runnerID, 10)
 	d.SetId(utils.BuildTwoPartID(&projectID, &runnerIDString))
 
 	return resourceGitlabProjectRunnerEnablementRead(ctx, d, meta)
@@ -103,15 +103,15 @@ func resourceGitlabProjectRunnerEnablementRead(ctx context.Context, d *schema.Re
 	return nil
 }
 
-func projectAndRunnerFromID(ctx context.Context, id string) (string, int, error) {
-	var runnerID int
+func projectAndRunnerFromID(ctx context.Context, id string) (string, int64, error) {
+	var runnerID int64
 	projectID, runnerIDString, err := utils.ParseTwoPartID(id)
 	if err != nil {
 		tflog.Warn(ctx, fmt.Sprintf("[WARN] could not get project and runner ids from resource id %v", id))
 		return projectID, runnerID, err
 	}
 
-	runnerID, err = strconv.Atoi(runnerIDString)
+	runnerID, err = strconv.ParseInt(runnerIDString, 10, 64)
 	if err != nil {
 		tflog.Warn(ctx, fmt.Sprintf("[WARN] could not convert runner id '%s' to integer", runnerIDString))
 		return projectID, runnerID, err

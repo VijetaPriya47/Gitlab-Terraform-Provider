@@ -132,7 +132,7 @@ func TestAccDataGitlabProjectBranches_UpdateHashStruct(t *testing.T) {
 
 						// get the new ID to check it against the project ID
 						newID := rs.Primary.ID
-						if newID != strconv.Itoa(testProject.ID) {
+						if newID != strconv.FormatInt(testProject.ID, 10) {
 							return fmt.Errorf("project ID and data source ID do not match!")
 						}
 

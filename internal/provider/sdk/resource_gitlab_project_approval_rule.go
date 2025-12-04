@@ -136,7 +136,7 @@ func resourceGitlabProjectApprovalRuleCreate(ctx context.Context, d *schema.Reso
 
 	// If the rule_type is "any_approver", then we need to check if the rule already exists, and update it instead of
 	// create it.
-	anyApproverRuleId := 0
+	var anyApproverRuleId int64 = 0
 	if ruleType == "any_approver" && !importBehavior {
 		ruleId, err := getAnyApproverRuleId(ctx, client, project)
 		if err != nil {
@@ -154,7 +154,7 @@ func resourceGitlabProjectApprovalRuleCreate(ctx context.Context, d *schema.Reso
 
 		options := gitlab.CreateProjectLevelRuleOptions{
 			Name:                          gitlab.Ptr(name),
-			ApprovalsRequired:             gitlab.Ptr(d.Get("approvals_required").(int)),
+			ApprovalsRequired:             gitlab.Ptr(int64(d.Get("approvals_required").(int))),
 			UserIDs:                       expandApproverIds(d.Get("user_ids")),
 			GroupIDs:                      expandApproverIds(d.Get("group_ids")),
 			ProtectedBranchIDs:            expandProtectedBranchIDs(d.Get("protected_branch_ids")),
@@ -197,13 +197,13 @@ func resourceGitlabProjectApprovalRuleCreate(ctx context.Context, d *schema.Reso
 			return diag.FromErr(err)
 		}
 
-		ruleIDString = strconv.Itoa(rule.ID)
+		ruleIDString = strconv.FormatInt(rule.ID, 10)
 	} else {
 
 		// We don't need to set "rule_type" because it's already implied in updating the "any_approver" rule.
 		options := gitlab.UpdateProjectLevelRuleOptions{
 			Name:                          gitlab.Ptr(d.Get("name").(string)),
-			ApprovalsRequired:             gitlab.Ptr(d.Get("approvals_required").(int)),
+			ApprovalsRequired:             gitlab.Ptr(int64(d.Get("approvals_required").(int))),
 			UserIDs:                       expandApproverIds(d.Get("user_ids")),
 			GroupIDs:                      expandApproverIds(d.Get("group_ids")),
 			ProtectedBranchIDs:            expandProtectedBranchIDs(d.Get("protected_branch_ids")),
@@ -217,7 +217,7 @@ func resourceGitlabProjectApprovalRuleCreate(ctx context.Context, d *schema.Reso
 		if err != nil {
 			return diag.FromErr(err)
 		}
-		ruleIDString = strconv.Itoa(rule.ID)
+		ruleIDString = strconv.FormatInt(rule.ID, 10)
 	}
 
 	d.SetId(utils.BuildTwoPartID(&project, &ruleIDString))
@@ -232,7 +232,7 @@ func resourceGitlabProjectApprovalRuleRead(ctx context.Context, d *schema.Resour
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	ruleID, err := strconv.Atoi(parsedRuleID)
+	ruleID, err := strconv.ParseInt(parsedRuleID, 10, 64)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -251,7 +251,7 @@ func resourceGitlabProjectApprovalRuleRead(ctx context.Context, d *schema.Resour
 
 	d.Set("project", projectID)
 	d.Set("name", rule.Name)
-	d.Set("approvals_required", rule.ApprovalsRequired)
+	d.Set("approvals_required", int(rule.ApprovalsRequired))
 	d.Set("rule_type", rule.RuleType)
 	d.Set("report_type", rule.ReportType)
 	d.Set("applies_to_all_protected_branches", rule.AppliesToAllProtectedBranches)
@@ -281,14 +281,14 @@ func resourceGitlabProjectApprovalRuleUpdate(ctx context.Context, d *schema.Reso
 		return diag.FromErr(err)
 	}
 
-	ruleIDInt, err := strconv.Atoi(ruleID)
+	ruleIDInt, err := strconv.ParseInt(ruleID, 10, 64)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	options := gitlab.UpdateProjectLevelRuleOptions{
 		Name:                          gitlab.Ptr(d.Get("name").(string)),
-		ApprovalsRequired:             gitlab.Ptr(d.Get("approvals_required").(int)),
+		ApprovalsRequired:             gitlab.Ptr(int64(d.Get("approvals_required").(int))),
 		UserIDs:                       expandApproverIds(d.Get("user_ids")),
 		GroupIDs:                      expandApproverIds(d.Get("group_ids")),
 		ProtectedBranchIDs:            expandProtectedBranchIDs(d.Get("protected_branch_ids")),
@@ -313,7 +313,7 @@ func resourceGitlabProjectApprovalRuleDelete(ctx context.Context, d *schema.Reso
 		return diag.FromErr(err)
 	}
 
-	ruleIDInt, err := strconv.Atoi(ruleID)
+	ruleIDInt, err := strconv.ParseInt(ruleID, 10, 64)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -336,7 +336,7 @@ func flattenApprovalRuleUserIDs(users []*gitlab.BasicUser) []int {
 	var userIDs []int
 
 	for _, user := range users {
-		userIDs = append(userIDs, user.ID)
+		userIDs = append(userIDs, int(user.ID))
 	}
 
 	return userIDs
@@ -348,7 +348,7 @@ func flattenApprovalRuleGroupIDs(groups []*gitlab.Group) []int {
 	var groupIDs []int
 
 	for _, group := range groups {
-		groupIDs = append(groupIDs, group.ID)
+		groupIDs = append(groupIDs, int(group.ID))
 	}
 
 	return groupIDs
@@ -358,34 +358,34 @@ func flattenProtectedBranchIDs(protectedBranches []*gitlab.ProtectedBranch) []in
 	var protectedBranchIDs []int
 
 	for _, protectedBranch := range protectedBranches {
-		protectedBranchIDs = append(protectedBranchIDs, protectedBranch.ID)
+		protectedBranchIDs = append(protectedBranchIDs, int(protectedBranch.ID))
 	}
 
 	return protectedBranchIDs
 }
 
 // expandApproverIds Expands an interface into a list of ints to read from state.
-func expandApproverIds(ids any) *[]int {
-	var approverIDs []int
+func expandApproverIds(ids any) *[]int64 {
+	var approverIDs []int64
 
 	for _, id := range ids.(*schema.Set).List() {
-		approverIDs = append(approverIDs, id.(int))
+		approverIDs = append(approverIDs, int64(id.(int)))
 	}
 
 	return &approverIDs
 }
 
-func expandProtectedBranchIDs(ids any) *[]int {
-	var protectedBranchIDs []int
+func expandProtectedBranchIDs(ids any) *[]int64 {
+	var protectedBranchIDs []int64
 
 	for _, id := range ids.(*schema.Set).List() {
-		protectedBranchIDs = append(protectedBranchIDs, id.(int))
+		protectedBranchIDs = append(protectedBranchIDs, int64(id.(int)))
 	}
 
 	return &protectedBranchIDs
 }
 
-func getAnyApproverRuleId(ctx context.Context, client *gitlab.Client, project string) (int, error) {
+func getAnyApproverRuleId(ctx context.Context, client *gitlab.Client, project string) (int64, error) {
 	rules, _, err := client.Projects.GetProjectApprovalRules(project, &gitlab.GetProjectApprovalRulesListsOptions{})
 	if err != nil {
 		if api.Is404(err) {

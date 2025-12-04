@@ -168,7 +168,7 @@ func (r *gitlabInstanceServiceAccountResource) Read(ctx context.Context, req res
 	}
 
 	// read all information for refresh from resource id
-	serviceAccountID, err := strconv.Atoi(data.ID.ValueString())
+	serviceAccountID, err := strconv.ParseInt(data.ID.ValueString(), 10, 64)
 	if err != nil {
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to convert resource ID: %s", err.Error()))
 		return
@@ -211,7 +211,7 @@ func (r *gitlabInstanceServiceAccountResource) Delete(ctx context.Context, req r
 	// read all information for refresh from resource id
 	serviceAccountID := data.ID.ValueString()
 
-	serviceAccountIDInt, err := strconv.Atoi(serviceAccountID)
+	serviceAccountIDInt, err := strconv.ParseInt(serviceAccountID, 10, 64)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Internal provider error",
@@ -273,7 +273,7 @@ func (r *gitlabInstanceServiceAccountResource) ImportState(ctx context.Context, 
 }
 
 func (r *gitlabInstanceServiceAccountResourceModel) userToStateModel(serviceAccount *gitlab.User) {
-	serviceAccountIDStr := strconv.Itoa(serviceAccount.ID)
+	serviceAccountIDStr := strconv.FormatInt(serviceAccount.ID, 10)
 	r.ID = types.StringValue(serviceAccountIDStr)
 	r.ServiceAccountID = types.StringValue(serviceAccountIDStr)
 	r.Name = types.StringValue(serviceAccount.Name)

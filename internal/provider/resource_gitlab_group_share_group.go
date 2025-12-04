@@ -115,7 +115,7 @@ func (r *gitlabGroupShareGroupResource) Create(ctx context.Context, req resource
 	}
 
 	groupID := data.GroupID.ValueString()
-	shareGroupID := int(data.ShareGroupID.ValueInt64())
+	shareGroupID := data.ShareGroupID.ValueInt64()
 	groupAccess := api.AccessLevelNameToValue[data.GroupAccess.ValueString()]
 
 	options := &gitlab.ShareGroupWithGroupOptions{
@@ -136,7 +136,7 @@ func (r *gitlabGroupShareGroupResource) Create(ctx context.Context, req resource
 	}
 
 	if !data.MemberRoleID.IsNull() && !data.MemberRoleID.IsUnknown() {
-		options.MemberRoleID = gitlab.Ptr(int(data.MemberRoleID.ValueInt64()))
+		options.MemberRoleID = gitlab.Ptr(data.MemberRoleID.ValueInt64())
 	}
 
 	group, _, err := r.client.Groups.ShareGroupWithGroup(groupID, options, gitlab.WithContext(ctx))
@@ -145,7 +145,7 @@ func (r *gitlabGroupShareGroupResource) Create(ctx context.Context, req resource
 		return
 	}
 
-	shareGroupIDString := strconv.Itoa(shareGroupID)
+	shareGroupIDString := strconv.FormatInt(shareGroupID, 10)
 	data.ID = types.StringValue(utils.BuildTwoPartID(&groupID, &shareGroupIDString))
 
 	for _, sharedGroup := range group.SharedWithGroups {
@@ -253,13 +253,13 @@ func (r *gitlabGroupShareGroupResource) Delete(ctx context.Context, req resource
 	resp.State.RemoveResource(ctx)
 }
 
-func groupIdsFromId(id string) (string, int, error) {
+func groupIdsFromId(id string) (string, int64, error) {
 	groupId, sharedGroupIdString, err := utils.ParseTwoPartID(id)
 	if err != nil {
 		return "", 0, fmt.Errorf("error parsing ID: %s", id)
 	}
 
-	sharedGroupId, err := strconv.Atoi(sharedGroupIdString)
+	sharedGroupId, err := strconv.ParseInt(sharedGroupIdString, 10, 64)
 	if err != nil {
 		return "", 0, fmt.Errorf("can not determine shared group id: %s", sharedGroupIdString)
 	}

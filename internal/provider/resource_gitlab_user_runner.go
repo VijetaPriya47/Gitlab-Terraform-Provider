@@ -219,10 +219,10 @@ func (r *gitlabUserRunnerResource) Create(ctx context.Context, req resource.Crea
 	}
 
 	if !data.GroupID.IsNull() {
-		options.GroupID = gitlab.Ptr(int(data.GroupID.ValueInt64()))
+		options.GroupID = gitlab.Ptr(data.GroupID.ValueInt64())
 	}
 	if !data.ProjectID.IsNull() {
-		options.ProjectID = gitlab.Ptr(int(data.ProjectID.ValueInt64()))
+		options.ProjectID = gitlab.Ptr(data.ProjectID.ValueInt64())
 	}
 	if !data.Description.IsNull() && !data.Description.IsUnknown() {
 		options.Description = gitlab.Ptr(data.Description.ValueString())
@@ -250,7 +250,7 @@ func (r *gitlabUserRunnerResource) Create(ctx context.Context, req resource.Crea
 	// Attempting to create with a timeout of 0 causes an error, so we validate that the value is
 	// greater than 0 before including it within create.
 	if !data.MaximumTimeout.IsNull() && !data.MaximumTimeout.IsUnknown() && data.MaximumTimeout.ValueInt64() > 0 {
-		options.MaximumTimeout = gitlab.Ptr(int(data.MaximumTimeout.ValueInt64()))
+		options.MaximumTimeout = gitlab.Ptr(data.MaximumTimeout.ValueInt64())
 	}
 	if !data.MaintenanceNote.IsNull() && !data.MaintenanceNote.IsUnknown() {
 		options.MaintenanceNote = gitlab.Ptr(data.MaintenanceNote.ValueString())
@@ -266,7 +266,7 @@ func (r *gitlabUserRunnerResource) Create(ctx context.Context, req resource.Crea
 	}
 
 	// Set the ID
-	data.ID = types.StringValue(strconv.Itoa(userRunner.ID))
+	data.ID = types.StringValue(strconv.FormatInt(userRunner.ID, 10))
 
 	// Save the token, since that is only available from the `create` function
 	data.Token = types.StringValue(userRunner.Token)
@@ -347,7 +347,7 @@ func (r *gitlabUserRunnerResource) Update(ctx context.Context, req resource.Upda
 		options.AccessLevel = data.AccessLevel.ValueStringPointer()
 	}
 	if !data.MaximumTimeout.IsNull() && !data.MaximumTimeout.IsUnknown() && data.MaximumTimeout.ValueInt64() > 0 {
-		options.MaximumTimeout = gitlab.Ptr(int(data.MaximumTimeout.ValueInt64()))
+		options.MaximumTimeout = gitlab.Ptr(data.MaximumTimeout.ValueInt64())
 	}
 	if !data.MaintenanceNote.IsNull() && !data.MaintenanceNote.IsUnknown() {
 		options.MaintenanceNote = gitlab.Ptr(data.MaintenanceNote.ValueString())
@@ -374,7 +374,7 @@ func (r *gitlabUserRunnerResource) Delete(ctx context.Context, req resource.Dele
 		return
 	}
 
-	runnerId, err := strconv.Atoi(data.ID.ValueString())
+	runnerId, err := strconv.ParseInt(data.ID.ValueString(), 10, 64)
 	if err != nil {
 		tflog.Debug(ctx, "[DEBUG] gitlab runner ID in state is not a number.", map[string]any{
 			"id": data.ID.ValueString(),

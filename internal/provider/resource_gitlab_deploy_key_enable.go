@@ -113,7 +113,7 @@ func (r *gitlabDeployKeyEnableResource) Create(ctx context.Context, req resource
 
 	project := data.Project.ValueString()
 
-	keyID, err := strconv.Atoi(data.KeyID.ValueString())
+	keyID, err := strconv.ParseInt(data.KeyID.ValueString(), 10, 64)
 	if err != nil {
 		resp.Diagnostics.AddError("Error parsing key ID", fmt.Sprintf("Could not parse key ID %q to int: %s", data.KeyID.ValueString(), err))
 		return
@@ -141,7 +141,7 @@ func (r *gitlabDeployKeyEnableResource) Create(ctx context.Context, req resource
 
 	data.ID = types.StringValue(fmt.Sprintf("%s:%d", project, deployKey.ID))
 	data.Title = types.StringValue(deployKey.Title)
-	data.KeyID = types.StringValue(strconv.Itoa(deployKey.ID))
+	data.KeyID = types.StringValue(strconv.FormatInt(deployKey.ID, 10))
 	data.Key = types.StringValue(deployKey.Key)
 	data.CanPush = types.BoolValue(deployKey.CanPush)
 	data.Project = types.StringValue(project)
@@ -175,7 +175,7 @@ func (r *gitlabDeployKeyEnableResource) Read(ctx context.Context, req resource.R
 	}
 
 	data.Title = types.StringValue(deployKey.Title)
-	data.KeyID = types.StringValue(strconv.Itoa(deployKey.ID))
+	data.KeyID = types.StringValue(strconv.FormatInt(deployKey.ID, 10))
 	data.Key = types.StringValue(deployKey.Key)
 	data.CanPush = types.BoolValue(deployKey.CanPush)
 	data.Project = types.StringValue(project)
@@ -211,13 +211,13 @@ func (r *gitlabDeployKeyEnableResource) Delete(ctx context.Context, req resource
 	}
 }
 
-func resourceGitLabDeployKeyEnableParseId(id string) (string, int, error) {
+func resourceGitLabDeployKeyEnableParseId(id string) (string, int64, error) {
 	projectID, deployTokenID, err := utils.ParseTwoPartID(id)
 	if err != nil {
 		return "", 0, err
 	}
 
-	deployTokenIID, err := strconv.Atoi(deployTokenID)
+	deployTokenIID, err := strconv.ParseInt(deployTokenID, 10, 64)
 	if err != nil {
 		return "", 0, err
 	}

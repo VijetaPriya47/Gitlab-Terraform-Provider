@@ -200,7 +200,7 @@ func (r *gitlabGroupEpicBoardResource) Read(ctx context.Context, req resource.Re
 		return
 	}
 
-	boardId, err := strconv.Atoi(boardID)
+	boardId, err := strconv.ParseInt(boardID, 10, 64)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Invalid board ID provided, board ID should be an Int",
@@ -308,7 +308,7 @@ func (r *gitlabGroupEpicBoardResource) Update(ctx context.Context, req resource.
 
 	parts := strings.Split(response.Data.EpicBoardUpdate.EpicBoard.Id, "/")
 	epicBoardId := parts[len(parts)-1]
-	EpicBoardId, err := strconv.Atoi(epicBoardId)
+	EpicBoardId, err := strconv.ParseInt(epicBoardId, 10, 64)
 	if err != nil {
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to update epic: %s - call response %v Query %s",
 			"EpicBoard ID not found in GraphQL response", response, query.Query))
@@ -489,7 +489,7 @@ func (r *gitlabGroupEpicBoardResource) Create(ctx context.Context, req resource.
 
 	parts := strings.Split(response.Data.EpicBoardCreate.EpicBoard.Id, "/")
 	epicBoardId := parts[len(parts)-1]
-	EpicBoardId, err := strconv.Atoi(epicBoardId)
+	EpicBoardId, err := strconv.ParseInt(epicBoardId, 10, 64)
 	if err != nil {
 		resp.Diagnostics.AddError("GitLab API error occurred",
 			fmt.Sprintf("Unable to create epic board: %s - ID %s, Name %s from resp %v with query %s",

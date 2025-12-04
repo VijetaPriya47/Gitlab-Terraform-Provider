@@ -117,8 +117,8 @@ func (r *gitlabProjectExternalStatusCheckResource) Configure(ctx context.Context
 	r.client = resourceData.Client
 }
 
-func (r *gitlabProjectExternalStatusCheckResource) projectExternalStatusCheckToStateModel(ctx context.Context, projectID int, externalStatusCheck *gitlab.ProjectStatusCheck, data *gitlabProjectExternalStatusCheckResourceModel) {
-	data.ID = types.StringValue(utils.BuildTwoPartID(gitlab.Ptr(strconv.Itoa(projectID)), gitlab.Ptr(strconv.Itoa(externalStatusCheck.ID))))
+func (r *gitlabProjectExternalStatusCheckResource) projectExternalStatusCheckToStateModel(ctx context.Context, projectID int64, externalStatusCheck *gitlab.ProjectStatusCheck, data *gitlabProjectExternalStatusCheckResourceModel) {
+	data.ID = types.StringValue(utils.BuildTwoPartID(gitlab.Ptr(fmt.Sprintf("%d", projectID)), gitlab.Ptr(strconv.FormatInt(externalStatusCheck.ID, 10))))
 	data.ProjectID = types.Int64Value(int64(projectID))
 	data.Name = types.StringValue(externalStatusCheck.Name)
 	data.ExternalURL = types.StringValue(externalStatusCheck.ExternalURL)
@@ -180,7 +180,7 @@ func (r *gitlabProjectExternalStatusCheckResource) Create(ctx context.Context, r
 		return
 	}
 
-	projectID := int(data.ProjectID.ValueInt64())
+	projectID := data.ProjectID.ValueInt64()
 
 	options := gitlab.CreateProjectExternalStatusCheckOptions{
 		Name:        data.Name.ValueStringPointer(),
@@ -192,8 +192,8 @@ func (r *gitlabProjectExternalStatusCheckResource) Create(ctx context.Context, r
 	}
 
 	if !data.ProtectedBranchIDs.IsNull() && !data.ProtectedBranchIDs.IsUnknown() {
-		// convert the Set to a []int and pass it in
-		var protectedBranchIDs []int
+		// convert the Set to a []int64 and pass it in
+		var protectedBranchIDs []int64
 		data.ProtectedBranchIDs.ElementsAs(ctx, &protectedBranchIDs, true)
 		options.ProtectedBranchIDs = &protectedBranchIDs
 
@@ -247,8 +247,8 @@ func (r *gitlabProjectExternalStatusCheckResource) Update(ctx context.Context, r
 	}
 
 	if !data.ProtectedBranchIDs.IsNull() && !data.ProtectedBranchIDs.IsUnknown() {
-		// convert the Set to a []int and pass it in
-		var protectedBranchIDs []int
+		// convert the Set to a []int64 and pass it in
+		var protectedBranchIDs []int64
 		data.ProtectedBranchIDs.ElementsAs(ctx, &protectedBranchIDs, true)
 		options.ProtectedBranchIDs = &protectedBranchIDs
 	}
@@ -294,7 +294,7 @@ func (r *gitlabProjectExternalStatusCheckResource) ImportState(ctx context.Conte
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
-func parseProjectExternalStatusCheckID(id string) (int, int, error) {
+func parseProjectExternalStatusCheckID(id string) (int64, int64, error) {
 	projectID, externalCheckID, err := utils.ParseTwoPartID(id)
 	if err != nil {
 		return 0, 0, err
@@ -306,16 +306,16 @@ func parseProjectExternalStatusCheckID(id string) (int, int, error) {
 		return 0, 0, err
 	}
 
-	// Make sure the external check ID is an int
-	externalCheckIDInt, err := strconv.Atoi(externalCheckID)
+	// Make sure the external check ID is an int64
+	externalCheckIDInt, err := strconv.ParseInt(externalCheckID, 10, 64)
 	if err != nil {
 		return 0, 0, err
 	}
 
-	return projectIDInt, externalCheckIDInt, nil
+	return int64(projectIDInt), externalCheckIDInt, nil
 }
 
-func findProjectExternalStatusCheck(client *gitlab.Client, projectID int, externalStatusCheckID int) (*gitlab.ProjectStatusCheck, error) {
+func findProjectExternalStatusCheck(client *gitlab.Client, projectID int64, externalStatusCheckID int64) (*gitlab.ProjectStatusCheck, error) {
 	options := gitlab.ListProjectExternalStatusChecksOptions{
 		ListOptions: gitlab.ListOptions{
 			PerPage: 20,

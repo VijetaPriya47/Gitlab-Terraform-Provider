@@ -294,7 +294,7 @@ func TestAccDataGitlabProject_CIDeletePipelinesInSeconds(t *testing.T) {
 	client := testutil.TestGitlabClient
 	project := testutil.CreateProject(t)
 
-	ciDeletePipelinesInSeconds1Month := 30 * 24 * 60 * 60
+	ciDeletePipelinesInSeconds1Month := int64(30 * 24 * 60 * 60)
 
 	_, _, err := client.Projects.EditProject(project.ID, &gitlab.EditProjectOptions{
 		CIDeletePipelinesInSeconds: &ciDeletePipelinesInSeconds1Month,
@@ -316,7 +316,7 @@ func TestAccDataGitlabProject_CIDeletePipelinesInSeconds(t *testing.T) {
 					`, project.ID,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("data.gitlab_project.this", "ci_delete_pipelines_in_seconds", strconv.Itoa(ciDeletePipelinesInSeconds1Month)),
+					resource.TestCheckResourceAttr("data.gitlab_project.this", "ci_delete_pipelines_in_seconds", strconv.FormatInt(ciDeletePipelinesInSeconds1Month, 10)),
 				),
 			},
 		},

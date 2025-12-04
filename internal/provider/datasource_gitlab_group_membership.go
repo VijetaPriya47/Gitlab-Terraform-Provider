@@ -212,7 +212,7 @@ func (d *gitlabGroupMembershipDataSource) Read(ctx context.Context, req datasour
 	data.Members = flattenGitlabGroupMembers(data.AccessLevel, allGms)
 
 	var optionsHash strings.Builder
-	optionsHash.WriteString(strconv.Itoa(group.ID))
+	optionsHash.WriteString(strconv.FormatInt(group.ID, 10))
 	if !data.AccessLevel.IsNull() {
 		optionsHash.WriteString(data.AccessLevel.ValueString())
 	}

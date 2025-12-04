@@ -433,7 +433,7 @@ func (r *gitlabGroupAccessTokenResource) Read(ctx context.Context, req resource.
 	tflog.Debug(ctx, fmt.Sprintf("Read gitlab GroupAccessToken %s, group ID %s", accessTokenId, group))
 
 	// Make sure the token ID is an int
-	accessTokenIdInt, err := strconv.Atoi(accessTokenId)
+	accessTokenIdInt, err := strconv.ParseInt(accessTokenId, 10, 64)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error parsing access token ID",
@@ -537,7 +537,7 @@ func (r *gitlabGroupAccessTokenResource) Create(ctx context.Context, req resourc
 	}
 
 	// Set the ID for the resource
-	data.ID = types.StringValue(utils.BuildTwoPartID(data.Group.ValueStringPointer(), gitlab.Ptr(strconv.Itoa(token.ID))))
+	data.ID = types.StringValue(utils.BuildTwoPartID(data.Group.ValueStringPointer(), gitlab.Ptr(strconv.FormatInt(token.ID, 10))))
 
 	r.groupAccessTokenToStateModel(ctx, data, token, data.Group.ValueString())
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -552,7 +552,7 @@ func (r *gitlabGroupAccessTokenResource) Update(ctx context.Context, req resourc
 
 	// Read the ID from state since it may be `unknown` in the plan.
 	group, patId, err := utils.ParseTwoPartID(state.ID.ValueString())
-	intPatId, parseErr := strconv.Atoi(patId)
+	intPatId, parseErr := strconv.ParseInt(patId, 10, 64)
 	if joinedErr := errors.Join(err, parseErr); joinedErr != nil {
 		resp.Diagnostics.AddError(
 			"Error parsing resource ID",
@@ -632,7 +632,7 @@ func (r *gitlabGroupAccessTokenResource) Update(ctx context.Context, req resourc
 	}
 
 	// Updating an access token changes the primary key, so we need to re-set the ID of the resource
-	data.ID = types.StringValue(utils.BuildTwoPartID(data.Group.ValueStringPointer(), gitlab.Ptr(strconv.Itoa(token.ID))))
+	data.ID = types.StringValue(utils.BuildTwoPartID(data.Group.ValueStringPointer(), gitlab.Ptr(strconv.FormatInt(token.ID, 10))))
 
 	r.groupAccessTokenToStateModel(ctx, data, token, data.Group.ValueString())
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -652,7 +652,7 @@ func (r *gitlabGroupAccessTokenResource) Delete(ctx context.Context, req resourc
 		return
 	}
 
-	groupAccessTokenID, err := strconv.Atoi(patId)
+	groupAccessTokenID, err := strconv.ParseInt(patId, 10, 64)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error parsing access token ID",

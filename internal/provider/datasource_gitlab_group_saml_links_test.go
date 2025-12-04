@@ -85,5 +85,5 @@ func createDatasourceGroupSAMLLinksTestData(t *testing.T) (string, string, strin
 	if err != nil {
 		return "", "", "", err
 	}
-	return strconv.Itoa(group.ID), strconv.Itoa(developerRole.ID), strconv.Itoa(reporterRole.ID), nil
+	return strconv.FormatInt(group.ID, 10), strconv.FormatInt(developerRole.ID, 10), strconv.FormatInt(reporterRole.ID, 10), nil
 }

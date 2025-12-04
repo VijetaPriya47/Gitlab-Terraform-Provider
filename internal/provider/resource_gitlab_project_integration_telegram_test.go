@@ -90,7 +90,7 @@ func TestAcc_GitlabProjectIntegrationTelegram_basic(t *testing.T) {
 				`, testProject.ID),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("gitlab_project_integration_telegram.this", "id"),
-					resource.TestCheckResourceAttr("gitlab_project_integration_telegram.this", "project", strconv.Itoa(testProject.ID)),
+					resource.TestCheckResourceAttr("gitlab_project_integration_telegram.this", "project", strconv.FormatInt(testProject.ID, 10)),
 					resource.TestCheckResourceAttr("gitlab_project_integration_telegram.this", "token", "923456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"),
 					resource.TestCheckResourceAttr("gitlab_project_integration_telegram.this", "room", "-2000000000000000"),
 					resource.TestCheckResourceAttr("gitlab_project_integration_telegram.this", "notify_only_broken_pipelines", "false"),
@@ -192,7 +192,7 @@ func TestAcc_GitlabProjectIntegrationTelegram_basic_deprecated(t *testing.T) {
 				`, testProject.ID),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("gitlab_integration_telegram.this", "id"),
-					resource.TestCheckResourceAttr("gitlab_integration_telegram.this", "project", strconv.Itoa(testProject.ID)),
+					resource.TestCheckResourceAttr("gitlab_integration_telegram.this", "project", strconv.FormatInt(testProject.ID, 10)),
 					resource.TestCheckResourceAttr("gitlab_integration_telegram.this", "token", "923456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"),
 					resource.TestCheckResourceAttr("gitlab_integration_telegram.this", "room", "-2000000000000000"),
 					resource.TestCheckResourceAttr("gitlab_integration_telegram.this", "notify_only_broken_pipelines", "false"),
@@ -223,7 +223,7 @@ func TestAcc_GitlabProjectIntegrationTelegram_missingRequired(t *testing.T) {
 	testProject := testutil.CreateProject(t)
 
 	requiredAttrs := map[string]string{
-		"project":                    strconv.Itoa(testProject.ID),
+		"project":                    strconv.FormatInt(testProject.ID, 10),
 		"token":                      `"123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"`,
 		"room":                       `"-1000000000000000"`,
 		"push_events":                "false",
@@ -300,7 +300,7 @@ func TestAcc_GitlabProjectIntegrationTelegram_invalidValues(t *testing.T) {
 	})
 }
 
-func testAccGitlabProjectIntegrationTelegramCheckDestroy(projectId int) resource.TestCheckFunc {
+func testAccGitlabProjectIntegrationTelegramCheckDestroy(projectId int64) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		service, _, err := testutil.TestGitlabClient.Services.GetTelegramService(projectId)
 		if err != nil {

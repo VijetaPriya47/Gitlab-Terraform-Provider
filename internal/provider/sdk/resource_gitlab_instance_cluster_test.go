@@ -207,7 +207,7 @@ func testAccCheckGitlabInstanceClusterExists(n string, cluster *gitlab.InstanceC
 			return fmt.Errorf("not found: %q", n)
 		}
 
-		instanceClusterID, err := strconv.Atoi(rs.Primary.ID)
+		instanceClusterID, err := strconv.ParseInt(rs.Primary.ID, 10, 64)
 		if err != nil {
 			return err
 		}
@@ -229,7 +229,7 @@ func testAccCheckGitlabInstanceClusterDestroy(s *terraform.State) error {
 			continue
 		}
 
-		instanceClusterID, err := strconv.Atoi(rs.Primary.ID)
+		instanceClusterID, err := strconv.ParseInt(rs.Primary.ID, 10, 64)
 		if err != nil {
 			return err
 		}

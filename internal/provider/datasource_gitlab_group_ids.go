@@ -101,7 +101,7 @@ func (d *gitlabGroupIDsDataSource) Read(ctx context.Context, req datasource.Read
 	}
 
 	data.GroupFullPath = types.StringValue(ids.GroupFullPath)
-	data.GroupId = types.StringValue(strconv.Itoa(ids.GroupID))
+	data.GroupId = types.StringValue(strconv.FormatInt(ids.GroupID, 10))
 	data.GroupGraphQLID = types.StringValue(ids.GroupGQLID)
 
 	diags := resp.State.Set(ctx, &data)

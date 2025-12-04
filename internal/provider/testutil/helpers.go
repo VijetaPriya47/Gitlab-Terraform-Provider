@@ -163,7 +163,7 @@ func CreateProject(t *testing.T) *gitlab.Project {
 
 // CreateProjectWithNamespace is a test helper for creating a project. This method accepts a namespace to create a project
 // within a group
-func CreateProjectWithNamespace(t *testing.T, namespaceID int) *gitlab.Project {
+func CreateProjectWithNamespace(t *testing.T, namespaceID int64) *gitlab.Project {
 	t.Helper()
 
 	options := &gitlab.CreateProjectOptions{
@@ -187,8 +187,8 @@ func CreateProjectWithNamespace(t *testing.T, namespaceID int) *gitlab.Project {
 func CreateProjectWithOptions(t *testing.T, opts *gitlab.CreateProjectOptions) *gitlab.Project {
 	t.Helper()
 
-	if IsRunningOnSaaS(t) && (opts.NamespaceID == nil || opts.NamespaceID == gitlab.Ptr(0)) {
-		namespaceID, err := strconv.Atoi(os.Getenv("GITLAB_SAAS_NAMESPACE_ID"))
+	if IsRunningOnSaaS(t) && (opts.NamespaceID == nil || opts.NamespaceID == gitlab.Ptr(int64(0))) {
+		namespaceID, err := strconv.ParseInt(os.Getenv("GITLAB_SAAS_NAMESPACE_ID"), 10, 64)
 		if err != nil {
 			t.Fatalf("could not parse GITLAB_SAAS_NAMESPACE_ID: %v", err)
 		}
@@ -224,7 +224,7 @@ func CreateProjectWithOptions(t *testing.T, opts *gitlab.CreateProjectOptions) *
 	return project
 }
 
-func CreateProjectWithDefaultPushRules(t *testing.T, namespaceID int) *gitlab.Project {
+func CreateProjectWithDefaultPushRules(t *testing.T, namespaceID int64) *gitlab.Project {
 	t.Helper()
 
 	project := CreateProjectWithNamespace(t, namespaceID)
@@ -262,7 +262,7 @@ func CreateProjectWithDefaultPushRules(t *testing.T, namespaceID int) *gitlab.Pr
 		CommitMessageRegex:         nil,
 		DenyDeleteTag:              gitlab.Ptr(false),
 		FileNameRegex:              nil,
-		MaxFileSize:                gitlab.Ptr(0),
+		MaxFileSize:                gitlab.Ptr(int64(0)),
 		MemberCheck:                gitlab.Ptr(false),
 		PreventSecrets:             gitlab.Ptr(false),
 		RejectUnsignedCommits:      nil,
@@ -380,9 +380,9 @@ func CreateGroups(t *testing.T, n int) []*gitlab.Group {
 func CreateGroupsWithPrefix(t *testing.T, n int, prefix string) []*gitlab.Group {
 	t.Helper()
 
-	var parentID *int
+	var parentID *int64
 	if IsRunningOnSaaS(t) {
-		namespaceID, err := strconv.Atoi(os.Getenv("GITLAB_SAAS_NAMESPACE_ID"))
+		namespaceID, err := strconv.ParseInt(os.Getenv("GITLAB_SAAS_NAMESPACE_ID"), 10, 64)
 		if err != nil {
 			t.Fatalf("could not parse GITLAB_SAAS_NAMESPACE_ID: %v", err)
 		}
@@ -640,7 +640,7 @@ func CreateMergeRequest(t *testing.T, assignee *gitlab.User, project *gitlab.Pro
 	}
 	if assignee != nil {
 		opts.AssigneeID = &assignee.ID
-		opts.AssigneeIDs = &[]int{assignee.ID}
+		opts.AssigneeIDs = &[]int64{assignee.ID}
 	}
 
 	mergeRequest, _, err := TestGitlabClient.MergeRequests.CreateMergeRequest(
@@ -855,7 +855,7 @@ func AddGroupMembers(t *testing.T, gid any, users []*gitlab.User) {
 }
 
 // GroupShareGroup shares a group with another group with a developer access level and finite date.
-func GroupShareGroup(t *testing.T, parentGid any, sharedGid *int) *gitlab.Group {
+func GroupShareGroup(t *testing.T, parentGid any, sharedGid *int64) *gitlab.Group {
 	t.Helper()
 
 	endDate := time.Date(2023, 12, 21, 0, 0, 0, 0, time.UTC)
@@ -888,7 +888,7 @@ func AddGroupMembersWithAccessLevel(t *testing.T, gid any, users []*gitlab.User,
 }
 
 // ProjectShareGroup is a test helper for sharing a project with a group.
-func ProjectShareGroup(t *testing.T, pid any, gid int) {
+func ProjectShareGroup(t *testing.T, pid any, gid int64) {
 	t.Helper()
 
 	_, err := TestGitlabClient.Projects.ShareProjectWithGroup(pid, &gitlab.ShareWithGroupOptions{
@@ -963,7 +963,7 @@ func AddGroupMilestones(t *testing.T, group *gitlab.Group, n int) []*gitlab.Grou
 	return milestones
 }
 
-func CreateDeployKey(t *testing.T, projectID int, options *gitlab.AddDeployKeyOptions) *gitlab.ProjectDeployKey {
+func CreateDeployKey(t *testing.T, projectID int64, options *gitlab.AddDeployKeyOptions) *gitlab.ProjectDeployKey {
 	deployKey, _, err := TestGitlabClient.DeployKeys.AddDeployKey(projectID, options)
 	if err != nil {
 		t.Fatal(err)
@@ -979,7 +979,7 @@ func CreateDeployKey(t *testing.T, projectID int, options *gitlab.AddDeployKeyOp
 }
 
 // CreateProjectEnvironment is a test helper function for creating a project environment
-func CreateProjectEnvironment(t *testing.T, projectID int, options *gitlab.CreateEnvironmentOptions) *gitlab.Environment {
+func CreateProjectEnvironment(t *testing.T, projectID int64, options *gitlab.CreateEnvironmentOptions) *gitlab.Environment {
 	t.Helper()
 
 	projectEnvironment, _, err := TestGitlabClient.Environments.CreateEnvironment(projectID, options)
@@ -1002,7 +1002,7 @@ func CreateProjectEnvironment(t *testing.T, projectID int, options *gitlab.Creat
 	return projectEnvironment
 }
 
-func CreateProjectVariable(t *testing.T, projectID int) *gitlab.ProjectVariable {
+func CreateProjectVariable(t *testing.T, projectID int64) *gitlab.ProjectVariable {
 	variable, _, err := TestGitlabClient.ProjectVariables.CreateVariable(projectID, &gitlab.CreateProjectVariableOptions{
 		Key:   gitlab.Ptr(fmt.Sprintf("test_key_%d", acctest.RandInt())),
 		Value: gitlab.Ptr("test_value"),
@@ -1020,7 +1020,7 @@ func CreateProjectVariable(t *testing.T, projectID int) *gitlab.ProjectVariable 
 	return variable
 }
 
-func CreateGroupVariable(t *testing.T, groupID int) *gitlab.GroupVariable {
+func CreateGroupVariable(t *testing.T, groupID int64) *gitlab.GroupVariable {
 	variable, _, err := TestGitlabClient.GroupVariables.CreateVariable(groupID, &gitlab.CreateGroupVariableOptions{
 		Key:   gitlab.Ptr(fmt.Sprintf("test_key_%d", acctest.RandInt())),
 		Value: gitlab.Ptr("test_value"),
@@ -1057,7 +1057,7 @@ func CreateInstanceVariable(t *testing.T) *gitlab.InstanceVariable {
 	return variable
 }
 
-func CreateProjectFile(t *testing.T, projectID int, fileContent string, filePath string, branch string) *gitlab.FileInfo {
+func CreateProjectFile(t *testing.T, projectID int64, fileContent string, filePath string, branch string) *gitlab.FileInfo {
 	file, _, err := TestGitlabClient.RepositoryFiles.CreateFile(projectID, filePath, &gitlab.CreateFileOptions{
 		Branch:        &branch,
 		Encoding:      gitlab.Ptr("base64"),
@@ -1080,7 +1080,7 @@ func CreateProjectFile(t *testing.T, projectID int, fileContent string, filePath
 	return file
 }
 
-func CreateProjectFilePlaintext(t *testing.T, projectID int, fileContent string, filePath string, branch string) *gitlab.FileInfo {
+func CreateProjectFilePlaintext(t *testing.T, projectID int64, fileContent string, filePath string, branch string) *gitlab.FileInfo {
 	file, _, err := TestGitlabClient.RepositoryFiles.CreateFile(projectID, filePath, &gitlab.CreateFileOptions{
 		Branch:        &branch,
 		Encoding:      gitlab.Ptr("text"),
@@ -1218,7 +1218,7 @@ func DeleteProjectComplianceFrameworks(t *testing.T, project *gitlab.Project) {
 	}
 }
 
-func CreateScheduledPipeline(t *testing.T, project int, branch string) (*gitlab.PipelineSchedule, error) {
+func CreateScheduledPipeline(t *testing.T, project int64, branch string) (*gitlab.PipelineSchedule, error) {
 	t.Helper()
 
 	// check if the branch is a full ref value, otherwise add "refs/heads/" to the front
@@ -1334,7 +1334,7 @@ func CreateRunnerWithOptions(t *testing.T, opts *gitlab.CreateUserRunnerOptions)
 	return runner
 }
 
-func CreateGroupAccessToken(t *testing.T, groupID int) *gitlab.GroupAccessToken {
+func CreateGroupAccessToken(t *testing.T, groupID int64) *gitlab.GroupAccessToken {
 	groupAccessToken, _, err := TestGitlabClient.GroupAccessTokens.CreateGroupAccessToken(groupID, &gitlab.CreateGroupAccessTokenOptions{
 		Name:        gitlab.Ptr(fmt.Sprintf("acctest-%d", acctest.RandInt())),
 		Scopes:      gitlab.Ptr([]string{"read_api", "read_repository"}),
@@ -1370,7 +1370,7 @@ func CreateCustomInstanceRole(t *testing.T, input *gitlab.CreateMemberRoleOption
 	return role
 }
 
-func CreateProjectAccessToken(t *testing.T, projectID int, name string, scopes []string, accessLevel gitlab.AccessLevelValue, description *string) *gitlab.
+func CreateProjectAccessToken(t *testing.T, projectID int64, name string, scopes []string, accessLevel gitlab.AccessLevelValue, description *string) *gitlab.
 	ProjectAccessToken {
 	options := &gitlab.CreateProjectAccessTokenOptions{
 		Name:        gitlab.Ptr(name),
@@ -1409,7 +1409,7 @@ func CreateGitlabClientWithToken(t *testing.T, token string) *gitlab.Client {
 	return client
 }
 
-func CreateProjectApprovalRule(t *testing.T, project int, ruleName string, approvalsRequired int, userIDs []int, groupIDs []int, protectedBranchIDs []int) (*gitlab.ProjectApprovalRule, error) {
+func CreateProjectApprovalRule(t *testing.T, project int64, ruleName string, approvalsRequired int64, userIDs []int64, groupIDs []int64, protectedBranchIDs []int64) (*gitlab.ProjectApprovalRule, error) {
 	t.Helper()
 
 	approvalRuleOptions := gitlab.CreateProjectLevelRuleOptions{

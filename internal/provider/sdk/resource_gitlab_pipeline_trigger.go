@@ -78,7 +78,7 @@ func resourceGitlabPipelineTriggerStateUpgradeV0(ctx context.Context, rawState m
 	project := rawState["project"].(string)
 	oldId := rawState["id"].(string)
 
-	pipelineTriggerId, err := strconv.Atoi(oldId)
+	pipelineTriggerId, err := strconv.ParseInt(oldId, 10, 64)
 	if err != nil {
 		return nil, fmt.Errorf("unable to convert pipeline trigger id %q to integer to migrate to new schema: %w", oldId, err)
 	}
@@ -89,19 +89,19 @@ func resourceGitlabPipelineTriggerStateUpgradeV0(ctx context.Context, rawState m
 	return rawState, nil
 }
 
-func resourceGitlabPipelineTriggerBuildId(project string, pipelineTriggerId int) string {
+func resourceGitlabPipelineTriggerBuildId(project string, pipelineTriggerId int64) string {
 	id := fmt.Sprintf("%d", pipelineTriggerId)
 	return utils.BuildTwoPartID(&project, &id)
 }
 
-func resourceGitlabPipelineTriggerParseId(id string) (string, int, error) {
+func resourceGitlabPipelineTriggerParseId(id string) (string, int64, error) {
 	project, rawPipelineTriggerId, err := utils.ParseTwoPartID(id)
 	e := fmt.Errorf("unable to parse id %q. Expected format <project>:<pipeline-trigger-id>", id)
 	if err != nil {
 		return "", 0, e
 	}
 
-	pipelineTriggerId, err := strconv.Atoi(rawPipelineTriggerId)
+	pipelineTriggerId, err := strconv.ParseInt(rawPipelineTriggerId, 10, 64)
 	if err != nil {
 		return "", 0, e
 	}

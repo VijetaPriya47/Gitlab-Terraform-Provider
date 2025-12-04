@@ -118,7 +118,7 @@ func (r *gitlabProjectFreezePeriodResource) Create(ctx context.Context, req reso
 		return
 	}
 
-	freezePeriodID := strconv.Itoa(freezePeriod.ID)
+	freezePeriodID := strconv.FormatInt(freezePeriod.ID, 10)
 	data.ID = types.StringValue(utils.BuildTwoPartID(&project, &freezePeriodID))
 	data.modelToStateModel(project, freezePeriod)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -286,13 +286,13 @@ func (d *gitlabProjectFreezePeriodResourceModel) modelToStateModel(project strin
 	d.CronTimezone = types.StringValue(freezePeriod.CronTimezone)
 }
 
-func projectAndFreezePeriodIDFromID(id string) (string, int, error) {
+func projectAndFreezePeriodIDFromID(id string) (string, int64, error) {
 	project, freezePeriodIDString, err := utils.ParseTwoPartID(id)
 	if err != nil {
 		return "", 0, err
 	}
 
-	freezePeriodID, err := strconv.Atoi(freezePeriodIDString)
+	freezePeriodID, err := strconv.ParseInt(freezePeriodIDString, 10, 64)
 	if err != nil {
 		return "", 0, fmt.Errorf("failed to get freezePeriodId: %v", err)
 	}

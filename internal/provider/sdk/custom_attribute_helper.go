@@ -12,16 +12,16 @@ import (
 	"gitlab.com/gitlab-org/api/client-go"
 )
 
-type CustomAttributeGetter func(int, string, ...gitlab.RequestOptionFunc) (*gitlab.CustomAttribute, *gitlab.Response, error)
-type CustomAttributeSetter func(int, gitlab.CustomAttribute, ...gitlab.RequestOptionFunc) (*gitlab.CustomAttribute, *gitlab.Response, error)
-type CustomAttributeDeleter func(int, string, ...gitlab.RequestOptionFunc) (*gitlab.Response, error)
+type CustomAttributeGetter func(int64, string, ...gitlab.RequestOptionFunc) (*gitlab.CustomAttribute, *gitlab.Response, error)
+type CustomAttributeSetter func(int64, gitlab.CustomAttribute, ...gitlab.RequestOptionFunc) (*gitlab.CustomAttribute, *gitlab.Response, error)
+type CustomAttributeDeleter func(int64, string, ...gitlab.RequestOptionFunc) (*gitlab.Response, error)
 
 type CreateGetter func(*gitlab.Client) CustomAttributeGetter
 type CreateSetter func(*gitlab.Client) CustomAttributeSetter
 type CreateDeleter func(*gitlab.Client) CustomAttributeDeleter
 
 func CreateCustomAttributeResource(idName string, createGetter CreateGetter, createSetter CreateSetter, createDeleter CreateDeleter, description string) *schema.Resource {
-	setToState := func(d *schema.ResourceData, userId int, customAttribute *gitlab.CustomAttribute) {
+	setToState := func(d *schema.ResourceData, userId int64, customAttribute *gitlab.CustomAttribute) {
 		// lintignore:R001
 		d.Set(idName, userId)
 		d.Set("key", customAttribute.Key)
@@ -51,7 +51,7 @@ func CreateCustomAttributeResource(idName string, createGetter CreateGetter, cre
 		client := meta.(*gitlab.Client)
 		setter := createSetter(client)
 
-		id := d.Get(idName).(int)
+		id := int64(d.Get(idName).(int))
 		options := &gitlab.CustomAttribute{
 			Key:   d.Get("key").(string),
 			Value: d.Get("value").(string),
@@ -116,13 +116,13 @@ func CreateCustomAttributeResource(idName string, createGetter CreateGetter, cre
 	}
 }
 
-func parseId(id string) (int, string, error) {
+func parseId(id string) (int64, string, error) {
 	parts := strings.SplitN(id, ":", 2)
 	if len(parts) != 2 {
 		return -1, "", fmt.Errorf("unexpected ID format (%q). Expected id:key", id)
 	}
 
-	subjectId, err := strconv.Atoi(parts[0])
+	subjectId, err := strconv.ParseInt(parts[0], 10, 64)
 	if err != nil {
 		return -1, "", fmt.Errorf("unexpected ID format (%q). Expected id:key whereas `id` must be an integer", id)
 	}
@@ -130,6 +130,6 @@ func parseId(id string) (int, string, error) {
 	return subjectId, parts[1], nil
 }
 
-func buildId(id int, key string) string {
+func buildId(id int64, key string) string {
 	return fmt.Sprintf("%d:%s", id, key)
 }

@@ -216,8 +216,8 @@ func (r *gitlabPersonalAccessTokenResource) Configure(ctx context.Context, req r
 	r.newGitLabClient = resourceData.NewGitLabClient
 }
 
-func (r *gitlabPersonalAccessTokenResource) personalAccessTokenToStateModel(ctx context.Context, data *gitlabPersonalAccessTokenResourceModel, token *gitlab.PersonalAccessToken, userId int) diag.Diagnostics {
-	data.UserId = types.Int64Value(int64(userId))
+func (r *gitlabPersonalAccessTokenResource) personalAccessTokenToStateModel(ctx context.Context, data *gitlabPersonalAccessTokenResourceModel, token *gitlab.PersonalAccessToken, userId int64) diag.Diagnostics {
+	data.UserId = types.Int64Value(userId)
 	data.Name = types.StringValue(token.Name)
 	data.Description = types.StringValue(token.Description)
 	data.Active = types.BoolValue(token.Active)
@@ -424,7 +424,7 @@ func (r *gitlabPersonalAccessTokenResource) Read(ctx context.Context, req resour
 	tflog.Debug(ctx, fmt.Sprintf("Read gitlab PersonalAccessToken %s, user ID %s", accessTokenId, userId))
 
 	// Make sure the user ID is an int
-	userIdInt, err := strconv.Atoi(userId)
+	userIdInt, err := strconv.ParseInt(userId, 10, 64)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error parsing user ID",
@@ -434,7 +434,7 @@ func (r *gitlabPersonalAccessTokenResource) Read(ctx context.Context, req resour
 	}
 
 	// Make sure the token ID is an int
-	accessTokenIdInt, err := strconv.Atoi(accessTokenId)
+	accessTokenIdInt, err := strconv.ParseInt(accessTokenId, 10, 64)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error parsing access token ID",
@@ -522,7 +522,7 @@ func (r *gitlabPersonalAccessTokenResource) Create(ctx context.Context, req reso
 
 	options.ExpiresAt = expiryDatePtr
 
-	token, _, err := r.client.Users.CreatePersonalAccessToken(int(data.UserId.ValueInt64()), options, gitlab.WithContext(ctx))
+	token, _, err := r.client.Users.CreatePersonalAccessToken(data.UserId.ValueInt64(), options, gitlab.WithContext(ctx))
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error creating GitLab PersonalAccessToken",
@@ -534,7 +534,7 @@ func (r *gitlabPersonalAccessTokenResource) Create(ctx context.Context, req reso
 	// Set the ID for the resource
 	data.ID = types.StringValue(fmt.Sprintf("%d:%d", data.UserId.ValueInt64(), token.ID))
 
-	r.personalAccessTokenToStateModel(ctx, data, token, int(data.UserId.ValueInt64()))
+	r.personalAccessTokenToStateModel(ctx, data, token, data.UserId.ValueInt64())
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -545,8 +545,8 @@ func (r *gitlabPersonalAccessTokenResource) Update(ctx context.Context, req reso
 
 	// Read the token and user ID from state since it may be `unknown` in the plan.
 	userId, patId, err := utils.ParseTwoPartID(state.ID.ValueString())
-	patIdInt, parseErrPat := strconv.Atoi(patId)
-	userIdInt, parseErrUserId := strconv.Atoi(userId)
+	patIdInt, parseErrPat := strconv.ParseInt(patId, 10, 64)
+	userIdInt, parseErrUserId := strconv.ParseInt(userId, 10, 64)
 	if joinedErr := errors.Join(err, parseErrPat, parseErrUserId); joinedErr != nil {
 		resp.Diagnostics.AddError(
 			"Error parsing resource ID",
@@ -624,7 +624,7 @@ func (r *gitlabPersonalAccessTokenResource) Update(ctx context.Context, req reso
 	}
 
 	// Updating an access token changes the primary key, so we need to re-set the ID of the resource
-	data.ID = types.StringValue(utils.BuildTwoPartID(gitlab.Ptr(strconv.Itoa(int(data.UserId.ValueInt64()))), gitlab.Ptr(strconv.Itoa(token.ID))))
+	data.ID = types.StringValue(utils.BuildTwoPartID(gitlab.Ptr(strconv.FormatInt(data.UserId.ValueInt64(), 10)), gitlab.Ptr(strconv.FormatInt(token.ID, 10))))
 
 	r.personalAccessTokenToStateModel(ctx, data, token, userIdInt)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -644,7 +644,7 @@ func (r *gitlabPersonalAccessTokenResource) Delete(ctx context.Context, req reso
 		return
 	}
 
-	personalAccessTokenID, err := strconv.Atoi(patId)
+	personalAccessTokenID, err := strconv.ParseInt(patId, 10, 64)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error parsing access token ID",

@@ -242,7 +242,7 @@ func (d *gitlabUserDataSource) Read(ctx context.Context, req datasource.ReadRequ
 
 	if !data.UserID.IsNull() && !data.UserID.IsUnknown() {
 		// Get user by id
-		userID := int(data.UserID.ValueInt64())
+		userID := data.UserID.ValueInt64()
 		user, _, err = d.client.Users.GetUser(userID, gitlab.GetUsersOptions{}, gitlab.WithContext(ctx))
 		if err != nil {
 			resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to read user by id %d: %s", userID, err.Error()))

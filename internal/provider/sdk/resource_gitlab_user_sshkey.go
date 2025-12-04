@@ -61,7 +61,7 @@ func resourceGitlabUserSSHKeyCreate(ctx context.Context, d *schema.ResourceData,
 			return diag.Errorf("current user needs to be admin for configuring ssh keys for a user")
 		}
 
-		key, _, err = client.Users.AddSSHKeyForUser(userID.(int), options, gitlab.WithContext(ctx))
+		key, _, err = client.Users.AddSSHKeyForUser(int64(userID.(int)), options, gitlab.WithContext(ctx))
 
 	} else {
 		key, _, err = client.Users.AddSSHKey(options, gitlab.WithContext(ctx))
@@ -73,7 +73,7 @@ func resourceGitlabUserSSHKeyCreate(ctx context.Context, d *schema.ResourceData,
 
 	var userIDForID string
 	if userIDOk {
-		userIDForID = fmt.Sprintf("%d", userID.(int))
+		userIDForID = fmt.Sprintf("%d", int64(userID.(int)))
 
 	} else {
 		user, _, err := client.Users.CurrentUser(gitlab.WithContext(ctx))
@@ -98,8 +98,10 @@ func resourceGitlabUserSSHKeyRead(ctx context.Context, d *schema.ResourceData, m
 	}
 
 	options := &gitlab.ListSSHKeysForUserOptions{
-		Page:    1,
-		PerPage: 20,
+		ListOptions: gitlab.ListOptions{
+			Page:    1,
+			PerPage: 20,
+		},
 	}
 
 	var key *gitlab.SSHKey
@@ -153,7 +155,7 @@ func resourceGitlabUserSSHKeyDelete(ctx context.Context, d *schema.ResourceData,
 		return diag.Errorf("failed to check if user is admin for configuring ssh keys for a user")
 	}
 
-	userID := d.Get("user_id").(int)
+	userID := int64(d.Get("user_id").(int))
 
 	if isAdmin {
 		_, err = client.Users.DeleteSSHKeyForUser(userID, keyID, gitlab.WithContext(ctx))
@@ -169,16 +171,16 @@ func resourceGitlabUserSSHKeyDelete(ctx context.Context, d *schema.ResourceData,
 	return nil
 }
 
-func resourceGitlabUserSSHKeyParseID(id string) (int, int, error) {
+func resourceGitlabUserSSHKeyParseID(id string) (int64, int64, error) {
 	userIDFromID, keyIDFromID, err := utils.ParseTwoPartID(id)
 	if err != nil {
 		return 0, 0, err
 	}
-	userID, err := strconv.Atoi(userIDFromID)
+	userID, err := strconv.ParseInt(userIDFromID, 10, 64)
 	if err != nil {
 		return 0, 0, err
 	}
-	keyID, err := strconv.Atoi(keyIDFromID)
+	keyID, err := strconv.ParseInt(keyIDFromID, 10, 64)
 	if err != nil {
 		return 0, 0, err
 	}

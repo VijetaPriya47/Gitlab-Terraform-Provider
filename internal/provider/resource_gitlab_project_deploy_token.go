@@ -212,7 +212,7 @@ func (r *gitlabProjectDeployTokenResource) Read(ctx context.Context, req resourc
 	tflog.Debug(ctx, fmt.Sprintf("Read GitLab ProjectDeployToken %s, project Id %s", deployTokenId, project))
 
 	// Make sure the token Id is an int
-	deployTokenIdInt, err := strconv.Atoi(deployTokenId)
+	deployTokenIdInt, err := strconv.ParseInt(deployTokenId, 10, 64)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error parsing deploy token Id",
@@ -305,7 +305,7 @@ func (r *gitlabProjectDeployTokenResource) Create(ctx context.Context, req resou
 	}
 
 	// Set the Id for the resource
-	data.Id = types.StringValue(utils.BuildTwoPartID(data.Project.ValueStringPointer(), gitlab.Ptr(strconv.Itoa(token.ID))))
+	data.Id = types.StringValue(utils.BuildTwoPartID(data.Project.ValueStringPointer(), gitlab.Ptr(strconv.FormatInt(token.ID, 10))))
 
 	r.projectDeployTokenToStateModel(ctx, data, token, data.Project.ValueString())
 
@@ -338,7 +338,7 @@ func (r *gitlabProjectDeployTokenResource) Delete(ctx context.Context, req resou
 		return
 	}
 
-	projectDeployTokenIdInt, err := strconv.Atoi(deployTokenId)
+	projectDeployTokenIdInt, err := strconv.ParseInt(deployTokenId, 10, 64)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error parsing deploy token Id",

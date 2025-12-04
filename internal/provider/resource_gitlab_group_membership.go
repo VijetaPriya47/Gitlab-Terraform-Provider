@@ -139,8 +139,8 @@ func (d *gitlabGroupMembershipResource) Create(ctx context.Context, req resource
 		return
 	}
 
-	userId := int(data.UserID.ValueInt64())
-	groupId := int(data.GroupID.ValueInt64())
+	userId := data.UserID.ValueInt64()
+	groupId := data.GroupID.ValueInt64()
 	expiresAt := data.ExpiresAt.ValueString()
 	accessLevelId := api.AccessLevelNameToValue[strings.ToLower(data.AccessLevel.ValueString())]
 
@@ -151,7 +151,7 @@ func (d *gitlabGroupMembershipResource) Create(ctx context.Context, req resource
 	}
 
 	if !data.MemberRoleID.IsNull() && !data.MemberRoleID.IsUnknown() {
-		options.MemberRoleID = gitlab.Ptr(int(data.MemberRoleID.ValueInt64()))
+		options.MemberRoleID = gitlab.Ptr(data.MemberRoleID.ValueInt64())
 	}
 
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab group groupMember for %d in %d", options.UserID, groupId))
@@ -179,12 +179,12 @@ func (d *gitlabGroupMembershipResource) Read(ctx context.Context, req resource.R
 		resp.Diagnostics.Append(diag.NewErrorDiagnostic("Error getting group and user ID from resource ID", fmt.Sprintf("Error getting group and user ID from resource ID: %v", err)))
 		return
 	}
-	groupId, err := strconv.Atoi(groupIdString)
+	groupId, err := strconv.ParseInt(groupIdString, 10, 64)
 	if err != nil {
 		resp.Diagnostics.Append(diag.NewErrorDiagnostic("Error converting group ID to int", fmt.Sprintf("Error converting group ID to int: %v", err)))
 		return
 	}
-	userId, err := strconv.Atoi(userIdString)
+	userId, err := strconv.ParseInt(userIdString, 10, 64)
 	if err != nil {
 		resp.Diagnostics.Append(diag.NewErrorDiagnostic("Error converting user ID to int", fmt.Sprintf("Error converting user ID to int: %v", err)))
 		return
@@ -211,8 +211,8 @@ func (d *gitlabGroupMembershipResource) Update(ctx context.Context, req resource
 		return
 	}
 
-	userId := int(data.UserID.ValueInt64())
-	groupId := int(data.GroupID.ValueInt64())
+	userId := data.UserID.ValueInt64()
+	groupId := data.GroupID.ValueInt64()
 	expiresAt := data.ExpiresAt.ValueString()
 	accessLevelId := api.AccessLevelNameToValue[strings.ToLower(data.AccessLevel.ValueString())]
 
@@ -223,14 +223,14 @@ func (d *gitlabGroupMembershipResource) Update(ctx context.Context, req resource
 
 	options.MemberRoleID = nil
 	if !data.MemberRoleID.IsNull() && !data.MemberRoleID.IsUnknown() {
-		options.MemberRoleID = gitlab.Ptr(int(data.MemberRoleID.ValueInt64()))
+		options.MemberRoleID = gitlab.Ptr(data.MemberRoleID.ValueInt64())
 	}
 
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab group membership %v for %v", userId, groupId))
 
 	groupMember, _, err := d.client.GroupMembers.EditGroupMember(groupId, userId, &options, gitlab.WithContext(ctx), func(request *retryablehttp.Request) error {
 		optionsStruct := struct {
-			MemberRoleID *int                     `url:"member_role_id" json:"member_role_id"`
+			MemberRoleID *int64                   `url:"member_role_id" json:"member_role_id"`
 			ExpiresAt    *string                  `url:"expires_at,omitempty" json:"expires_at,omitempty"`
 			AccessLevel  *gitlab.AccessLevelValue `url:"access_level,omitempty" json:"access_level,omitempty"`
 		}{
@@ -277,7 +277,7 @@ func (d *gitlabGroupMembershipResource) Delete(ctx context.Context, req resource
 		resp.Diagnostics.Append(diag.NewErrorDiagnostic("Error converting group ID to int", fmt.Sprintf("Error converting group ID to int: %v", err)))
 		return
 	}
-	userId, err := strconv.Atoi(userIdString)
+	userId, err := strconv.ParseInt(userIdString, 10, 64)
 	if err != nil {
 		resp.Diagnostics.Append(diag.NewErrorDiagnostic("Error converting user ID to int", fmt.Sprintf("Error converting user ID to int: %v", err)))
 		return
@@ -297,12 +297,12 @@ func (d *gitlabGroupMembershipResource) Delete(ctx context.Context, req resource
 	}
 }
 
-func (data *gitlabGroupMembershipResourceModel) groupMembershipToStateModel(groupId int, groupMember *gitlab.GroupMember) diag.Diagnostics {
-	groupIDString := strconv.Itoa(groupId)
-	userIDString := strconv.Itoa(groupMember.ID)
+func (data *gitlabGroupMembershipResourceModel) groupMembershipToStateModel(groupId int64, groupMember *gitlab.GroupMember) diag.Diagnostics {
+	groupIDString := fmt.Sprintf("%d", groupId)
+	userIDString := strconv.FormatInt(groupMember.ID, 10)
 	data.ID = types.StringValue(utils.BuildTwoPartID(&groupIDString, &userIDString))
 	data.GroupID = types.Int64Value(int64(groupId))
-	data.UserID = types.Int64Value(int64(groupMember.ID))
+	data.UserID = types.Int64Value(groupMember.ID)
 	data.AccessLevel = types.StringValue(api.AccessLevelValueToName[groupMember.AccessLevel])
 
 	if groupMember.MemberRole != nil {

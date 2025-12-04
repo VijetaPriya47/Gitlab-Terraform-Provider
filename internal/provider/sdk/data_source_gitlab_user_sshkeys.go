@@ -54,8 +54,10 @@ func dataSourceGitlabUserKeysRead(ctx context.Context, d *schema.ResourceData, m
 	tflog.Info(ctx, "[INFO] Reading Gitlab user")
 
 	options := gitlab.ListSSHKeysForUserOptions{
-		PerPage: 2,
-		Page:    1,
+		ListOptions: gitlab.ListOptions{
+			PerPage: 2,
+			Page:    1,
+		},
 	}
 	var keys []*gitlab.SSHKey
 

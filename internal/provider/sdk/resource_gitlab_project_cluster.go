@@ -220,7 +220,7 @@ func resourceGitlabProjectClusterRead(ctx context.Context, d *schema.ResourceDat
 	if cluster.ManagementProject == nil {
 		d.Set("management_project_id", "")
 	} else {
-		d.Set("management_project_id", strconv.Itoa(cluster.ManagementProject.ID))
+		d.Set("management_project_id", strconv.FormatInt(cluster.ManagementProject.ID, 10))
 	}
 
 	return nil
@@ -302,13 +302,13 @@ func resourceGitlabProjectClusterDelete(ctx context.Context, d *schema.ResourceD
 	return nil
 }
 
-func projectIdAndClusterIdFromId(id string) (string, int, error) {
+func projectIdAndClusterIdFromId(id string) (string, int64, error) {
 	project, clusterIdString, err := utils.ParseTwoPartID(id)
 	if err != nil {
 		return "", 0, err
 	}
 
-	clusterId, err := strconv.Atoi(clusterIdString)
+	clusterId, err := strconv.ParseInt(clusterIdString, 10, 64)
 	if err != nil {
 		return "", 0, fmt.Errorf("failed to get clusterId: %v", err)
 	}

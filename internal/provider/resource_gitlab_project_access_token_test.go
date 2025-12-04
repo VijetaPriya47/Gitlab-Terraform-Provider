@@ -1022,7 +1022,7 @@ func TestAccGitlabProjectAccessToken_revokedTokenWithPastExpiry(t *testing.T) {
 	})
 }
 
-func revokeProjectAccessToken(projectID int, tokenName string) error {
+func revokeProjectAccessToken(projectID int64, tokenName string) error {
 	tokenID, err := projectAccessTokenID(projectID, tokenName)
 	if err != nil {
 		return err
@@ -1032,7 +1032,7 @@ func revokeProjectAccessToken(projectID int, tokenName string) error {
 	return err
 }
 
-func projectAccessTokenID(projectID int, tokenName string) (int, error) {
+func projectAccessTokenID(projectID int64, tokenName string) (int64, error) {
 	tokens, _, err := testutil.TestGitlabClient.ProjectAccessTokens.ListProjectAccessTokens(projectID, nil)
 	if err != nil {
 		return 0, err

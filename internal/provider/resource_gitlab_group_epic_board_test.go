@@ -162,13 +162,13 @@ func TestAccGitlabGroupEpicBoard_Lists(t *testing.T) {
 	})
 }
 
-func resourceGitlabGroupEpicBoardParseID(id string) (string, int, error) {
+func resourceGitlabGroupEpicBoardParseID(id string) (string, int64, error) {
 	group, rawIssueBoardID, err := utils.ParseTwoPartID(id)
 	if err != nil {
 		return "", 0, err
 	}
 
-	epicBoardID, err := strconv.Atoi(rawIssueBoardID)
+	epicBoardID, err := strconv.ParseInt(rawIssueBoardID, 10, 64)
 	if err != nil {
 		return "", 0, err
 	}

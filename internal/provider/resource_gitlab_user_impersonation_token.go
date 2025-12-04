@@ -252,7 +252,7 @@ func (r *gitlabUserImpersonationTokenResource) Create(ctx context.Context, req r
 	}
 
 	userID := data.UserID.ValueInt64()
-	token, _, err := r.client.Users.CreateImpersonationToken(int(userID), options, gitlab.WithContext(ctx))
+	token, _, err := r.client.Users.CreateImpersonationToken(userID, options, gitlab.WithContext(ctx))
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error creating GitLab User Impersonation Token",
@@ -331,7 +331,7 @@ func (r *gitlabUserImpersonationTokenResource) Delete(ctx context.Context, req r
 	}
 
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Deleting User Impersonation Token %d from user %d", tokenID, userID))
-	_, err = r.client.Users.RevokeImpersonationToken(int(data.UserID.ValueInt64()), *tokenID, gitlab.WithContext(ctx))
+	_, err = r.client.Users.RevokeImpersonationToken(data.UserID.ValueInt64(), *tokenID, gitlab.WithContext(ctx))
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error deleting user impersonation token",
@@ -341,7 +341,7 @@ func (r *gitlabUserImpersonationTokenResource) Delete(ctx context.Context, req r
 	}
 }
 
-func (r *gitlabUserImpersonationTokenResource) parseResourceID(data *gitlabUserImpersonationTokenResourceModel) (*int, *int, error) {
+func (r *gitlabUserImpersonationTokenResource) parseResourceID(data *gitlabUserImpersonationTokenResourceModel) (*int64, *int64, error) {
 	// get the user and tokenID from the resource ID
 	userIDStr, tokenIDStr, err := utils.ParseTwoPartID(data.ID.ValueString())
 	if err != nil {
@@ -349,13 +349,13 @@ func (r *gitlabUserImpersonationTokenResource) parseResourceID(data *gitlabUserI
 	}
 
 	// Make sure the user ID is an int
-	userID, err := strconv.Atoi(userIDStr)
+	userID, err := strconv.ParseInt(userIDStr, 10, 64)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	// Make sure the token ID is an int
-	tokenID, err := strconv.Atoi(tokenIDStr)
+	tokenID, err := strconv.ParseInt(tokenIDStr, 10, 64)
 	if err != nil {
 		return nil, nil, err
 	}

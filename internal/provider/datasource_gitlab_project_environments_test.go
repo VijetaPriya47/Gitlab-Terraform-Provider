@@ -39,11 +39,11 @@ func TestAccDataProjectEnvironment_basic(t *testing.T) {
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// check resource attributes
-					resource.TestCheckResourceAttr("data.gitlab_project_environments.this", "project", strconv.Itoa(project.ID)),
+					resource.TestCheckResourceAttr("data.gitlab_project_environments.this", "project", strconv.FormatInt(project.ID, 10)),
 					resource.TestCheckResourceAttr("data.gitlab_project_environments.this", "states", "available"),
 					resource.TestCheckResourceAttrSet("data.gitlab_project_environments.this", "environments.0.%"),
 					// check environment attributes
-					resource.TestCheckResourceAttr("data.gitlab_project_environments.this", "environments.0.id", strconv.Itoa(environment.ID)),
+					resource.TestCheckResourceAttr("data.gitlab_project_environments.this", "environments.0.id", strconv.FormatInt(environment.ID, 10)),
 					resource.TestCheckNoResourceAttr("data.gitlab_project_environments.this", "environments.0.cluster_agent_id"),
 					resource.TestCheckResourceAttr("data.gitlab_project_environments.this", "environments.0.name", environment.Name),
 					resource.TestCheckResourceAttr("data.gitlab_project_environments.this", "environments.0.description", environment.Description),
@@ -103,7 +103,7 @@ func TestAccDataProjectEnvironment_filter(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"data.gitlab_project_environments.this",
 						"environments.0.id",
-						strconv.Itoa(environmentDev.ID),
+						strconv.FormatInt(environmentDev.ID, 10),
 					),
 					resource.TestCheckResourceAttr(
 						"data.gitlab_project_environments.this",
@@ -131,7 +131,7 @@ func TestAccDataProjectEnvironment_filter(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"data.gitlab_project_environments.this",
 						"environments.0.id",
-						strconv.Itoa(environmentProd.ID),
+						strconv.FormatInt(environmentProd.ID, 10),
 					),
 					resource.TestCheckNoResourceAttr(
 						"data.gitlab_project_environments.this",
@@ -196,7 +196,7 @@ func TestAccDataProjectEnvironment_clusterAgent(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"data.gitlab_project_environments.this",
 						"environments.0.id",
-						strconv.Itoa(environment.ID),
+						strconv.FormatInt(environment.ID, 10),
 					),
 					resource.TestCheckResourceAttr(
 						"data.gitlab_project_environments.this",
@@ -206,7 +206,7 @@ func TestAccDataProjectEnvironment_clusterAgent(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"data.gitlab_project_environments.this",
 						"environments.0.cluster_agent_id",
-						strconv.Itoa(environment.ClusterAgent.ID),
+						strconv.FormatInt(environment.ClusterAgent.ID, 10),
 					),
 					resource.TestCheckResourceAttr(
 						"data.gitlab_project_environments.this",

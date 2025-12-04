@@ -988,7 +988,7 @@ func testAccCheckGitlabBranchProtectionExists(n string, pb *gitlab.ProtectedBran
 
 func testAccCheckGitlabBranchProtectionComputedAttributes(n string, pb *gitlab.ProtectedBranch) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		return resource.TestCheckResourceAttr(n, "branch_protection_id", strconv.Itoa(pb.ID))(s)
+		return resource.TestCheckResourceAttr(n, "branch_protection_id", strconv.FormatInt(pb.ID, 10))(s)
 	}
 }
 
@@ -1063,7 +1063,7 @@ func testAccCheckGitlabBranchProtectionAttributes(n string, pb *gitlab.Protected
 			return fmt.Errorf("got allow_force_push %v; want %v", pb.AllowForcePush, want.AllowForcePush)
 		}
 
-		remainingWantedUserIDsAllowedToPush := map[int]struct{}{}
+		remainingWantedUserIDsAllowedToPush := map[int64]struct{}{}
 		for _, v := range want.UsersAllowedToPush {
 			users, _, err := testutil.TestGitlabClient.Users.ListUsers(&gitlab.ListUsersOptions{
 				Username: gitlab.Ptr(v),
@@ -1076,7 +1076,7 @@ func testAccCheckGitlabBranchProtectionAttributes(n string, pb *gitlab.Protected
 			}
 			remainingWantedUserIDsAllowedToPush[users[0].ID] = struct{}{}
 		}
-		remainingWantedGroupIDsAllowedToPush := map[int]struct{}{}
+		remainingWantedGroupIDsAllowedToPush := map[int64]struct{}{}
 		for _, v := range want.GroupsAllowedToPush {
 			group, _, err := testutil.TestGitlabClient.Groups.GetGroup(v, nil)
 			if err != nil {
@@ -1084,7 +1084,7 @@ func testAccCheckGitlabBranchProtectionAttributes(n string, pb *gitlab.Protected
 			}
 			remainingWantedGroupIDsAllowedToPush[group.ID] = struct{}{}
 		}
-		remainingWantedDeployKeyIDsAllowedToPush := map[int]struct{}{}
+		remainingWantedDeployKeyIDsAllowedToPush := map[int64]struct{}{}
 		for _, v := range want.DeployKeysAllowedToPush {
 			deployKeys, _, err := testutil.TestGitlabClient.DeployKeys.ListProjectDeployKeys(project, &gitlab.ListProjectDeployKeysOptions{})
 			if err != nil {
@@ -1123,7 +1123,7 @@ func testAccCheckGitlabBranchProtectionAttributes(n string, pb *gitlab.Protected
 			return fmt.Errorf("failed to find wanted deploy key IDs %v", remainingWantedDeployKeyIDsAllowedToPush)
 		}
 
-		remainingWantedUserIDsAllowedToMerge := map[int]struct{}{}
+		remainingWantedUserIDsAllowedToMerge := map[int64]struct{}{}
 		for _, v := range want.UsersAllowedToMerge {
 			users, _, err := testutil.TestGitlabClient.Users.ListUsers(&gitlab.ListUsersOptions{
 				Username: gitlab.Ptr(v),
@@ -1136,7 +1136,7 @@ func testAccCheckGitlabBranchProtectionAttributes(n string, pb *gitlab.Protected
 			}
 			remainingWantedUserIDsAllowedToMerge[users[0].ID] = struct{}{}
 		}
-		remainingWantedGroupIDsAllowedToMerge := map[int]struct{}{}
+		remainingWantedGroupIDsAllowedToMerge := map[int64]struct{}{}
 		for _, v := range want.GroupsAllowedToMerge {
 			group, _, err := testutil.TestGitlabClient.Groups.GetGroup(v, nil)
 			if err != nil {
@@ -1164,7 +1164,7 @@ func testAccCheckGitlabBranchProtectionAttributes(n string, pb *gitlab.Protected
 			return fmt.Errorf("failed to find wanted group IDs %v", remainingWantedGroupIDsAllowedToMerge)
 		}
 
-		remainingWantedUserIDsAllowedToUnprotect := map[int]struct{}{}
+		remainingWantedUserIDsAllowedToUnprotect := map[int64]struct{}{}
 		for _, v := range want.UsersAllowedToUnprotect {
 			users, _, err := testutil.TestGitlabClient.Users.ListUsers(&gitlab.ListUsersOptions{
 				Username: gitlab.Ptr(v),
@@ -1177,7 +1177,7 @@ func testAccCheckGitlabBranchProtectionAttributes(n string, pb *gitlab.Protected
 			}
 			remainingWantedUserIDsAllowedToUnprotect[users[0].ID] = struct{}{}
 		}
-		remainingWantedGroupIDsAllowedToUnprotect := map[int]struct{}{}
+		remainingWantedGroupIDsAllowedToUnprotect := map[int64]struct{}{}
 		for _, v := range want.GroupsAllowedToUnprotect {
 			group, _, err := testutil.TestGitlabClient.Groups.GetGroup(v, nil)
 			if err != nil {

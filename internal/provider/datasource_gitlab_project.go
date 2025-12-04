@@ -708,7 +708,7 @@ func (d *gitlabProjectDataSource) Read(ctx context.Context, req datasource.ReadR
 	data.CIDefaultGitDepth = types.Int64Value(int64(found.CIDefaultGitDepth))
 	data.CIDeletePipelinesInSeconds = types.Int64Value(int64(found.CIDeletePipelinesInSeconds))
 	data.CIConfigPath = types.StringValue(found.CIConfigPath)
-	data.CISeparatedCaches = types.BoolValue(found.CISeperateCache)
+	data.CISeparatedCaches = types.BoolValue(found.CISeparatedCaches)
 	claims, diags := types.ListValueFrom(ctx, types.StringType, found.CIIdTokenSubClaimComponents)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {

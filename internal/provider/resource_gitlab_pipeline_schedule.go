@@ -147,11 +147,11 @@ func (r *gitlabPipelineScheduleResource) pipelineScheduleToStateModel(pid string
 	data.Active = types.BoolValue(pipelineSchedule.Active)
 	data.TakeOwnership = types.BoolValue(data.TakeOwnership.ValueBool())
 
-	ownerId := 0
+	ownerId := int64(0)
 	if pipelineSchedule.Owner != nil {
 		ownerId = pipelineSchedule.Owner.ID
 	}
-	data.Owner = types.Int64Value(int64(ownerId))
+	data.Owner = types.Int64Value(ownerId)
 }
 
 // Note: In the framework, every state upgrade function must perform all steps necessary to upgrade the state
@@ -282,7 +282,7 @@ func (r *gitlabPipelineScheduleResource) Read(ctx context.Context, req resource.
 		return
 	}
 
-	pipelineScheduleID, err := strconv.Atoi(rawPipelineScheduleID)
+	pipelineScheduleID, err := strconv.ParseInt(rawPipelineScheduleID, 10, 64)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Invalid pipeline schedule ID provided, pipeline schedule ID should be an Int",
@@ -306,7 +306,7 @@ func (r *gitlabPipelineScheduleResource) Read(ctx context.Context, req resource.
 	}
 
 	// persist API response in state model
-	rawPipelineScheduleID = strconv.Itoa(pipelineSchedule.ID)
+	rawPipelineScheduleID = strconv.FormatInt(pipelineSchedule.ID, 10)
 	data.ID = types.StringValue(utils.BuildTwoPartID(&projectID, &rawPipelineScheduleID))
 	r.pipelineScheduleToStateModel(projectID, pipelineSchedule, data)
 
@@ -333,7 +333,7 @@ func (r *gitlabPipelineScheduleResource) Update(ctx context.Context, req resourc
 		return
 	}
 
-	pipelineScheduleID, err := strconv.Atoi(rawPipelineScheduleID)
+	pipelineScheduleID, err := strconv.ParseInt(rawPipelineScheduleID, 10, 64)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Invalid pipeline schedule ID provided, pipeline schedule ID should be an Int",
@@ -372,7 +372,7 @@ func (r *gitlabPipelineScheduleResource) Update(ctx context.Context, req resourc
 	}
 
 	// persist API response in state model
-	rawPipelineScheduleID = strconv.Itoa(pipelineSchedule.ID)
+	rawPipelineScheduleID = strconv.FormatInt(pipelineSchedule.ID, 10)
 	data.ID = types.StringValue(utils.BuildTwoPartID(&projectID, &rawPipelineScheduleID))
 	r.pipelineScheduleToStateModel(projectID, pipelineSchedule, data)
 
@@ -404,7 +404,7 @@ func (r *gitlabPipelineScheduleResource) Delete(ctx context.Context, req resourc
 		return
 	}
 
-	pipelineScheduleID, err := strconv.Atoi(rawPipelineScheduleID)
+	pipelineScheduleID, err := strconv.ParseInt(rawPipelineScheduleID, 10, 64)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Invalid pipeline schedule ID provided, pipeline schedule ID should be an Int",
@@ -455,7 +455,7 @@ func (r *gitlabPipelineScheduleResource) Create(ctx context.Context, req resourc
 	}
 
 	// persist API response in state model
-	rawPipelineScheduleID := strconv.Itoa(pipelineSchedule.ID)
+	rawPipelineScheduleID := strconv.FormatInt(pipelineSchedule.ID, 10)
 	data.ID = types.StringValue(utils.BuildTwoPartID(&projectID, &rawPipelineScheduleID))
 	r.pipelineScheduleToStateModel(projectID, pipelineSchedule, data)
 

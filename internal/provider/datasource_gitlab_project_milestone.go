@@ -135,7 +135,7 @@ func (d *gitlabProjectMilestoneDataSource) Read(ctx context.Context, req datasou
 		return
 	}
 	project := data.Project.ValueString()
-	milestoneID := int(data.MilestoneID.ValueInt64())
+	milestoneID := data.MilestoneID.ValueInt64()
 
 	milestone, _, err := d.client.Milestones.GetMilestone(project, milestoneID, gitlab.WithContext(ctx))
 	if err != nil {

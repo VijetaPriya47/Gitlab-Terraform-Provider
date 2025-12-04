@@ -113,7 +113,7 @@ func (r *gitlabUserIdentityResource) Create(ctx context.Context, req resource.Cr
 		Provider:  data.ExternalProvider.ValueStringPointer(),
 	}
 
-	user, _, err := r.client.Users.ModifyUser(int(data.UserID.ValueInt64()), options, gitlab.WithContext(ctx))
+	user, _, err := r.client.Users.ModifyUser(data.UserID.ValueInt64(), options, gitlab.WithContext(ctx))
 	if err != nil {
 		resp.Diagnostics.AddError("GitLab API error occured", fmt.Sprintf("Unable to create user identity: %s", err.Error()))
 		return
@@ -144,7 +144,7 @@ func (r *gitlabUserIdentityResource) Read(ctx context.Context, req resource.Read
 		return
 	}
 
-	user, _, err := r.client.Users.GetUser(int(userID), gitlab.GetUsersOptions{}, gitlab.WithContext(ctx))
+	user, _, err := r.client.Users.GetUser(userID, gitlab.GetUsersOptions{}, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
 			resp.Diagnostics.AddWarning("User not found", fmt.Sprintf("[DEBUG] user %d not found so removing from state", userID))
@@ -196,14 +196,14 @@ func (r *gitlabUserIdentityResource) Delete(ctx context.Context, req resource.De
 	resp.State.RemoveResource(ctx)
 }
 
-func (data *gitlabUserIdentityResourceModel) modelToStateModel(userID int, provider string, identities []*gitlab.UserIdentity) error {
-	userIDStr := strconv.Itoa(userID)
+func (data *gitlabUserIdentityResourceModel) modelToStateModel(userID int64, provider string, identities []*gitlab.UserIdentity) error {
+	userIDStr := strconv.FormatInt(userID, 10)
 
 	// Find the added identity in the return user identities
 	for _, identity := range identities {
 		if identity.Provider == provider {
 			data.ID = types.StringValue(utils.BuildTwoPartID(&userIDStr, &identity.Provider))
-			data.UserID = types.Int64Value(int64(userID))
+			data.UserID = types.Int64Value(userID)
 			data.ExternalProvider = types.StringValue(identity.Provider)
 			data.ExternalUID = types.StringValue(identity.ExternUID)
 			return nil
@@ -214,13 +214,13 @@ func (data *gitlabUserIdentityResourceModel) modelToStateModel(userID int, provi
 }
 
 // Parse resource ID into user ID and provider.
-func resourceGitlabUserIdentityParseID(id string) (int, string, error) {
+func resourceGitlabUserIdentityParseID(id string) (int64, string, error) {
 	userIDStr, provider, err := utils.ParseTwoPartID(id)
 	if err != nil {
 		return 0, "", err
 	}
 
-	userID, err := strconv.Atoi(userIDStr)
+	userID, err := strconv.ParseInt(userIDStr, 10, 64)
 	if err != nil {
 		return 0, "", err
 	}

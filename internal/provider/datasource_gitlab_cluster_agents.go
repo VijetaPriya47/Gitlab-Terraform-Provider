@@ -112,8 +112,10 @@ func (d *gitlabClusterAgentsDataSource) Read(ctx context.Context, req datasource
 
 	project := data.Project.ValueString()
 	options := &gitlab.ListAgentsOptions{
-		PerPage: 20,
-		Page:    1,
+		ListOptions: gitlab.ListOptions{
+			PerPage: 20,
+			Page:    1,
+		},
 	}
 	var clusterAgents []*gitlab.Agent
 	for options.Page != 0 {

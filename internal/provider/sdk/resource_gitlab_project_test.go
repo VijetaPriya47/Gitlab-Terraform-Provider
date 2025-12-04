@@ -223,7 +223,7 @@ func TestAccGitlabProject_basic(t *testing.T) {
 						PackagesEnabled:                false,
 						PagesAccessLevel:               gitlab.DisabledAccessControl,
 						CIForwardDeploymentEnabled:     false,
-						CISeperateCache:                false,
+						CISeparatedCaches:              false,
 						KeepLatestArtifact:             false,
 						ResolveOutdatedDiffDiscussions: false,
 						AnalyticsAccessLevel:           gitlab.DisabledAccessControl,
@@ -1212,7 +1212,7 @@ func TestAccGitlabProject_setSinglePushRuleToDefault(t *testing.T) {
 
 func TestAccGitlabProject_groupWithoutDefaultBranchProtection(t *testing.T) {
 	group := testutil.CreateGroups(t, 1)[0]
-	no_protection := 0
+	no_protection := int64(0)
 	_, _, err := testutil.TestGitlabClient.Groups.UpdateGroup(group.ID, &gitlab.UpdateGroupOptions{DefaultBranchProtection: &no_protection})
 	if err != nil {
 		t.Fatalf("error setting test group default branch protection: %v", err)
@@ -1627,7 +1627,7 @@ func TestAccGitlabProject_transfer(t *testing.T) {
 		PrintingMergeRequestLinkEnabled: true,
 		PagesAccessLevel:                gitlab.PrivateAccessControl,
 		CIForwardDeploymentEnabled:      true,
-		CISeperateCache:                 true,
+		CISeparatedCaches:               true,
 		KeepLatestArtifact:              true,
 	}
 
@@ -2192,7 +2192,7 @@ func TestAccGitlabProject_InstanceBranchProtectionDisabled(t *testing.T) {
 						}
 					})
 
-					if _, _, err := testutil.TestGitlabClient.Settings.UpdateSettings(&gitlab.UpdateSettingsOptions{DefaultBranchProtection: gitlab.Ptr(0)}); err != nil {
+					if _, _, err := testutil.TestGitlabClient.Settings.UpdateSettings(&gitlab.UpdateSettingsOptions{DefaultBranchProtection: gitlab.Ptr(int64(0))}); err != nil {
 						t.Fatalf("failed to update instance-wide default branch protection setting: %v", err)
 					}
 				},
@@ -3911,7 +3911,7 @@ func testProjectDefaults(rInt int) gitlab.Project {
 		MergeRequestsTemplate:           "",
 		CIConfigPath:                    ".gitlab-ci.yml@mynamespace/myproject",
 		CIForwardDeploymentEnabled:      true,
-		CISeperateCache:                 true,
+		CISeparatedCaches:               true,
 		KeepLatestArtifact:              true,
 		ResolveOutdatedDiffDiscussions:  true,
 		AnalyticsAccessLevel:            gitlab.EnabledAccessControl,

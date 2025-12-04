@@ -105,18 +105,18 @@ func resourceGitlabProjectDeployKeyStateUpgradeV0(ctx context.Context, rawState 
 	return rawState, nil
 }
 
-func resourceGitlabProjectDeployKeyBuildId(project string, deployKeyId int) string {
-	h := strconv.Itoa(deployKeyId)
+func resourceGitlabProjectDeployKeyBuildId(project string, deployKeyId int64) string {
+	h := strconv.FormatInt(deployKeyId, 10)
 	return utils.BuildTwoPartID(&project, &h)
 }
 
-func resourceGitlabProjectDeployKeyParseId(id string) (string, int, error) {
+func resourceGitlabProjectDeployKeyParseId(id string) (string, int64, error) {
 	project, rawDeployKeyId, err := utils.ParseTwoPartID(id)
 	if err != nil {
 		return "", 0, err
 	}
 
-	deployKeyId, err := strconv.Atoi(rawDeployKeyId)
+	deployKeyId, err := strconv.ParseInt(rawDeployKeyId, 10, 64)
 	if err != nil {
 		return "", 0, err
 	}

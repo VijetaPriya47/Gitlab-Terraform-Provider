@@ -201,7 +201,7 @@ func TestAcc_GitlabProjectIntegrationCustomIssueTracker_failures(t *testing.T) {
 	})
 }
 
-func testAccGitlabProjectIntegrationCustomIssueTrackerCheckDestroy(projectId int) resource.TestCheckFunc {
+func testAccGitlabProjectIntegrationCustomIssueTrackerCheckDestroy(projectId int64) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		service, _, err := testutil.TestGitlabClient.Services.GetCustomIssueTrackerService(projectId)
 		if err != nil {

@@ -69,7 +69,7 @@ func resourceGitlabGroupSamlLinkCreate(ctx context.Context, d *schema.ResourceDa
 	}
 
 	if v, ok := d.GetOk("member_role_id"); v != nil && ok {
-		options.MemberRoleID = gitlab.Ptr(v.(int))
+		options.MemberRoleID = gitlab.Ptr(int64(v.(int)))
 	}
 
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Create GitLab Group SAML Link for group %q with name %q", group, samlGroupName))

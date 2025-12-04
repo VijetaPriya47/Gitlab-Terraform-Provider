@@ -160,7 +160,7 @@ func resourceGitlabUserCreate(ctx context.Context, d *schema.ResourceData, meta 
 		Email:               gitlab.Ptr(d.Get("email").(string)),
 		Username:            gitlab.Ptr(d.Get("username").(string)),
 		Name:                gitlab.Ptr(d.Get("name").(string)),
-		ProjectsLimit:       gitlab.Ptr(d.Get("projects_limit").(int)),
+		ProjectsLimit:       gitlab.Ptr(int64(d.Get("projects_limit").(int))),
 		Admin:               gitlab.Ptr(d.Get("is_admin").(bool)),
 		CanCreateGroup:      gitlab.Ptr(d.Get("can_create_group").(bool)),
 		SkipConfirmation:    gitlab.Ptr(d.Get("skip_confirmation").(bool)),
@@ -209,7 +209,7 @@ func resourceGitlabUserRead(ctx context.Context, d *schema.ResourceData, meta an
 	client := meta.(*gitlab.Client)
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] import -- read gitlab user %s", d.Id()))
 
-	id, _ := strconv.Atoi(d.Id())
+	id, _ := strconv.ParseInt(d.Id(), 10, 64)
 
 	user, _, err := client.Users.GetUser(id, gitlab.GetUsersOptions{}, gitlab.WithContext(ctx))
 	if err != nil {
@@ -252,7 +252,7 @@ func resourceGitlabUserUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	}
 
 	if d.HasChange("projects_limit") {
-		options.ProjectsLimit = gitlab.Ptr(d.Get("projects_limit").(int))
+		options.ProjectsLimit = gitlab.Ptr(int64(d.Get("projects_limit").(int)))
 	}
 
 	if d.HasChange("is_external") {
@@ -265,7 +265,7 @@ func resourceGitlabUserUpdate(ctx context.Context, d *schema.ResourceData, meta 
 
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab user %s", d.Id()))
 
-	id, _ := strconv.Atoi(d.Id())
+	id, _ := strconv.ParseInt(d.Id(), 10, 64)
 
 	_, _, err := client.Users.ModifyUser(id, options, gitlab.WithContext(ctx))
 	if err != nil {
@@ -310,7 +310,7 @@ func resourceGitlabUserDelete(ctx context.Context, d *schema.ResourceData, meta 
 	client := meta.(*gitlab.Client)
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Delete gitlab user %s", d.Id()))
 
-	id, _ := strconv.Atoi(d.Id())
+	id, _ := strconv.ParseInt(d.Id(), 10, 64)
 
 	if _, err := client.Users.DeleteUser(id, gitlab.WithContext(ctx)); err != nil {
 		return diag.FromErr(err)

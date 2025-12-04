@@ -420,7 +420,7 @@ func resourceGitlabGroupCreate(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	if v, ok := d.GetOk("two_factor_grace_period"); ok {
-		options.TwoFactorGracePeriod = gitlab.Ptr(v.(int))
+		options.TwoFactorGracePeriod = gitlab.Ptr(int64(v.(int)))
 	}
 
 	if v, ok := d.GetOk("project_creation_level"); ok {
@@ -450,13 +450,13 @@ func resourceGitlabGroupCreate(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	if v, ok := d.GetOk("parent_id"); ok {
-		options.ParentID = gitlab.Ptr(v.(int))
+		options.ParentID = gitlab.Ptr(int64(v.(int)))
 	}
 
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 	if v, ok := d.GetOkExists("default_branch_protection"); ok {
-		options.DefaultBranchProtection = gitlab.Ptr(v.(int))
+		options.DefaultBranchProtection = gitlab.Ptr(int64(v.(int)))
 	}
 
 	if v, ok := d.GetOk("default_branch_protection_defaults.0"); ok {
@@ -476,11 +476,11 @@ func resourceGitlabGroupCreate(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	if v, ok := d.GetOk("extra_shared_runners_minutes_limit"); ok {
-		options.ExtraSharedRunnersMinutesLimit = gitlab.Ptr(v.(int))
+		options.ExtraSharedRunnersMinutesLimit = gitlab.Ptr(int64(v.(int)))
 	}
 
 	if v, ok := d.GetOk("shared_runners_minutes_limit"); ok {
-		options.SharedRunnersMinutesLimit = gitlab.Ptr(v.(int))
+		options.SharedRunnersMinutesLimit = gitlab.Ptr(int64(v.(int)))
 	}
 
 	avatar, err := handleAvatarOnCreate(d)
@@ -792,7 +792,7 @@ func resourceGitlabGroupUpdate(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	if d.HasChange("two_factor_grace_period") {
-		options.TwoFactorGracePeriod = gitlab.Ptr(d.Get("two_factor_grace_period").(int))
+		options.TwoFactorGracePeriod = gitlab.Ptr(int64(d.Get("two_factor_grace_period").(int)))
 	}
 
 	if d.HasChange("auto_devops_enabled") {
@@ -813,7 +813,7 @@ func resourceGitlabGroupUpdate(ctx context.Context, d *schema.ResourceData, meta
 
 	if d.HasChange("default_branch_protection") {
 		// nolint:staticcheck // SA1019 ignore deprecated DefaultBranchProtection
-		options.DefaultBranchProtection = gitlab.Ptr(d.Get("default_branch_protection").(int))
+		options.DefaultBranchProtection = gitlab.Ptr(int64(d.Get("default_branch_protection").(int)))
 	}
 
 	if d.HasChange("default_branch_protection_defaults.0") {
@@ -829,11 +829,11 @@ func resourceGitlabGroupUpdate(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	if d.HasChange("extra_shared_runners_minutes_limit") {
-		options.ExtraSharedRunnersMinutesLimit = gitlab.Ptr(d.Get("extra_shared_runners_minutes_limit").(int))
+		options.ExtraSharedRunnersMinutesLimit = gitlab.Ptr(int64(d.Get("extra_shared_runners_minutes_limit").(int)))
 	}
 
 	if d.HasChange("shared_runners_minutes_limit") {
-		options.SharedRunnersMinutesLimit = gitlab.Ptr(d.Get("shared_runners_minutes_limit").(int))
+		options.SharedRunnersMinutesLimit = gitlab.Ptr(int64(d.Get("shared_runners_minutes_limit").(int)))
 	}
 
 	if d.HasChange("ip_restriction_ranges") {
@@ -912,7 +912,7 @@ func transferSubGroup(ctx context.Context, d *schema.ResourceData, client *gitla
 			"new_group": parentId,
 		})
 
-		opt.GroupID = gitlab.Ptr(parentId)
+		opt.GroupID = gitlab.Ptr(int64(parentId))
 	} else {
 		tflog.Debug(ctx, "turn gitlab group into a new top-level group", map[string]any{
 			"group_id":  d.Id(),
@@ -1132,7 +1132,7 @@ func expandEditGroupPushRuleOptions(d *schema.ResourceData) (gitlab.EditGroupPus
 	}
 
 	if d.HasChange("push_rules.0.max_file_size") {
-		options.MaxFileSize = gitlab.Ptr(d.Get("push_rules.0.max_file_size").(int))
+		options.MaxFileSize = gitlab.Ptr(int64(d.Get("push_rules.0.max_file_size").(int)))
 	}
 
 	return options, nil
@@ -1190,7 +1190,7 @@ func expandAddGroupPushRuleOptions(d *schema.ResourceData) (gitlab.AddGroupPushR
 	}
 
 	if v, ok := d.GetOk("push_rules.0.max_file_size"); ok {
-		options.MaxFileSize = gitlab.Ptr(v.(int))
+		options.MaxFileSize = gitlab.Ptr(int64(v.(int)))
 	}
 
 	return options, nil

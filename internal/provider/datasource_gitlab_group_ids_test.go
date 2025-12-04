@@ -24,7 +24,7 @@ func TestAccDataGitlabGroupIDs_basic(t *testing.T) {
 				}
 				`, group.FullPath),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("data.gitlab_group_ids.foo", "group_id", strconv.Itoa(group.ID)),
+					resource.TestCheckResourceAttr("data.gitlab_group_ids.foo", "group_id", strconv.FormatInt(group.ID, 10)),
 					resource.TestCheckResourceAttr("data.gitlab_group_ids.foo", "group_full_path", group.FullPath),
 					resource.TestCheckResourceAttr("data.gitlab_group_ids.foo", "group_graphql_id", fmt.Sprintf("gid://gitlab/Group/%d", group.ID)),
 				),
