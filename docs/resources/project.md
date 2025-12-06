@@ -11,7 +11,7 @@ description: |-
   In the gitlab_project resource, define a local-exec provisioner which invokes
   the /projects/:id/protected_branches/:name API via curl to delete the branch protection on the default
   branch using a DELETE request. Then define the desired branch protection using the gitlab_branch_protection resource.
-  Upstream API: GitLab REST API docs https://docs.gitlab.com/ce/api/projects/
+  Upstream API: GitLab REST API docs https://docs.gitlab.com/api/projects/
 ---
 
 # gitlab_project (Resource)
@@ -27,7 +27,7 @@ In the `gitlab_project` resource, define a `local-exec` provisioner which invoke
 the `/projects/:id/protected_branches/:name` API via curl to delete the branch protection on the default
 branch using a `DELETE` request. Then define the desired branch protection using the `gitlab_branch_protection` resource.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ce/api/projects/)
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/projects/)
 
 ## Example Usage
 
