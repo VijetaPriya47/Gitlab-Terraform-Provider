@@ -846,6 +846,19 @@ func CreateProjectLabels(t *testing.T, pid any, n int) []*gitlab.Label {
 	return labels
 }
 
+// AddLabelToIssue is a test helper for adding a label to an issue.
+// It assumes the project and issue will be destroyed at the end of the test and will not cleanup the label assignment.
+func AddLabelToIssue(t *testing.T, projectID any, issueIID int64, label *gitlab.Label) {
+	t.Helper()
+	opts := &gitlab.UpdateIssueOptions{
+		AddLabels: &gitlab.LabelOptions{label.Name},
+	}
+	_, _, err := TestGitlabClient.Issues.UpdateIssue(projectID, issueIID, opts)
+	if err != nil {
+		t.Fatalf("could not add label to issue %d: %v", issueIID, err)
+	}
+}
+
 // AddGroupMembers is a test helper for adding users as members of a group with Developer level access.
 // It assumes the group will be destroyed at the end of the test and will not cleanup members.
 func AddGroupMembers(t *testing.T, gid any, users []*gitlab.User) {
