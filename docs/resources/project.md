@@ -189,6 +189,7 @@ resource "gitlab_project" "import_private" {
 - `merge_requests_enabled` (Boolean, Deprecated) Enable merge requests for the project. Use `merge_requests_access_level` instead. To be removed in 19.0.
 - `merge_requests_template` (String) Sets the template for new merge requests in the project.
 - `merge_trains_enabled` (Boolean) Enable or disable merge trains. Requires `merge_pipelines_enabled` to be set to `true` to take effect.
+- `merge_trains_skip_train_allowed` (Boolean) Allows merge train merge requests to be merged without waiting for pipelines to finish. Requires `merge_pipelines_enabled` to be set to `true` to take effect.
 - `mirror` (Boolean) Enable project pull mirror.
 - `mirror_overwrites_diverged_branches` (Boolean) Enable overwrite diverged branches for a mirrored project.
 - `mirror_trigger_builds` (Boolean) Enable trigger builds on pushes for a mirrored project.

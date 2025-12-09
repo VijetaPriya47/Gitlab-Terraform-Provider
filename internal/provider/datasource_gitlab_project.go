@@ -64,6 +64,7 @@ type gitlabProjectDataSourceModel struct {
 	PrintingMergeRequestLinkEnabled          types.Bool                                              `tfsdk:"printing_merge_request_link_enabled"`
 	MergePipelinesEnabled                    types.Bool                                              `tfsdk:"merge_pipelines_enabled"`
 	MergeTrainsEnabled                       types.Bool                                              `tfsdk:"merge_trains_enabled"`
+	MergeTrainsSkipTrainAllowed              types.Bool                                              `tfsdk:"merge_trains_skip_train_allowed"`
 	ResolveOutdatedDiffDiscussions           types.Bool                                              `tfsdk:"resolve_outdated_diff_discussions"`
 	AnalyticsAccessLevel                     types.String                                            `tfsdk:"analytics_access_level"`
 	AutoCancelPendingPipelines               types.String                                            `tfsdk:"auto_cancel_pending_pipelines"`
@@ -288,6 +289,10 @@ func (d *gitlabProjectDataSource) Schema(_ context.Context, _ datasource.SchemaR
 			},
 			"merge_trains_enabled": schema.BoolAttribute{
 				MarkdownDescription: "Enable or disable merge trains.",
+				Computed:            true,
+			},
+			"merge_trains_skip_train_allowed": schema.BoolAttribute{
+				MarkdownDescription: "Allows merge train merge requests to be merged without waiting for pipelines to finish.",
 				Computed:            true,
 			},
 			"resolve_outdated_diff_discussions": schema.BoolAttribute{
@@ -653,6 +658,7 @@ func (d *gitlabProjectDataSource) Read(ctx context.Context, req datasource.ReadR
 	data.RestrictUserDefinedVariables = types.BoolValue(found.RestrictUserDefinedVariables) //nolint:staticcheck
 	data.MergePipelinesEnabled = types.BoolValue(found.MergePipelinesEnabled)
 	data.MergeTrainsEnabled = types.BoolValue(found.MergeTrainsEnabled)
+	data.MergeTrainsSkipTrainAllowed = types.BoolValue(found.MergeTrainsSkipTrainAllowed)
 	data.ResolveOutdatedDiffDiscussions = types.BoolValue(found.ResolveOutdatedDiffDiscussions)
 	data.AnalyticsAccessLevel = types.StringValue(string(found.AnalyticsAccessLevel))
 	data.AutoCancelPendingPipelines = types.StringValue(found.AutoCancelPendingPipelines)
