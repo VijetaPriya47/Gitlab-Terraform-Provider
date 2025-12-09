@@ -34,3 +34,6 @@ certs/gitlab-registry.crt
 certs/gitlab-registry.key
 /go/
 /.go/
+playground
+!playground/main.tf
+!playground/.terraformrc

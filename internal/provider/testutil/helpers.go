@@ -1530,3 +1530,24 @@ func CreateMemberRole(t *testing.T) *api.GraphQLMemberRole {
 
 	return &response.Data.MemberRoleCreate.MemberRole
 }
+
+func CreateProjectSecureFile(t *testing.T, pid any, n int) []*gitlab.SecureFile {
+	var secureFiles = make([]*gitlab.SecureFile, 0, n)
+	for i := range n {
+		contentReader := strings.NewReader(fmt.Sprintf("secure file content %d", i))
+		secureFile, _, err := TestGitlabClient.SecureFiles.CreateSecureFile(pid, contentReader, &gitlab.CreateSecureFileOptions{
+			Name: gitlab.Ptr(fmt.Sprintf("secure-file-%d", i)),
+		})
+		if err != nil {
+			t.Fatalf("could not create test secure file: %v", err)
+		}
+		t.Cleanup(func() {
+			if _, err := TestGitlabClient.SecureFiles.RemoveSecureFile(pid, secureFile.ID); err != nil {
+				t.Fatalf("could not cleanup test secure file: %v", err)
+			}
+		})
+		secureFiles = append(secureFiles, secureFile)
+	}
+
+	return secureFiles
+}
