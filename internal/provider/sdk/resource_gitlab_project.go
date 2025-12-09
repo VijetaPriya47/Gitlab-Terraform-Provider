@@ -534,6 +534,12 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 		Optional:    true,
 		Computed:    true,
 	},
+	"merge_trains_skip_train_allowed": {
+		Description: "Allows merge train merge requests to be merged without waiting for pipelines to finish. Requires `merge_pipelines_enabled` to be set to `true` to take effect.",
+		Type:        schema.TypeBool,
+		Optional:    true,
+		Computed:    true,
+	},
 	"merge_trains_enabled": {
 		Description: "Enable or disable merge trains. Requires `merge_pipelines_enabled` to be set to `true` to take effect.",
 		Type:        schema.TypeBool,
@@ -991,6 +997,7 @@ func resourceGitlabProjectSetToState(d *schema.ResourceData, project *gitlab.Pro
 	d.Set("ci_pipeline_variables_minimum_override_role", project.CIPipelineVariablesMinimumOverrideRole)
 	d.Set("keep_latest_artifact", project.KeepLatestArtifact)
 	d.Set("merge_pipelines_enabled", project.MergePipelinesEnabled)
+	d.Set("merge_trains_skip_train_allowed", project.MergeTrainsSkipTrainAllowed)
 	d.Set("merge_trains_enabled", project.MergeTrainsEnabled)
 	d.Set("resolve_outdated_diff_discussions", project.ResolveOutdatedDiffDiscussions)
 	d.Set("analytics_access_level", string(project.AnalyticsAccessLevel))
@@ -1493,6 +1500,10 @@ func resourceGitlabProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 
 	if d.HasChange("merge_pipelines_enabled") {
 		options.MergePipelinesEnabled = gitlab.Ptr(d.Get("merge_pipelines_enabled").(bool))
+	}
+
+	if d.HasChange("merge_trains_skip_train_allowed") {
+		options.MergeTrainsSkipTrainAllowed = gitlab.Ptr(d.Get("merge_trains_skip_train_allowed").(bool))
 	}
 
 	if d.HasChange("merge_trains_enabled") {
@@ -2633,6 +2644,12 @@ func updatePostCreateEditOptions(editProjectOptions *gitlab.EditProjectOptions, 
 	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
 	if v, ok := d.GetOkExists("merge_pipelines_enabled"); ok {
 		editProjectOptions.MergePipelinesEnabled = gitlab.Ptr(v.(bool))
+	}
+
+	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
+	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
+	if v, ok := d.GetOkExists("merge_trains_skip_train_allowed"); ok {
+		editProjectOptions.MergeTrainsSkipTrainAllowed = gitlab.Ptr(v.(bool))
 	}
 
 	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists

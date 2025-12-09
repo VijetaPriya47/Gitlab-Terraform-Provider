@@ -167,6 +167,7 @@ func TestAccGitlabProject_basic(t *testing.T) {
 				  keep_latest_artifact = false
 				  merge_pipelines_enabled = false
 				  merge_trains_enabled = false
+				  merge_trains_skip_train_allowed = false
 				  resolve_outdated_diff_discussions = false
 				  analytics_access_level = "disabled"
 				  auto_cancel_pending_pipelines = "disabled"
@@ -255,6 +256,8 @@ func TestAccGitlabProject_basic(t *testing.T) {
 						WikiAccessLevel:                  gitlab.DisabledAccessControl,
 						SquashCommitTemplate:             "goodby squash",
 						MergeCommitTemplate:              "goodby merge",
+						MergeTrainsEnabled:               false,
+						MergeTrainsSkipTrainAllowed:      false,
 					}, &received),
 				),
 			},
@@ -1351,11 +1354,12 @@ func TestAccGitlabProject_MergeTrains(t *testing.T) {
 				SkipFunc: testutil.IsRunningInCE,
 				Config: fmt.Sprintf(`
 				resource "gitlab_project" "foo" {
-				  name = "foo-%d"
-				  path = "foo.%d"
-				  description = "Terraform acceptance tests"
-				  merge_pipelines_enabled = true
-				  merge_trains_enabled = true
+				  name                            = "foo-%d"
+				  path                            = "foo.%d"
+				  description                     = "Terraform acceptance tests"
+				  merge_pipelines_enabled         = true
+				  merge_trains_enabled            = true
+				  merge_trains_skip_train_allowed = true
 
 				  # So that acceptance tests can be run in a gitlab organization
 				  # with no billing
@@ -2708,6 +2712,7 @@ func TestAccGitlabProject_SetDefaultFalseBooleansOnCreate(t *testing.T) {
 						public_jobs                            = false
 						merge_pipelines_enabled                = false
 						merge_trains_enabled                   = false
+						merge_trains_skip_train_allowed        = false
 						ci_forward_deployment_enabled          = false
 						ci_forward_deployment_rollback_allowed = false
 						group_runners_enabled                  = false
