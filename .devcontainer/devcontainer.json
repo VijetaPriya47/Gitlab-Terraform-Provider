@@ -8,7 +8,7 @@
 
 	// Features add additional features to your environment. See https://containers.dev/features
 	"features": {
-        "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+		"ghcr.io/devcontainers/features/docker-in-docker:2": {},
 		"ghcr.io/devcontainers/features/terraform:1": {
 			"version": "1.4.0"
 		},
@@ -24,7 +24,7 @@
 				"ms-vscode-remote.remote-containers", // devcontainer support
 				"GitLab.gitlab-workflow", // gitlab extension
 				"hashicorp.terraform", // terraform extension
-				"mhutchie.git-graph" // visual git graph for thos who want it
+				"mhutchie.git-graph" // visual git graph for those who want it
 			]
 		}
 	}
