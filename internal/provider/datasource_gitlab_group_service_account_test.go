@@ -4,6 +4,7 @@ package provider
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"testing"
 
@@ -42,6 +43,19 @@ func TestAcc_GitLabGroupServiceAccount_DataSource_Basic(t *testing.T) {
 					resource.TestCheckResourceAttr("data.gitlab_group_service_account.test", "name", serviceAccount.Name),
 					resource.TestCheckResourceAttr("data.gitlab_group_service_account.test", "username", serviceAccount.UserName),
 				),
+			},
+			// Error not found
+			{
+				Config: fmt.Sprintf(
+					`
+					data "gitlab_group_service_account" "test" {
+						service_account_id = 1
+						group = %s
+					}
+					`,
+					groupID,
+				),
+				ExpectError: regexp.MustCompile("Service account not found"),
 			},
 		},
 	})

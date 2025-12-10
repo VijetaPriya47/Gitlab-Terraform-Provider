@@ -100,9 +100,13 @@ func (d *gitlabGroupServiceAccountDataSource) Read(ctx context.Context, req data
 	}
 
 	// Make API call to read service accounts
-	serviceAccount, err := findGitlabServiceAccount(d.client, state.Group.ValueString(), state.ServiceAccountID.ValueString())
+	serviceAccount, found, err := findGitlabServiceAccount(d.client, state.Group.ValueString(), state.ServiceAccountID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to read service account details: %s", err.Error()))
+		return
+	}
+	if !found {
+		resp.Diagnostics.AddError("Service account not found", fmt.Sprintf("Service account with ID %s not found in group %s", state.ServiceAccountID.ValueString(), state.Group.ValueString()))
 		return
 	}
 
