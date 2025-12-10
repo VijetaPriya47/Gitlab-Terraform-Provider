@@ -16,7 +16,7 @@ require (
 	github.com/hashicorp/terraform-plugin-testing v1.14.0
 	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/onsi/gomega v1.38.3
-	gitlab.com/gitlab-org/api/client-go v1.8.0
+	gitlab.com/gitlab-org/api/client-go v1.8.1
 	golang.org/x/oauth2 v0.33.0
 )
 
@@ -24,8 +24,8 @@ require go.yaml.in/yaml/v3 v3.0.4 // indirect
 
 require (
 	al.essio.dev/pkg/shellescape v1.6.0 // indirect
-	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.10-20250912141014-52f32327d4b0.1 // indirect
-	buf.build/go/protovalidate v1.0.1 // indirect
+	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.10-20251209175733-2a1774d88802.1 // indirect
+	buf.build/go/protovalidate v1.1.0 // indirect
 	buf.build/go/protoyaml v0.6.0 // indirect
 	cel.dev/expr v0.25.1 // indirect
 	github.com/ProtonMail/go-crypto v1.1.6 // indirect
