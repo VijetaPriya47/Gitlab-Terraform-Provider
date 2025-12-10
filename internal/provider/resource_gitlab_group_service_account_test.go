@@ -154,8 +154,8 @@ func testAcc_GitlabGroupServiceAccount_CheckDestroy() resource.TestCheckFunc {
 		for _, rs := range s.RootModule().Resources {
 			if rs.Type == "gitlab_group_service_account" {
 				groupID := rs.Primary.Attributes["group"]
-				serviceAccount, err := findGitlabServiceAccount(testutil.TestGitlabClient, groupID, rs.Primary.ID)
-				if err == nil {
+				serviceAccount, found, _ := findGitlabServiceAccount(testutil.TestGitlabClient, groupID, rs.Primary.ID)
+				if found {
 					return fmt.Errorf("Found GitLab service account that should have been deleted: %s", gitlab.Stringify(serviceAccount))
 				}
 			}

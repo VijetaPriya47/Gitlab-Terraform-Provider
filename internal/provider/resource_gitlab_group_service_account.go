@@ -178,13 +178,16 @@ func (r *gitlabGroupServiceAccountResource) Read(ctx context.Context, req resour
 		return
 	}
 
-	serviceAccount, err := findGitlabServiceAccount(r.client, group, serviceAccountID)
+	serviceAccount, found, err := findGitlabServiceAccount(r.client, group, serviceAccountID)
 	if err != nil {
+		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to read service account: %s", err.Error()))
+		return
+	}
+	if !found {
 		// If the service account is not found, it might have been deleted outside of Terraform
 		tflog.Debug(ctx, "Service account not found during read, removing from state", map[string]any{
 			"group":              group,
 			"service_account_id": serviceAccountID,
-			"error":              err.Error(),
 		})
 		resp.State.RemoveResource(ctx)
 		return
@@ -368,7 +371,7 @@ func (r *gitlabGroupServiceAccountResource) waitForServiceAccountDeletion(ctx co
 	}
 }
 
-func findGitlabServiceAccount(client *gitlab.Client, group, desiredId string) (*gitlab.GroupServiceAccount, error) {
+func findGitlabServiceAccount(client *gitlab.Client, group, desiredId string) (*gitlab.GroupServiceAccount, bool, error) {
 	options := gitlab.ListServiceAccountsOptions{
 		ListOptions: gitlab.ListOptions{
 			PerPage: 20,
@@ -379,18 +382,18 @@ func findGitlabServiceAccount(client *gitlab.Client, group, desiredId string) (*
 	for options.Page != 0 {
 		paginatedServiceAccounts, resp, err := client.Groups.ListServiceAccounts(group, &options)
 		if err != nil {
-			return nil, fmt.Errorf("unable to list service accounts. %s", err)
+			return nil, false, fmt.Errorf("unable to list service accounts. %s", err)
 		}
 
 		for i := range paginatedServiceAccounts {
 			if strconv.FormatInt(paginatedServiceAccounts[i].ID, 10) == desiredId {
-				return paginatedServiceAccounts[i], nil
+				return paginatedServiceAccounts[i], true, nil
 			}
 		}
 
 		options.Page = resp.NextPage
 	}
 
-	// if we loop through the pages and haven't found it, we should error
-	return nil, fmt.Errorf("unable to find service account with id: %s", desiredId)
+	// if we loop through the pages and haven't found it, we should return false
+	return nil, false, nil
 }
