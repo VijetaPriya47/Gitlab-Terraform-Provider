@@ -228,14 +228,15 @@ you can contribute using your own personal fork, we strongly recommend using the
 
 ### Apple Silicon Environments
 
-The container images used to run the acceptance tests are currently targeting `linux/amd64` only. Apple Silicon environments *will* run these in container engines such as Docker. Apple Silicon
-supports GitPod Flex's desktop environment, which is the recommended way to develop on Apple Silicon.
+The container images used to run the acceptance tests are currently targeting `linux/amd64` only. Apple Silicon environments *will* run these in container engines such as Docker.
+If your environment is struggling to run the acceptance test environment, we would recommend you look at remote development options (such as Ona).
 
 ### Use a Remote Environment via GitPod
 
-You can choose to use your own development environment if desired, however a `devcontainer.json` and `automations.yml` file is included within the repository to allow the use of [GitPod Flex](https://gitpod.io/) easily.
+You can choose to use your own development environment if desired, however a `devcontainer.json` and `automations.yml` file is included within the repository to allow the use of [Ona](https://app.gitpod.io/) easily.
 This will allow you to use GitPod's integration with GitLab to quickly start a remote development environment including Go and Docker, which are necessary
-for running tests. To get started with GitPod Flex, see the [Getting Started](https://www.gitpod.io/docs/flex/getting-started) documentation. 
+for running tests. To get started with Ona, see the [Getting Started](https://ona.com/docs/ona/getting-started) documentation. 
+[Gitlab Docs(Ona)](https://docs.gitlab.com/integration/gitpod/)
 
 ### Using a DevContainer
 
