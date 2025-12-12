@@ -238,7 +238,7 @@ This attribute is only used during resource creation, thus changes are suppresse
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `topics` (Set of String) The list of topics for the project.
 - `use_custom_template` (Boolean) Use either custom instance or group (with group_with_project_templates_id) project template (enterprise edition).
-		~> When using a custom template, [Group Tokens won't work](https://docs.gitlab.com/15.7/ee/user/project/settings/import_export_troubleshooting/#import-using-the-rest-api-fails-when-using-a-group-access-token). You must use a real user's Personal Access Token.
+		~> When using a custom template, [Group Tokens won't work](https://docs.gitlab.com/user/project/settings/import_export_troubleshooting/#import-using-the-rest-api-fails-when-using-a-group-access-token). You must use a real user's Personal Access Token.
 - `visibility_level` (String) Set to `public` to create a public project. Valid values are `private`, `internal`, `public`.
 - `wiki_access_level` (String) Set the wiki access level. Valid values are `disabled`, `private`, `enabled`.
 - `wiki_enabled` (Boolean, Deprecated) Enable wiki for the project. Use `wiki_access_level` instead. To be removed in 19.0.

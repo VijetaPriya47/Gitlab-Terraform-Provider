@@ -412,7 +412,7 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 	},
 	"use_custom_template": {
 		Description: `Use either custom instance or group (with group_with_project_templates_id) project template (enterprise edition).
-		~> When using a custom template, [Group Tokens won't work](https://docs.gitlab.com/15.7/ee/user/project/settings/import_export_troubleshooting/#import-using-the-rest-api-fails-when-using-a-group-access-token). You must use a real user's Personal Access Token.`,
+		~> When using a custom template, [Group Tokens won't work](https://docs.gitlab.com/user/project/settings/import_export_troubleshooting/#import-using-the-rest-api-fails-when-using-a-group-access-token). You must use a real user's Personal Access Token.`,
 		Type:     schema.TypeBool,
 		Optional: true,
 	},
