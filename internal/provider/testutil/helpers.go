@@ -1564,3 +1564,18 @@ func CreateProjectSecureFile(t *testing.T, pid any, n int) []*gitlab.SecureFile 
 
 	return secureFiles
 }
+
+// CreateGroupServiceAccountAccessToken is a test helper for creating a personal access token for a group service account.
+func CreateGroupServiceAccountAccessToken(t *testing.T, groupID string, userID int, name string, scopes []string) *gitlab.PersonalAccessToken {
+	t.Helper()
+
+	token, _, err := TestGitlabClient.Groups.CreateServiceAccountPersonalAccessToken(groupID, int64(userID), &gitlab.CreateServiceAccountPersonalAccessTokenOptions{
+		Name:   gitlab.Ptr(name),
+		Scopes: gitlab.Ptr(scopes),
+	})
+	if err != nil {
+		t.Fatalf("could not create Group Service Account Access Token for user %d in group %s: %v", userID, groupID, err)
+	}
+
+	return token
+}
