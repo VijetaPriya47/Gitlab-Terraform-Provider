@@ -82,6 +82,7 @@ func (r *gitlabBranchResource) Schema(ctx context.Context, req resource.SchemaRe
 			"id": schema.StringAttribute{
 				MarkdownDescription: "The ID of this resource. In the format `<project:name>`",
 				Computed:            true,
+				PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 			"name": schema.StringAttribute{
 				MarkdownDescription: "The name for this branch.",
