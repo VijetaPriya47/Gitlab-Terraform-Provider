@@ -106,7 +106,7 @@ Required:
 
 Optional:
 
-- `expression` (Block List) Expression for internal controls. Required when `control_type` is `internal`. (see [below for nested schema](#nestedblock--controls--expression))
+- `expression` (Block, Optional) Expression for internal controls. Required when `control_type` is `internal`. (see [below for nested schema](#nestedblock--controls--expression))
 - `external_url` (String) External URL for external controls. Required when `control_type` is `external`.
 - `secret_token` (String, Sensitive) Secret token for external controls. Optional when `control_type` is `external`.
 

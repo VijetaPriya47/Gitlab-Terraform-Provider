@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
@@ -39,9 +40,10 @@ func buildComplianceRequirementID(frameworkID, requirementID string) string {
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ resource.Resource                = &gitlabComplianceRequirementResource{}
-	_ resource.ResourceWithConfigure   = &gitlabComplianceRequirementResource{}
-	_ resource.ResourceWithImportState = &gitlabComplianceRequirementResource{}
+	_ resource.Resource                   = &gitlabComplianceRequirementResource{}
+	_ resource.ResourceWithConfigure      = &gitlabComplianceRequirementResource{}
+	_ resource.ResourceWithImportState    = &gitlabComplianceRequirementResource{}
+	_ resource.ResourceWithValidateConfig = &gitlabComplianceRequirementResource{}
 )
 
 func init() {
@@ -67,7 +69,7 @@ type gitlabComplianceRequirementResourceModel struct {
 type gitlabComplianceControlModel struct {
 	Name        types.String `tfsdk:"name"`
 	ControlType types.String `tfsdk:"control_type"`
-	Expression  types.List   `tfsdk:"expression"`
+	Expression  types.Object `tfsdk:"expression"`
 	ExternalURL types.String `tfsdk:"external_url"`
 	SecretToken types.String `tfsdk:"secret_token"`
 }
@@ -114,14 +116,13 @@ Compliance requirements define specific compliance conditions that projects must
 				MarkdownDescription: "Description for the compliance requirement.",
 				Optional:            true,
 			},
-		},
-		Blocks: map[string]schema.Block{
-			"controls": schema.ListNestedBlock{
+			"controls": schema.ListNestedAttribute{
 				MarkdownDescription: "List of controls for this compliance requirement. Controls define how compliance is verified.",
+				Optional:            true,
 				Validators: []validator.List{
 					listvalidator.SizeAtLeast(1),
 				},
-				NestedObject: schema.NestedBlockObject{
+				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"name": schema.StringAttribute{
 							MarkdownDescription: "Name of the control.",
@@ -144,30 +145,24 @@ Compliance requirements define specific compliance conditions that projects must
 							Optional:            true,
 							Sensitive:           true,
 						},
-					},
-					Blocks: map[string]schema.Block{
-						"expression": schema.ListNestedBlock{
+						"expression": schema.SingleNestedAttribute{
 							MarkdownDescription: "Expression for internal controls. Required when `control_type` is `internal`.",
-							Validators: []validator.List{
-								listvalidator.SizeAtMost(1),
-							},
-							NestedObject: schema.NestedBlockObject{
-								Attributes: map[string]schema.Attribute{
-									"field": schema.StringAttribute{
-										MarkdownDescription: "The field to evaluate (e.g., `scanner_dep_scanning_running`).",
-										Required:            true,
+							Optional:            true,
+							Attributes: map[string]schema.Attribute{
+								"field": schema.StringAttribute{
+									MarkdownDescription: "The field to evaluate (e.g., `scanner_dep_scanning_running`).",
+									Required:            true,
+								},
+								"operator": schema.StringAttribute{
+									MarkdownDescription: fmt.Sprintf("The operator for comparison. Valid values are %s.", utils.RenderValueListForDocs(api.ValidComplianceControlOperators)),
+									Required:            true,
+									Validators: []validator.String{
+										stringvalidator.OneOf(api.ValidComplianceControlOperators...),
 									},
-									"operator": schema.StringAttribute{
-										MarkdownDescription: fmt.Sprintf("The operator for comparison. Valid values are %s.", utils.RenderValueListForDocs(api.ValidComplianceControlOperators)),
-										Required:            true,
-										Validators: []validator.String{
-											stringvalidator.OneOf(api.ValidComplianceControlOperators...),
-										},
-									},
-									"value": schema.StringAttribute{
-										MarkdownDescription: "The value to compare against. Use `true` or `false` for boolean values.",
-										Required:            true,
-									},
+								},
+								"value": schema.StringAttribute{
+									MarkdownDescription: "The value to compare against. Use `true` or `false` for boolean values.",
+									Required:            true,
 								},
 							},
 						},
@@ -175,6 +170,52 @@ Compliance requirements define specific compliance conditions that projects must
 				},
 			},
 		},
+	}
+}
+
+func (r *gitlabComplianceRequirementResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	var data gitlabComplianceRequirementResourceModel
+
+	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if data.Controls.IsNull() || data.Controls.IsUnknown() {
+		return
+	}
+
+	var controls []gitlabComplianceControlModel
+	resp.Diagnostics.Append(data.Controls.ElementsAs(ctx, &controls, false)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	for i, control := range controls {
+		if control.ControlType.IsUnknown() {
+			continue
+		}
+
+		controlType := control.ControlType.ValueString()
+
+		if controlType == "external" {
+			if control.ExternalURL.IsNull() {
+				resp.Diagnostics.AddAttributeError(
+					path.Root("controls").AtListIndex(i).AtName("external_url"),
+					"Missing Attribute Configuration",
+					"external_url is required when control_type is 'external'",
+				)
+			}
+		} else if controlType == "internal" {
+			if control.Expression.IsNull() {
+				resp.Diagnostics.AddAttributeError(
+					path.Root("controls").AtListIndex(i).AtName("expression"),
+					"Missing Block Configuration",
+					"expression block is required when control_type is 'internal'",
+				)
+			}
+		}
 	}
 }
 
@@ -228,9 +269,7 @@ func (r *gitlabComplianceRequirementResource) Create(ctx context.Context, req re
 				}
 			}`, frameworkID, escapeGraphQLString(name), escapeGraphQLString(description), controlsInput),
 	}
-	tflog.Debug(ctx, "executing GraphQL Query to create compliance requirement", map[string]any{
-		"query": query.Query,
-	})
+	tflog.Debug(ctx, "executing GraphQL Query to create compliance requirement")
 
 	var response createComplianceRequirementResponse
 	if _, err := r.client.GraphQL.Do(query, &response); err != nil {
@@ -384,9 +423,7 @@ func (r *gitlabComplianceRequirementResource) Update(ctx context.Context, req re
 				}
 			}`, requirementID, escapeGraphQLString(name), escapeGraphQLString(description), controlsInput),
 	}
-	tflog.Debug(ctx, "executing GraphQL Query to update compliance requirement", map[string]any{
-		"query": query.Query,
-	})
+	tflog.Debug(ctx, "executing GraphQL Query to update compliance requirement")
 
 	var response updateComplianceRequirementResponse
 	if _, err := r.client.GraphQL.Do(query, &response); err != nil {
@@ -506,16 +543,13 @@ func (r *gitlabComplianceRequirementResource) buildControlsInput(ctx context.Con
 			controlStr += `}`
 		} else {
 			// Internal control with expression
-			var expressions []gitlabControlExpressionModel
+			var expr gitlabControlExpressionModel
 			if !control.Expression.IsNull() && !control.Expression.IsUnknown() {
-				diags := control.Expression.ElementsAs(ctx, &expressions, false)
+				diags := control.Expression.As(ctx, &expr, basetypes.ObjectAsOptions{})
 				if diags.HasError() {
 					return "", fmt.Errorf("failed to parse expression")
 				}
-			}
 
-			if len(expressions) > 0 {
-				expr := expressions[0]
 				// Determine if value is boolean or string
 				value := expr.Value.ValueString()
 				var valueStr string

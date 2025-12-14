@@ -39,16 +39,16 @@ func TestAccGitlabComplianceRequirement_basic(t *testing.T) {
 						name         = "Test Requirement"
 						description  = "A test compliance requirement"
 
-						controls {
+						controls = [{
 							name         = "scanner_dep_scanning_running"
 							control_type = "internal"
 
-							expression {
+							expression = {
 								field    = "scanner_dep_scanning_running"
 								operator = "equals"
 								value    = "true"
 							}
-						}
+						}]
 					}
 				`, testGroup.FullPath),
 				Check: resource.ComposeTestCheckFunc(
@@ -80,16 +80,16 @@ func TestAccGitlabComplianceRequirement_basic(t *testing.T) {
 						name         = "Updated Requirement"
 						description  = "An updated compliance requirement"
 
-						controls {
+						controls = [{
 							name         = "scanner_dep_scanning_running"
 							control_type = "internal"
 
-							expression {
+							expression = {
 								field    = "scanner_dep_scanning_running"
 								operator = "equals"
 								value    = "true"
 							}
-						}
+						}]
 					}
 				`, testGroup.FullPath),
 				Check: resource.ComposeTestCheckFunc(
@@ -125,11 +125,11 @@ func TestAccGitlabComplianceRequirement_externalControl(t *testing.T) {
 						name         = "External Control Requirement"
 						description  = "A requirement with external control"
 
-						controls {
+						controls = [{
 							name         = "External Audit Report"
 							control_type = "external"
 							external_url = "https://example.com/audit-report"
-						}
+						}]
 					}
 				`, testGroup.FullPath),
 				Check: resource.ComposeTestCheckFunc(
@@ -165,22 +165,23 @@ func TestAccGitlabComplianceRequirement_multipleControls(t *testing.T) {
 						name         = "Multi Control Requirement"
 						description  = "A requirement with multiple controls"
 
-						controls {
-							name         = "scanner_dep_scanning_running"
-							control_type = "internal"
+						controls = [
+							{
+								name         = "scanner_dep_scanning_running"
+								control_type = "internal"
 
-							expression {
-								field    = "scanner_dep_scanning_running"
-								operator = "equals"
-								value    = "true"
+								expression = {
+									field    = "scanner_dep_scanning_running"
+									operator = "equals"
+									value    = "true"
+								}
+							},
+							{
+								name         = "External Audit"
+								control_type = "external"
+								external_url = "https://example.com/audit"
 							}
-						}
-
-						controls {
-							name         = "External Audit"
-							control_type = "external"
-							external_url = "https://example.com/audit"
-						}
+						]
 					}
 				`, testGroup.FullPath),
 				Check: resource.ComposeTestCheckFunc(
