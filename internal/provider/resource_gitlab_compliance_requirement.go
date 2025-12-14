@@ -17,6 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
+	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
 
 const complianceRequirementIDSeparator = "|"
@@ -128,7 +129,7 @@ Compliance requirements define specific compliance conditions that projects must
 							Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 						},
 						"control_type": schema.StringAttribute{
-							MarkdownDescription: "Type of control. Valid values are `internal` or `external`.",
+							MarkdownDescription: fmt.Sprintf("Type of control. Valid values are %s.", utils.RenderValueListForDocs(api.ValidComplianceControlTypes)),
 							Required:            true,
 							Validators: []validator.String{
 								stringvalidator.OneOf(api.ValidComplianceControlTypes...),
@@ -157,7 +158,7 @@ Compliance requirements define specific compliance conditions that projects must
 										Required:            true,
 									},
 									"operator": schema.StringAttribute{
-										MarkdownDescription: "The operator for comparison. Valid values are `equals`, `not_equals`, `greater_than`, `less_than`.",
+										MarkdownDescription: fmt.Sprintf("The operator for comparison. Valid values are %s.", utils.RenderValueListForDocs(api.ValidComplianceControlOperators)),
 										Required:            true,
 										Validators: []validator.String{
 											stringvalidator.OneOf(api.ValidComplianceControlOperators...),

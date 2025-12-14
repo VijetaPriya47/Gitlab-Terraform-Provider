@@ -101,7 +101,7 @@ resource "gitlab_compliance_requirement" "multiple_controls" {
 
 Required:
 
-- `control_type` (String) Type of control. Valid values are `internal` or `external`.
+- `control_type` (String) Type of control. Valid values are `internal`, `external`.
 - `name` (String) Name of the control.
 
 Optional:
