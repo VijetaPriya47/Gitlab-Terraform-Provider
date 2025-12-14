@@ -28,16 +28,16 @@ resource "gitlab_compliance_requirement" "internal_control" {
   name         = "Dependency Scanning Required"
   description  = "Ensures dependency scanning is enabled and running"
 
-  controls {
+  controls = [{
     name         = "scanner_dep_scanning_running"
     control_type = "internal"
 
-    expression {
+    expression = {
       field    = "scanner_dep_scanning_running"
       operator = "equals"
       value    = "true"
     }
-  }
+  }]
 }
 
 # Example: Create a compliance requirement with an external control
@@ -46,12 +46,12 @@ resource "gitlab_compliance_requirement" "external_control" {
   name         = "External Audit Verification"
   description  = "Verification via external audit service"
 
-  controls {
+  controls = [{
     name         = "External Audit Report"
     control_type = "external"
     external_url = "https://example.com/audit-report"
     secret_token = var.audit_secret_token # Use a variable for sensitive values
-  }
+  }]
 }
 
 # Example: Create a compliance requirement with multiple controls
@@ -60,22 +60,23 @@ resource "gitlab_compliance_requirement" "multiple_controls" {
   name         = "Comprehensive Security Check"
   description  = "Multiple security controls for compliance"
 
-  controls {
-    name         = "scanner_dep_scanning_running"
-    control_type = "internal"
+  controls = [
+    {
+      name         = "scanner_dep_scanning_running"
+      control_type = "internal"
 
-    expression {
-      field    = "scanner_dep_scanning_running"
-      operator = "equals"
-      value    = "true"
+      expression = {
+        field    = "scanner_dep_scanning_running"
+        operator = "equals"
+        value    = "true"
+      }
+    },
+    {
+      name         = "External Security Audit"
+      control_type = "external"
+      external_url = "https://example.com/security-audit"
     }
-  }
-
-  controls {
-    name         = "External Security Audit"
-    control_type = "external"
-    external_url = "https://example.com/security-audit"
-  }
+  ]
 }
 ```
 
@@ -89,14 +90,14 @@ resource "gitlab_compliance_requirement" "multiple_controls" {
 
 ### Optional
 
-- `controls` (Block List) List of controls for this compliance requirement. Controls define how compliance is verified. (see [below for nested schema](#nestedblock--controls))
+- `controls` (Attributes List) List of controls for this compliance requirement. Controls define how compliance is verified. (see [below for nested schema](#nestedatt--controls))
 - `description` (String) Description for the compliance requirement.
 
 ### Read-Only
 
 - `id` (String) The ID of this Terraform resource. In the format of `<framework_id>|<requirement_id>`.
 
-<a id="nestedblock--controls"></a>
+<a id="nestedatt--controls"></a>
 ### Nested Schema for `controls`
 
 Required:
@@ -106,11 +107,11 @@ Required:
 
 Optional:
 
-- `expression` (Block, Optional) Expression for internal controls. Required when `control_type` is `internal`. (see [below for nested schema](#nestedblock--controls--expression))
+- `expression` (Attributes) Expression for internal controls. Required when `control_type` is `internal`. (see [below for nested schema](#nestedatt--controls--expression))
 - `external_url` (String) External URL for external controls. Required when `control_type` is `external`.
 - `secret_token` (String, Sensitive) Secret token for external controls. Optional when `control_type` is `external`.
 
-<a id="nestedblock--controls--expression"></a>
+<a id="nestedatt--controls--expression"></a>
 ### Nested Schema for `controls.expression`
 
 Required:
