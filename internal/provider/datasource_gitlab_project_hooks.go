@@ -99,7 +99,7 @@ func (d *gitlabProjectHooksDataSource) Schema(_ context.Context, _ datasource.Sc
 							MarkdownDescription: "A token to present when invoking the hook. The token is only available on resource creation, not in this datasource. It will always be blank. Will be removed in 19.0.",
 							Computed:            true,
 							Sensitive:           true,
-							DeprecationMessage:  "The token is only available on resource creation, not in this datasource. It will always be blank.",
+							DeprecationMessage:  "The token is only available on resource creation, not in this datasource. It will always be blank. To be removed in 19.0.",
 						},
 						"push_events": schema.BoolAttribute{
 							MarkdownDescription: "Invoke the hook for push events.",
