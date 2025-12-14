@@ -406,7 +406,7 @@ func (r *gitlabProjectVariableResource) getProjectVariableSchema() *schema.Schem
 				Computed:            true,
 			},
 			"masked": schema.BoolAttribute{
-				MarkdownDescription: "If set to `true`, the value of the variable will be masked in job logs. The value must meet the [masking requirements](https://docs.gitlab.com/ee/ci/variables/#mask-a-cicd-variable).",
+				MarkdownDescription: "If set to `true`, the value of the variable will be masked in job logs. The value must meet the [masking requirements](https://docs.gitlab.com/ci/variables/#mask-a-cicd-variable).",
 				Optional:            true,
 				Computed:            true,
 			},

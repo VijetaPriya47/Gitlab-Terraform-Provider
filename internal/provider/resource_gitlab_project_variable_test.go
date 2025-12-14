@@ -156,7 +156,7 @@ func TestAccGitlabProjectVariable_basic(t *testing.T) {
 				},
 			},
 			// Try to update with an illegal masked variable.
-			// ref: https://docs.gitlab.com/ce/ci/variables/README.html#masked-variable-requirements
+			// ref: https://docs.gitlab.com/ci/variables/#mask-a-cicd-variable
 			{
 				Config: fmt.Sprintf(`
 					resource "gitlab_project_variable" "foo" {

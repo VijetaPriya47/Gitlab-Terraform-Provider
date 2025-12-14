@@ -18,7 +18,7 @@ var _ = registerResource("gitlab_user_sshkey", func() *schema.Resource {
 	return &schema.Resource{
 		Description: `The ` + "`" + `gitlab_user_sshkey` + "`" + ` resource allows to manage the lifecycle of an SSH key assigned to a user.
 
-**Upstream API**: [GitLab API docs](https://docs.gitlab.com/api/users/#single-ssh-key)`,
+**Upstream API**: [GitLab API docs](https://docs.gitlab.com/api/user_keys/#get-an-ssh-key-for-a-user)`,
 
 		CreateContext: resourceGitlabUserSSHKeyCreate,
 		ReadContext:   resourceGitlabUserSSHKeyRead,
@@ -74,7 +74,6 @@ func resourceGitlabUserSSHKeyCreate(ctx context.Context, d *schema.ResourceData,
 	var userIDForID string
 	if userIDOk {
 		userIDForID = fmt.Sprintf("%d", int64(userID.(int)))
-
 	} else {
 		user, _, err := client.Users.CurrentUser(gitlab.WithContext(ctx))
 		if err != nil {
@@ -159,7 +158,6 @@ func resourceGitlabUserSSHKeyDelete(ctx context.Context, d *schema.ResourceData,
 
 	if isAdmin {
 		_, err = client.Users.DeleteSSHKeyForUser(userID, keyID, gitlab.WithContext(ctx))
-
 	} else {
 		_, err = client.Users.DeleteSSHKey(keyID, gitlab.WithContext(ctx))
 	}

@@ -74,7 +74,7 @@ func (r *gitlabProjectPushRulesResource) Schema(ctx context.Context, req resourc
 
 -> This resource requires a GitLab Enterprise instance with a Premium license to set the push rules on a project.
 
-**Upstream API**: [GitLab API docs](https://docs.gitlab.com/api/projects/#push-rules)`,
+**Upstream API**: [GitLab API docs](https://docs.gitlab.com/api/project_push_rules/)`,
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{

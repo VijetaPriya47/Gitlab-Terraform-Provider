@@ -25,7 +25,7 @@ The runner will be registered at a group level if the token used is from a group
 ~> Using this resource will register a runner using the deprecated ` + "`registration_token`" + ` flow. To use the new ` + "`authentication_token`" + ` flow instead,
 use the ` + "`gitlab_user_runner`" + ` resource!
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/runners/#register-a-new-runner)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/runners/)`,
 
 		DeprecationMessage: `This resource has been deprecated in favor of the ` + "`gitlab_user_runner`" + ` resource. Please use that resource, and the new registration flow, instead.`,
 		CreateContext:      resourceGitLabRunnerCreate,

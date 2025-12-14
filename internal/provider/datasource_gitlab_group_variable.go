@@ -90,7 +90,7 @@ func (d *gitlabGroupVariableDataSource) Schema(_ context.Context, _ datasource.S
 				Computed:            true,
 			},
 			"masked": schema.BoolAttribute{
-				MarkdownDescription: "If set to `true`, the value of the variable will be hidden in job logs. The value must meet the [masking requirements](https://docs.gitlab.com/ci/variables/#masked-variables).",
+				MarkdownDescription: "If set to `true`, the value of the variable will be hidden in job logs. The value must meet the [masking requirements](https://docs.gitlab.com/ci/variables/#mask-a-cicd-variable).",
 				Computed:            true,
 			},
 			"environment_scope": schema.StringAttribute{

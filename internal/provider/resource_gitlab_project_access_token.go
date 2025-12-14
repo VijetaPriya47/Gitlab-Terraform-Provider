@@ -82,7 +82,7 @@ func (r *gitlabProjectAccessTokenResource) Schema(ctx context.Context, req resou
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`" + `gitlab_project_access_token` + "`" + ` resource allows to manage the lifecycle of a project access token.
 
-~> Observability scopes are in beta and may not work on all instances. See more details in [the documentation](https://docs.gitlab.com/operations/tracing/)
+~> Observability scopes are in beta and may not work on all instances. See more details in [the documentation](https://docs.gitlab.com/development/tracing/)
 
 ~> Use ` + "`rotation_configuration`" + ` to automatically rotate tokens instead of using ` + "`timestamp()`" + ` as timestamp will cause changes with every plan. ` + "`terraform apply`" + ` must still be run to rotate the token.
 

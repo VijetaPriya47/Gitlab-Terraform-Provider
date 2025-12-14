@@ -24,7 +24,7 @@ var _ = registerResource("gitlab_project_membership", func() *schema.Resource {
 
 -> If a project should grant membership to an entire group use the ` + "`gitlab_project_share_group`" + ` resource instead.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/members/)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_members/)`,
 
 		CreateContext: resourceGitlabProjectMembershipCreate,
 		ReadContext:   resourceGitlabProjectMembershipRead,

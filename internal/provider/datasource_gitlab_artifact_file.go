@@ -48,7 +48,7 @@ func (d *gitlabArtifactFileDataSource) Metadata(ctx context.Context, req datasou
 func (d *gitlabArtifactFileDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_artifact_file`" + ` data source allows downloading a single artifact file from a specific job in the latest successful pipeline for a given reference (branch, tag, or commit).
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/ee/api/job_artifacts.html#download-a-single-artifact-file-from-specific-tag-or-branch)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/job_artifacts/#download-a-single-artifact-file-by-reference-name)`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "The ID of this datasource. In the format `<project>:<ref>:<job>:<artifact_path>`.",

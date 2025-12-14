@@ -72,7 +72,7 @@ func (d *gitlabGlobalLevelNotificationsResource) Schema(_ context.Context, _ res
 		Version: 1,
 		MarkdownDescription: `The ` + "`" + `gitlab_global_level_notifications` + "`" + ` resource allows to manage global notifications.
 		
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/notification_settings/#group--project-level-notification-settings)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/notification_settings/#get-group-or-project-notification-settings)`,
 
 		// Schema is external because we'll need to re-implement the state migration function.
 		Attributes: map[string]schema.Attribute{
@@ -350,7 +350,6 @@ func (d *gitlabGlobalLevelNotificationsResource) ValidateConfig(ctx context.Cont
 			`"level" must be set to "custom" to set individual notification levels`,
 			`"level" must be set to "custom" to set individual notification levels`)
 	}
-
 }
 
 func (d *gitlabGlobalLevelNotificationsModel) globalNotificationModelToState(id string, notifications *gitlab.NotificationSettings) {
@@ -401,7 +400,6 @@ func (d *gitlabGlobalLevelNotificationsModel) globalNotificationModelToState(id 
 // Both update and create essentially do the same thing; there is no resource to create in GitLab,
 // we just update the global notification settings either way.
 func (d *gitlabGlobalLevelNotificationsResource) updateGlobalNotifications(ctx context.Context, data *gitlabGlobalLevelNotificationsModel) (*gitlab.NotificationSettings, error) {
-
 	opts := &gitlab.NotificationSettingsOptions{}
 	if !data.Level.IsNull() {
 		val := globalNotificationLevelTypes[data.Level.ValueString()]

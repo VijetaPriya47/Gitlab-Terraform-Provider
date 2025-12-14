@@ -345,7 +345,7 @@ var _ = registerDataSource("gitlab_projects", func() *schema.Resource {
 				Optional:    true,
 			},
 			"min_access_level": {
-				Description: "Limit to projects where current user has at least this access level, refer to the [official documentation](https://docs.gitlab.com/api/members/) for values. Cannot be used with `group_id`.",
+				Description: "Limit to projects where current user has at least this access level, refer to the [official documentation](https://docs.gitlab.com/user/permissions/#default-roles) for values. Cannot be used with `group_id`.",
 				Type:        schema.TypeInt,
 				Optional:    true,
 				ValidateFunc: validation.IntInSlice([]int{

@@ -21,7 +21,7 @@ var _ = registerResource("gitlab_user_gpgkey", func() *schema.Resource {
 		
 -> Managing GPG keys for arbitrary users requires admin privileges.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/users/#get-a-specific-gpg-key)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/user_keys/#get-a-gpg-key-for-a-user)`,
 
 		CreateContext: resourceGitlabUserGPGKeyCreate,
 		ReadContext:   resourceGitlabUserGPGKeyRead,

@@ -76,7 +76,7 @@ func (d *gitlabPagesDomainResource) Schema(_ context.Context, _ resource.SchemaR
 				},
 			},
 			"project": schema.StringAttribute{
-				MarkdownDescription: "The ID or [URL-encoded path of the project](https://docs.gitlab.com/api/index/#namespaced-path-encoding) owned by the authenticated user.",
+				MarkdownDescription: "The ID or Namespace path of the project owned by the authenticated user.",
 				Required:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -214,7 +214,6 @@ func (d *gitlabPagesDomainResource) Read(ctx context.Context, req resource.ReadR
 
 // Updates updates the resource in-place.
 func (d *gitlabPagesDomainResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-
 	// Get data information into our struct
 	var data gitLabPagesDomainResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
@@ -334,5 +333,4 @@ func (v autoSslEnabledValidator) ValidateBool(ctx context.Context, req validator
 			`"certificate" can't be included when "auto_ssl_enabled" is set to true`,
 		))
 	}
-
 }

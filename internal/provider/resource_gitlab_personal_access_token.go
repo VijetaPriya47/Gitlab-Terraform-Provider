@@ -83,7 +83,7 @@ func (r *gitlabPersonalAccessTokenResource) Schema(ctx context.Context, req reso
 
 ~> Use of the ` + "`timestamp()`" + ` function with expires_at will cause the resource to be re-created with every apply, it's recommended to use ` + "`plantimestamp()`" + ` or a static value instead.
 
-~> Observability scopes are in beta and may not work on all instances. See more details in [the documentation](https://docs.gitlab.com/operations/tracing/)
+~> Observability scopes are in beta and may not work on all instances. See more details in [the documentation](https://docs.gitlab.com/development/tracing/)
 
 ~> Use ` + "`rotation_configuration`" + ` to automatically rotate tokens instead of using ` + "`timestamp()`" + ` as timestamp will cause changes with every plan. ` + "`terraform apply`" + ` must still be run to rotate the token.
 
