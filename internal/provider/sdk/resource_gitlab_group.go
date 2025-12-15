@@ -3,6 +3,7 @@ package sdk
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -31,7 +32,23 @@ var (
 		// Deprecated
 		"disabled_with_override",
 	}
+	groupNameRegexp = regexp.MustCompile(`^[\p{L}\p{N}\p{So}_][\p{L}\p{N}\p{Zs}\p{So}_\.\-()]*$`)
+	groupPathRegexp = regexp.MustCompile(`^[a-zA-Z0-9]+(?:[._-][a-zA-Z0-9]+)*$`)
 )
+
+func validateGroupPath(v any, k string) (ws []string, errors []error) {
+	// Go's regexp package does not support negative lookaheads, so we cannot include
+	// the restriction against ending in .git or .atom directly in the regex.
+	// Instead, we check the regex first, then separately validate the suffix.
+	s := v.(string)
+	if !groupPathRegexp.MatchString(s) {
+		errors = append(errors, fmt.Errorf("must start and end with a letter or digit, contain only letters, digits, '_', '.', or '-', and not have consecutive special characters"))
+	}
+	if strings.HasSuffix(s, ".git") || strings.HasSuffix(s, ".atom") {
+		errors = append(errors, fmt.Errorf("cannot end in .git or .atom"))
+	}
+	return
+}
 
 var _ = registerResource("gitlab_group", func() *schema.Resource {
 	return &schema.Resource{
@@ -54,11 +71,16 @@ var _ = registerResource("gitlab_group", func() *schema.Resource {
 				Description: "The name of the group.",
 				Type:        schema.TypeString,
 				Required:    true,
+				ValidateFunc: validation.StringMatch(
+					groupNameRegexp,
+					"must start with a letter, digit, emoji, or '_' and can only contain letters, digits, emoji, '_', '.', dash, space, or parenthesis",
+				),
 			},
 			"path": {
-				Description: "The path of the group.",
-				Type:        schema.TypeString,
-				Required:    true,
+				Description:  "The path of the group.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validateGroupPath,
 			},
 			"full_path": {
 				Description: "The full path of the group.",

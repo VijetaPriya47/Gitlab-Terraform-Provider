@@ -1806,6 +1806,62 @@ func TestAccGitlabGroup_sharedRunnersSetting(t *testing.T) {
 	})
 }
 
+func TestAccGitlabGroup_invalidName(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+				resource "gitlab_group" "foo" {
+				  name = "-invalid"
+				  path = "invalid-path"
+				}`,
+				ExpectError: regexp.MustCompile(regexp.QuoteMeta("must start with a letter, digit, emoji, or '_' and can only contain letters, digits, emoji, '_', '.', dash, space, or parenthesis")),
+			},
+		},
+	})
+}
+
+func TestAccGitlabGroup_invalidPathRegex(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+				resource "gitlab_group" "foo" {
+				  name = "valid-name"
+				  path = "--invalid"
+				}`,
+				ExpectError: regexp.MustCompile(regexp.QuoteMeta("must start and end with a letter or digit, contain only letters, digits, '_', '.', or '-', and not have consecutive special characters")),
+			},
+		},
+	})
+}
+
+func TestAccGitlabGroup_invalidPathSuffix(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+				resource "gitlab_group" "foo1" {
+				  name = "valid-name"
+				  path = "validpath.git"
+				}`,
+				ExpectError: regexp.MustCompile(regexp.QuoteMeta("cannot end in .git or .atom")),
+			},
+			{
+				Config: `
+				resource "gitlab_group" "foo2" {
+				  name = "valid-name"
+				  path = "validpath.atom"
+				}`,
+				ExpectError: regexp.MustCompile(regexp.QuoteMeta("cannot end in .git or .atom")),
+			},
+		},
+	})
+}
+
 func testAccCheckGitlabGroupExists(n string, group *gitlab.Group) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
