@@ -1330,6 +1330,27 @@ func CreateInstanceServiceAccountsWithPrefix(t *testing.T, n int, prefix string)
 	return serviceAccounts
 }
 
+func CreateGroupServiceAccountAccessToken(t *testing.T, groupID int64, serviceAccountID int64, name string, scopes []string) *gitlab.PersonalAccessToken {
+	t.Helper()
+
+	groupServiceAccountAccessToken, _, err := TestGitlabClient.Groups.CreateServiceAccountPersonalAccessToken(groupID, serviceAccountID, &gitlab.CreateServiceAccountPersonalAccessTokenOptions{
+		Name:      gitlab.Ptr(name),
+		Scopes:    gitlab.Ptr(scopes),
+		ExpiresAt: gitlab.Ptr(gitlab.ISOTime(time.Now().AddDate(0, 0, 7))),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() {
+		if _, err := TestGitlabClient.Groups.RevokeServiceAccountPersonalAccessToken(groupID, serviceAccountID, groupServiceAccountAccessToken.ID); err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	return groupServiceAccountAccessToken
+}
+
 // CreateRunnerWithOptions is a test helper for creating a Runner given some options
 func CreateRunnerWithOptions(t *testing.T, opts *gitlab.CreateUserRunnerOptions) *gitlab.UserRunner {
 	t.Helper()
@@ -1347,11 +1368,11 @@ func CreateRunnerWithOptions(t *testing.T, opts *gitlab.CreateUserRunnerOptions)
 	return runner
 }
 
-func CreateGroupAccessToken(t *testing.T, groupID int64) *gitlab.GroupAccessToken {
+func CreateGroupAccessToken(t *testing.T, groupID int64, name string, scopes []string, accessLevel gitlab.AccessLevelValue) *gitlab.GroupAccessToken {
 	groupAccessToken, _, err := TestGitlabClient.GroupAccessTokens.CreateGroupAccessToken(groupID, &gitlab.CreateGroupAccessTokenOptions{
-		Name:        gitlab.Ptr(fmt.Sprintf("acctest-%d", acctest.RandInt())),
-		Scopes:      gitlab.Ptr([]string{"read_api", "read_repository"}),
-		AccessLevel: gitlab.Ptr(gitlab.DeveloperPermissions),
+		Name:        gitlab.Ptr(name),
+		Scopes:      gitlab.Ptr(scopes),
+		AccessLevel: gitlab.Ptr(accessLevel),
 		ExpiresAt:   gitlab.Ptr(gitlab.ISOTime(time.Now().AddDate(0, 0, 7))),
 	})
 	if err != nil {
@@ -1563,19 +1584,4 @@ func CreateProjectSecureFile(t *testing.T, pid any, n int) []*gitlab.SecureFile 
 	}
 
 	return secureFiles
-}
-
-// CreateGroupServiceAccountAccessToken is a test helper for creating a personal access token for a group service account.
-func CreateGroupServiceAccountAccessToken(t *testing.T, groupID string, userID int, name string, scopes []string) *gitlab.PersonalAccessToken {
-	t.Helper()
-
-	token, _, err := TestGitlabClient.Groups.CreateServiceAccountPersonalAccessToken(groupID, int64(userID), &gitlab.CreateServiceAccountPersonalAccessTokenOptions{
-		Name:   gitlab.Ptr(name),
-		Scopes: gitlab.Ptr(scopes),
-	})
-	if err != nil {
-		t.Fatalf("could not create Group Service Account Access Token for user %d in group %s: %v", userID, groupID, err)
-	}
-
-	return token
 }

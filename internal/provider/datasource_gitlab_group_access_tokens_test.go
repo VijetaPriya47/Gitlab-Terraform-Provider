@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 
 	gitlab "gitlab.com/gitlab-org/api/client-go"
@@ -17,7 +18,8 @@ func TestAccDataSourceGitlabGroupAccessTokens_basic(t *testing.T) {
 	testGroup := testutil.CreateGroups(t, 1)[0]
 	testAccessTokens := make([]*gitlab.GroupAccessToken, 0)
 	for range 25 {
-		testAccessTokens = append(testAccessTokens, testutil.CreateGroupAccessToken(t, testGroup.ID))
+		name := fmt.Sprintf("acctest-%d", acctest.RandInt())
+		testAccessTokens = append(testAccessTokens, testutil.CreateGroupAccessToken(t, testGroup.ID, name, []string{"read_api", "read_repository"}, gitlab.DeveloperPermissions))
 	}
 
 	resource.ParallelTest(t, resource.TestCase{

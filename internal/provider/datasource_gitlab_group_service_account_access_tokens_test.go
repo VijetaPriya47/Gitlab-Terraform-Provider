@@ -16,11 +16,10 @@ func TestAcc_GitLabGroupServiceAccountAccessTokens_DataSource_Basic(t *testing.T
 
 	// Create group and service account
 	group := testutil.CreateGroups(t, 1)[0]
-	groupID := strconv.Itoa(int(group.ID))
-	serviceAccount := testutil.CreateGroupServiceAccounts(t, 1, groupID)[0]
+	serviceAccount := testutil.CreateGroupServiceAccounts(t, 1, strconv.FormatInt(group.ID, 10))[0]
 
 	// Create a token via API
-	testutil.CreateGroupServiceAccountAccessToken(t, groupID, int(serviceAccount.ID), "test-token", []string{"api"})
+	testutil.CreateGroupServiceAccountAccessToken(t, group.ID, serviceAccount.ID, "test-token", []string{"api"})
 
 	// lintignore:AT001
 	resource.ParallelTest(t, resource.TestCase{
@@ -30,15 +29,15 @@ func TestAcc_GitLabGroupServiceAccountAccessTokens_DataSource_Basic(t *testing.T
 			{
 				Config: fmt.Sprintf(`
 					data "gitlab_group_service_account_access_tokens" "test" {
-						group              = %s
+						group              = %d
 						service_account_id = %d
 					}
-				`, groupID, serviceAccount.ID),
+				`, group.ID, serviceAccount.ID),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// Verify data source attributes
-					resource.TestCheckResourceAttr("data.gitlab_group_service_account_access_tokens.test", "group", groupID),
-					resource.TestCheckResourceAttr("data.gitlab_group_service_account_access_tokens.test", "service_account_id", strconv.Itoa(int(serviceAccount.ID))),
-					resource.TestCheckResourceAttr("data.gitlab_group_service_account_access_tokens.test", "id", fmt.Sprintf("%s:%d", groupID, serviceAccount.ID)),
+					resource.TestCheckResourceAttr("data.gitlab_group_service_account_access_tokens.test", "group", strconv.FormatInt(group.ID, 10)),
+					resource.TestCheckResourceAttr("data.gitlab_group_service_account_access_tokens.test", "service_account_id", strconv.FormatInt(serviceAccount.ID, 10)),
+					resource.TestCheckResourceAttr("data.gitlab_group_service_account_access_tokens.test", "id", fmt.Sprintf("%d:%d", group.ID, serviceAccount.ID)),
 					// Verify at least one token is returned
 					resource.TestCheckResourceAttr("data.gitlab_group_service_account_access_tokens.test", "access_tokens.#", "1"),
 					// Verify the token attributes
@@ -58,12 +57,11 @@ func TestAcc_GitLabGroupServiceAccountAccessTokens_DataSource_MultipleTokens(t *
 
 	// Create group and service account
 	group := testutil.CreateGroups(t, 1)[0]
-	groupID := strconv.Itoa(int(group.ID))
-	serviceAccount := testutil.CreateGroupServiceAccounts(t, 1, groupID)[0]
+	serviceAccount := testutil.CreateGroupServiceAccounts(t, 1, strconv.FormatInt(group.ID, 10))[0]
 
 	// Create tokens via API
-	testutil.CreateGroupServiceAccountAccessToken(t, groupID, int(serviceAccount.ID), "test-token-1", []string{"api"})
-	testutil.CreateGroupServiceAccountAccessToken(t, groupID, int(serviceAccount.ID), "test-token-2", []string{"read_api"})
+	testutil.CreateGroupServiceAccountAccessToken(t, group.ID, serviceAccount.ID, "test-token-1", []string{"api"})
+	testutil.CreateGroupServiceAccountAccessToken(t, group.ID, serviceAccount.ID, "test-token-2", []string{"read_api"})
 
 	// lintignore:AT001
 	resource.ParallelTest(t, resource.TestCase{
@@ -73,10 +71,10 @@ func TestAcc_GitLabGroupServiceAccountAccessTokens_DataSource_MultipleTokens(t *
 			{
 				Config: fmt.Sprintf(`
 					data "gitlab_group_service_account_access_tokens" "test" {
-						group              = %s
+						group              = %d
 						service_account_id = %d
 					}
-				`, groupID, serviceAccount.ID),
+				`, group.ID, serviceAccount.ID),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// Verify at least two tokens are returned
 					resource.TestCheckResourceAttr("data.gitlab_group_service_account_access_tokens.test", "access_tokens.#", "2"),
