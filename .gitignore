@@ -20,6 +20,7 @@
 Gitlab-license.txt
 bin/
 example.tf
+gl-code-quality-report.json
 license/*
 modules-dev/
 terraform.tfplan
