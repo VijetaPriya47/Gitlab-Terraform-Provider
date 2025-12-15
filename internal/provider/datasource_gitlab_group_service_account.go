@@ -51,7 +51,7 @@ func (d *gitlabGroupServiceAccountDataSource) Schema(_ context.Context, _ dataso
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_group_service_account`" + ` data source retrieves information about a GitLab service account in a group.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/group_service_accounts/#list-service-account-users)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/service_accounts/#list-all-group-service-accounts)`,
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{

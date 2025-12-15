@@ -60,7 +60,7 @@ func (r *gitlabInstanceServiceAccountResource) Schema(ctx context.Context, _ res
 
 ~> In order for a user to create a user account, they must have admin privileges at the instance level. This makes this feature unavailable on ` + "`gitlab.com`" + `
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/user_service_accounts/)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/service_accounts/#instance-service-accounts)`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:            true,

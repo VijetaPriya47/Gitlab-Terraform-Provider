@@ -23,7 +23,7 @@ The `gitlab_label` resource manages the lifecycle of a project label.
 
 ### Required
 
-- `color` (String) The color of the label given in 6-digit hex notation with leading '#' sign (e.g. #FFAABB) or one of the [CSS color names](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#Color_keywords).
+- `color` (String) The color of the label given in 6-digit hex notation with leading '#' sign (e.g. #FFAABB) or one of the [CSS color names](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/color_value#Color_keywords).
 - `name` (String) The name of the label.
 - `project` (String) The name or id of the project to add the label to.
 

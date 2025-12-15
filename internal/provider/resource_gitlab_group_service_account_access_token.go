@@ -90,7 +90,7 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Schema(ctx context.Contex
 
 ~> Due to a limitation in the API, the ` + "`rotation_configuration`" + ` is unable to set the new expiry date before GitLab 17.9. Instead, when the resource is created, it will default the expiry date to 7 days in the future. On each subsequent apply, the new expiry will be 7 days from the date of the apply. 
 
-**Upstream API**: [GitLab API docs](https://docs.gitlab.com/api/group_service_accounts/#create-a-personal-access-token-for-a-service-account-user)`,
+**Upstream API**: [GitLab API docs](https://docs.gitlab.com/api/service_accounts/#create-a-personal-access-token-for-a-group-service-account)`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "The ID of the group service account access token.",

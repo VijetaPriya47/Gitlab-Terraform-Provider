@@ -69,7 +69,7 @@ func (d *gitlabGroupServiceAccountAccessTokensDataSource) Schema(_ context.Conte
 
 ~> **Permissions:** You must have administrator access or be an Owner of the group to list the tokens of a service account.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/personal_access_tokens/#list-personal-access-tokens)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/personal_access_tokens/#list-all-personal-access-tokens)`,
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{

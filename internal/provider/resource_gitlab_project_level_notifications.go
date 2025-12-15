@@ -79,7 +79,7 @@ func (d *gitlabProjectLevelNotificationsResource) Schema(_ context.Context, _ re
 
 ~> While the API supports both groups and projects, this resource only supports projects currently.
 		
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/notification_settings/#group--project-level-notification-settings)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/notification_settings/#get-group-or-project-notification-settings)`,
 
 		// Schema is external because we'll need to re-implement the state migration function.
 		Attributes: map[string]schema.Attribute{

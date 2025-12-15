@@ -67,7 +67,7 @@ func (d *gitlabProjectMembershipDataSource) Schema(_ context.Context, _ datasour
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_project_membership`" + ` data source allows you to list and filter all members of a project.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/members/#list-all-members-of-a-group-or-project)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_members/#list-all-members-of-a-project)`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "The ID of this datasource. In the format `<project:query-hash>` if query is set, otherwise `<project>`.",

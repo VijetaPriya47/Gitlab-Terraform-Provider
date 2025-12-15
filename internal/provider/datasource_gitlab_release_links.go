@@ -66,7 +66,7 @@ func (d *gitlabReleaseLinksDataSource) Schema(_ context.Context, _ datasource.Sc
 				Computed:            true,
 			},
 			"project": schema.StringAttribute{
-				MarkdownDescription: "The ID or [URL-encoded path of the project](https://docs.gitlab.com/api/index/#namespaced-path-encoding).",
+				MarkdownDescription: "The ID or Namespace path of the project.",
 				Required:            true,
 			},
 			"tag_name": schema.StringAttribute{
@@ -79,7 +79,7 @@ func (d *gitlabReleaseLinksDataSource) Schema(_ context.Context, _ datasource.Sc
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"project": schema.StringAttribute{
-							MarkdownDescription: "The ID or [URL-encoded path of the project](https://docs.gitlab.com/api/index/#namespaced-path-encoding).",
+							MarkdownDescription: "The ID or Namespace path of the project.",
 							Computed:            true,
 						},
 						"tag_name": schema.StringAttribute{
@@ -95,7 +95,7 @@ func (d *gitlabReleaseLinksDataSource) Schema(_ context.Context, _ datasource.Sc
 							Computed:            true,
 						},
 						"filepath": schema.StringAttribute{
-							MarkdownDescription: "Relative path for a [Direct Asset link](https://docs.gitlab.com/user/project/releases/index/#permanent-links-to-release-assets).",
+							MarkdownDescription: "Relative path for a [Direct Asset link](https://docs.gitlab.com/user/project/releases/release_fields/#permanent-links-to-latest-release-assets).",
 							Computed:            true,
 						},
 						"link_type": schema.StringAttribute{
@@ -107,7 +107,7 @@ func (d *gitlabReleaseLinksDataSource) Schema(_ context.Context, _ datasource.Sc
 							Computed:            true,
 						},
 						"direct_asset_url": schema.StringAttribute{
-							MarkdownDescription: "Full path for a [Direct Asset link](https://docs.gitlab.com/user/project/releases/index/#permanent-links-to-release-assets).",
+							MarkdownDescription: "Full path for a [Direct Asset link](https://docs.gitlab.com/user/project/releases/release_fields/#permanent-links-to-latest-release-assets).",
 							Computed:            true,
 						},
 						"external": schema.BoolAttribute{

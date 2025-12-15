@@ -315,7 +315,7 @@ func (d *gitlabProjectHookResource) getSchema() schema.Schema {
 		Version: 1,
 		MarkdownDescription: `The ` + "`" + `gitlab_project_hook` + "`" + ` resource allows to manage the lifecycle of a project hook.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/projects/#hooks)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_webhooks/)`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: `The id of the project hook. In the format of "project:hook_id"`,

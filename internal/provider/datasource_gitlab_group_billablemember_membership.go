@@ -70,7 +70,7 @@ func (d *gitlabGroupBillableMemberMembershipsDataSource) Schema(_ context.Contex
 ~> When using the ` + "`email`" + ` attribute, an exact match is not guaranteed. The most related match will be returned. Starting with GitLab 16.6,
 the most related match will prioritize an exact match if one is available.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/members/#list-memberships-for-a-billable-member-of-a-group)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/group_members/#list-all-billable-members-of-a-group)`,
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
@@ -117,7 +117,7 @@ the most related match will prioritize an exact match if one is available.
 							Computed:            true,
 						},
 						"access_level": schema.StringAttribute{
-							MarkdownDescription: "Access-level of the member. For details see: https://docs.gitlab.com/api/access_requests/#valid-access-levels",
+							MarkdownDescription: "Access-level of the member. For details see: https://docs.gitlab.com/user/permissions/#default-roles",
 							Computed:            true,
 						},
 					},
@@ -147,7 +147,6 @@ func (d *gitlabGroupBillableMemberMembershipsDataSource) Read(ctx context.Contex
 
 	tflog.Info(ctx, "[INFO] Reading Gitlab user memberships")
 	membership, err := d.fetchAllOfListMembershipsForBillableGroupMember(state.GroupId.ValueString(), state.UserId.ValueInt64(), ctx)
-
 	if err != nil {
 		resp.Diagnostics.AddError("API call to ListMembershipsForBillableGroupMember failed", err.Error())
 		return
@@ -193,7 +192,7 @@ func flattenBillableMemberMembershipsForState(memberships []*gitlab.BillableUser
 }
 
 func gitlabBillableMemberMembershipToStateModel(membership *gitlab.BillableUserMembership) gitlabGroupBillableMemberMembershipModel {
-	var createdAt = ""
+	createdAt := ""
 	if membership.CreatedAt != nil {
 		createdAt = membership.CreatedAt.Format(time.RFC3339)
 	}

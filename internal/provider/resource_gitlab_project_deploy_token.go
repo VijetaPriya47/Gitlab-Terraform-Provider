@@ -67,7 +67,7 @@ func (r *gitlabProjectDeployTokenResource) Schema(ctx context.Context, req resou
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_project_deploy_token`" + ` resource allows you to manage the lifecycle of deploy tokens on a project.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/deploy_tokens/)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/deploy_tokens/#project-deploy-tokens)`,
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{

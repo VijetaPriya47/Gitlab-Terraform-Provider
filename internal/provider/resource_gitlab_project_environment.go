@@ -420,7 +420,7 @@ func (r *gitlabProjectEnvironmentResource) Delete(ctx context.Context, req resou
 	stopBeforeDestroy := data.StopBeforeDestroy.ValueBool()
 	if stopBeforeDestroy {
 		// To stop an environment with an on_stop action, we need to force stop.
-		// https://docs.gitlab.com/ee/ci/environments/#stop-an-environment-without-running-the-on_stop-action
+		// https://docs.gitlab.com/ci/environments/#stop-an-environment-without-running-the-on_stop-action
 		forceStop := false
 		if data.AutoStopSetting.ValueString() == "with_action" {
 			tflog.Debug(ctx, fmt.Sprintf("Force-stopping environment %d for Project %s with on_stop action", environmentID, project))

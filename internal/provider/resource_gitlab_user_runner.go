@@ -74,7 +74,7 @@ func (d *gitlabUserRunnerResource) Schema(_ context.Context, _ resource.SchemaRe
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `The ` + "`gitlab_user_runner`" + ` resource allows creating a GitLab runner using the new [GitLab Runner Registration Flow](https://docs.gitlab.com/ci/runners/new_creation_workflow/).
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/users/#create-a-runner)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/users/#create-a-runner-linked-to-a-user)`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:            true,

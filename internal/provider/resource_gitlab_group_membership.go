@@ -67,7 +67,7 @@ func (r *gitlabGroupMembershipResource) Schema(ctc context.Context, req resource
 
 -> If a group should grant membership to another group use the ` + "`gitlab_group_share_group`" + ` resource instead.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/members/)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/group_members/)`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:            true,
