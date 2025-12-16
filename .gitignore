@@ -37,3 +37,4 @@ certs/gitlab-registry.key
 playground
 !playground/main.tf
 !playground/.terraformrc
+gl-code-quality-report.json

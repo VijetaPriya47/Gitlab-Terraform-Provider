@@ -1,15 +1,15 @@
 //go:build acceptance
 
-package sdk
+package provider
 
 import (
 	"fmt"
 	"strconv"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 
@@ -21,7 +21,7 @@ func TestAccGitlabSystemHook_basic(t *testing.T) {
 	rInt := acctest.RandInt()
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabSystemHookDestroy,
 		Steps: []resource.TestStep{
 			// Create a hook with all options
@@ -72,6 +72,68 @@ func TestAccGitlabSystemHook_basic(t *testing.T) {
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"token"},
+			},
+		},
+	})
+}
+
+func TestAccGitlabSystemHook_upgradeFromSDKToFramework(t *testing.T) {
+	var hook gitlab.Hook
+	rInt := acctest.RandInt()
+
+	resource.ParallelTest(t, resource.TestCase{
+		CheckDestroy: testAccCheckGitlabSystemHookDestroy,
+		Steps: []resource.TestStep{
+			// Create a hook with sdk version
+			{
+				ExternalProviders: map[string]resource.ExternalProvider{
+					"gitlab": {
+						VersionConstraint: "= 18.6.0",
+						Source:            "gitlabhq/gitlab",
+					},
+				},
+				Config: fmt.Sprintf(`
+					resource "gitlab_system_hook" "this" {
+						url                      = "https://example.com/hook-%d"
+						token                    = "secret-token"
+						push_events              = true
+						tag_push_events          = true
+						merge_requests_events    = true
+						repository_update_events = true
+						enable_ssl_verification  = true
+					}
+				`, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabSystemHookExists("gitlab_system_hook.this", &hook),
+					resource.TestCheckResourceAttrSet("gitlab_system_hook.this", "created_at"),
+				),
+			},
+			// Switch to framework version
+			{
+				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+				Config: fmt.Sprintf(`
+					resource "gitlab_system_hook" "this" {
+						url                      = "https://example.com/hook-%d"
+						token                    = "secret-token"
+						push_events              = true
+						tag_push_events          = true
+						merge_requests_events    = true
+						repository_update_events = true
+						enable_ssl_verification  = true
+					}
+				`, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabSystemHookExists("gitlab_system_hook.this", &hook),
+					resource.TestCheckResourceAttrSet("gitlab_system_hook.this", "created_at"),
+				),
+			},
+			// Verify import
+			{
+				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+				ResourceName:             "gitlab_system_hook.this",
+				ImportState:              true,
+				ImportStateVerify:        true,
+				ImportStateVerifyIgnore:  []string{"token"},
 			},
 		},
 	})
