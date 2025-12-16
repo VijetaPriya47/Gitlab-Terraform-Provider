@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strconv"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -85,7 +86,7 @@ func TestAcc_GitlabProjectLabel_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("gitlab_project_label.fixme", "description", "fix this test"),
 				),
 			},
-			// Update the label to change the parameters
+			// Update the label to change the color and description
 			{
 				Config: fmt.Sprintf(`
 					resource "gitlab_project_label" "fixme" {
@@ -98,6 +99,23 @@ func TestAcc_GitlabProjectLabel_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("gitlab_project_label.fixme", "project", fmt.Sprintf("%d", project.ID)),
 					resource.TestCheckResourceAttr("gitlab_project_label.fixme", "name", fmt.Sprintf("FIXME-%d", rInt)),
+					resource.TestCheckResourceAttr("gitlab_project_label.fixme", "color", "#ff0000"),
+					resource.TestCheckResourceAttr("gitlab_project_label.fixme", "description", "red label"),
+				),
+			},
+			// Update the label name (this should NOT force replacement)
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_label" "fixme" {
+						project     = "%d"
+						name        = "RENAMED-%d"
+						color       = "#ff0000"
+						description = "red label"
+					}
+				`, project.ID, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project_label.fixme", "project", fmt.Sprintf("%d", project.ID)),
+					resource.TestCheckResourceAttr("gitlab_project_label.fixme", "name", fmt.Sprintf("RENAMED-%d", rInt)),
 					resource.TestCheckResourceAttr("gitlab_project_label.fixme", "color", "#ff0000"),
 					resource.TestCheckResourceAttr("gitlab_project_label.fixme", "description", "red label"),
 				),
@@ -180,6 +198,92 @@ func TestAcc_GitlabProjectLabel_deprecatedResourceName(t *testing.T) {
 				ResourceName:      "gitlab_label.fixme",
 				ImportState:       true,
 				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAcc_GitlabProjectLabel_schemaMigrationV0toV2(t *testing.T) {
+	project := testutil.CreateProject(t)
+	rInt := acctest.RandInt()
+	labelName := fmt.Sprintf("test-label-%d", rInt)
+
+	legacyConfig := fmt.Sprintf(`
+	resource "gitlab_label" "foo" {
+		project     = "%d"
+		name        = "%s"
+		color       = "#FF0000"
+		description = "Project label description"
+	}
+	`, project.ID, labelName)
+
+	newConfig := fmt.Sprintf(`
+	resource "gitlab_label" "foo" {
+		project     = "%d"
+		name        = "%s"
+		color       = "#FF0000"
+		description = "Project label description"
+	}
+	`, project.ID, labelName)
+
+	resource.ParallelTest(t, resource.TestCase{
+		CheckDestroy: testAccCheckGitlabProjectLabelDestroy,
+		Steps: []resource.TestStep{
+			{
+				ExternalProviders: map[string]resource.ExternalProvider{
+					"gitlab": {
+						VersionConstraint: "~> 15.7", // Before V1 schema, produces V0 state.
+						Source:            "gitlabhq/gitlab",
+					},
+				},
+				Config: legacyConfig,
+			},
+			{
+				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+				Config:                   newConfig,
+			},
+		},
+	})
+}
+
+func TestAcc_GitlabProjectLabel_schemaMigrationV1toV2(t *testing.T) {
+	project := testutil.CreateProject(t)
+	rInt := acctest.RandInt()
+	labelName := fmt.Sprintf("test-label-%d", rInt)
+
+	legacyConfig := fmt.Sprintf(`
+	resource "gitlab_label" "foo" {
+		project     = "%d"
+		name        = "%s"
+		color       = "#FF0000"
+		description = "Project label description"
+	}
+	`, project.ID, labelName)
+
+	newConfig := fmt.Sprintf(`
+	resource "gitlab_label" "foo" {
+		project     = "%d"
+		name        = "%s"
+		color       = "#FF0000"
+		description = "Project label description"
+	}
+	`, project.ID, labelName)
+
+	resource.ParallelTest(t, resource.TestCase{
+		CheckDestroy: testAccCheckGitlabProjectLabelDestroy,
+		Steps: []resource.TestStep{
+			{
+				ExternalProviders: map[string]resource.ExternalProvider{
+					"gitlab": {
+						VersionConstraint: "~> 17.3.0", // Before framework migration, produces V1 state.
+						Source:            "gitlabhq/gitlab",
+					},
+				},
+				Config: legacyConfig,
+			},
+			{
+				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+				Config:                   newConfig,
 			},
 		},
 	})
@@ -330,14 +434,14 @@ func testAccCheckGitlabProjectLabelDestroy(s *terraform.State) error {
 			continue
 		}
 
-		projectName, labelName, err := (&gitlabProjectLabelResourceModel{}).ResourceGitlabProjectLabelParseID(rs.Primary.ID)
+		projectName, labelID, err := (&gitlabProjectLabelResourceModel{}).ResourceGitlabProjectLabelParseID(rs.Primary.ID)
 		if err != nil {
 			return fmt.Errorf("Failed to parse project label id %q: %w", rs.Primary.ID, err)
 		}
 
-		_, _, err = testutil.TestGitlabClient.Labels.GetLabel(projectName, labelName)
+		_, _, err = testutil.TestGitlabClient.Labels.GetLabel(projectName, strconv.FormatInt(int64(labelID), 10))
 		if err == nil {
-			return fmt.Errorf("Project label %s in project %s still exists", labelName, projectName)
+			return fmt.Errorf("Project label %d in project %s still exists", labelID, projectName)
 		}
 		if !api.Is404(err) {
 			return err

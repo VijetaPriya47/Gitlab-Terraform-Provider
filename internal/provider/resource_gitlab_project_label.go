@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -98,10 +99,10 @@ func (r *gitlabProjectLabelResource) getV1Schema() schema.Schema {
 	toReturn := schema.Schema{
 		MarkdownDescription: r.ResourceDescription,
 		DeprecationMessage:  r.DeprecationMessage,
-		Version:             1,
+		Version:             2,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				MarkdownDescription: "The ID of this Terraform resource. In the format of `<project-id>:<label-name>`.",
+				MarkdownDescription: "The ID of this Terraform resource. In the format of `<project-id>:<label-id>`.",
 				Computed:            true,
 				PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
@@ -117,7 +118,6 @@ func (r *gitlabProjectLabelResource) getV1Schema() schema.Schema {
 			"name": schema.StringAttribute{
 				MarkdownDescription: "The name of the label.",
 				Required:            true,
-				PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 			},
 			"color": schema.StringAttribute{
 				MarkdownDescription: "The color of the label given in 6-digit hex notation with leading '#' sign (e.g. #FFAABB) or one of the [CSS color names](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/color_value#Color_keywords).",
@@ -164,7 +164,8 @@ func (r *gitlabProjectLabelResource) Create(ctx context.Context, req resource.Cr
 		return
 	}
 
-	data.ID = types.StringValue(utils.BuildTwoPartID(&project, data.Name.ValueStringPointer()))
+	labelID := strconv.FormatInt(int64(label.ID), 10)
+	data.ID = types.StringValue(utils.BuildTwoPartID(&project, &labelID))
 	data.modelToStateModel(label, color, project)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -176,13 +177,13 @@ func (r *gitlabProjectLabelResource) Read(ctx context.Context, req resource.Read
 		return
 	}
 
-	project, labelName, err := data.ResourceGitlabProjectLabelParseID(data.ID.ValueString())
+	project, labelID, err := data.ResourceGitlabProjectLabelParseID(data.ID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to read resource ID", fmt.Sprintf("Unable to parse resource ID: %s, %s", data.ID.ValueString(), err.Error()))
 		return
 	}
 
-	label, _, err := r.client.Labels.GetLabel(project, labelName, gitlab.WithContext(ctx))
+	label, _, err := r.client.Labels.GetLabel(project, strconv.FormatInt(int64(labelID), 10), gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
 			resp.Diagnostics.AddWarning("GitLab API error occured", fmt.Sprintf("Project label doesn't exist anymore, removing from state: %s", err.Error()))
@@ -203,7 +204,7 @@ func (r *gitlabProjectLabelResource) Update(ctx context.Context, req resource.Up
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	project, labelName, err := data.ResourceGitlabProjectLabelParseID(data.ID.ValueString())
+	project, labelID, err := data.ResourceGitlabProjectLabelParseID(data.ID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to read resource ID", fmt.Sprintf("Unable to parse resource ID: %s, %s", data.ID.ValueString(), err.Error()))
 		return
@@ -211,8 +212,8 @@ func (r *gitlabProjectLabelResource) Update(ctx context.Context, req resource.Up
 
 	color := data.Color.ValueString()
 	options := &gitlab.UpdateLabelOptions{
-		Name:  gitlab.Ptr(data.Name.ValueString()),
-		Color: gitlab.Ptr(color),
+		NewName: gitlab.Ptr(data.Name.ValueString()),
+		Color:   gitlab.Ptr(color),
 	}
 
 	if !data.Description.IsNull() && !data.Description.IsUnknown() {
@@ -220,7 +221,7 @@ func (r *gitlabProjectLabelResource) Update(ctx context.Context, req resource.Up
 	}
 
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update gitlab label %s", data.ID.ValueString()))
-	label, _, err := r.client.Labels.UpdateLabel(project, labelName, options, gitlab.WithContext(ctx))
+	label, _, err := r.client.Labels.UpdateLabel(project, strconv.FormatInt(int64(labelID), 10), options, gitlab.WithContext(ctx))
 	if err != nil {
 		resp.Diagnostics.AddError("GitLab API error occured", fmt.Sprintf("Unable to update project label: %s", err.Error()))
 		return
@@ -237,13 +238,13 @@ func (r *gitlabProjectLabelResource) Delete(ctx context.Context, req resource.De
 		return
 	}
 
-	project, labelName, err := data.ResourceGitlabProjectLabelParseID(data.ID.ValueString())
+	project, labelID, err := data.ResourceGitlabProjectLabelParseID(data.ID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to read resource ID", fmt.Sprintf("Unable to parse resource ID: %s, %s", data.ID.ValueString(), err.Error()))
 		return
 	}
 
-	_, err = r.client.Labels.DeleteLabel(project, labelName, nil, gitlab.WithContext(ctx))
+	_, err = r.client.Labels.DeleteLabel(project, strconv.FormatInt(int64(labelID), 10), nil, gitlab.WithContext(ctx))
 	if err != nil {
 		resp.Diagnostics.AddError("GitLab API error occured", fmt.Sprintf("Unable to delete project label: %s", err.Error()))
 		return
@@ -255,6 +256,10 @@ func (r *gitlabProjectLabelResource) Delete(ctx context.Context, req resource.De
 func (r *gitlabProjectLabelResource) UpgradeState(ctx context.Context) map[int64]resource.StateUpgrader {
 	schema := r.getV1Schema()
 
+	// We can reuse the same schema for all state upgraders because the schema definition
+	// itself didn't change between versions - only the internal ID format changed from
+	// V0 (label-name) to V1 (project:label-name) to V2 (project:label-id). The ID field
+	// is not part of the formal schema attributes, so the same schema is valid for all versions.
 	return map[int64]resource.StateUpgrader{
 		0: {
 			PriorSchema: &schema,
@@ -266,7 +271,42 @@ func (r *gitlabProjectLabelResource) UpgradeState(ctx context.Context) map[int64
 				}
 
 				newData := resourceGitlabProjectLabelStateUpgradeV0(ctx, &data)
+
+				// As we are upgrading from V0 to V2 directly, we need to apply the V1 -> V2 migration as well.
+				// This is because Terraform does not chain state upgraders.
+				err := r.upgradeIdToV2Id(ctx, newData)
+				if err != nil {
+					tflog.Error(ctx, "Failed to upgrade resource ID", map[string]any{
+						"oldId":   data.ID.ValueString(),
+						"project": data.Project.ValueString(),
+					})
+					resp.Diagnostics.AddError("Failed to upgrade resource ID", fmt.Sprintf("Unable to upgrade resource ID: %s, %s", data.ID.ValueString(), err.Error()))
+					return
+				}
+
 				resp.Diagnostics.Append(resp.State.Set(ctx, &newData)...)
+			},
+		},
+		1: {
+			PriorSchema: &schema,
+			StateUpgrader: func(ctx context.Context, req resource.UpgradeStateRequest, resp *resource.UpgradeStateResponse) {
+				var data gitlabProjectLabelResourceModel
+				resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+
+				err := r.upgradeIdToV2Id(ctx, &data)
+				if err != nil {
+					tflog.Error(ctx, "Failed to upgrade resource ID", map[string]any{
+						"oldId":   data.ID.ValueString(),
+						"project": data.Project.ValueString(),
+					})
+					resp.Diagnostics.AddError("Failed to upgrade resource ID", fmt.Sprintf("Unable to upgrade resource ID: %s, %s", data.ID.ValueString(), err.Error()))
+					return
+				}
+
+				resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 			},
 		},
 	}
@@ -282,6 +322,83 @@ func resourceGitlabProjectLabelStateUpgradeV0(ctx context.Context, data *gitlabP
 	return data
 }
 
+// upgradeIdToV2Id performs the state migration from V1 to V2 ID format (<project>:<label_id>).
+// This handles migration from V1 (<project>:<label_name>) to V2 (<project>:<label_id>).
+// It first tries to use the LabelID from state, and only falls back to API calls when necessary.
+func (r *gitlabProjectLabelResource) upgradeIdToV2Id(ctx context.Context, input *gitlabProjectLabelResourceModel) error {
+	// If LabelID is already available in state, use it directly (no API call needed)
+	if !input.LabelID.IsNull() && !input.LabelID.IsUnknown() {
+		tflog.Debug(ctx, "Using LabelID from state, no API call needed", map[string]any{
+			"label_id": input.LabelID.ValueInt64(),
+		})
+	} else {
+		// At this point the state has already passed through the V0→V1 upgrader, so any
+		// remaining legacy IDs are guaranteed to be in the V1 format <project>:<label_name>.
+		// LabelID is not available in state, need to fetch it from API
+		tflog.Info(ctx, "LabelID not available in state, fetching from API", map[string]any{
+			"project": input.Project.ValueString(),
+			"old_id":  input.ID.ValueString(),
+		})
+
+		project := input.Project.ValueString()
+		oldID := input.ID.ValueString()
+
+		// Parse the V1 ID format: <project>:<label_name>
+		_, labelName, err := utils.ParseTwoPartID(oldID)
+		if err != nil {
+			return fmt.Errorf("failed to parse V1 ID format '%s': %w", oldID, err)
+		}
+
+		tflog.Debug(ctx, "Fetching label by name to get label ID", map[string]any{
+			"project":    project,
+			"label_name": labelName,
+		})
+
+		label, _, err := r.client.Labels.GetLabel(project, labelName, gitlab.WithContext(ctx))
+		if err != nil {
+			// Log the error but don't fail the migration completely
+			// The resource will be recreated if the label doesn't exist
+			tflog.Warn(ctx, "Failed to fetch label for state migration", map[string]any{
+				"project":    project,
+				"label_name": labelName,
+				"error":      err.Error(),
+			})
+			// Continue with migration without setting LabelID - resource will be recreated if needed
+		} else {
+			// Set the label ID into state for future use
+			input.LabelID = types.Int64Value(int64(label.ID))
+
+			tflog.Info(ctx, "Successfully fetched label ID from API", map[string]any{
+				"label_id":   label.ID,
+				"label_name": label.Name,
+			})
+		}
+	}
+
+	// Check if we have a valid LabelID to build the new ID format
+	if input.LabelID.IsNull() || input.LabelID.IsUnknown() {
+		tflog.Warn(ctx, "LabelID not available after migration attempt, keeping original ID", map[string]any{
+			"original_id": input.ID.ValueString(),
+		})
+		// Keep the original ID - Terraform will handle resource recreation if needed
+		return nil
+	}
+
+	// Build the new V2 ID format
+	stringLabelID := strconv.FormatInt(input.LabelID.ValueInt64(), 10)
+	project := input.Project.ValueString()
+	newID := utils.BuildTwoPartID(&project, &stringLabelID)
+
+	tflog.Debug(ctx, "Upgrading state to the V2 ID", map[string]any{
+		"oldId":   input.ID.ValueString(),
+		"project": project,
+		"newId":   newID,
+	})
+
+	input.ID = types.StringValue(newID)
+	return nil
+}
+
 func (data *gitlabProjectLabelResourceModel) modelToStateModel(label *gitlab.Label, color string, project string) {
 	data.LabelID = types.Int64Value(int64(label.ID))
 	data.Project = types.StringValue(project)
@@ -295,11 +412,16 @@ func (data *gitlabProjectLabelResourceModel) modelToStateModel(label *gitlab.Lab
 	data.Name = types.StringValue(label.Name)
 }
 
-func (d *gitlabProjectLabelResourceModel) ResourceGitlabProjectLabelParseID(id string) (string, string, error) {
-	project, labelName, err := utils.ParseTwoPartID(id)
+func (d *gitlabProjectLabelResourceModel) ResourceGitlabProjectLabelParseID(id string) (string, int, error) {
+	project, rawLabelID, err := utils.ParseTwoPartID(id)
 	if err != nil {
-		return "", "", err
+		return "", 0, err
 	}
 
-	return project, labelName, nil
+	labelID, err := strconv.Atoi(rawLabelID)
+	if err != nil {
+		return "", 0, err
+	}
+
+	return project, labelID, nil
 }
