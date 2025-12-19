@@ -271,7 +271,7 @@ var _ = registerResource("gitlab_group", func() *schema.Resource {
 			},
 			"ip_restriction_ranges": {
 				Description: "A list of IP addresses or subnet masks to restrict group access. Will be concatenated together into a comma separated string. Only allowed on top level groups.",
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 				Optional:    true,
 			},
@@ -588,7 +588,7 @@ func resourceGitlabGroupCreate(ctx context.Context, d *schema.ResourceData, meta
 
 	// IP Restriction can only be set on update.
 	if v, ok := d.GetOk("ip_restriction_ranges"); ok {
-		updateOptions.IPRestrictionRanges = stringListToCommaSeparatedString(v.([]any))
+		updateOptions.IPRestrictionRanges = convertIPRestrictionRangesToString(v.(*schema.Set))
 	}
 
 	// Email domains can only be set on update.
@@ -607,6 +607,15 @@ func resourceGitlabGroupCreate(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	return resourceGitlabGroupRead(ctx, d, meta)
+}
+
+func convertIPRestrictionRangesToString(ipRestrictionRanges *schema.Set) *string {
+	var ranges []string
+	for _, r := range ipRestrictionRanges.List() {
+		ranges = append(ranges, r.(string))
+	}
+	joinedRanges := strings.Join(ranges, ",")
+	return &joinedRanges
 }
 
 func convertAccessLevelNamesToValues(names []any) []*gitlab.GroupAccessLevel {
@@ -859,7 +868,7 @@ func resourceGitlabGroupUpdate(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	if d.HasChange("ip_restriction_ranges") {
-		options.IPRestrictionRanges = stringListToCommaSeparatedString(d.Get("ip_restriction_ranges").([]any))
+		options.IPRestrictionRanges = convertIPRestrictionRangesToString(d.Get("ip_restriction_ranges").(*schema.Set))
 	}
 
 	if d.HasChange("allowed_email_domains_list") {

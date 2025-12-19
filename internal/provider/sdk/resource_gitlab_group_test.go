@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
+	"slices"
 	"strings"
 	"testing"
 
@@ -1090,7 +1091,7 @@ func TestAccGitlabGroup_IPRestricted(t *testing.T) {
 					testAccCheckGitlabGroupAttributes(&group, &testAccGitlabGroupExpectedAttributes{
 						Name:                fmt.Sprintf("test-ip-restrictions-%d", rInt),
 						Path:                fmt.Sprintf("path-%d", rInt),
-						IPRestrictionRanges: "192.168.0.0/24",
+						IPRestrictionRanges: []string{"192.168.0.0/24"},
 					}),
 				),
 			},
@@ -1110,7 +1111,7 @@ func TestAccGitlabGroup_IPRestricted(t *testing.T) {
 					name = "test-ip-restrictions-%d"
 					path = "path-%d"
 
-					ip_restriction_ranges = ["192.168.0.0/24", "10.1.0.0/24"]
+					ip_restriction_ranges = ["192.168.0.0/24", "10.1.0.0/24", "10.2.0.0/24"]
 				}
 				`, rInt, rInt),
 				Check: resource.ComposeTestCheckFunc(
@@ -1118,7 +1119,7 @@ func TestAccGitlabGroup_IPRestricted(t *testing.T) {
 					testAccCheckGitlabGroupAttributes(&group, &testAccGitlabGroupExpectedAttributes{
 						Name:                fmt.Sprintf("test-ip-restrictions-%d", rInt),
 						Path:                fmt.Sprintf("path-%d", rInt),
-						IPRestrictionRanges: "192.168.0.0/24,10.1.0.0/24",
+						IPRestrictionRanges: []string{"10.2.0.0/24", "192.168.0.0/24", "10.1.0.0/24"},
 					}),
 				),
 			},
@@ -1146,7 +1147,7 @@ func TestAccGitlabGroup_IPRestricted(t *testing.T) {
 					testAccCheckGitlabGroupAttributes(&group, &testAccGitlabGroupExpectedAttributes{
 						Name:                fmt.Sprintf("test-ip-restrictions-%d", rInt),
 						Path:                fmt.Sprintf("path-%d", rInt),
-						IPRestrictionRanges: "",
+						IPRestrictionRanges: []string{},
 					}),
 				),
 			},
@@ -1910,7 +1911,7 @@ type testAccGitlabGroupExpectedAttributes struct {
 	TwoFactorGracePeriod            *int64
 	DefaultBranchProtection         *int64
 	DefaultBranchProtectionDefaults *testDefaultBranchProtectionDefaults
-	IPRestrictionRanges             string
+	IPRestrictionRanges             []string
 	AllowedEmailDomainsList         string
 }
 
@@ -1996,9 +1997,17 @@ func testAccCheckGitlabGroupAttributes(group *gitlab.Group, want *testAccGitlabG
 				return fmt.Errorf("got default_branch_protection_defaults.developer_can_initial_push %t; want %t", group.DefaultBranchProtectionDefaults.DeveloperCanInitialPush, want.DefaultBranchProtectionDefaults.DeveloperCanInitialPush)
 			}
 		}
-
-		if group.IPRestrictionRanges != want.IPRestrictionRanges {
-			return fmt.Errorf("got ip_restriction_ranges %s; want %s", group.IPRestrictionRanges, want.IPRestrictionRanges)
+		var gotIPRestrictionRanges []string
+		if len(group.IPRestrictionRanges) > 0 {
+			gotIPRestrictionRanges = strings.Split(group.IPRestrictionRanges, ",")
+		} else {
+			gotIPRestrictionRanges = []string{}
+		}
+		wantIPRestrictionRanges := want.IPRestrictionRanges
+		slices.Sort(gotIPRestrictionRanges)
+		slices.Sort(wantIPRestrictionRanges)
+		if !slices.Equal(gotIPRestrictionRanges, wantIPRestrictionRanges) {
+			return fmt.Errorf("got ip_restriction_ranges %q; want %q", gotIPRestrictionRanges, wantIPRestrictionRanges)
 		}
 
 		if want.Parent != nil {
