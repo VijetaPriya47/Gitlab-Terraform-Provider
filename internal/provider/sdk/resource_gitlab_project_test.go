@@ -3506,7 +3506,6 @@ func TestAccGitlabProject_ResourceGroupDefaultProcessMode(t *testing.T) {
 	projectName := acctest.RandomWithPrefix("acctest")
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:                 func() { testutil.RunIfAtLeast(t, "18.4") },
 		ProtoV6ProviderFactories: providerFactoriesV6,
 		CheckDestroy:             testAccCheckGitlabProjectDestroy,
 		Steps: []resource.TestStep{
