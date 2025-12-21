@@ -3,7 +3,6 @@ package provider
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"slices"
 	"strconv"
 	"strings"
@@ -517,28 +516,53 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Read(ctx context.Context,
 		return
 	}
 
-	// Read the access token from the API
-	accessToken, httpresp, err := r.client.PersonalAccessTokens.GetSinglePersonalAccessTokenByID(accessTokenIDInt, gitlab.WithContext(ctx))
+	// Make sure the group ID is an int64
+	groupIDInt, err := strconv.ParseInt(group, 10, 64)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error parsing group ID",
+			fmt.Sprintf("Could not parse group ID %q to int: %s", group, err),
+		)
+		return
+	}
+
+	// Make sure the user ID is an int64
+	userIDInt, err := strconv.ParseInt(userID, 10, 64)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error parsing user ID",
+			fmt.Sprintf("Could not parse user ID %q to int: %s", userID, err),
+		)
+		return
+	}
+
+	// Read all the access tokens from the API
+	// There is no HTTP API to get a single token by ID yet
+	accessTokens, _, err := r.client.Groups.ListServiceAccountPersonalAccessTokens(groupIDInt, userIDInt, nil, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			// The access token doesn't exist anymore; remove it.
-			tflog.Debug(ctx, "AccessToken not found, removing from state", map[string]any{"token_id": accessTokenID, "user_id": userID})
+			tflog.Debug(ctx, "Group or service account not found, removing from state", map[string]any{"token_id": accessTokenID, "user_id": userID})
 			resp.State.RemoveResource(ctx)
-			return
 		}
-
-		// If the read comes back as a permission error, this can _sometimes_ mean a non-admin/owner token is used, especially on gitlab.com.
-		// until group owners can read service account access tokens, we will rely on the state and ignore a 401.
-		if httpresp.StatusCode == http.StatusUnauthorized {
-			tflog.Warn(ctx, "AccessToken read returned a 401, ignoring because service account access tokens can't be read without an admin (top-level group owner on gitlab.com) token currently. This will make the tfplan rely on state data instead of the current API values.", map[string]any{"token_id": accessTokenID, "user_id": userID})
-			return
-		}
-
-		// Legit error, add a diagnostic and error
 		resp.Diagnostics.AddError(
-			"Error reading GitLab PersonalAccessToken",
-			fmt.Sprintf("Could not read GitLab PersonalAccessToken, unexpected error: %v", err),
+			"Error reading GitLab ServiceAccountPersonalAccessTokens",
+			fmt.Sprintf("Could not read GitLab ServiceAccountPersonalAccessTokens, unexpected error: %v", err),
 		)
+		return
+	}
+
+	// Find the token we want
+	var accessToken *gitlab.PersonalAccessToken
+	for i := range accessTokens {
+		if accessTokens[i].ID == accessTokenIDInt {
+			accessToken = accessTokens[i]
+			break
+		}
+	}
+	if accessToken == nil {
+		// The access token doesn't exist anymore; remove it.
+		tflog.Debug(ctx, "AccessToken not found, removing from state", map[string]any{"token_id": accessTokenID, "user_id": userID})
+		resp.State.RemoveResource(ctx)
 		return
 	}
 
