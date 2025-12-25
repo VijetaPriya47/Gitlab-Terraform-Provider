@@ -78,7 +78,7 @@ Any projects added to the CI/CD Job Token scope outside of TF will be untouched 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:            true,
-				MarkdownDescription: "The ID of this Terraform resource. In the format of `<project>:<target-project-id>`.",
+				MarkdownDescription: "The ID of this Terraform resource. In the format of `<project>:<type>:<target-id>` where `type` is either `project` or `group`.",
 				PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 			"project": schema.StringAttribute{
