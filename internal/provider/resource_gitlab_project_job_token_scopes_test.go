@@ -165,24 +165,10 @@ func TestAcc_GitlabProjectJobTokenScopes_basic(t *testing.T) {
 }
 
 func TestAcc_GitlabProjectJobTokenScopes_destroyRevertsToApplicationSettings(t *testing.T) {
-	// Set the application settings to `false` to ensure we revert `enabled` to false.
-	// changing application settings means this can't be a parallel test.
-	_, _, err := testutil.TestGitlabClient.Settings.UpdateSettings(&gitlab.UpdateSettingsOptions{
-		EnforceCIInboundJobTokenScopeEnabled: gitlab.Ptr(false),
-	})
-	if err != nil {
-		t.Fatalf("Failed to update application settings: %v", err)
-	}
 
-	// Restore the original settings after the test
-	t.Cleanup(func() {
-		_, _, err = testutil.TestGitlabClient.Settings.UpdateSettings(&gitlab.UpdateSettingsOptions{
-			EnforceCIInboundJobTokenScopeEnabled: gitlab.Ptr(true),
-		})
-		if err != nil {
-			t.Logf("Warning: Failed to restore original application settings: %v", err)
-		}
-	})
+	// Update the instance enforcement to be set to "false" since we're testing disabling
+	// the scopes enforcement at the project level
+	testutil.UpdateEnforceCIInboundJobTokenScopeEnabledSetting(t, false)
 
 	// Set up project environment.
 	project := testutil.CreateProject(t)
@@ -223,10 +209,15 @@ func TestAcc_GitlabProjectJobTokenScopes_destroyRevertsToApplicationSettings(t *
 }
 
 func TestAcc_GitlabProjectJobTokenScopes_testEnabledValidation(t *testing.T) {
+
+	// Update the instance enforcement to be set to "true" since we're testing the
+	// validation that only matters when instance enforcement is set to `true`
+	testutil.UpdateEnforceCIInboundJobTokenScopeEnabledSetting(t, true)
+
 	// Set up project environment.
 	project := testutil.CreateProject(t)
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAcc_GitlabProjectJobTokenScopes_CheckDestroy,
 		Steps: []resource.TestStep{
@@ -244,6 +235,7 @@ func TestAcc_GitlabProjectJobTokenScopes_testEnabledValidation(t *testing.T) {
 }
 
 func TestAcc_GitlabProjectJobTokenScopes_basic_deprecated(t *testing.T) {
+
 	// Set up project environment.
 	project := testutil.CreateProject(t)
 
