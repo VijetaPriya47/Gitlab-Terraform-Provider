@@ -23,5 +23,6 @@ curl --silent --show-error --header "Authorization: Bearer $GITLAB_TOKEN" "$GITL
 echo
 
 # We use git imports during integration tests, so the import sources need to have git enabled as of 16.0. Otherwise they're all disabled.
+# In addition to enabling git imports, we also need to disable enforcement of CI/CD job token scopes, since the resource tests depend on this setting being disabled by default
 echo "Setting import sources to 'git' for testing purposes"
-curl --silent --show-error --request PUT --header "Authorization: Bearer $GITLAB_TOKEN" "$GITLAB_BASE_URL/application/settings?import_sources=git,gitlab_project"
+curl --silent --show-error --request PUT --header "Authorization: Bearer $GITLAB_TOKEN" "$GITLAB_BASE_URL/application/settings?import_sources=git,gitlab_project&enforce_ci_inbound_job_token_scope_enabled=false"

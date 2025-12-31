@@ -1585,3 +1585,33 @@ func CreateProjectSecureFile(t *testing.T, pid any, n int) []*gitlab.SecureFile 
 
 	return secureFiles
 }
+
+// This helper updates the `EnforceCIInboundJobTokenScopeEnabled` setting on the instance, then
+// when the test completes, reverts the setting to the value that it was previously configured to.
+func UpdateEnforceCIInboundJobTokenScopeEnabledSetting(t *testing.T, enabled bool) {
+
+	// Get the current settings for the application so when we revert, we revert properly
+	setting, _, err := TestGitlabClient.Settings.GetSettings()
+	if err != nil {
+		t.Fatalf("failed to get existing application settings: %v", err)
+	}
+	currentCISetting := setting.EnforceCIInboundJobTokenScopeEnabled
+
+	// Update the application setting to the value passed into the helper
+	_, _, err = TestGitlabClient.Settings.UpdateSettings(&gitlab.UpdateSettingsOptions{
+		EnforceCIInboundJobTokenScopeEnabled: gitlab.Ptr(enabled),
+	})
+	if err != nil {
+		t.Fatalf("failed to update application setting for enforcing CI/CD job tokens: %v", err)
+	}
+
+	// Restore the original settings after the test
+	t.Cleanup(func() {
+		_, _, err = TestGitlabClient.Settings.UpdateSettings(&gitlab.UpdateSettingsOptions{
+			EnforceCIInboundJobTokenScopeEnabled: &currentCISetting,
+		})
+		if err != nil {
+			t.Logf("Warning: Failed to restore original application settings: %v", err)
+		}
+	})
+}
