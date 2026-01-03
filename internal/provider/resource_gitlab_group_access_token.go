@@ -150,6 +150,9 @@ func (r *gitlabGroupAccessTokenResource) Schema(ctx context.Context, req resourc
 				MarkdownDescription: "Wether to validate if the expiration date is in the future.",
 				Optional:            true,
 				Computed:            true,
+				// Default can't be applied even though it seems like it may be desired. This is because
+				// it will cause all users with existing tokens to force an apply, making it not truly a
+				// "breaking" change, but certainly an inconvenient one.
 			},
 			"created_at": schema.StringAttribute{
 				MarkdownDescription: "Time the token has been created, RFC3339 format.",
@@ -583,8 +586,12 @@ func (r *gitlabGroupAccessTokenResource) Update(ctx context.Context, req resourc
 			return
 		}
 	} else {
-		// Default to `false` if it's not set in the config/plan.
-		data.ValidatePastExpirationDate = types.BoolValue(false)
+		// If we have a known value, accept that so we don't error with inconsistent values
+		data.ValidatePastExpirationDate = state.ValidatePastExpirationDate
+		// If we're still unknown, set to False
+		if data.ValidatePastExpirationDate.IsUnknown() {
+			data.ValidatePastExpirationDate = types.BoolValue(false)
+		}
 	}
 
 	// find out whether self_rotate is one of the scopes
