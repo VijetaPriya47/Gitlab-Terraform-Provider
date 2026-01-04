@@ -4,6 +4,9 @@ resource "gitlab_group_hook" "example" {
   name                  = "Example"
   description           = "Example Group Webhook"
   merge_requests_events = true
+
+  # Set to false to avoid default true value
+  push_events = false
 }
 
 # Setting all attributes

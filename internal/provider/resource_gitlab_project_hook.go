@@ -315,6 +315,8 @@ func (d *gitlabProjectHookResource) getSchema() schema.Schema {
 		Version: 1,
 		MarkdownDescription: `The ` + "`" + `gitlab_project_hook` + "`" + ` resource allows to manage the lifecycle of a project hook.
 
+~> Note that ` + "`" + `push_events` + "`" + ` defaults to ` + "`" + `true` + "`" + `.
+
 **Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/project_webhooks/)`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
@@ -363,7 +365,7 @@ func (d *gitlabProjectHookResource) getSchema() schema.Schema {
 				Computed:            true,
 			},
 			"push_events": schema.BoolAttribute{
-				MarkdownDescription: "Invoke the hook for push events.",
+				MarkdownDescription: "Invoke the hook for push events. Defaults to `true`.",
 				Optional:            true,
 				Computed:            true,
 				Default:             booldefault.StaticBool(true),
@@ -374,79 +376,79 @@ func (d *gitlabProjectHookResource) getSchema() schema.Schema {
 				Computed:            true,
 			},
 			"issues_events": schema.BoolAttribute{
-				MarkdownDescription: "Invoke the hook for issues events.",
+				MarkdownDescription: "Invoke the hook for issues events. Defaults to `false`.",
 				Optional:            true,
 				Computed:            true,
 				Default:             booldefault.StaticBool(false),
 			},
 			"confidential_issues_events": schema.BoolAttribute{
-				MarkdownDescription: "Invoke the hook for confidential issues events.",
+				MarkdownDescription: "Invoke the hook for confidential issues events. Defaults to `false`.",
 				Optional:            true,
 				Computed:            true,
 				Default:             booldefault.StaticBool(false),
 			},
 			"merge_requests_events": schema.BoolAttribute{
-				MarkdownDescription: "Invoke the hook for merge requests events.",
+				MarkdownDescription: "Invoke the hook for merge requests events. Defaults to `false`.",
 				Optional:            true,
 				Computed:            true,
 				Default:             booldefault.StaticBool(false),
 			},
 			"tag_push_events": schema.BoolAttribute{
-				MarkdownDescription: "Invoke the hook for tag push events.",
+				MarkdownDescription: "Invoke the hook for tag push events. Defaults to `false`.",
 				Optional:            true,
 				Computed:            true,
 				Default:             booldefault.StaticBool(false),
 			},
 			"note_events": schema.BoolAttribute{
-				MarkdownDescription: "Invoke the hook for note events.",
+				MarkdownDescription: "Invoke the hook for note events. Defaults to `false`.",
 				Optional:            true,
 				Computed:            true,
 				Default:             booldefault.StaticBool(false),
 			},
 			"confidential_note_events": schema.BoolAttribute{
-				MarkdownDescription: "Invoke the hook for confidential note events.",
+				MarkdownDescription: "Invoke the hook for confidential note events. Defaults to `false`.",
 				Optional:            true,
 				Computed:            true,
 				Default:             booldefault.StaticBool(false),
 			},
 			"job_events": schema.BoolAttribute{
-				MarkdownDescription: "Invoke the hook for job events.",
+				MarkdownDescription: "Invoke the hook for job events. Defaults to `false`.",
 				Optional:            true,
 				Computed:            true,
 				Default:             booldefault.StaticBool(false),
 			},
 			"pipeline_events": schema.BoolAttribute{
-				MarkdownDescription: "Invoke the hook for pipeline events.",
+				MarkdownDescription: "Invoke the hook for pipeline events. Defaults to `false`.",
 				Optional:            true,
 				Computed:            true,
 				Default:             booldefault.StaticBool(false),
 			},
 			"wiki_page_events": schema.BoolAttribute{
-				MarkdownDescription: "Invoke the hook for wiki page events.",
+				MarkdownDescription: "Invoke the hook for wiki page events. Defaults to `false`.",
 				Optional:            true,
 				Computed:            true,
 				Default:             booldefault.StaticBool(false),
 			},
 			"resource_access_token_events": schema.BoolAttribute{
-				MarkdownDescription: "Invoke the hook for project access token expiry events.",
+				MarkdownDescription: "Invoke the hook for project access token expiry events. Defaults to `false`.",
 				Optional:            true,
 				Computed:            true,
 				Default:             booldefault.StaticBool(false),
 			},
 			"deployment_events": schema.BoolAttribute{
-				MarkdownDescription: "Invoke the hook for deployment events.",
+				MarkdownDescription: "Invoke the hook for deployment events. Defaults to `false`.",
 				Optional:            true,
 				Computed:            true,
 				Default:             booldefault.StaticBool(false),
 			},
 			"releases_events": schema.BoolAttribute{
-				MarkdownDescription: "Invoke the hook for release events.",
+				MarkdownDescription: "Invoke the hook for release events. Defaults to `false`.",
 				Optional:            true,
 				Computed:            true,
 				Default:             booldefault.StaticBool(false),
 			},
 			"enable_ssl_verification": schema.BoolAttribute{
-				MarkdownDescription: "Enable SSL verification when invoking the hook.",
+				MarkdownDescription: "Enable SSL verification when invoking the hook. Defaults to `true`.",
 				Optional:            true,
 				Computed:            true,
 				Default:             booldefault.StaticBool(true),

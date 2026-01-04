@@ -4,6 +4,9 @@ resource "gitlab_project_hook" "example" {
   name                  = "example"
   description           = "Example hook"
   merge_requests_events = true
+
+  # Set to false to avoid default true value
+  push_events = false
 }
 
 # Using Custom Headers
