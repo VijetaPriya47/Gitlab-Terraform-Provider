@@ -12,6 +12,8 @@ import (
 )
 
 func TestAccGitlabProjectPullMirror_basic(t *testing.T) {
+	testutil.SkipIfCE(t)
+
 	testProjectToMirror := testutil.CreateProject(t)
 	testProject := testutil.CreateProject(t)
 
@@ -78,6 +80,8 @@ func TestAccGitlabProjectPullMirror_basic(t *testing.T) {
 }
 
 func TestAccGitlabProjectPullMirror_withOptions(t *testing.T) {
+	testutil.SkipIfCE(t)
+
 	testProjectToMirror := testutil.CreateProject(t)
 	testProject := testutil.CreateProject(t)
 
@@ -144,6 +148,8 @@ func TestAccGitlabProjectPullMirror_withOptions(t *testing.T) {
 }
 
 func TestAccGitlabProjectPullMirror_disable(t *testing.T) {
+	testutil.SkipIfCE(t)
+
 	testProjectToMirror := testutil.CreateProject(t)
 	testProject := testutil.CreateProject(t)
 
@@ -194,6 +200,7 @@ func TestAccGitlabProjectPullMirror_disable(t *testing.T) {
 }
 
 func TestAccGitlabProjectPullMirror_Validation(t *testing.T) {
+	testutil.SkipIfCE(t)
 
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
