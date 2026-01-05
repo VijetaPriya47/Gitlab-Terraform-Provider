@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -106,12 +107,10 @@ This resource uses the dedicated pull mirror API endpoint which provides reliabl
 				Computed:            true,
 			},
 			"enabled": schema.BoolAttribute{
-				MarkdownDescription: "Enable or disable the pull mirror.",
+				MarkdownDescription: "Enable or disable the pull mirror. Defaults to `true`.",
 				Optional:            true,
 				Computed:            true,
-				PlanModifiers: []planmodifier.Bool{
-					boolplanmodifier.UseStateForUnknown(),
-				},
+				Default:             booldefault.StaticBool(true),
 			},
 			"auth_user": schema.StringAttribute{
 				MarkdownDescription: "Authentication username for the remote repository.",
@@ -230,15 +229,17 @@ func (r *gitlabProjectPullMirrorResource) Create(ctx context.Context, req resour
 	// Set the ID - everything else is set by `updateProjectPullMirrorConfig`
 	data.ID = types.StringValue(project)
 
-	// Trigger the mirror to start
-	_, err := r.client.Projects.StartMirroringProject(project, gitlab.WithContext(ctx))
-	if err != nil {
-		tflog.Error(ctx, "failed to start mirroring after configuration", map[string]interface{}{
-			"project": project,
-			"error":   err.Error(),
-		})
-		resp.Diagnostics.AddError("Failed to start mirroring after configuration. The mirroring is configured, but failed to start.", err.Error())
-		return
+	// Trigger the mirror to start only if it's enabled (either explicitly set or defaulted by API)
+	// Check the actual state after configuration to see if it's enabled
+	if data.Enabled.ValueBool() {
+		_, err := r.client.Projects.StartMirroringProject(project, gitlab.WithContext(ctx))
+		if err != nil {
+			// Log the error but don't fail - the mirror is configured, just not started
+			tflog.Warn(ctx, "failed to start mirroring after configuration", map[string]interface{}{
+				"project": project,
+				"error":   err.Error(),
+			})
+		}
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -328,9 +329,8 @@ func (r *gitlabProjectPullMirrorResource) updateProjectPullMirrorConfig(ctx cont
 		URL: gitlab.Ptr(data.URL.ValueString()),
 	}
 
-	if !data.Enabled.IsNull() && !data.Enabled.IsUnknown() {
-		options.Enabled = data.Enabled.ValueBoolPointer()
-	}
+	// Enabled has a default value, so it should always be set
+	options.Enabled = data.Enabled.ValueBoolPointer()
 
 	if !data.AuthUser.IsNull() && !data.AuthUser.IsUnknown() {
 		options.AuthUser = gitlab.Ptr(data.AuthUser.ValueString())
@@ -410,11 +410,13 @@ func (r *gitlabProjectPullMirrorResource) ImportState(ctx context.Context, req r
 func (r *gitlabProjectPullMirrorResource) mapMirrorToModel(mirror *gitlab.ProjectPullMirrorDetails, data *gitlabProjectPullMirrorResourceModel) {
 	data.MirrorID = types.Int64Value(int64(mirror.ID))
 
-	if mirror.URL != "" {
-		data.URL = types.StringValue(mirror.URL)
-	} else {
-		data.URL = types.StringNull()
-	}
+	// Don't update URL from API response to avoid inconsistency with sensitive attribute
+	// The URL is write-only in the API and we preserve the user's input
+
+	data.Enabled = types.BoolValue(mirror.Enabled)
+	data.MirrorTriggerBuilds = types.BoolValue(mirror.MirrorTriggerBuilds)
+	data.OnlyMirrorProtectedBranches = types.BoolValue(mirror.OnlyMirrorProtectedBranches)
+	data.MirrorOverwritesDivergedBranches = types.BoolValue(mirror.MirrorOverwritesDivergedBranches)
 
 	if mirror.LastError != "" {
 		data.LastError = types.StringValue(mirror.LastError)
@@ -446,5 +448,9 @@ func (r *gitlabProjectPullMirrorResource) mapMirrorToModel(mirror *gitlab.Projec
 		data.UpdateStatus = types.StringNull()
 	}
 
-	// TODO - update client-go to support additional attributes.
+	if mirror.MirrorBranchRegex != "" {
+		data.MirrorBranchRegex = types.StringValue(mirror.MirrorBranchRegex)
+	} else {
+		data.MirrorBranchRegex = types.StringNull()
+	}
 }

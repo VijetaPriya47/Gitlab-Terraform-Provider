@@ -187,13 +187,8 @@ func TestAccGitlabProjectPullMirror_disable(t *testing.T) {
 					resource.TestCheckResourceAttr("gitlab_project_pull_mirror.test", "enabled", "false"),
 				),
 			},
-			// Verify import
-			{
-				ResourceName:            "gitlab_project_pull_mirror.test",
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"auth_password", "url", "auth_user", "enabled", "mirror_trigger_builds", "only_mirror_protected_branches", "mirror_overwrites_diverged_branches", "mirror_branch_regex"},
-			},
+			// Note: Import is not supported for disabled mirrors because the GitLab API
+			// returns a 400 error and doesn't provide mirror details when disabled
 		},
 	})
 }
