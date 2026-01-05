@@ -271,8 +271,18 @@ func (r *gitlabProjectPullMirrorResource) Read(ctx context.Context, req resource
 			resp.State.RemoveResource(ctx)
 			return
 		}
-		// Check if the error is "project is not mirrored" - this happens when mirror is disabled
+		// The GitLab API returns a 400 Bad Request with message "Project is not mirrored" when:
+		// 1. Pull mirroring has never been configured for the project
+		// 2. Pull mirroring was configured but is currently disabled
+		// We handle this by checking the state's enabled flag to determine the appropriate action.
 		if errResp, ok := err.(*gitlab.ErrorResponse); ok && errResp.Response != nil && errResp.Response.StatusCode == 400 {
+			tflog.Debug(ctx, "received 400 error from pull mirror API", map[string]interface{}{
+				"project":      project,
+				"error":        err.Error(),
+				"status_code":  errResp.Response.StatusCode,
+				"enabled_flag": data.Enabled.ValueBool(),
+			})
+
 			// If the mirror is disabled in state, this is expected - keep the state as-is
 			if !data.Enabled.IsNull() && !data.Enabled.ValueBool() {
 				tflog.Debug(ctx, "pull mirror is disabled, keeping state", map[string]interface{}{
@@ -281,7 +291,7 @@ func (r *gitlabProjectPullMirrorResource) Read(ctx context.Context, req resource
 				resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 				return
 			}
-			// Otherwise, remove from state
+			// Otherwise, remove from state as the mirror is not configured
 			tflog.Warn(ctx, "pull mirror not configured, removing from state", map[string]interface{}{
 				"project": project,
 			})
@@ -306,22 +316,37 @@ func (r *gitlabProjectPullMirrorResource) Read(ctx context.Context, req resource
 }
 
 func (r *gitlabProjectPullMirrorResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var data gitlabProjectPullMirrorResourceModel
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+	var plan, state gitlabProjectPullMirrorResourceModel
+
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	project := data.Project.ValueString()
+	project := plan.Project.ValueString()
 
-	diags := r.updateProjectPullMirrorConfig(ctx, project, &data)
+	diags := r.updateProjectPullMirrorConfig(ctx, project, &plan)
 	if diags.HasError() {
 		resp.Diagnostics.Append(diags...)
 		return
 	}
 
-	// Note - we don't need to re-trigger the start since this is an update.
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	// If the mirror was disabled and is now being enabled, trigger a mirror start
+	wasDisabled := !state.Enabled.IsNull() && !state.Enabled.ValueBool()
+	isNowEnabled := !plan.Enabled.IsNull() && plan.Enabled.ValueBool()
+
+	if wasDisabled && isNowEnabled {
+		_, err := r.client.Projects.StartMirroringProject(project, gitlab.WithContext(ctx))
+		if err != nil {
+			tflog.Warn(ctx, "failed to start mirroring after re-enabling", map[string]interface{}{
+				"project": project,
+				"error":   err.Error(),
+			})
+		}
+	}
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (r *gitlabProjectPullMirrorResource) updateProjectPullMirrorConfig(ctx context.Context, project string, data *gitlabProjectPullMirrorResourceModel) diag.Diagnostics {
@@ -333,11 +358,11 @@ func (r *gitlabProjectPullMirrorResource) updateProjectPullMirrorConfig(ctx cont
 	options.Enabled = data.Enabled.ValueBoolPointer()
 
 	if !data.AuthUser.IsNull() && !data.AuthUser.IsUnknown() {
-		options.AuthUser = gitlab.Ptr(data.AuthUser.ValueString())
+		options.AuthUser = data.AuthUser.ValueStringPointer()
 	}
 
 	if !data.AuthPassword.IsNull() && !data.AuthPassword.IsUnknown() {
-		options.AuthPassword = gitlab.Ptr(data.AuthPassword.ValueString())
+		options.AuthPassword = data.AuthPassword.ValueStringPointer()
 	}
 
 	if !data.MirrorTriggerBuilds.IsNull() && !data.MirrorTriggerBuilds.IsUnknown() {
@@ -353,7 +378,7 @@ func (r *gitlabProjectPullMirrorResource) updateProjectPullMirrorConfig(ctx cont
 	}
 
 	if !data.MirrorBranchRegex.IsNull() && !data.MirrorBranchRegex.IsUnknown() {
-		options.MirrorBranchRegex = gitlab.Ptr(data.MirrorBranchRegex.ValueString())
+		options.MirrorBranchRegex = data.MirrorBranchRegex.ValueStringPointer()
 	}
 
 	tflog.Debug(ctx, "updating gitlab project pull mirror", map[string]interface{}{
@@ -408,7 +433,7 @@ func (r *gitlabProjectPullMirrorResource) ImportState(ctx context.Context, req r
 //
 // Note - does not map the ID, since that's only set on creation.
 func (r *gitlabProjectPullMirrorResource) mapMirrorToModel(mirror *gitlab.ProjectPullMirrorDetails, data *gitlabProjectPullMirrorResourceModel) {
-	data.MirrorID = types.Int64Value(int64(mirror.ID))
+	data.MirrorID = types.Int64Value(mirror.ID)
 
 	// Don't update URL from API response to avoid inconsistency with sensitive attribute
 	// The URL is write-only in the API and we preserve the user's input

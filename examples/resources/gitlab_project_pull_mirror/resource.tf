@@ -28,13 +28,3 @@ resource "gitlab_project_pull_mirror" "regex" {
   auth_password       = var.github_token
   mirror_branch_regex = "^(main|develop|release/.*)$"
 }
-
-# Minimal configuration - GitLab will apply all defaults
-resource "gitlab_project_pull_mirror" "minimal" {
-  project       = gitlab_project.example.id
-  url           = "https://github.com/example/repo.git"
-  auth_user     = "github-username"
-  auth_password = var.github_token
-  # enabled, mirror_trigger_builds, etc. will use GitLab's defaults
-  # and be visible in terraform state after apply
-}

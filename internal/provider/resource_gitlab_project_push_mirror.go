@@ -320,7 +320,7 @@ func (r *gitlabProjectMirrorResource) getSchema() schema.Schema {
 
 	return schema.Schema{
 		Version: 0,
-		MarkdownDescription: fmt.Sprintf(`The `+"`"+`gitlab_project_mirror`+"`"+` resource allows to manage the lifecycle of a project mirror.
+		MarkdownDescription: fmt.Sprintf(`The `+"`gitlab"+r.ResourceName+"`"+` resource manages the lifecycle of a project mirror.
 
 This is for *pushing* changes to a remote repository. *Pull Mirroring* can be configured using a combination of the
 import_url, mirror, and mirror_trigger_builds properties on the gitlab_project resource.

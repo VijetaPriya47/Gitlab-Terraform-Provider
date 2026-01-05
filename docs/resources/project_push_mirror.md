@@ -3,7 +3,7 @@
 page_title: "gitlab_project_push_mirror Resource - terraform-provider-gitlab"
 subcategory: ""
 description: |-
-  The gitlab_project_mirror resource allows to manage the lifecycle of a project mirror.
+  The gitlab_project_push_mirror resource manages the lifecycle of a project mirror.
   This is for pushing changes to a remote repository. Pull Mirroring can be configured using a combination of the
   import_url, mirror, and mirror_trigger_builds properties on the gitlab_project resource.
   -> Warning By default, the provider sets the keep_divergent_refs argument to True.
@@ -14,7 +14,7 @@ description: |-
 
 # gitlab_project_push_mirror (Resource)
 
-The `gitlab_project_mirror` resource allows to manage the lifecycle of a project mirror.
+The `gitlab_project_push_mirror` resource manages the lifecycle of a project mirror.
 
 This is for *pushing* changes to a remote repository. *Pull Mirroring* can be configured using a combination of the
 import_url, mirror, and mirror_trigger_builds properties on the gitlab_project resource.
