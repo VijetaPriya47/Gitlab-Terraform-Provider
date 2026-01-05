@@ -13,6 +13,30 @@ import (
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
+// The ISO constant for parsing dates to a `gitlab.ISOTime` value
+const Iso8601 = "2006-01-02"
+
+// Checks if the error represents a 400 bad request response
+func Is400(err error) bool {
+	// If the error is a typed response
+	if errResponse, ok := err.(*gitlab.ErrorResponse); ok &&
+		errResponse.Response != nil &&
+		errResponse.Response.StatusCode == http.StatusBadRequest {
+		return true
+	}
+	return false
+}
+
+// Checks if the error represents a 403 response
+func Is403(err error) bool {
+	if errResponse, ok := err.(*gitlab.ErrorResponse); ok &&
+		errResponse.Response != nil &&
+		errResponse.Response.StatusCode == 403 {
+		return true
+	}
+	return false
+}
+
 // Checks if the error represents a 404 response
 func Is404(err error) bool {
 	// If the error is a typed response
@@ -27,19 +51,6 @@ func Is404(err error) bool {
 		return true
 	}
 
-	return false
-}
-
-// The ISO constant for parsing dates to a `gitlab.ISOTime` value
-const Iso8601 = "2006-01-02"
-
-// Checks if the error represents a 403 response
-func Is403(err error) bool {
-	if errResponse, ok := err.(*gitlab.ErrorResponse); ok &&
-		errResponse.Response != nil &&
-		errResponse.Response.StatusCode == 403 {
-		return true
-	}
 	return false
 }
 

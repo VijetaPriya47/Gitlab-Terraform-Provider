@@ -235,7 +235,7 @@ func (r *gitlabProjectPullMirrorResource) Create(ctx context.Context, req resour
 		_, err := r.client.Projects.StartMirroringProject(project, gitlab.WithContext(ctx))
 		if err != nil {
 			// Log the error but don't fail - the mirror is configured, just not started
-			tflog.Warn(ctx, "failed to start mirroring after configuration", map[string]interface{}{
+			tflog.Warn(ctx, "failed to start mirroring after configuration", map[string]any{
 				"project": project,
 				"error":   err.Error(),
 			})
@@ -258,14 +258,14 @@ func (r *gitlabProjectPullMirrorResource) Read(ctx context.Context, req resource
 		project = data.ID.ValueString()
 	}
 
-	tflog.Debug(ctx, "reading gitlab project pull mirror", map[string]interface{}{
+	tflog.Debug(ctx, "reading gitlab project pull mirror", map[string]any{
 		"project": project,
 	})
 
 	mirror, _, err := r.client.Projects.GetProjectPullMirrorDetails(project, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
-			tflog.Warn(ctx, "pull mirror not found, removing from state", map[string]interface{}{
+			tflog.Warn(ctx, "pull mirror not found, removing from state", map[string]any{
 				"project": project,
 			})
 			resp.State.RemoveResource(ctx)
@@ -275,29 +275,29 @@ func (r *gitlabProjectPullMirrorResource) Read(ctx context.Context, req resource
 		// 1. Pull mirroring has never been configured for the project
 		// 2. Pull mirroring was configured but is currently disabled
 		// We handle this by checking the state's enabled flag to determine the appropriate action.
-		if errResp, ok := err.(*gitlab.ErrorResponse); ok && errResp.Response != nil && errResp.Response.StatusCode == 400 {
-			tflog.Debug(ctx, "received 400 error from pull mirror API", map[string]interface{}{
+		if api.Is400(err) {
+			tflog.Debug(ctx, "received `400 Bad Request` from pull mirror API", map[string]any{
 				"project":      project,
 				"error":        err.Error(),
-				"status_code":  errResp.Response.StatusCode,
 				"enabled_flag": data.Enabled.ValueBool(),
 			})
 
 			// If the mirror is disabled in state, this is expected - keep the state as-is
 			if !data.Enabled.IsNull() && !data.Enabled.ValueBool() {
-				tflog.Debug(ctx, "pull mirror is disabled, keeping state", map[string]interface{}{
+				tflog.Debug(ctx, "pull mirror is disabled, keeping state", map[string]any{
 					"project": project,
 				})
 				resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 				return
 			}
 			// Otherwise, remove from state as the mirror is not configured
-			tflog.Warn(ctx, "pull mirror not configured, removing from state", map[string]interface{}{
+			tflog.Warn(ctx, "pull mirror not configured, removing from state", map[string]any{
 				"project": project,
 			})
 			resp.State.RemoveResource(ctx)
 			return
 		}
+
 		resp.Diagnostics.AddError(
 			"Unable to read project pull mirror",
 			fmt.Sprintf("Error reading pull mirror for project %s: %s", project, err.Error()),
@@ -339,7 +339,7 @@ func (r *gitlabProjectPullMirrorResource) Update(ctx context.Context, req resour
 	if wasDisabled && isNowEnabled {
 		_, err := r.client.Projects.StartMirroringProject(project, gitlab.WithContext(ctx))
 		if err != nil {
-			tflog.Warn(ctx, "failed to start mirroring after re-enabling", map[string]interface{}{
+			tflog.Warn(ctx, "failed to start mirroring after re-enabling", map[string]any{
 				"project": project,
 				"error":   err.Error(),
 			})
@@ -381,7 +381,7 @@ func (r *gitlabProjectPullMirrorResource) updateProjectPullMirrorConfig(ctx cont
 		options.MirrorBranchRegex = data.MirrorBranchRegex.ValueStringPointer()
 	}
 
-	tflog.Debug(ctx, "updating gitlab project pull mirror", map[string]interface{}{
+	tflog.Debug(ctx, "updating gitlab project pull mirror", map[string]any{
 		"project": project,
 	})
 
@@ -411,12 +411,26 @@ func (r *gitlabProjectPullMirrorResource) Delete(ctx context.Context, req resour
 		Enabled: gitlab.Ptr(false),
 	}
 
-	tflog.Debug(ctx, "disabling gitlab project pull mirror", map[string]interface{}{
+	tflog.Debug(ctx, "disabling gitlab project pull mirror", map[string]any{
 		"project": project,
 	})
 
 	_, _, err := r.client.Projects.ConfigureProjectPullMirror(project, options, gitlab.WithContext(ctx))
 	if err != nil {
+		// If the error is a 404 is means the project doesn't exist anymore, and we should treat this
+		// as properly deleted
+		if api.Is404(err) {
+			tflog.Info(ctx,
+				"received a 404 when attempting to delete a project pull mirror. This typically means the project is deleted, so treating this as a successful delete.",
+				map[string]any{
+					"project":         project,
+					"pull_mirror_url": data.URL.ValueString(),
+				})
+
+			// Return to indicate the delete was successful.
+			return
+		}
+
 		resp.Diagnostics.AddError(
 			"Unable to disable project pull mirror",
 			fmt.Sprintf("Error disabling pull mirror for project %s: %s", project, err.Error()),
