@@ -73,7 +73,7 @@ resource "gitlab_project_pull_mirror" "minimal" {
 
 - `auth_password` (String, Sensitive) Authentication password or token for the remote repository.
 - `auth_user` (String) Authentication username for the remote repository.
-- `enabled` (Boolean) Enable or disable the pull mirror.
+- `enabled` (Boolean) Enable or disable the pull mirror. Defaults to `true`.
 - `mirror_branch_regex` (String) Regular expression for branches to mirror. Requires GitLab Premium or Ultimate. Cannot be used with `only_mirror_protected_branches`.
 - `mirror_overwrites_diverged_branches` (Boolean) Overwrite diverged branches on the target project.
 - `mirror_trigger_builds` (Boolean) Trigger CI/CD pipelines when the mirror updates.
