@@ -32,12 +32,26 @@ var (
 
 // Register the resource with the provider.
 func init() {
+	registerResource(NewGitLabProjectPushMirrorResource)
+
+	// Register the old alias of the resource
 	registerResource(NewGitLabProjectMirrorResource)
 }
 
 // NewGitLabProjectMirrorResource returns a new instance of the resource.
+func NewGitLabProjectPushMirrorResource() resource.Resource {
+	return &gitlabProjectMirrorResource{
+		ResourceName: "_project_push_mirror",
+	}
+}
+
+// NewGitLabProjectMirrorResource returns a new instance of the resource.
+// deprecated: This function is deprecated and will be removed in a future version. Use NewGitLabProjectPushMirrorResource instead.
 func NewGitLabProjectMirrorResource() resource.Resource {
-	return &gitlabProjectMirrorResource{}
+	return &gitlabProjectMirrorResource{
+		ResourceName:       "_project_mirror",
+		DeprecationMessage: "This resource is deprecated in favor of `gitlab_project_push_mirror` which is a rename. The alias will be removed in version 19.0.",
+	}
 }
 
 // gitlabProjectMirrorResourceModel maps the resource schema data.
@@ -56,11 +70,14 @@ type gitlabProjectMirrorResourceModel struct {
 // gitlabProjectMirrorResource implements the resource.
 type gitlabProjectMirrorResource struct {
 	client *gitlab.Client
+
+	ResourceName       string
+	DeprecationMessage string
 }
 
 // Metadata returns the resource type name.
 func (r *gitlabProjectMirrorResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_project_mirror"
+	resp.TypeName = req.ProviderTypeName + r.ResourceName
 }
 
 // Schema defines the schema for the resource.
@@ -303,16 +320,18 @@ func (r *gitlabProjectMirrorResource) getSchema() schema.Schema {
 
 	return schema.Schema{
 		Version: 0,
-		MarkdownDescription: `The ` + "`" + `gitlab_project_mirror` + "`" + ` resource allows to manage the lifecycle of a project mirror.
+		MarkdownDescription: fmt.Sprintf(`The `+"`"+`gitlab_project_mirror`+"`"+` resource allows to manage the lifecycle of a project mirror.
 
 This is for *pushing* changes to a remote repository. *Pull Mirroring* can be configured using a combination of the
 import_url, mirror, and mirror_trigger_builds properties on the gitlab_project resource.
 
--> **Warning** By default, the provider sets the ` + "`" + `keep_divergent_refs` + "`" + ` argument to ` + "`" + `True` + "`" + `.
-   If you manually set ` + "`" + `keep_divergent_refs` + "`" + ` to ` + "`" + `False` + "`" + `, GitLab mirroring removes branches in the target that aren't in the source.
+-> **Warning** By default, the provider sets the `+"`"+`keep_divergent_refs`+"`"+` argument to `+"`"+`True`+"`"+`.
+   If you manually set `+"`"+`keep_divergent_refs`+"`"+` to `+"`"+`False`+"`"+`, GitLab mirroring removes branches in the target that aren't in the source.
    This action can result in unexpected branch deletions.
 
-**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/remote_mirrors/)`,
+**Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/remote_mirrors/)
+
+%s`, r.DeprecationMessage),
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "The id of the project mirror. In the format of " + "`" + "project:mirror_id" + "`" + "",
