@@ -275,7 +275,7 @@ func (r *gitlabProjectPullMirrorResource) Read(ctx context.Context, req resource
 		// 1. Pull mirroring has never been configured for the project
 		// 2. Pull mirroring was configured but is currently disabled
 		// We handle this by checking the state's enabled flag to determine the appropriate action.
-		if api.Is400(err) {
+		if gitlab.HasStatusCode(err, 400) {
 			tflog.Debug(ctx, "received `400 Bad Request` from pull mirror API", map[string]any{
 				"project":      project,
 				"error":        err.Error(),

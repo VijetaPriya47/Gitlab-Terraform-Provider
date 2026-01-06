@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -16,33 +15,20 @@ import (
 // The ISO constant for parsing dates to a `gitlab.ISOTime` value
 const Iso8601 = "2006-01-02"
 
-// Checks if the error represents a 400 bad request response
-func Is400(err error) bool {
-	// If the error is a typed response
-	if errResponse, ok := err.(*gitlab.ErrorResponse); ok &&
-		errResponse.Response != nil &&
-		errResponse.Response.StatusCode == http.StatusBadRequest {
-		return true
-	}
-	return false
-}
-
 // Checks if the error represents a 403 response
+// Deprecated: use `gitlab.HasStatusCode(err, 403)` instead.
 func Is403(err error) bool {
-	if errResponse, ok := err.(*gitlab.ErrorResponse); ok &&
-		errResponse.Response != nil &&
-		errResponse.Response.StatusCode == 403 {
-		return true
-	}
-	return false
+	return gitlab.HasStatusCode(err, 403)
 }
 
 // Checks if the error represents a 404 response
 func Is404(err error) bool {
-	// If the error is a typed response
-	if errResponse, ok := err.(*gitlab.ErrorResponse); ok &&
-		errResponse.Response != nil &&
-		errResponse.Response.StatusCode == http.StatusNotFound {
+	// If the error is a typed response, check the
+	// response code in the error and return it. If it's
+	// not typed, it may still have 404 in the body, so we can't
+	// return yet.
+	is404Err := gitlab.HasStatusCode(err, 404)
+	if is404Err {
 		return true
 	}
 
