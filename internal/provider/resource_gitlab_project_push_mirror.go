@@ -322,8 +322,7 @@ func (r *gitlabProjectMirrorResource) getSchema() schema.Schema {
 		Version: 0,
 		MarkdownDescription: fmt.Sprintf(`The `+"`gitlab"+r.ResourceName+"`"+` resource manages the lifecycle of a project mirror.
 
-This is for *pushing* changes to a remote repository. *Pull Mirroring* can be configured using a combination of the
-import_url, mirror, and mirror_trigger_builds properties on the gitlab_project resource.
+This is for *pushing* changes to a remote repository. *Pull Mirroring* can be configured with the gitlab_project_pull_mirror resource.
 
 -> **Warning** By default, the provider sets the `+"`"+`keep_divergent_refs`+"`"+` argument to `+"`"+`True`+"`"+`.
    If you manually set `+"`"+`keep_divergent_refs`+"`"+` to `+"`"+`False`+"`"+`, GitLab mirroring removes branches in the target that aren't in the source.
