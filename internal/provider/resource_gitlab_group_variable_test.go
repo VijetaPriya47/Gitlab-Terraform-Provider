@@ -719,6 +719,51 @@ func testAccCheckGitlabGroupVariableAttributes(variable *gitlab.GroupVariable, w
 	}
 }
 
+func TestAccGitlabGroupVariable_hiddenNotConfiguredDoesNotForceReplacement(t *testing.T) {
+	group := testutil.CreateGroups(t, 1)[0]
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabGroupVariableDestroy,
+		Steps: []resource.TestStep{
+			// Create a group variable without configuring the hidden attribute
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_group_variable" "test" {
+						group = %d
+						key = "test_key"
+						value = "test_value"
+						masked = true
+						protected = true
+					}
+					`, group.ID),
+				Check: testAccCheckGitlabGroupVariableExists("gitlab_group_variable.test", &gitlab.GroupVariable{}),
+			},
+			// Update the value - this should NOT force replacement since hidden is not configured
+			// but currently it does due to the bug described in issue #6685
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_group_variable" "test" {
+						group = %d
+						key = "test_key"
+						value = "updated_test_value"
+						masked = true
+						protected = true
+					}
+					`, group.ID),
+				// This test should pass because it should be Update, not Replace
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						// This should be Update, not Replace
+						plancheck.ExpectResourceAction("gitlab_group_variable.test", plancheck.ResourceActionUpdate),
+					},
+				},
+				Check: testAccCheckGitlabGroupVariableExists("gitlab_group_variable.test", &gitlab.GroupVariable{}),
+			},
+		},
+	})
+}
+
 func testAccCheckGitlabGroupVariableDestroy(s *terraform.State) error {
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "gitlab_group" {

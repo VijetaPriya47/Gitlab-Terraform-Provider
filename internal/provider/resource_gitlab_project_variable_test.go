@@ -387,6 +387,51 @@ func testAccCheckGitlabProjectVariableExists(name string) resource.TestCheckFunc
 	)
 }
 
+func TestAccGitlabProjectVariable_hiddenNotConfiguredDoesNotForceReplacement(t *testing.T) {
+	testProject := testutil.CreateProject(t)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccGitlabProjectVariableCheckAllVariablesDestroyed(testProject),
+		Steps: []resource.TestStep{
+			// Create a project variable without configuring the hidden attribute
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_variable" "test" {
+						project = %d
+						key = "test_key"
+						value = "test_value"
+						masked = true
+						protected = true
+					}
+					`, testProject.ID),
+				Check: testAccCheckGitlabProjectVariableExists("gitlab_project_variable.test"),
+			},
+			// Update the value - this should NOT force replacement since hidden is not configured
+			// but currently it does due to the bug described in issue #6685
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_variable" "test" {
+						project = %d
+						key = "test_key"
+						value = "updated_test_value"
+						masked = true
+						protected = true
+					}
+					`, testProject.ID),
+				// This test verifies that the fix works - it should be Update, not Replace
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						// This should be Update, but currently it's Replace due to the bug
+						plancheck.ExpectResourceAction("gitlab_project_variable.test", plancheck.ResourceActionUpdate),
+					},
+				},
+				Check: testAccCheckGitlabProjectVariableExists("gitlab_project_variable.test"),
+			},
+		},
+	})
+}
+
 func testAccGitlabProjectVariableCheckAllVariablesDestroyed(project *gitlab.Project) func(state *terraform.State) error {
 	return func(state *terraform.State) error {
 		vars, _, err := testutil.TestGitlabClient.ProjectVariables.ListVariables(project.ID, nil)
