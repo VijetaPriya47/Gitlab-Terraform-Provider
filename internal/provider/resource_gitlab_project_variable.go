@@ -412,7 +412,7 @@ func (r *gitlabProjectVariableResource) getProjectVariableSchema() *schema.Schem
 			},
 			"hidden": schema.BoolAttribute{
 				MarkdownDescription: "If set to `true`, the value of the variable will be hidden in the CI/CD User Interface. The value must meet the [hidden requirements](https://docs.gitlab.com/ci/variables/#hide-a-cicd-variable).",
-				PlanModifiers:       []planmodifier.Bool{boolplanmodifier.RequiresReplace()},
+				PlanModifiers:       []planmodifier.Bool{boolplanmodifier.RequiresReplaceIfConfigured()},
 				Optional:            true,
 				Computed:            true,
 				Validators: []validator.Bool{

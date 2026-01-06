@@ -119,7 +119,7 @@ func (r *gitlabGroupVariableResource) Schema(_ context.Context, _ resource.Schem
 			},
 			"hidden": schema.BoolAttribute{
 				MarkdownDescription: "If set to `true`, the value of the variable will be hidden in the CI/CD User Interface. The value must meet the [hidden requirements](https://docs.gitlab.com/ci/variables/#hide-a-cicd-variable).",
-				PlanModifiers:       []planmodifier.Bool{boolplanmodifier.RequiresReplace()},
+				PlanModifiers:       []planmodifier.Bool{boolplanmodifier.RequiresReplaceIfConfigured()},
 				Optional:            true,
 				Computed:            true,
 				Validators: []validator.Bool{
@@ -128,6 +128,7 @@ func (r *gitlabGroupVariableResource) Schema(_ context.Context, _ resource.Schem
 			},
 			"environment_scope": schema.StringAttribute{
 				MarkdownDescription: "The environment scope of the variable. Defaults to all environment (`*`). Note that in Community Editions of Gitlab, values other than `*` will cause inconsistent plans.",
+				PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 				Optional:            true,
 				Computed:            true,
 				Default:             stringdefault.StaticString("*"),
