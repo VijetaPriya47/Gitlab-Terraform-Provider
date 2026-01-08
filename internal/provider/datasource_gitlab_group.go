@@ -35,28 +35,29 @@ type gitlabGroupDataSource struct {
 }
 
 type gitlabGroupDataSourceModel struct {
-	ID                             types.String                                `tfsdk:"id"`
-	GroupID                        types.Int64                                 `tfsdk:"group_id"`
-	FullPath                       types.String                                `tfsdk:"full_path"`
-	Name                           types.String                                `tfsdk:"name"`
-	FullName                       types.String                                `tfsdk:"full_name"`
-	WebURL                         types.String                                `tfsdk:"web_url"`
-	Path                           types.String                                `tfsdk:"path"`
-	DefaultBranch                  types.String                                `tfsdk:"default_branch"`
-	Description                    types.String                                `tfsdk:"description"`
-	LFSEnabled                     types.Bool                                  `tfsdk:"lfs_enabled"`
-	RequestAccessEnabled           types.Bool                                  `tfsdk:"request_access_enabled"`
-	VisibilityLevel                types.String                                `tfsdk:"visibility_level"`
-	ParentID                       types.Int64                                 `tfsdk:"parent_id"`
-	RunnersToken                   types.String                                `tfsdk:"runners_token"`
-	DefaultBranchProtection        types.Int64                                 `tfsdk:"default_branch_protection"`
-	PreventForkingOutsideGroup     types.Bool                                  `tfsdk:"prevent_forking_outside_group"`
-	MembershipLock                 types.Bool                                  `tfsdk:"membership_lock"`
-	ExtraSharedRunnersMinutesLimit types.Int64                                 `tfsdk:"extra_shared_runners_minutes_limit"`
-	SharedRunnersMinutesLimit      types.Int64                                 `tfsdk:"shared_runners_minutes_limit"`
-	WikiAccessLevel                types.String                                `tfsdk:"wiki_access_level"`
-	SharedRunnersSetting           types.String                                `tfsdk:"shared_runners_setting"`
-	SharedWithGroups               []gitlabGroupSharedWithGroupDataSourceModel `tfsdk:"shared_with_groups"`
+	ID                                   types.String                                `tfsdk:"id"`
+	GroupID                              types.Int64                                 `tfsdk:"group_id"`
+	FullPath                             types.String                                `tfsdk:"full_path"`
+	Name                                 types.String                                `tfsdk:"name"`
+	FullName                             types.String                                `tfsdk:"full_name"`
+	WebURL                               types.String                                `tfsdk:"web_url"`
+	Path                                 types.String                                `tfsdk:"path"`
+	DefaultBranch                        types.String                                `tfsdk:"default_branch"`
+	Description                          types.String                                `tfsdk:"description"`
+	LFSEnabled                           types.Bool                                  `tfsdk:"lfs_enabled"`
+	RequestAccessEnabled                 types.Bool                                  `tfsdk:"request_access_enabled"`
+	VisibilityLevel                      types.String                                `tfsdk:"visibility_level"`
+	ParentID                             types.Int64                                 `tfsdk:"parent_id"`
+	RunnersToken                         types.String                                `tfsdk:"runners_token"`
+	DefaultBranchProtection              types.Int64                                 `tfsdk:"default_branch_protection"`
+	PreventForkingOutsideGroup           types.Bool                                  `tfsdk:"prevent_forking_outside_group"`
+	PreventSharingGroupsOutsideHierarchy types.Bool                                  `tfsdk:"prevent_sharing_groups_outside_hierarchy"`
+	MembershipLock                       types.Bool                                  `tfsdk:"membership_lock"`
+	ExtraSharedRunnersMinutesLimit       types.Int64                                 `tfsdk:"extra_shared_runners_minutes_limit"`
+	SharedRunnersMinutesLimit            types.Int64                                 `tfsdk:"shared_runners_minutes_limit"`
+	WikiAccessLevel                      types.String                                `tfsdk:"wiki_access_level"`
+	SharedRunnersSetting                 types.String                                `tfsdk:"shared_runners_setting"`
+	SharedWithGroups                     []gitlabGroupSharedWithGroupDataSourceModel `tfsdk:"shared_with_groups"`
 }
 
 type gitlabGroupSharedWithGroupDataSourceModel struct {
@@ -159,6 +160,10 @@ func (d *gitlabGroupDataSource) Schema(ctx context.Context, req datasource.Schem
 			},
 			"prevent_forking_outside_group": schema.BoolAttribute{
 				MarkdownDescription: "When enabled, users can not fork projects from this group to external namespaces.",
+				Computed:            true,
+			},
+			"prevent_sharing_groups_outside_hierarchy": schema.BoolAttribute{
+				MarkdownDescription: "When enabled, users cannot invite other groups outside of the top-level group’s hierarchy. This option is only available for top-level groups.",
 				Computed:            true,
 			},
 			"membership_lock": schema.BoolAttribute{

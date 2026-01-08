@@ -251,6 +251,12 @@ var _ = registerResource("gitlab_group", func() *schema.Resource {
 				Optional:    true,
 				Computed:    true,
 			},
+			"prevent_sharing_groups_outside_hierarchy": {
+				Description: "Defaults to false. When enabled, users cannot invite other groups outside of the top-level group’s hierarchy. This option is only available for top-level groups.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+			},
 			"membership_lock": {
 				Description: "Users cannot be added to projects in this group.",
 				Type:        schema.TypeBool,
@@ -586,6 +592,10 @@ func resourceGitlabGroupCreate(ctx context.Context, d *schema.ResourceData, meta
 		updateOptions.PreventForkingOutsideGroup = gitlab.Ptr(v.(bool))
 	}
 
+	if v, ok := d.GetOkExists("prevent_sharing_groups_outside_hierarchy"); ok {
+		updateOptions.PreventSharingGroupsOutsideHierarchy = gitlab.Ptr(v.(bool))
+	}
+
 	// IP Restriction can only be set on update.
 	if v, ok := d.GetOk("ip_restriction_ranges"); ok {
 		updateOptions.IPRestrictionRanges = convertIPRestrictionRangesToString(v.(*schema.Set))
@@ -853,6 +863,10 @@ func resourceGitlabGroupUpdate(ctx context.Context, d *schema.ResourceData, meta
 
 	if d.HasChange("prevent_forking_outside_group") {
 		options.PreventForkingOutsideGroup = gitlab.Ptr(d.Get("prevent_forking_outside_group").(bool))
+	}
+
+	if d.HasChange("prevent_sharing_groups_outside_hierarchy") {
+		options.PreventSharingGroupsOutsideHierarchy = gitlab.Ptr(d.Get("prevent_sharing_groups_outside_hierarchy").(bool))
 	}
 
 	if d.HasChange("membership_lock") {
