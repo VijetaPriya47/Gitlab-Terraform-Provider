@@ -4,7 +4,7 @@ go 1.25.5
 
 require (
 	github.com/bflad/tfproviderlint v0.31.0
-	github.com/golangci/golangci-lint/v2 v2.7.2
+	github.com/golangci/golangci-lint/v2 v2.8.0
 	github.com/hashicorp/terraform-plugin-docs v0.24.0
 	golang.org/x/tools v0.37.0
 	mvdan.cc/sh/v3 v3.12.0
