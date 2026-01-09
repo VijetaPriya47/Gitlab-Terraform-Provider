@@ -188,7 +188,7 @@ func (r *gitlabGroupShareGroupResource) Read(ctx context.Context, req resource.R
 		return
 	}
 
-	group, _, err := r.client.Groups.GetGroup(groupID, nil, gitlab.WithContext(ctx))
+	group, _, err := r.client.Groups.GetGroup(groupID, &gitlab.GetGroupOptions{WithProjects: gitlab.Ptr(false)}, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
 			resp.Diagnostics.AddWarning("Group not found", fmt.Sprintf("[DEBUG] gitlab group %s not found so removing from state", groupID))
