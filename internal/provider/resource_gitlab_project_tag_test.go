@@ -1,15 +1,15 @@
 //go:build acceptance
 
-package sdk
+package provider
 
 import (
 	"errors"
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
@@ -25,7 +25,7 @@ func TestAccGitlabProjectTag_basic(t *testing.T) {
 	branches := testutil.CreateBranches(t, project, 1)
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: providerFactoriesV6,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabProjectTagDestroy,
 		Steps: []resource.TestStep{
 			{
@@ -92,14 +92,79 @@ func TestAccGitlabProjectTag_basic(t *testing.T) {
 	})
 }
 
+func TestAccGitlabProjectTag_migrateFromSDKToFramework(t *testing.T) {
+	var tag gitlab.Tag
+	rInt, rInt2 := acctest.RandInt(), acctest.RandInt()
+	project := testutil.CreateProject(t)
+
+	resource.ParallelTest(t, resource.TestCase{
+		CheckDestroy: testAccCheckGitlabProjectTagDestroy,
+		Steps: []resource.TestStep{
+			// Create the tag in the old provider version
+			{
+				ExternalProviders: map[string]resource.ExternalProvider{
+					"gitlab": {
+						VersionConstraint: "~> 18.7",
+						Source:            "gitlabhq/gitlab",
+					},
+				},
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_tag" "foo" {
+						name    = "tag-%[1]d"
+						ref     = "main"
+						project = "%[3]s"
+					}
+			  	`, rInt, rInt2, project.PathWithNamespace),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabProjectTagExists("foo", &tag),
+					testAccCheckGitlabProjectTagAttributes("foo", &tag, &testAccGitlabProjectTagExpectedAttributes{
+						Name:    fmt.Sprintf("tag-%d", rInt),
+						Message: "",
+						Ref:     "main",
+					}),
+				),
+			},
+			// Create the config in the new provider version to ensure migration works
+			{
+				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_tag" "foo" {
+						name    = "tag-%[1]d"
+						ref     = "main"
+						project = "%[3]s"
+					}
+			  	`, rInt, rInt2, project.PathWithNamespace),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabProjectTagExists("foo", &tag),
+					testAccCheckGitlabProjectTagAttributes("foo", &tag, &testAccGitlabProjectTagExpectedAttributes{
+						Name:    fmt.Sprintf("tag-%d", rInt),
+						Message: "",
+						Ref:     "main",
+					}),
+				),
+			},
+			// Test ImportState
+			{
+				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+				ResourceName:             "gitlab_project_tag.foo",
+				ImportState:              true,
+				ImportStateVerify:        true,
+				ImportStateVerifyIgnore:  []string{"ref"},
+			},
+		},
+	})
+}
+
 func testAccCheckGitlabProjectTagDestroy(s *terraform.State) error {
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "gitlab_project_tag" {
 			continue
 		}
-		name := rs.Primary.Attributes["name"]
-		project := rs.Primary.Attributes["project"]
-		_, _, err := testutil.TestGitlabClient.Tags.GetTag(project, name)
+		project, name, err := utils.ParseTwoPartID(rs.Primary.ID)
+		if err != nil {
+			return err
+		}
+		_, _, err = testutil.TestGitlabClient.Tags.GetTag(project, name)
 		if err != nil {
 			if api.Is404(err) {
 				return nil
