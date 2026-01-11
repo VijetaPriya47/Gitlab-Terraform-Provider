@@ -30,12 +30,13 @@ make reviewable
 ```
 
 This command runs:
+
 - `make build` - Builds the provider
 - `make fmt` - Formats code and fixes issues
 - `make generate` - Generates documentation
 - `make test` - Runs unit tests
 
-**CRITICAL** Always run a least the tests for your modified resources 
+**CRITICAL** Always run a least the tests for your modified resources
 before you commit changes!
 
 ### Building the Provider
@@ -69,31 +70,38 @@ Acceptance tests run against a real GitLab instance. There are two options:
 #### Option 1: Local GitLab Container (Recommended)
 
 1. **Start GitLab container** (takes ~5 minutes to become healthy):
+
    ```bash
    unset GITLAB_TOKEN && make testacc-up
    ```
-   **CRITICAL** if `Gitlab-license.txt` is present in the root of the repository, 
+
+   **CRITICAL** if `Gitlab-license.txt` is present in the root of the repository,
    use this to start tests instead:
+
    ```bash
    unset GITLAB_TOKEN && SERVICE=gitlab-ee make testacc-up
    ```
 
 2. **Run acceptance tests** (full suite takes ~60-90 minutes):
+
    ```bash
    unset GITLAB_TOKEN && make testacc
    ```
 
 3. **Run specific acceptance tests**:
+
    ```bash
    unset GITLAB_TOKEN && make testacc RUN=TestAccGitlabGroup
    ```
 
 4. **Run specific test function**:
+
    ```bash
    unset GITLAB_TOKEN && make testacc RUN=TestAccGitlabGroup_basic
    ```
 
 5. **Stop GitLab container**:
+
    ```bash
    unset GITLAB_TOKEN && make testacc-down
    ```
@@ -135,11 +143,13 @@ make testacc TESTACCTAG=flakey
 ### Debugging Tests in an IDE
 
 1. Start the GitLab container:
+
    ```bash
    make testacc-up
    ```
 
 2. Configure your IDE's run configuration with these environment variables:
+
    ```bash
    GITLAB_BASE_URL=http://127.0.0.1:8085/api/v4
    TF_ACC=1
@@ -153,7 +163,7 @@ When triaging issues, especially bug reports, follow this systematic approach:
 
 ### 0. Understand the changes made if on a branch
 
-If working on a branch, use a `git diff` between the current branch and `main` 
+If working on a branch, use a `git diff` between the current branch and `main`
 to understand what changes exist on the branch. This helps context when determining
 why the tests may be failing.
 
@@ -175,7 +185,7 @@ make testacc RUN=TestAccGitlab<ResourceName>
 
 - Review the test output and error messages
 - Check the resource implementation in `internal/provider/`
-- Review the GitLab API documentation at https://docs.gitlab.com/api/
+- Review the GitLab API documentation at <https://docs.gitlab.com/api/>
 - Compare the provider's behavior with the API's expected behavior
 
 ### 3. Implement the Fix
@@ -225,6 +235,10 @@ When creating a new resource, follow the comprehensive guide at [docs/developmen
 6. Use inline test configurations (preferred over separate functions)
 7. Use Import Verification test steps
 
+## Migrating Datasources and Resources from SDK to Framework
+
+If you are migrating a datasource or resource from the SDK to Terraform Framework Plugin, follow the guide at [Migration.md](Migration.md) for specific instructions.
+
 ## Code Guidelines
 
 ### Resource ID and Import
@@ -236,6 +250,7 @@ Example: For `GET /projects/:id/environments/:environment_id`, the ID would be `
 ### Test Configuration Style
 
 **Preferred:** Inline test configuration
+
 ```go
 Steps: []resource.TestStep{
   {
@@ -303,15 +318,16 @@ testProject := testutil.CreateProject(t)
 
 ## Getting Help
 
-- **Issues:** https://gitlab.com/gitlab-org/terraform-provider-gitlab/issues
-- **Discord:** https://discord.gg/gitlab (mention Patrick or Timo)
-- **API Documentation:** https://docs.gitlab.com/api/
-- **Terraform Plugin Framework:** https://developer.hashicorp.com/terraform/plugin/framework
-- **Provider Design Principles:** https://www.terraform.io/plugin/hashicorp-provider-design-principles
+- **Issues:** <https://gitlab.com/gitlab-org/terraform-provider-gitlab/issues>
+- **Discord:** <https://discord.gg/gitlab> (mention Patrick or Timo)
+- **API Documentation:** <https://docs.gitlab.com/api/>
+- **Terraform Plugin Framework:** <https://developer.hashicorp.com/terraform/plugin/framework>
+- **Provider Design Principles:** <https://www.terraform.io/plugin/hashicorp-provider-design-principles>
 
 ## Support Policy
 
 The provider supports:
+
 - Latest 3 patch releases within a major release
 - Breaking changes only on major releases
 - Tests run against latest 3 patch releases
