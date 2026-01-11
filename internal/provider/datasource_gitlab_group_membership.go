@@ -48,14 +48,21 @@ type gitlabGroupMembershipDataSourceModel struct {
 }
 
 type gitlabGroupMembershipMemberModel struct {
-	ID          types.Int64  `tfsdk:"id"`
-	Username    types.String `tfsdk:"username"`
-	Name        types.String `tfsdk:"name"`
-	State       types.String `tfsdk:"state"`
-	AvatarURL   types.String `tfsdk:"avatar_url"`
-	WebURL      types.String `tfsdk:"web_url"`
-	AccessLevel types.String `tfsdk:"access_level"`
-	ExpiresAt   types.String `tfsdk:"expires_at"`
+	ID                types.Int64                                  `tfsdk:"id"`
+	Username          types.String                                 `tfsdk:"username"`
+	Name              types.String                                 `tfsdk:"name"`
+	State             types.String                                 `tfsdk:"state"`
+	AvatarURL         types.String                                 `tfsdk:"avatar_url"`
+	WebURL            types.String                                 `tfsdk:"web_url"`
+	AccessLevel       types.String                                 `tfsdk:"access_level"`
+	GroupSamlIdentity *gitlabGroupMembershipGroupSamlIdentityModel `tfsdk:"group_saml_identity"`
+	ExpiresAt         types.String                                 `tfsdk:"expires_at"`
+}
+
+type gitlabGroupMembershipGroupSamlIdentityModel struct {
+	ExternUID      types.String `tfsdk:"extern_uid"`
+	Provider       types.String `tfsdk:"provider"`
+	SamlProviderID types.Int64  `tfsdk:"saml_provider_id"`
 }
 
 // Metadata returns the data source type name.
@@ -128,6 +135,24 @@ func (d *gitlabGroupMembershipDataSource) Schema(_ context.Context, _ datasource
 						"access_level": schema.StringAttribute{
 							MarkdownDescription: "The level of access to the group.",
 							Computed:            true,
+						},
+						"group_saml_identity": schema.SingleNestedAttribute{
+							MarkdownDescription: "SAML identity linked to the group member.",
+							Computed:            true,
+							Attributes: map[string]schema.Attribute{
+								"extern_uid": schema.StringAttribute{
+									MarkdownDescription: "The external UID of the group SAML identity.",
+									Computed:            true,
+								},
+								"provider": schema.StringAttribute{
+									MarkdownDescription: "The provider of the SAML identity.",
+									Computed:            true,
+								},
+								"saml_provider_id": schema.Int64Attribute{
+									MarkdownDescription: "The ID of the SAML provider.",
+									Computed:            true,
+								},
+							},
 						},
 						"expires_at": schema.StringAttribute{
 							MarkdownDescription: "Expiration date for the group membership.",
@@ -243,6 +268,13 @@ func flattenGitlabGroupMembers(accessLevel types.String, members []*gitlab.Group
 			AvatarURL:   types.StringValue(member.AvatarURL),
 			WebURL:      types.StringValue(member.WebURL),
 			AccessLevel: types.StringValue(api.AccessLevelValueToName[member.AccessLevel]),
+		}
+		if member.GroupSAMLIdentity != nil {
+			memberModel.GroupSamlIdentity = &gitlabGroupMembershipGroupSamlIdentityModel{
+				ExternUID:      types.StringValue(member.GroupSAMLIdentity.ExternUID),
+				Provider:       types.StringValue(member.GroupSAMLIdentity.Provider),
+				SamlProviderID: types.Int64Value(int64(member.GroupSAMLIdentity.SAMLProviderID)),
+			}
 		}
 		if member.ExpiresAt != nil {
 			memberModel.ExpiresAt = types.StringValue(member.ExpiresAt.String())
