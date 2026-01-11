@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
@@ -99,6 +100,34 @@ func TestAccDataSourceGitlabGroupMembership_pagination(t *testing.T) {
 				  access_level = "developer"
 				}`, group.ID),
 				Check: resource.TestCheckResourceAttr("data.gitlab_group_membership.this", "members.#", fmt.Sprintf("%d", userCount)),
+			},
+		},
+	})
+}
+
+func TestAccDataSourceGitlabGroupMembership_samlIdentity(t *testing.T) {
+	// This test verifies that the group_saml_identity field is properly handled
+	// when it's null (which is the common case without SAML configuration).
+	// Testing with actual SAML data would require a SAML provider setup.
+	group := testutil.CreateGroups(t, 1)[0]
+	user := testutil.CreateUsers(t, 1)[0]
+	testutil.AddGroupMembers(t, group.ID, []*gitlab.User{user})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+				data "gitlab_group_membership" "saml_test" {
+				  group_id = "%d"
+				}`, group.ID),
+				Check: resource.ComposeTestCheckFunc(
+					// Verify members are returned
+					resource.TestCheckResourceAttr("data.gitlab_group_membership.saml_test", "members.#", "2"),
+					// Verify group_saml_identity doesn't cause errors when null
+					// The field should not be set/populated for regular users without SAML
+					resource.TestCheckResourceAttr("data.gitlab_group_membership.saml_test", "members.1.username", user.Username),
+				),
 			},
 		},
 	})
