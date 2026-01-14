@@ -1580,6 +1580,79 @@ func TestAccGitlabGroup_EE(t *testing.T) {
 	})
 }
 
+func TestAccGitlabGroup_AllowMergeSettings(t *testing.T) {
+	testutil.RunIfAtLeast(t, "18.7")
+	testutil.SkipIfCE(t)
+
+	var group gitlab.Group
+	rInt := acctest.RandInt()
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabGroupDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "foo-name-%d"
+				  path = "foo-path-%d"
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				
+				  only_allow_merge_if_pipeline_succeeds            = false
+				  allow_merge_on_skipped_pipeline                  = false
+				  only_allow_merge_if_all_discussions_are_resolved = false
+				}
+				  `, rInt, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabGroupExists("gitlab_group.foo", &group),
+					resource.TestCheckResourceAttr("gitlab_group.foo", "only_allow_merge_if_pipeline_succeeds", "false"),
+					resource.TestCheckResourceAttr("gitlab_group.foo", "allow_merge_on_skipped_pipeline", "false"),
+					resource.TestCheckResourceAttr("gitlab_group.foo", "only_allow_merge_if_all_discussions_are_resolved", "false"),
+				),
+			},
+			// Verify import
+			{
+				ResourceName:            "gitlab_group.foo",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"permanently_remove_on_delete"},
+			},
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "foo-name-%d"
+				  path = "foo-path-%d"
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				
+				  only_allow_merge_if_pipeline_succeeds            = true
+				  allow_merge_on_skipped_pipeline                  = true
+				  only_allow_merge_if_all_discussions_are_resolved = true
+				}
+				  `, rInt, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabGroupExists("gitlab_group.foo", &group),
+					resource.TestCheckResourceAttr("gitlab_group.foo", "only_allow_merge_if_pipeline_succeeds", "true"),
+					resource.TestCheckResourceAttr("gitlab_group.foo", "allow_merge_on_skipped_pipeline", "true"),
+					resource.TestCheckResourceAttr("gitlab_group.foo", "only_allow_merge_if_all_discussions_are_resolved", "true"),
+				),
+			},
+			// Verify import
+			{
+				ResourceName:            "gitlab_group.foo",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"permanently_remove_on_delete"},
+			},
+		},
+	})
+}
+
 func TestAccGitlabGroup_PreventForkingOutsideGroup(t *testing.T) {
 	var group gitlab.Group
 	rInt := acctest.RandInt()
