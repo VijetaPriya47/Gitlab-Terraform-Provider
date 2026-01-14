@@ -302,6 +302,24 @@ var _ = registerResource("gitlab_group", func() *schema.Resource {
 				Optional:    true,
 				Default:     false,
 			},
+			"only_allow_merge_if_pipeline_succeeds": {
+				Description: "Only allow merging merge requests if the pipeline succeeds. When enabled for a group, applies to all projects in the group. Premium and Ultimate only.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+			},
+			"allow_merge_on_skipped_pipeline": {
+				Description: "Allow merging merge requests when the pipeline is skipped. Only applies when only_allow_merge_if_pipeline_succeeds is true. Premium and Ultimate only.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+			},
+			"only_allow_merge_if_all_discussions_are_resolved": {
+				Description: "Only allow merging merge requests when all discussions are resolved. When enabled for a group, applies to all projects in the group. Premium and Ultimate only.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+			},
 			"push_rules": {
 				Description: "Push rules for the group.",
 				Type:        schema.TypeList,
@@ -600,6 +618,24 @@ func resourceGitlabGroupCreate(ctx context.Context, d *schema.ResourceData, meta
 		updateOptions.SharedRunnersSetting = stringToSharedRunnersSetting(v.(string))
 	}
 
+	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
+	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
+	if v, ok := d.GetOkExists("only_allow_merge_if_pipeline_succeeds"); ok {
+		updateOptions.OnlyAllowMergeIfPipelineSucceeds = gitlab.Ptr(v.(bool))
+	}
+
+	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
+	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
+	if v, ok := d.GetOkExists("allow_merge_on_skipped_pipeline"); ok {
+		updateOptions.AllowMergeOnSkippedPipeline = gitlab.Ptr(v.(bool))
+	}
+
+	// nolint:staticcheck // SA1019 ignore deprecated GetOkExists
+	// lintignore: XR001 // TODO: replace with alternative for GetOkExists
+	if v, ok := d.GetOkExists("only_allow_merge_if_all_discussions_are_resolved"); ok {
+		updateOptions.OnlyAllowMergeIfAllDiscussionsAreResolved = gitlab.Ptr(v.(bool))
+	}
+
 	if (updateOptions != gitlab.UpdateGroupOptions{}) {
 		if _, _, err = client.Groups.UpdateGroup(d.Id(), &updateOptions, gitlab.WithContext(ctx)); err != nil {
 			return diag.Errorf("could not update group after creation %q: %s", d.Id(), err)
@@ -690,6 +726,9 @@ func resourceGitlabGroupRead(ctx context.Context, d *schema.ResourceData, meta a
 	d.Set("wiki_access_level", group.WikiAccessLevel)
 	d.Set("shared_runners_setting", group.SharedRunnersSetting)
 	d.Set("emails_enabled", group.EmailsEnabled)
+	d.Set("only_allow_merge_if_pipeline_succeeds", group.OnlyAllowMergeIfPipelineSucceeds)
+	d.Set("allow_merge_on_skipped_pipeline", group.AllowMergeOnSkippedPipeline)
+	d.Set("only_allow_merge_if_all_discussions_are_resolved", group.OnlyAllowMergeIfAllDiscussionsAreResolved)
 
 	// nolint:staticcheck // SA1019 ignore deprecated DefaultBranchProtection
 	d.Set("default_branch_protection", group.DefaultBranchProtection)
@@ -873,6 +912,18 @@ func resourceGitlabGroupUpdate(ctx context.Context, d *schema.ResourceData, meta
 
 	if d.HasChange("allowed_email_domains_list") {
 		options.AllowedEmailDomainsList = stringListToCommaSeparatedString(d.Get("allowed_email_domains_list").([]any))
+	}
+
+	if d.HasChange("only_allow_merge_if_pipeline_succeeds") {
+		options.OnlyAllowMergeIfPipelineSucceeds = gitlab.Ptr(d.Get("only_allow_merge_if_pipeline_succeeds").(bool))
+	}
+
+	if d.HasChange("allow_merge_on_skipped_pipeline") {
+		options.AllowMergeOnSkippedPipeline = gitlab.Ptr(d.Get("allow_merge_on_skipped_pipeline").(bool))
+	}
+
+	if d.HasChange("only_allow_merge_if_all_discussions_are_resolved") {
+		options.OnlyAllowMergeIfAllDiscussionsAreResolved = gitlab.Ptr(d.Get("only_allow_merge_if_all_discussions_are_resolved").(bool))
 	}
 
 	avatar, err := handleAvatarOnUpdate(d)
