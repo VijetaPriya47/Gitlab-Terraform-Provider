@@ -38,11 +38,12 @@ resourceData := req.ProviderData.(*GitLabResourceData)
 r.client = resourceData.Client
 ```
 
-The `client` field is not a secret and does not require obfuscating.
+Important - the `r.client` field is NOT a secret and does not require obfuscating. Do not set it to asterisks! Set it to `resourceData.Client` as shown above.
 
 ## Add migration acceptance test
 
 All resource migrations need an additional migration acceptance test.
+Add this to the same test file as the other acceptance tests for the resource.
 
 See file `internal/provider/resource_gitlab_cluster_agent_test.go` for an example called `TestAccGitlabClusterAgent_migrateFromSDKToFramework`.
 
