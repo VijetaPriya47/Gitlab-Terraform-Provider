@@ -1,6 +1,6 @@
 module gitlab.com/gitlab-org/terraform-provider-gitlab
 
-go 1.25.5
+go 1.25.6
 
 require (
 	github.com/dcarbone/terraform-plugin-framework-utils/v3 v3.9.0
