@@ -53,6 +53,7 @@ type gitlabGroupHooksIndividualDataSourceModel struct {
 	DeploymentEvents         types.Bool   `tfsdk:"deployment_events"`
 	ReleasesEvents           types.Bool   `tfsdk:"releases_events"`
 	SubGroupEvents           types.Bool   `tfsdk:"subgroup_events"`
+	VulnerabilityEvents      types.Bool   `tfsdk:"vulnerability_events"`
 	EmojiEvents              types.Bool   `tfsdk:"emoji_events"`
 	EnableSSLVerification    types.Bool   `tfsdk:"enable_ssl_verification"`
 	CustomWebhookTemplate    types.String `tfsdk:"custom_webhook_template"`
@@ -163,6 +164,10 @@ func (d *gitlabGroupHooksDataSource) Schema(_ context.Context, _ datasource.Sche
 							MarkdownDescription: "Invoke the hook for emoji events.",
 							Computed:            true,
 						},
+						"vulnerability_events": schema.BoolAttribute{
+							MarkdownDescription: "Invoke the hook for vulnerability events.",
+							Computed:            true,
+						},
 						"enable_ssl_verification": schema.BoolAttribute{
 							MarkdownDescription: "Enable ssl verification when invoking the hook.",
 							Computed:            true,
@@ -229,6 +234,7 @@ func (d *gitlabGroupHooksDataSource) Read(ctx context.Context, req datasource.Re
 			ReleasesEvents:           types.BoolValue(hook.ReleasesEvents),
 			SubGroupEvents:           types.BoolValue(hook.SubGroupEvents),
 			EmojiEvents:              types.BoolValue(hook.EmojiEvents),
+			VulnerabilityEvents:      types.BoolValue(hook.VulnerabilityEvents),
 			EnableSSLVerification:    types.BoolValue(hook.EnableSSLVerification),
 			CustomWebhookTemplate:    types.StringValue(hook.CustomWebhookTemplate),
 		}

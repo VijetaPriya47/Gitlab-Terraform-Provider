@@ -47,6 +47,7 @@ type gitlabProjectHookDataSourceModel struct {
 	WikiPageEvents           types.Bool   `tfsdk:"wiki_page_events"`
 	DeploymentEvents         types.Bool   `tfsdk:"deployment_events"`
 	ReleasesEvents           types.Bool   `tfsdk:"releases_events"`
+	VulnerabilityEvents      types.Bool   `tfsdk:"vulnerability_events"`
 	EnableSSLVerification    types.Bool   `tfsdk:"enable_ssl_verification"`
 	CustomWebhookTemplate    types.String `tfsdk:"custom_webhook_template"`
 }
@@ -139,6 +140,10 @@ func (d *gitlabProjectHookDataSource) Schema(_ context.Context, _ datasource.Sch
 				MarkdownDescription: "Invoke the hook for releases events.",
 				Computed:            true,
 			},
+			"vulnerability_events": schema.BoolAttribute{
+				MarkdownDescription: "Invoke the hook for vulnerability events.",
+				Computed:            true,
+			},
 			"enable_ssl_verification": schema.BoolAttribute{
 				MarkdownDescription: "Enable ssl verification when invoking the hook.",
 				Computed:            true,
@@ -193,6 +198,7 @@ func (d *gitlabProjectHookDataSource) Read(ctx context.Context, req datasource.R
 	data.WikiPageEvents = types.BoolValue(hook.WikiPageEvents)
 	data.DeploymentEvents = types.BoolValue(hook.DeploymentEvents)
 	data.ReleasesEvents = types.BoolValue(hook.ReleasesEvents)
+	data.VulnerabilityEvents = types.BoolValue(hook.VulnerabilityEvents)
 	data.EnableSSLVerification = types.BoolValue(hook.EnableSSLVerification)
 	data.CustomWebhookTemplate = types.StringValue(hook.CustomWebhookTemplate)
 	data.Token = types.StringValue("") // Token is not available in API response for security reasons

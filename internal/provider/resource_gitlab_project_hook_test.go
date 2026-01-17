@@ -127,6 +127,7 @@ func TestAccGitlabProjectHook_basic(t *testing.T) {
 				  resource_access_token_events = true
 				  deployment_events = true
 				  releases_events = true
+				  vulnerability_events = true
 				}
 					`, project.ID, rInt),
 				Check: resource.ComposeTestCheckFunc(
@@ -148,6 +149,7 @@ func TestAccGitlabProjectHook_basic(t *testing.T) {
 						WikiPageEvents:            true,
 						DeploymentEvents:          true,
 						ReleasesEvents:            true,
+						VulnerabilityEvents:       true,
 						ResourceAccessTokenEvents: true,
 						EnableSSLVerification:     false,
 					}),
@@ -515,6 +517,7 @@ type testAccGitlabProjectHookExpectedAttributes struct {
 	ResourceAccessTokenEvents bool
 	DeploymentEvents          bool
 	ReleasesEvents            bool
+	VulnerabilityEvents       bool
 	EnableSSLVerification     bool
 	CustomWebhookTemplate     string
 }
@@ -591,6 +594,10 @@ func testAccCheckGitlabProjectHookAttributes(hook *gitlab.ProjectHook, want *tes
 
 		if hook.ReleasesEvents != want.ReleasesEvents {
 			return fmt.Errorf("got releases_events %t; want %t", hook.ReleasesEvents, want.ReleasesEvents)
+		}
+
+		if hook.VulnerabilityEvents != want.VulnerabilityEvents {
+			return fmt.Errorf("got vulnerability_events %t; want %t", hook.VulnerabilityEvents, want.VulnerabilityEvents)
 		}
 
 		if hook.CustomWebhookTemplate != want.CustomWebhookTemplate {
