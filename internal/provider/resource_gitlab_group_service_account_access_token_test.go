@@ -34,15 +34,17 @@ func TestAccGitlabGroupServiceAccountAccessToken_createWithPastExpiryDate_valida
 		Steps: []resource.TestStep{
 			{
 				// This configuration should now SUCCEED because the new field defaults to false.
+				// Note - we explicitly use the group FullName here instead of the ID because we should
+				//  support URL-encoded group paths
 				Config: fmt.Sprintf(`
 					resource "gitlab_group_service_account_access_token" "success" {
 						name       = "this-token-should-succeed"
-						group      = %s
+						group      = "%s"
 						user_id    = %d
 						scopes     = ["api"]
 						expires_at = "%s"
 					}
-				`, groupID, serviceAccount.ID, pastDate),
+				`, group.FullName, serviceAccount.ID, pastDate),
 				// We now check that the resource was created successfully with the past date.
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("gitlab_group_service_account_access_token.success", "expires_at", pastDate),
@@ -1314,4 +1316,85 @@ func serviceAccountAccessTokenID(userID int64, tokenName string) (int64, error) 
 	}
 
 	return 0, fmt.Errorf("service account %d token with name %s does not exist", userID, tokenName)
+}
+
+// TestAccGitlabGroupServiceAccountAccessToken_paginationHandling tests that the resource
+// correctly handles pagination when a service account has more than 20 access tokens
+func TestAccGitlabGroupServiceAccountAccessToken_paginationHandling(t *testing.T) {
+	testutil.SkipIfCE(t)
+
+	group := testutil.CreateGroups(t, 1)[0]
+	groupID := strconv.FormatInt(group.ID, 10)
+
+	serviceAccount := testutil.CreateGroupServiceAccounts(t, 1, groupID)[0]
+
+	expiryDate := testutil.GetCurrentTimePlusDays(t, 2).String()
+	var originalTokenValue string
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabGroupServiceAccountAccessTokenDestroy,
+		Steps: []resource.TestStep{
+			// Step 1: Create a token with basic config
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_group_service_account_access_token" "pagination_test" {
+						name       = "pagination-test-token"
+						group      = %s
+						user_id    = %d
+						scopes     = ["api"]
+						expires_at = "%s"
+					}
+				`, groupID, serviceAccount.ID, expiryDate),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_group_service_account_access_token.pagination_test", "name", "pagination-test-token"),
+					resource.TestCheckResourceAttr("gitlab_group_service_account_access_token.pagination_test", "active", "true"),
+					resource.TestCheckResourceAttrWith("gitlab_group_service_account_access_token.pagination_test", "token", func(value string) error {
+						originalTokenValue = value
+						return nil
+					}),
+				),
+			},
+			// Step 2: Create 30 additional tokens to trigger pagination, then verify the original token is not destroyed
+			{
+				PreConfig: func() {
+					// Create 30 additional tokens to ensure pagination happens (>20 triggers pagination)
+					for i := 0; i < 30; i++ {
+						testutil.CreateGroupServiceAccountAccessToken(
+							t,
+							group.ID,
+							serviceAccount.ID,
+							fmt.Sprintf("extra-token-%d", i),
+							[]string{"api"},
+						)
+					}
+				},
+				Config: fmt.Sprintf(`
+					resource "gitlab_group_service_account_access_token" "pagination_test" {
+						name       = "pagination-test-token"
+						group      = %s
+						user_id    = %d
+						scopes     = ["api"]
+						expires_at = "%s"
+					}
+				`, groupID, serviceAccount.ID, expiryDate),
+				// Verify the token value hasn't changed (token was not destroyed and recreated)
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrWith("gitlab_group_service_account_access_token.pagination_test", "token", func(value string) error {
+						if value != originalTokenValue {
+							return fmt.Errorf("token value changed, indicating the resource was incorrectly destroyed and recreated")
+						}
+						return nil
+					}),
+				),
+			},
+			// Step 3: Verify import
+			{
+				ResourceName:            "gitlab_group_service_account_access_token.pagination_test",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"token", "validate_past_expiration_date"},
+			},
+		},
+	})
 }
