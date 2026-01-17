@@ -519,16 +519,6 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Read(ctx context.Context,
 		return
 	}
 
-	// Make sure the group ID is an int64
-	groupIDInt, err := strconv.ParseInt(group, 10, 64)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error parsing group ID",
-			fmt.Sprintf("Could not parse group ID %q to int: %s", group, err),
-		)
-		return
-	}
-
 	// Make sure the user ID is an int64
 	userIDInt, err := strconv.ParseInt(userID, 10, 64)
 	if err != nil {
@@ -539,17 +529,16 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Read(ctx context.Context,
 		return
 	}
 
-	// Read all the access tokens from the API
+	// Read all the access tokens from the API with pagination using client-go ScanAndCollect to paginate
 	// There is no HTTP API to get a single token by ID yet
-	accessTokens, _, err := r.client.Groups.ListServiceAccountPersonalAccessTokens(groupIDInt, userIDInt, nil, gitlab.WithContext(ctx))
+	options := &gitlab.ListServiceAccountPersonalAccessTokensOptions{}
+	accessTokens, err := gitlab.ScanAndCollect(func(p gitlab.PaginationOptionFunc) ([]*gitlab.PersonalAccessToken, *gitlab.Response, error) {
+		return r.client.Groups.ListServiceAccountPersonalAccessTokens(group, userIDInt, options, p, gitlab.WithContext(ctx))
+	})
 	if err != nil {
-		if api.Is404(err) {
-			tflog.Debug(ctx, "Group or service account not found, removing from state", map[string]any{"token_id": accessTokenID, "user_id": userID})
-			resp.State.RemoveResource(ctx)
-		}
 		resp.Diagnostics.AddError(
-			"Error reading GitLab ServiceAccountPersonalAccessTokens",
-			fmt.Sprintf("Could not read GitLab ServiceAccountPersonalAccessTokens, unexpected error: %v", err),
+			"Error Reading Group Service Account Access Tokens",
+			fmt.Sprintf("Received an error when paginating to read all Group Service Account Access Tokens for user %s: %v", userID, err),
 		)
 		return
 	}
