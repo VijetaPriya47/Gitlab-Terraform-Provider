@@ -8,7 +8,7 @@ It provides specific instructions based off feedback from prior migration attemp
 
 Datasources and resources being migrated live in `internal/provider/sdk`.
 After migration, they should live in `internal/provider`.
-Delete any files from `internal/provider/sdk` that have been replaced due to the migration.
+Delete the contents of any files from `internal/provider/sdk` that have been replaced due to the migration and replace with a comment indicating the files should be deleted.
 Datasources in the `internal/provider/sdk` folder have filename prefix `data_source_`.
 Migrated datasources in the `internal/provider` have filename prefix `datasource_`.
 
@@ -58,6 +58,10 @@ There are three standard steps to the test:
 The resource ID value should only be set in the `Create` function.
 Do not set it in the `Read` or `Update` functions.
 
+There will be duplication between the `Create` and `Update` functions in some cases.
+Even then, choose minimal duplication over setting the resource ID in the `Update` function.
+See [this merge request](https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/merge_requests/2858) for an example of minimal duplication.
+
 ## Resources that always recreate on change
 
 If all attributes cause the resource to recreate on update, then there is no need for logic in the `Update` function.
@@ -72,3 +76,11 @@ resp.Diagnostics.AddError(
     "Somehow the resource was requested to perform an in-place upgrade which is not possible.",
 )
 ```
+
+## 404 Response from API
+
+If a GitLab API call returns a 404:
+
+- In the `Create` function, do not check for 404, just add the error to the response and return.
+- In the `Read` and `Update` functions, log a warning to say the resource is being removed from state, then remove it from state.
+- In the `Delete` function, log a debug message to say the resource is being removed from state, then remove it from state.
