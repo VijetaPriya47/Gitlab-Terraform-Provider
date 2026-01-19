@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
@@ -195,6 +196,66 @@ func TestAccGitlabProjectPullMirror_disable(t *testing.T) {
 			},
 			// Note: Import is not supported for disabled mirrors because the GitLab API
 			// returns a 400 error and doesn't provide mirror details when disabled
+		},
+	})
+}
+
+// Note - this test is unusual in that it tests two resource - `gitlab_project`
+// and `gitlab_project_pull_mirror`. We typically avoid doing that, but it's intentional
+// here because the two resources have an explicit integration - `gitlab_project` had a bug
+// where it would attempt to disable mirroring when used with this resource. This test
+// validates that doesn't happen when they're used together.
+func TestAccGitlabProjectPullMirror_worksWithGitLabProject(t *testing.T) {
+	testutil.SkipIfCE(t)
+	rInt := acctest.RandInt()
+
+	testProjectToMirror := testutil.CreateProject(t)
+
+	resource.ParallelTest(t, resource.TestCase{
+		// Note - the Mux provider is required since `gitlab_project` is an SDK resource, not framework
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		Steps: []resource.TestStep{
+			// Create enabled
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project" "project" {
+						name        = "acctest-%d"
+						description = "stuff"
+
+						default_branch = "main"
+					}
+
+					resource "gitlab_project_pull_mirror" "test" {
+						project       = gitlab_project.project.id
+						url           = "%s"
+						enabled       = true
+					}
+				`, rInt, testProjectToMirror.HTTPURLToRepo),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project_pull_mirror.test", "enabled", "true"),
+				),
+			},
+			// re-apply exactly the same config, and expect an empty plan.
+			// previously this would error because `gitlab_project.import_url` would
+			// show a diff
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project" "project" {
+						name        = "acctest-%d"
+						description = "stuff"
+
+						default_branch = "main"
+					}
+
+					resource "gitlab_project_pull_mirror" "test" {
+						project       = gitlab_project.project.id
+						url           = "%s"
+						enabled       = true
+					}
+				`, rInt, testProjectToMirror.HTTPURLToRepo),
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: false,
+			},
 		},
 	})
 }
