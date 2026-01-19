@@ -108,6 +108,7 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 		Description:   "Git URL to a repository to be imported. Together with `mirror = true` it will setup a Pull Mirror. This can also be used together with `forked_from_project_id` to setup a Pull Mirror for a fork. The fork takes precedence over the import. Make sure to provide the credentials in `import_url_username` and `import_url_password`. GitLab never returns the credentials, thus the provider cannot detect configuration drift in the credentials. They can also not be imported using `terraform import`. See the examples section for how to properly use it.",
 		Type:          schema.TypeString,
 		Optional:      true,
+		Computed:      true, // Prevent conflict with the new `gitlab_project_pull_mirror`
 		ConflictsWith: []string{"initialize_with_readme"},
 	},
 	"import_url_username": {
@@ -434,6 +435,7 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 		Description:  "Enable project pull mirror.",
 		Type:         schema.TypeBool,
 		Optional:     true,
+		Computed:     true, // Prevent conflict with the new `gitlab_project_pull_mirror`
 		RequiredWith: []string{"import_url"},
 	},
 	"mirror_trigger_builds": {
