@@ -45,22 +45,23 @@ type gitlabGroupsDataSourceModel struct {
 }
 
 type gitlabGroupsIndividualDataSourceModel struct {
-	GroupID                    types.Int64  `tfsdk:"group_id"`
-	FullPath                   types.String `tfsdk:"full_path"`
-	Name                       types.String `tfsdk:"name"`
-	FullName                   types.String `tfsdk:"full_name"`
-	WebURL                     types.String `tfsdk:"web_url"`
-	Path                       types.String `tfsdk:"path"`
-	Description                types.String `tfsdk:"description"`
-	LFSEnabled                 types.Bool   `tfsdk:"lfs_enabled"`
-	RequestAccessEnabled       types.Bool   `tfsdk:"request_access_enabled"`
-	VisibilityLevel            types.String `tfsdk:"visibility_level"`
-	ParentID                   types.Int64  `tfsdk:"parent_id"`
-	RunnersToken               types.String `tfsdk:"runners_token"`
-	DefaultBranchProtection    types.Int64  `tfsdk:"default_branch_protection"`
-	PreventForkingOutsideGroup types.Bool   `tfsdk:"prevent_forking_outside_group"`
-	WikiAccessLevel            types.String `tfsdk:"wiki_access_level"`
-	SharedRunnersSetting       types.String `tfsdk:"shared_runners_setting"`
+	GroupID                              types.Int64  `tfsdk:"group_id"`
+	FullPath                             types.String `tfsdk:"full_path"`
+	Name                                 types.String `tfsdk:"name"`
+	FullName                             types.String `tfsdk:"full_name"`
+	WebURL                               types.String `tfsdk:"web_url"`
+	Path                                 types.String `tfsdk:"path"`
+	Description                          types.String `tfsdk:"description"`
+	LFSEnabled                           types.Bool   `tfsdk:"lfs_enabled"`
+	RequestAccessEnabled                 types.Bool   `tfsdk:"request_access_enabled"`
+	VisibilityLevel                      types.String `tfsdk:"visibility_level"`
+	ParentID                             types.Int64  `tfsdk:"parent_id"`
+	RunnersToken                         types.String `tfsdk:"runners_token"`
+	DefaultBranchProtection              types.Int64  `tfsdk:"default_branch_protection"`
+	PreventForkingOutsideGroup           types.Bool   `tfsdk:"prevent_forking_outside_group"`
+	PreventSharingGroupsOutsideHierarchy types.Bool   `tfsdk:"prevent_sharing_groups_outside_hierarchy"`
+	WikiAccessLevel                      types.String `tfsdk:"wiki_access_level"`
+	SharedRunnersSetting                 types.String `tfsdk:"shared_runners_setting"`
 }
 
 func (d *gitlabGroupsDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -160,6 +161,10 @@ func (d *gitlabGroupsDataSource) Schema(ctx context.Context, req datasource.Sche
 						},
 						"prevent_forking_outside_group": schema.BoolAttribute{
 							MarkdownDescription: "When enabled, users can not fork projects from this group to external namespaces.",
+							Computed:            true,
+						},
+						"prevent_sharing_groups_outside_hierarchy": schema.BoolAttribute{
+							MarkdownDescription: "When enabled, users cannot invite other groups outside of the top-level group’s hierarchy. This option is only available for top-level groups.",
 							Computed:            true,
 						},
 						"wiki_access_level": schema.StringAttribute{

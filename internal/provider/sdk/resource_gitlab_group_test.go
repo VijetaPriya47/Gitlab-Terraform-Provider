@@ -1705,6 +1705,58 @@ func TestAccGitlabGroup_PreventForkingOutsideGroup(t *testing.T) {
 	})
 }
 
+func TestAccGitlabGroup_PreventSharingGroupsOutsideHierarchy(t *testing.T) {
+	var group gitlab.Group
+	rInt := acctest.RandInt()
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabGroupDestroy,
+		Steps: []resource.TestStep{
+			{
+				SkipFunc: testutil.IsRunningInCE,
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "foo-name-%d"
+				  path = "foo-path-%d"
+				  description = "Terraform acceptance tests"
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				
+				  prevent_sharing_groups_outside_hierarchy = true
+				}
+				  `, rInt, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabGroupExists("gitlab_group.foo", &group),
+					resource.TestCheckResourceAttr("gitlab_group.foo", "prevent_sharing_groups_outside_hierarchy", "true"),
+				),
+			},
+			{
+				SkipFunc: testutil.IsRunningInCE,
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "foo-name-%d"
+				  path = "foo-path-%d"
+				  description = "Terraform acceptance tests"
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				
+				  prevent_sharing_groups_outside_hierarchy = false
+				}
+				  `, rInt, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabGroupExists("gitlab_group.foo", &group),
+					resource.TestCheckResourceAttr("gitlab_group.foo", "prevent_sharing_groups_outside_hierarchy", "false"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccGitlabGroup_SetDefaultFalseBooleansOnCreate(t *testing.T) {
 	rInt := acctest.RandInt()
 
