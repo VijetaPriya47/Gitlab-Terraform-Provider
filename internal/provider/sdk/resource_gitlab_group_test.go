@@ -1652,12 +1652,12 @@ func TestAccGitlabGroup_PreventSharingGroupsOutsideHierarchy(t *testing.T) {
 				  # with no billing
 				  visibility_level = "public"
 				
-				  prevent_sharing_groups_outisde_hierarchy = true
+				  prevent_sharing_groups_outside_hierarchy = true
 				}
 				  `, rInt, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabGroupExists("gitlab_group.foo", &group),
-					resource.TestCheckResourceAttr("gitlab_group.foo", "prevent_sharing_groups_outisde_hierarchy", "true"),
+					resource.TestCheckResourceAttr("gitlab_group.foo", "prevent_sharing_groups_outside_hierarchy", "true"),
 				),
 			},
 			{
@@ -1672,12 +1672,12 @@ func TestAccGitlabGroup_PreventSharingGroupsOutsideHierarchy(t *testing.T) {
 				  # with no billing
 				  visibility_level = "public"
 				
-				  prevent_sharing_groups_outisde_hierarchy = false
+				  prevent_sharing_groups_outside_hierarchy = false
 				}
 				  `, rInt, rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGitlabGroupExists("gitlab_group.foo", &group),
-					resource.TestCheckResourceAttr("gitlab_group.foo", "prevent_sharing_groups_outisde_hierarchy", "false"),
+					resource.TestCheckResourceAttr("gitlab_group.foo", "prevent_sharing_groups_outside_hierarchy", "false"),
 				),
 			},
 		},
