@@ -834,6 +834,12 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 		Optional:    true,
 		Computed:    true,
 	},
+	"max_artifacts_size": {
+		Description: "The maximum file size in megabytes for individual job artifacts.",
+		Type:        schema.TypeInt,
+		Optional:    true,
+		Computed:    true,
+	},
 }
 
 var validContainerExpirationPolicyAttributesCadenceValues = []string{
@@ -1063,6 +1069,7 @@ func resourceGitlabProjectSetToState(d *schema.ResourceData, project *gitlab.Pro
 	d.Set("prevent_merge_without_jira_issue", project.PreventMergeWithoutJiraIssue)
 	d.Set("auto_duo_code_review_enabled", project.AutoDuoCodeReviewEnabled)
 	d.Set("ci_push_repository_for_job_token_allowed", project.CIPushRepositoryForJobTokenAllowed)
+	d.Set("max_artifacts_size", project.MaxArtifactsSize)
 
 	return nil
 }
@@ -1689,6 +1696,10 @@ func resourceGitlabProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 
 	if d.HasChange("ci_push_repository_for_job_token_allowed") {
 		options.CIPushRepositoryForJobTokenAllowed = gitlab.Ptr(d.Get("ci_push_repository_for_job_token_allowed").(bool))
+	}
+
+	if d.HasChange("max_artifacts_size") {
+		options.MaxArtifactsSize = gitlab.Ptr(int64(d.Get("max_artifacts_size").(int)))
 	}
 
 	avatar, err := handleAvatarOnUpdate(d)
@@ -2729,6 +2740,10 @@ func updatePostCreateEditOptions(editProjectOptions *gitlab.EditProjectOptions, 
 
 	if v, ok := d.GetOk("ci_push_repository_for_job_token_allowed"); ok {
 		editProjectOptions.CIPushRepositoryForJobTokenAllowed = gitlab.Ptr(v.(bool))
+	}
+
+	if v, ok := d.GetOk("max_artifacts_size"); ok {
+		editProjectOptions.MaxArtifactsSize = gitlab.Ptr(int64(v.(int)))
 	}
 
 	// If we forked the project we could apply lots of the attributes,

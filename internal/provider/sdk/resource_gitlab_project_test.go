@@ -3502,6 +3502,53 @@ func TestAccGitlabProject_CIPushRepositoryForJobTokenAllowed(t *testing.T) {
 	})
 }
 
+func TestAccGitlabProject_MaxArtifactsSize(t *testing.T) {
+	projectName := acctest.RandomWithPrefix("acctest")
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabProjectDestroy,
+		Steps: []resource.TestStep{
+			// Create a project with max_artifacts_size set
+			{
+				Config: fmt.Sprintf(`resource "gitlab_project" "test" {
+					name           = "%s"
+					default_branch = "main"
+
+					max_artifacts_size = 6
+				}`, projectName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project.test", "max_artifacts_size", "6"),
+				),
+			},
+			// Verify import
+			{
+				ResourceName:      "gitlab_project.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Update max_artifacts_size
+			{
+				Config: fmt.Sprintf(`resource "gitlab_project" "test" {
+					name           = "%s"
+					default_branch = "main"
+
+					max_artifacts_size = 42
+				}`, projectName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project.test", "max_artifacts_size", "42"),
+				),
+			},
+			// Verify import
+			{
+				ResourceName:      "gitlab_project.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 func TestAccGitlabProject_ResourceGroupDefaultProcessMode(t *testing.T) {
 	projectName := acctest.RandomWithPrefix("acctest")
 

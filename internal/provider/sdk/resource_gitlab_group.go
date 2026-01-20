@@ -326,6 +326,12 @@ var _ = registerResource("gitlab_group", func() *schema.Resource {
 				Optional:    true,
 				Computed:    true,
 			},
+			"max_artifacts_size": {
+				Description: "The maximum file size in megabytes for individual job artifacts.",
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Computed:    true,
+			},
 			"push_rules": {
 				Description: "Push rules for the group.",
 				Type:        schema.TypeList,
@@ -646,6 +652,10 @@ func resourceGitlabGroupCreate(ctx context.Context, d *schema.ResourceData, meta
 		updateOptions.OnlyAllowMergeIfAllDiscussionsAreResolved = gitlab.Ptr(v.(bool))
 	}
 
+	if v, ok := d.GetOk("max_artifacts_size"); ok {
+		updateOptions.MaxArtifactsSize = gitlab.Ptr(int64(v.(int)))
+	}
+
 	if (updateOptions != gitlab.UpdateGroupOptions{}) {
 		if _, _, err = client.Groups.UpdateGroup(d.Id(), &updateOptions, gitlab.WithContext(ctx)); err != nil {
 			return diag.Errorf("could not update group after creation %q: %s", d.Id(), err)
@@ -739,6 +749,7 @@ func resourceGitlabGroupRead(ctx context.Context, d *schema.ResourceData, meta a
 	d.Set("only_allow_merge_if_pipeline_succeeds", group.OnlyAllowMergeIfPipelineSucceeds)
 	d.Set("allow_merge_on_skipped_pipeline", group.AllowMergeOnSkippedPipeline)
 	d.Set("only_allow_merge_if_all_discussions_are_resolved", group.OnlyAllowMergeIfAllDiscussionsAreResolved)
+	d.Set("max_artifacts_size", group.MaxArtifactsSize)
 
 	// nolint:staticcheck // SA1019 ignore deprecated DefaultBranchProtection
 	d.Set("default_branch_protection", group.DefaultBranchProtection)
@@ -938,6 +949,10 @@ func resourceGitlabGroupUpdate(ctx context.Context, d *schema.ResourceData, meta
 
 	if d.HasChange("only_allow_merge_if_all_discussions_are_resolved") {
 		options.OnlyAllowMergeIfAllDiscussionsAreResolved = gitlab.Ptr(d.Get("only_allow_merge_if_all_discussions_are_resolved").(bool))
+	}
+
+	if d.HasChange("max_artifacts_size") {
+		options.MaxArtifactsSize = gitlab.Ptr(int64(d.Get("max_artifacts_size").(int)))
 	}
 
 	avatar, err := handleAvatarOnUpdate(d)

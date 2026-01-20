@@ -182,6 +182,7 @@ resource "gitlab_project" "import_private" {
 - `issues_template` (String) Sets the template for new issues in the project.
 - `keep_latest_artifact` (Boolean) Disable or enable the ability to keep the latest artifact for this project.
 - `lfs_enabled` (Boolean) Enable LFS for the project.
+- `max_artifacts_size` (Number) The maximum file size in megabytes for individual job artifacts.
 - `merge_commit_template` (String) Template used to create merge commit message in merge requests.
 - `merge_method` (String) Set the merge method. Valid values are `merge`, `rebase_merge`, `ff`.
 - `merge_pipelines_enabled` (Boolean) Enable or disable merge pipelines.
