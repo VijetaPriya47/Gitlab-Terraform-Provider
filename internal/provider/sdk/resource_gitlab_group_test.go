@@ -1757,6 +1757,69 @@ func TestAccGitlabGroup_PreventSharingGroupsOutsideHierarchy(t *testing.T) {
 	})
 }
 
+func TestAccGitlabGroup_MaxArtifactsSize(t *testing.T) {
+
+	var group gitlab.Group
+	rInt := acctest.RandInt()
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabGroupDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "foo-name-%d"
+				  path = "foo-path-%d"
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				
+				  max_artifacts_size = 6
+				}
+				  `, rInt, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabGroupExists("gitlab_group.foo", &group),
+					resource.TestCheckResourceAttr("gitlab_group.foo", "max_artifacts_size", "6"),
+				),
+			},
+			// Verify import
+			{
+				ResourceName:            "gitlab_group.foo",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"permanently_remove_on_delete"},
+			},
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group" "foo" {
+				  name = "foo-name-%d"
+				  path = "foo-path-%d"
+				
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				
+				  max_artifacts_size = 42
+				}
+				  `, rInt, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabGroupExists("gitlab_group.foo", &group),
+					resource.TestCheckResourceAttr("gitlab_group.foo", "max_artifacts_size", "42"),
+				),
+			},
+			// Verify import
+			{
+				ResourceName:            "gitlab_group.foo",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"permanently_remove_on_delete"},
+			},
+		},
+	})
+}
+
 func TestAccGitlabGroup_SetDefaultFalseBooleansOnCreate(t *testing.T) {
 	rInt := acctest.RandInt()
 
