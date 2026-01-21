@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timetypes/timetypes"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
@@ -177,6 +178,44 @@ func TestAccGitlabProjectDeployToken_pagination(t *testing.T) {
 				}
 				`, 25, project.ID, expireTime),
 				PlanOnly: true,
+			},
+		},
+	})
+}
+
+func TestAccGitlabProjectDeployToken_gracefulDestroyProjectMoved(t *testing.T) {
+	project := testutil.CreateProject(t)
+	groups := testutil.CreateGroups(t, 1)
+	group := groups[0]
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabProjectDeployTokenDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_deploy_token" "this" {
+					project = %d
+					name    = "some"
+					scopes  = ["read_repository"]
+				}
+				`, project.ID),
+			},
+			{
+				PreConfig: func() {
+					_, _, err := testutil.TestGitlabClient.Projects.TransferProject(project.ID, &gitlab.TransferProjectOptions{Namespace: group.ID}, gitlab.WithContext(t.Context()))
+					if err != nil {
+						t.Fatalf("failed to transfer project in test: %v", err)
+					}
+				},
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_deploy_token" "this" {
+					project = %d
+					name    = "some"
+					scopes  = ["read_repository"]
+				}
+				`, project.ID),
+				Destroy: true,
 			},
 		},
 	})

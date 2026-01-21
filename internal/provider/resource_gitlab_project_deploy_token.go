@@ -350,6 +350,11 @@ func (r *gitlabProjectDeployTokenResource) Delete(ctx context.Context, req resou
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Deleting ProjectDeployToken %d from project %s", projectDeployTokenIdInt, project))
 	_, err = r.client.DeployTokens.DeleteProjectDeployToken(project, projectDeployTokenIdInt, gitlab.WithContext(ctx))
 	if err != nil {
+		if api.ProjectMoved(err) {
+			tflog.Debug(ctx, "The project the token is assigned to has been moved, gracefully deleting token from state")
+			return
+		}
+
 		resp.Diagnostics.AddError(
 			"Error deleting project deploy token",
 			fmt.Sprintf("Could not delete project deploy token, unexpected error: %v", err),

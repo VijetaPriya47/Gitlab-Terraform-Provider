@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -18,7 +19,7 @@ const Iso8601 = "2006-01-02"
 // Checks if the error represents a 403 response
 // Deprecated: use `gitlab.HasStatusCode(err, 403)` instead.
 func Is403(err error) bool {
-	return gitlab.HasStatusCode(err, 403)
+	return gitlab.HasStatusCode(err, http.StatusForbidden)
 }
 
 // Checks if the error represents a 404 response
@@ -27,7 +28,7 @@ func Is404(err error) bool {
 	// response code in the error and return it. If it's
 	// not typed, it may still have 404 in the body, so we can't
 	// return yet.
-	is404Err := gitlab.HasStatusCode(err, 404)
+	is404Err := gitlab.HasStatusCode(err, http.StatusNotFound)
 	if is404Err {
 		return true
 	}
@@ -38,6 +39,16 @@ func Is404(err error) bool {
 	}
 
 	return false
+}
+
+func ProjectMoved(err error) bool {
+	if err == nil || !gitlab.HasStatusCode(err, http.StatusMethodNotAllowed) {
+		return false
+	}
+
+	// coming from Rails API helpers at
+	// https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/api/helpers.rb#L186
+	return strings.Contains(err.Error(), "Non GET methods are not allowed for moved projects")
 }
 
 // extractIIDFromGlobalID extracts the internal model ID from a global GraphQL ID.
