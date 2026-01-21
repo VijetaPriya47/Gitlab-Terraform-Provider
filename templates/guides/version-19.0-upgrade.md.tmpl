@@ -5,7 +5,7 @@ subcategory: "Upgrade Guides"
 
 # Upgrade to Terraform GitLab Provider Version 19.0
 
-This is a draft and is subject to change.
+~> This is a draft and is subject to change.
 
 The GitLab 19.0 major milestone introduced some breaking changes that this release addresses.
 The provider also has some breaking changes which may require actions on the users side.
@@ -13,32 +13,34 @@ These are described below:
 
 ## Resource renames
 
-If you are using any of the following resources, you will need to complete these actions:
+These resources are identical but have been renamed.
+You can migrate between the two using a state move operation.
 
-- Rename the resource reference in your terraform code. For example:
+Rename the resource reference in your code. For example:
 
-  ```hcl
-  resource "gitlab_integration_jira" "jira_setup" {
-    ...
-  }
-  ```
+```hcl
+resource "gitlab_integration_jira" "jira_setup" {
+  ...
+}
+```
 
-  Becomes
+Becomes
 
-  ```hcl
-  resource "gitlab_project_integration_jira" "jira_setup" {
-    ...
-  }
-  ```
+```hcl
+resource "gitlab_project_integration_jira" "jira_setup" {
+  ...
+}
+```
 
-- Perform a state move using one of the terraform options:
-  - Command line with [state mv](https://developer.hashicorp.com/terraform/cli/commands/state/mv). For example:
+Perform a state move using one of the available options:
+
+- Command line with [state mv](https://developer.hashicorp.com/terraform/cli/commands/state/mv). For example:
 
   ```bash
   terraform state mv 'gitlab_integration_jira.jira_setup' 'gitlab_project_integration_jira.jira_setup'
   ```
 
-  - State [moved block](https://developer.hashicorp.com/terraform/language/block/moved) and running an apply. For example:
+- State [moved block](https://developer.hashicorp.com/terraform/language/block/moved) and running an apply. For example:
 
   ```hcl
   moved {
@@ -46,6 +48,8 @@ If you are using any of the following resources, you will need to complete these
     to   = gitlab_project_integration_jira.jira_setup
   }
   ```
+
+~> To use the moved block across resources types like this, you will need at least [Terraform version 1.8](https://github.com/hashicorp/terraform/blob/v1.8.0/CHANGELOG.md) and GitLab Provider version 18.9.
 
 ### Renamed resources
 
@@ -65,107 +69,125 @@ If you are using any of the following resources, you will need to complete these
 - `gitlab_label` renamed to `gitlab_project_label`
 - `gitlab_project_mirror` renamed to `gitlab_project_push_mirror`
 
-## Resource replacements
+## Resource gitlab_runner replacement
 
-- `gitlab_runner` replaced by `gitlab_user_runner`.
-  - This switches to the [newer authentication method](https://docs.gitlab.com/runner/register/#register-with-a-runner-authentication-token) for registering runners.
+Replaced by `gitlab_user_runner`.
+This switches to the [newer authentication method](https://docs.gitlab.com/runner/register/#register-with-a-runner-authentication-token) for registering runners.
 
 ## Attribute swaps
 
-### Datasources
+### Datasource gitlab_projects
 
-- `gitlab_projects._link` renamed to `gitlab_projects.links`.
+The `gitlab_projects._link` attribute has been renamed to `gitlab_projects.links`.
+This can be directly replaced with no other changes required.
+
+### Resource gitlab_integration_slack
+
+The `gitlab_integration_slack.notify_only_default_branch` attribute should be replaced with `gitlab_integration_slack.branches_to_be_notified`.
+
+- If `notify_only_default_branch` was `false`, set `branches_to_be_notified` to `all`.
+- If `notify_only_default_branch` was `true`, set `branches_to_be_notified` to `default`.
+
+### Resource gitlab_project_share_group
+
+The `gitlab_project_share_group.access_level` attribute should be replaced with `gitlab_project_share_group.group_access`.
+This can be directly replaced with no other changes required.
+
+### Resource gitlab_project
+
+- For all of the following, replace `true` with `enabled` and `false` with `disabled`:
+  - `issues_enabled` switch to `issues_access_level`
+  - `merge_requests_enabled` switch to `merge_requests_access_level`
+  - `pipelines_enabled` switch to `builds_access_level`
+  - `wiki_enabled` switch to `wiki_access_level`
+  - `snippets_enabled` switch to `snippets_access_level`
+  - `container_registry_enabled` switch to `container_registry_access_level`
+- `restrict_user_defined_variables` switch to `ci_pipeline_variables_minimum_override_role`
+  - If `restrict_user_defined_variables` was `false`, set `ci_pipeline_variables_minimum_override_role` to `developer`.
+  - If `restrict_user_defined_variables` was `true`, set `ci_pipeline_variables_minimum_override_role` to `maintainer`.
+- `tags` switch to `topics`
+  - Can be directly replaced with no other changes required.
+- `public_builds` switch to `public_jobs`
   - Can be directly replaced with no other changes required.
 
-### Resources
+### Resource gitlab_application_settings
 
-- `gitlab_integration_slack.notify_only_default_branch` switch to `gitlab_integration_slack.branches_to_be_notified`.
-  - If `notify_only_default_branch` was `false`, set `branches_to_be_notified` to `all`.
-  - If `notify_only_default_branch` was `true`, set `branches_to_be_notified` to `default`.
-- `gitlab_project_share_group.access_level` switch to `gitlab_project_share_group.group_access`
-  - Can be directly replaced with no other changes required.
-- `gitlab_project`
-  - For all of the following, replace `true` with `enabled` and `false` with `disabled`:
-    - `issues_enabled` switch to `issues_access_level`
-    - `merge_requests_enabled` switch to `merge_requests_access_level`
-    - `pipelines_enabled` switch to `builds_access_level`
-    - `wiki_enabled` switch to `wiki_access_level`
-    - `snippets_enabled` switch to `snippets_access_level`
-    - `container_registry_enabled` switch to `container_registry_access_level`
-  - `restrict_user_defined_variables` switch to `ci_pipeline_variables_minimum_override_role`
-    - If `restrict_user_defined_variables` was `false`, set `ci_pipeline_variables_minimum_override_role` to `developer`.
-    - If `restrict_user_defined_variables` was `true`, set `ci_pipeline_variables_minimum_override_role` to `maintainer`.
-  - `tags` switch to `topics`
-    - Can be directly replaced with no other changes required.
-  - `public_builds` switch to `public_jobs`
-    - Can be directly replaced with no other changes required.
-- `gitlab_application_settings.default_branch_protection` switch to `gitlab_application_settings.default_branch_protection_defaults`. As a rough guide:
-  - If `default_branch_protection` was `0`:
-  
-    ```hcl
-    default_branch_protection_defaults {
-        allowed_to_push = [30] # Developer
-        allowed_to_merge = [30] # Developer
-        allow_force_push = true
-    }
-    ```
+The `gitlab_application_settings.default_branch_protection` attribute should be replaced with `gitlab_application_settings.default_branch_protection_defaults`.
+As a rough guide:
 
-  - If `default_branch_protection` was `1`:
-  
-    ```hcl
-    default_branch_protection_defaults {
-        allowed_to_push = [30] # Developer
-        allowed_to_merge = [40] # Maintainer
-        allow_force_push = false
-    }
-    ```
+- If `default_branch_protection` was `0`:
 
-  - If `default_branch_protection` was `2`:
-  
-    ```hcl
-    default_branch_protection_defaults {
-        allowed_to_push = [40] # Maintainer
-        allowed_to_merge = [40] # Maintainer
-        allow_force_push = false
-    }
-    ```
+  ```hcl
+  default_branch_protection_defaults {
+      allowed_to_push = [30] # Developer
+      allowed_to_merge = [30] # Developer
+      allow_force_push = true
+  }
+  ```
 
-  - If `default_branch_protection` was `3`:
-  
-    ```hcl
-    default_branch_protection_defaults {
-        allowed_to_push = []
-        allowed_to_merge = [40] # Maintainer
-        allow_force_push = false
-    }
-    ```
+- If `default_branch_protection` was `1`:
 
-## Attributes replaced by new resources
+  ```hcl
+  default_branch_protection_defaults {
+      allowed_to_push = [30] # Developer
+      allowed_to_merge = [40] # Maintainer
+      allow_force_push = false
+  }
+  ```
 
-- `gitlab_project.approvals_before_merge` replaced by `gitlab_project_approval_rule`
-  - All projects have a default approval rule, regardless of whether `approvals_before_merge` is in use.
-  - By default, `gitlab_project_approval_rule` will automatically import the default approval rule.
-  - Remove `gitlab_project.approvals_before_merge`.
-  - Add the `gitlab_project_approval_rule` resource, and set attribute `approvals_required` to the value that was stored in `approvals_before_merge`.
-  - Apply the changes
-  - During the update process, the approvers total will be set to zero by the project resource for a short time. The approval rule resource will then import the rule and update the approvers total to the desired amount in the same apply operation.
-  - Example old config:
+- If `default_branch_protection` was `2`:
 
-    ```hcl
-    resource "gitlab_project" "project" {
-        approvals_before_merge = 2
-    }
-    ```
+  ```hcl
+  default_branch_protection_defaults {
+      allowed_to_push = [40] # Maintainer
+      allowed_to_merge = [40] # Maintainer
+      allow_force_push = false
+  }
+  ```
 
-  - Example of new config:
+- If `default_branch_protection` was `3`:
 
-    ```hcl
-    resource "gitlab_project_approval_rule" "default_rule" {
-        project            = gitlab_project.project.id
-        name               = "Default"
-        approvals_required = 2
-    }
-    ```
+  ```hcl
+  default_branch_protection_defaults {
+      allowed_to_push = []
+      allowed_to_merge = [40] # Maintainer
+      allow_force_push = false
+  }
+  ```
+
+## Resource gitlab_project.approvals_before_merge Replacement
+
+The `gitlab_project.approvals_before_merge` attribute should be replaced with the `gitlab_project_approval_rule` resource.
+
+Example old config:
+
+```hcl
+resource "gitlab_project" "project" {
+    approvals_before_merge = 2
+}
+```
+
+Example new config:
+
+```hcl
+resource "gitlab_project_approval_rule" "default_rule" {
+    project            = gitlab_project.project.id
+    name               = "Default"
+    approvals_required = 2
+}
+```
+
+### Migration Process
+
+All projects have a default approval rule, regardless of whether `approvals_before_merge` is in use.
+By default, `gitlab_project_approval_rule` will automatically import the default approval rule.
+
+- Remove `gitlab_project.approvals_before_merge`.
+- Add the `gitlab_project_approval_rule` resource, and set attribute `approvals_required` to the value that was stored in `approvals_before_merge`.
+- Apply the changes
+
+During the update process, the approvers total will be set to zero by the project resource for a short time.
+The approval rule resource will then import the rule and update the approvers total to the desired amount in the same apply operation.
 
 ## Resources removed
 
