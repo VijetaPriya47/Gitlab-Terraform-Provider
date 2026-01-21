@@ -255,9 +255,11 @@ func (r *gitlabComplianceRequirementResource) Create(ctx context.Context, req re
 				createComplianceRequirement(
 					input: {
 						complianceFrameworkId: "%s",
-						name: "%s",
-						description: "%s",
-						controls: %s
+						params: {
+							name: "%s",
+							description: "%s",
+							controls: %s
+						}
 					}
 				) {
 					complianceRequirement {
@@ -409,9 +411,11 @@ func (r *gitlabComplianceRequirementResource) Update(ctx context.Context, req re
 				updateComplianceRequirement(
 					input: {
 						id: "%s",
-						name: "%s",
-						description: "%s",
-						controls: %s
+						params: {
+							name: "%s",
+							description: "%s",
+							controls: %s
+						}
 					}
 				) {
 					complianceRequirement {
@@ -532,7 +536,7 @@ func (r *gitlabComplianceRequirementResource) buildControlsInput(ctx context.Con
 			secretToken := control.SecretToken.ValueString()
 			controlStr = fmt.Sprintf(`{
 				name: "%s",
-				controlType: EXTERNAL,
+				controlType: "external",
 				externalUrl: "%s"`,
 				escapeGraphQLString(control.Name.ValueString()),
 				escapeGraphQLString(externalURL))
@@ -561,21 +565,21 @@ func (r *gitlabComplianceRequirementResource) buildControlsInput(ctx context.Con
 
 				controlStr = fmt.Sprintf(`{
 					name: "%s",
-					controlType: INTERNAL,
+					controlType: "internal",
 					expression: {
 						field: "%s",
-						operator: %s,
+						operator: "%s",
 						value: %s
 					}
 				}`,
 					escapeGraphQLString(control.Name.ValueString()),
 					escapeGraphQLString(expr.Field.ValueString()),
-					strings.ToUpper(expr.Operator.ValueString()),
+					strings.ToLower(expr.Operator.ValueString()),
 					valueStr)
 			} else {
 				controlStr = fmt.Sprintf(`{
 					name: "%s",
-					controlType: INTERNAL
+					controlType: "internal"
 				}`, escapeGraphQLString(control.Name.ValueString()))
 			}
 		}
