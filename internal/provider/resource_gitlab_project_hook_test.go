@@ -122,6 +122,7 @@ func TestAccGitlabProjectHook_basic(t *testing.T) {
 				  note_events = true
 				  confidential_note_events = true
 				  job_events = true
+				  emoji_events = true
 				  pipeline_events = true
 				  wiki_page_events = true
 				  resource_access_token_events = true
@@ -145,6 +146,7 @@ func TestAccGitlabProjectHook_basic(t *testing.T) {
 						NoteEvents:                true,
 						ConfidentialNoteEvents:    true,
 						JobEvents:                 true,
+						EmojiEvents:               true,
 						PipelineEvents:            true,
 						WikiPageEvents:            true,
 						DeploymentEvents:          true,
@@ -512,6 +514,7 @@ type testAccGitlabProjectHookExpectedAttributes struct {
 	NoteEvents                bool
 	ConfidentialNoteEvents    bool
 	JobEvents                 bool
+	EmojiEvents               bool
 	PipelineEvents            bool
 	WikiPageEvents            bool
 	ResourceAccessTokenEvents bool
@@ -574,6 +577,10 @@ func testAccCheckGitlabProjectHookAttributes(hook *gitlab.ProjectHook, want *tes
 
 		if hook.JobEvents != want.JobEvents {
 			return fmt.Errorf("got job_events %t; want %t", hook.JobEvents, want.JobEvents)
+		}
+
+		if hook.EmojiEvents != want.EmojiEvents {
+			return fmt.Errorf("got emoji_events %t; want %t", hook.EmojiEvents, want.EmojiEvents)
 		}
 
 		if hook.PipelineEvents != want.PipelineEvents {

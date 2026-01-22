@@ -43,6 +43,7 @@ type gitlabProjectHookDataSourceModel struct {
 	NoteEvents               types.Bool   `tfsdk:"note_events"`
 	ConfidentialNoteEvents   types.Bool   `tfsdk:"confidential_note_events"`
 	JobEvents                types.Bool   `tfsdk:"job_events"`
+	EmojiEvents              types.Bool   `tfsdk:"emoji_events"`
 	PipelineEvents           types.Bool   `tfsdk:"pipeline_events"`
 	WikiPageEvents           types.Bool   `tfsdk:"wiki_page_events"`
 	DeploymentEvents         types.Bool   `tfsdk:"deployment_events"`
@@ -124,6 +125,10 @@ func (d *gitlabProjectHookDataSource) Schema(_ context.Context, _ datasource.Sch
 				MarkdownDescription: "Invoke the hook for job events.",
 				Computed:            true,
 			},
+			"emoji_events": schema.BoolAttribute{
+				MarkdownDescription: "Invoke the hook for emoji events.",
+				Computed:            true,
+			},
 			"pipeline_events": schema.BoolAttribute{
 				MarkdownDescription: "Invoke the hook for pipeline events.",
 				Computed:            true,
@@ -194,6 +199,7 @@ func (d *gitlabProjectHookDataSource) Read(ctx context.Context, req datasource.R
 	data.NoteEvents = types.BoolValue(hook.NoteEvents)
 	data.ConfidentialNoteEvents = types.BoolValue(hook.ConfidentialNoteEvents)
 	data.JobEvents = types.BoolValue(hook.JobEvents)
+	data.EmojiEvents = types.BoolValue(hook.EmojiEvents)
 	data.PipelineEvents = types.BoolValue(hook.PipelineEvents)
 	data.WikiPageEvents = types.BoolValue(hook.WikiPageEvents)
 	data.DeploymentEvents = types.BoolValue(hook.DeploymentEvents)
