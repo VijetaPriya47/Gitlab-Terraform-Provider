@@ -41,6 +41,7 @@ func TestAccGitlabProjectIssueLink_basic(t *testing.T) {
 				}`, sourceProject.ID, sourceIssue.IID, targetProject.ID, targetIssue.IID),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("gitlab_project_issue_link.this", "id"),
+					resource.TestCheckResourceAttrSet("gitlab_project_issue_link.this", "issue_link_id"),
 					resource.TestCheckResourceAttr("gitlab_project_issue_link.this", "project", fmt.Sprintf("%d", sourceProject.ID)),
 					resource.TestCheckResourceAttr("gitlab_project_issue_link.this", "issue_iid", fmt.Sprintf("%d", sourceIssue.IID)),
 					resource.TestCheckResourceAttr("gitlab_project_issue_link.this", "target_project_id", fmt.Sprintf("%d", targetProject.ID)),
@@ -86,6 +87,7 @@ func TestAccGitlabProjectIssueLink_ensureReplacement(t *testing.T) {
 				}`, sourceProject.ID, sourceIssue.IID, targetProject.ID, targetIssue.IID),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("gitlab_project_issue_link.this", "id"),
+					resource.TestCheckResourceAttrSet("gitlab_project_issue_link.this", "issue_link_id"),
 					resource.TestCheckResourceAttr("gitlab_project_issue_link.this", "project", fmt.Sprintf("%d", sourceProject.ID)),
 					resource.TestCheckResourceAttr("gitlab_project_issue_link.this", "issue_iid", fmt.Sprintf("%d", sourceIssue.IID)),
 					resource.TestCheckResourceAttr("gitlab_project_issue_link.this", "target_project_id", fmt.Sprintf("%d", targetProject.ID)),
@@ -110,6 +112,7 @@ func TestAccGitlabProjectIssueLink_ensureReplacement(t *testing.T) {
 				},
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("gitlab_project_issue_link.this", "id"),
+					resource.TestCheckResourceAttrSet("gitlab_project_issue_link.this", "issue_link_id"),
 					resource.TestCheckResourceAttr("gitlab_project_issue_link.this", "project", fmt.Sprintf("%d", sourceProject.ID)),
 					resource.TestCheckResourceAttr("gitlab_project_issue_link.this", "issue_iid", fmt.Sprintf("%d", sourceIssue.IID)),
 					resource.TestCheckResourceAttr("gitlab_project_issue_link.this", "target_project_id", fmt.Sprintf("%d", targetProject.ID)),

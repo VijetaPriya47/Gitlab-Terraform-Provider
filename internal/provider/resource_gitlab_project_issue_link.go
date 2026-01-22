@@ -155,43 +155,31 @@ func (r *gitlabProjectIssueLinkResource) Create(ctx context.Context, req resourc
 		return
 	}
 
-	var issueLinkID int64
-	found := false
+	// NOTE: the ID can be zero before GitLab 18.9. After GitLab 18.9 support is removed, we can remove this code here, too.
+	if issueLink.ID == 0 {
+		tflog.Debug(ctx, "Issue link ID not present in creation response, looking up via issue relations", map[string]any{
+			"project":           projectId,
+			"issue_iid":         issueIID,
+			"target_project_id": targetProjectID,
+			"target_issue_iid":  targetIssueIID,
+		})
 
-	relations, hasErr := gitlab.Scan(func(p gitlab.PaginationOptionFunc) ([]*gitlab.IssueRelation, *gitlab.Response, error) {
-		return r.client.IssueLinks.ListIssueRelations(projectId, issueIID, gitlab.WithContext(ctx), p)
-	})
-
-	// Search for issue link ID, stopping early when found
-	for relation := range relations {
-		if relation.IID != targetIssueIID {
-			continue
+		// Fallback: lookup issue link ID via listing issue relations
+		var found bool
+		issueLink.ID, found, err = r.lookupIssueLinkID(ctx, data)
+		if err != nil {
+			resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to lookup issue link ID after creation: %s", err.Error()))
+			return
 		}
 
-		// Verify target project ID matches
-		// If parsing fails (e.g., targetProjectID is a path), we'll still match on IID only
-		parsedTargetProjectID, err := strconv.ParseInt(targetProjectID, 10, 64)
-		if err == nil && relation.ProjectID != parsedTargetProjectID {
-			continue
+		if !found {
+			resp.Diagnostics.AddError("Failed to find issue link", fmt.Sprintf("Unable to find issue link ID after creation for target project %s and issue %d", targetProjectID, targetIssueIID))
+			return
 		}
 
-		issueLinkID = relation.IssueLinkID
-		found = true
-		break
 	}
 
-	// Check for pagination errors after iteration completes
-	if err := hasErr(); err != nil {
-		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to list issue relations: %s", err.Error()))
-		return
-	}
-
-	if !found {
-		resp.Diagnostics.AddError("Failed to find issue link", fmt.Sprintf("Unable to find issue link ID after creation for target project %s and issue %d", targetProjectID, targetIssueIID))
-		return
-	}
-
-	data.issueLinkServiceToStateModel(projectId, issueIID, issueLinkID, issueLink)
+	data.issueLinkServiceToStateModel(projectId, issueIID, issueLink.ID, issueLink)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -227,6 +215,12 @@ func (r *gitlabProjectIssueLinkResource) Read(ctx context.Context, req resource.
 
 	if issueLink.SourceIssue == nil || issueLink.TargetIssue == nil {
 		resp.Diagnostics.AddError("Invalid API response", "Issue link read returned invalid data")
+		return
+	}
+
+	// Validate that the ID in the response matches what we queried for
+	if issueLink.ID != 0 && issueLink.ID != issueLinkID {
+		resp.Diagnostics.AddError("ID mismatch", fmt.Sprintf("Issue link ID mismatch: expected %d from state, got %d from API", issueLinkID, issueLink.ID))
 		return
 	}
 
@@ -291,4 +285,44 @@ func parseIssueLinkID(id string) (projectId string, issueIID int64, issueLinkID 
 	}
 
 	return project, issueIID, issueLinkID, nil
+}
+
+func (r *gitlabProjectIssueLinkResource) lookupIssueLinkID(ctx context.Context, data *gitlabProjectIssueLinkResourceModel) (int64, bool, error) {
+	projectId := data.Project.ValueString()
+	issueIID := data.IssueIID.ValueInt64()
+	targetProjectID := data.TargetProjectID.ValueString()
+	targetIssueIID := data.TargetIssueIID.ValueInt64()
+
+	relations, hasErr := gitlab.Scan(func(p gitlab.PaginationOptionFunc) ([]*gitlab.IssueRelation, *gitlab.Response, error) {
+		return r.client.IssueLinks.ListIssueRelations(projectId, issueIID, gitlab.WithContext(ctx), p)
+	})
+
+	var issueLinkID int64
+	found := false
+
+	// Search for issue link ID, stopping early when found
+	for relation := range relations {
+		if relation.IID != targetIssueIID {
+			continue
+		}
+
+		// Verify target project ID matches
+		// If parsing fails (e.g., targetProjectID is a path), we'll still match on IID only
+		parsedTargetProjectID, err := strconv.ParseInt(targetProjectID, 10, 64)
+		if err == nil && relation.ProjectID != parsedTargetProjectID {
+			continue
+		}
+
+		issueLinkID = relation.IssueLinkID
+		found = true
+		break
+	}
+
+	// Check for pagination errors after iteration completes
+	if err := hasErr(); err != nil {
+		return 0, false, err
+	}
+
+	return issueLinkID, found, nil
+
 }
