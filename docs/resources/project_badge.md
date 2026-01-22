@@ -59,7 +59,7 @@ resource "gitlab_project_badge" "gitlab_release" {
 
 - `image_url` (String) The image url which will be presented on project overview.
 - `link_url` (String) The url linked with the badge.
-- `project` (String) The id of the project to add the badge to.
+- `project` (String) The ID or URL-encoded path of the project to add the badge to.
 
 ### Optional
 
@@ -67,7 +67,7 @@ resource "gitlab_project_badge" "gitlab_release" {
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `id` (String) The ID of this Terraform resource. In the format of `<project-id>:<badge-id>`.
 - `rendered_image_url` (String) The image_url argument rendered (in case of use of placeholders).
 - `rendered_link_url` (String) The link_url argument rendered (in case of use of placeholders).
 
