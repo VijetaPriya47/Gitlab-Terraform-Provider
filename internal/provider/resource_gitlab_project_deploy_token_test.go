@@ -11,8 +11,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timetypes/timetypes"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/tfversion"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
+	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil/framework"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
@@ -243,4 +245,72 @@ func testAccCheckGitlabProjectDeployTokenDestroy(s *terraform.State) error {
 	}
 
 	return nil
+}
+
+// TestAccGitlabProjectDeployToken_stateMove verifies that the moved block works
+// when migrating from gitlab_deploy_token to gitlab_project_deploy_token.
+// This test requires Terraform 1.8+ because cross-resource-type state moves
+// were introduced in that version.
+func TestAccGitlabProjectDeployToken_stateMove(t *testing.T) {
+	project := testutil.CreateProject(t)
+	expireTime, _ := timetypes.NewRFC3339Value(api.CurrentTime().Add(time.Hour * 48).Format(time.RFC3339))
+
+	// Run this test explicitly with the 1.8 version of TF; this helper will run the
+	// test independently (not in parallel), and reset the TF version when the
+	// test finishes.
+	framework.RunTestWithVersion(t, "1.8.0", resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
+			tfversion.RequireAbove(tfversion.Version1_8_0), // fail if the TF version isn't set properly.
+		},
+		CheckDestroy: testAccCheckGitlabProjectDeployTokenDestroy,
+		Steps: []resource.TestStep{
+			// Create a deploy token using the old gitlab_deploy_token resource
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_deploy_token" "old" {
+					project    = %d
+					name       = "moved-token"
+					scopes     = ["read_repository"]
+					expires_at = %s
+				}
+				`, project.ID, expireTime),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_deploy_token.old", "name", "moved-token"),
+					resource.TestCheckResourceAttr("gitlab_deploy_token.old", "project", fmt.Sprintf("%d", project.ID)),
+					resource.TestCheckResourceAttrSet("gitlab_deploy_token.old", "token"),
+				),
+			},
+			// Move the state to the new gitlab_project_deploy_token resource
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_deploy_token" "new" {
+					project    = %d
+					name       = "moved-token"
+					scopes     = ["read_repository"]
+					expires_at = %s
+				}
+
+				moved {
+					from = gitlab_deploy_token.old
+					to   = gitlab_project_deploy_token.new
+				}
+				`, project.ID, expireTime),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project_deploy_token.new", "name", "moved-token"),
+					resource.TestCheckResourceAttr("gitlab_project_deploy_token.new", "project", fmt.Sprintf("%d", project.ID)),
+					// Token should be preserved from the old state
+					resource.TestCheckResourceAttrSet("gitlab_project_deploy_token.new", "token"),
+				),
+			},
+			// Verify the resource still works after the move
+			{
+				ResourceName:      "gitlab_project_deploy_token.new",
+				ImportState:       true,
+				ImportStateVerify: true,
+				// The token is only known during creation
+				ImportStateVerifyIgnore: []string{"token", "validate_past_expiration_date"},
+			},
+		},
+	})
 }
