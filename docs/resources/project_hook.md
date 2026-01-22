@@ -66,6 +66,7 @@ resource "gitlab_project_hook" "custom_headers" {
 - `custom_webhook_template` (String) Custom webhook template.
 - `deployment_events` (Boolean) Invoke the hook for deployment events. Defaults to `false`.
 - `description` (String) Description of the webhook.
+- `emoji_events` (Boolean) Invoke the hook for emoji events. Defaults to `false`.
 - `enable_ssl_verification` (Boolean) Enable SSL verification when invoking the hook. Defaults to `true`.
 - `issues_events` (Boolean) Invoke the hook for issues events. Defaults to `false`.
 - `job_events` (Boolean) Invoke the hook for job events. Defaults to `false`.

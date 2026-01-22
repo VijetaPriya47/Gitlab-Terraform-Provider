@@ -57,6 +57,7 @@ type gitlabProjectHookResourceModel struct {
 	NoteEvents                types.Bool   `tfsdk:"note_events"`
 	ConfidentialNoteEvents    types.Bool   `tfsdk:"confidential_note_events"`
 	JobEvents                 types.Bool   `tfsdk:"job_events"`
+	EmojiEvents               types.Bool   `tfsdk:"emoji_events"`
 	PipelineEvents            types.Bool   `tfsdk:"pipeline_events"`
 	WikiPageEvents            types.Bool   `tfsdk:"wiki_page_events"`
 	ResourceAccessTokenEvents types.Bool   `tfsdk:"resource_access_token_events"`
@@ -119,6 +120,7 @@ func (r *gitlabProjectHookResource) Create(ctx context.Context, req resource.Cre
 		NoteEvents:                data.NoteEvents.ValueBoolPointer(),
 		ConfidentialNoteEvents:    data.ConfidentialNoteEvents.ValueBoolPointer(),
 		JobEvents:                 data.JobEvents.ValueBoolPointer(),
+		EmojiEvents:               data.EmojiEvents.ValueBoolPointer(),
 		PipelineEvents:            data.PipelineEvents.ValueBoolPointer(),
 		WikiPageEvents:            data.WikiPageEvents.ValueBoolPointer(),
 		ResourceAccessTokenEvents: data.ResourceAccessTokenEvents.ValueBoolPointer(),
@@ -227,6 +229,7 @@ func (r *gitlabProjectHookResource) Update(ctx context.Context, req resource.Upd
 		NoteEvents:                data.NoteEvents.ValueBoolPointer(),
 		ConfidentialNoteEvents:    data.ConfidentialNoteEvents.ValueBoolPointer(),
 		JobEvents:                 data.JobEvents.ValueBoolPointer(),
+		EmojiEvents:               data.EmojiEvents.ValueBoolPointer(),
 		PipelineEvents:            data.PipelineEvents.ValueBoolPointer(),
 		WikiPageEvents:            data.WikiPageEvents.ValueBoolPointer(),
 		ResourceAccessTokenEvents: data.ResourceAccessTokenEvents.ValueBoolPointer(),
@@ -420,6 +423,12 @@ func (d *gitlabProjectHookResource) getSchema() schema.Schema {
 				Computed:            true,
 				Default:             booldefault.StaticBool(false),
 			},
+			"emoji_events": schema.BoolAttribute{
+				MarkdownDescription: "Invoke the hook for emoji events. Defaults to `false`.",
+				Optional:            true,
+				Computed:            true,
+				Default:             booldefault.StaticBool(false),
+			},
 			"pipeline_events": schema.BoolAttribute{
 				MarkdownDescription: "Invoke the hook for pipeline events. Defaults to `false`.",
 				Optional:            true,
@@ -507,6 +516,7 @@ func (d *gitlabProjectHookResourceModel) modelToStateModel(a *gitlab.ProjectHook
 	d.NoteEvents = types.BoolValue(a.NoteEvents)
 	d.ConfidentialNoteEvents = types.BoolValue(a.ConfidentialNoteEvents)
 	d.JobEvents = types.BoolValue(a.JobEvents)
+	d.EmojiEvents = types.BoolValue(a.EmojiEvents)
 	d.PipelineEvents = types.BoolValue(a.PipelineEvents)
 	d.WikiPageEvents = types.BoolValue(a.WikiPageEvents)
 	d.ResourceAccessTokenEvents = types.BoolValue(a.ResourceAccessTokenEvents)
