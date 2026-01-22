@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework-timetypes/timetypes"
@@ -30,6 +31,7 @@ var (
 	_ resource.Resource                = &gitlabProjectDeployTokenResource{}
 	_ resource.ResourceWithConfigure   = &gitlabProjectDeployTokenResource{}
 	_ resource.ResourceWithImportState = &gitlabProjectDeployTokenResource{}
+	_ resource.ResourceWithMoveState   = &gitlabProjectDeployTokenResource{}
 )
 
 func init() {
@@ -365,4 +367,139 @@ func (r *gitlabProjectDeployTokenResource) Delete(ctx context.Context, req resou
 
 func (r *gitlabProjectDeployTokenResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+// MoveState implements the ResourceWithMoveState interface to support moving state from the deprecated gitlab_deploy_token resource.
+// This enables users to migrate from gitlab_deploy_token to gitlab_project_deploy_token using Terraform's moved block.
+// Note: Cross-resource-type state moves require Terraform 1.8 or later.
+func (r *gitlabProjectDeployTokenResource) MoveState(ctx context.Context) []resource.StateMover {
+	return []resource.StateMover{
+		// This first StateMover implements the migration from
+		// `gitlab_deploy_token` -> `gitlab_project_deploy_token`. The SourceSchema
+		// needs to match the deprecated `gitlab_deploy_token` as a result.
+		{
+			SourceSchema: &schema.Schema{
+				Attributes: map[string]schema.Attribute{
+					"id": schema.StringAttribute{
+						Computed: true,
+					},
+					"deploy_token_id": schema.Int64Attribute{
+						Computed: true,
+					},
+					"project": schema.StringAttribute{
+						Optional: true,
+					},
+					"group": schema.StringAttribute{
+						Optional: true,
+					},
+					"name": schema.StringAttribute{
+						Required: true,
+					},
+					"username": schema.StringAttribute{
+						Optional: true,
+						Computed: true,
+					},
+					"expires_at": schema.StringAttribute{
+						Optional:   true,
+						CustomType: timetypes.RFC3339Type{},
+					},
+					"scopes": schema.SetAttribute{
+						Required:    true,
+						ElementType: types.StringType,
+					},
+					"token": schema.StringAttribute{
+						Computed:  true,
+						Sensitive: true,
+					},
+				},
+			},
+			StateMover: func(ctx context.Context, req resource.MoveStateRequest, resp *resource.MoveStateResponse) {
+				// Only handle moves from gitlab_deploy_token resource
+				if req.SourceTypeName != "gitlab_deploy_token" {
+
+					tflog.Warn(ctx, "Received a request to migrate to `gitlab_project_deploy_token`. Skipping StateMover because source isn't a `gitlab_deploy_token`", map[string]any{
+						"receivedResourceType": req.SourceTypeName,
+					})
+					return
+				}
+
+				// Check provider address (without hostname for compatibility)
+				// Accept anything that ends with gitlab, which seems the safest.
+				//  hashicorp/gitlab is used in tests
+				//  gitlab-org/gitlab is used in production
+				//  gitlabhq/gitlab is referenced on the provider docs.
+				if !strings.HasSuffix(req.SourceProviderAddress, "gitlab") {
+					tflog.Warn(ctx, "Failed to validate the SourceProviderAddress when moving resources. Exiting early.", map[string]any{
+						"receivedAddress": req.SourceProviderAddress,
+					})
+					return
+				}
+
+				// The old gitlab_deploy_token resource had schema version 1
+				if req.SourceSchemaVersion != 1 {
+					return
+				}
+
+				// Define the source model matching the old gitlab_deploy_token schema
+				type sourceModel struct {
+					Id            types.String      `tfsdk:"id"`
+					DeployTokenId types.Int64       `tfsdk:"deploy_token_id"`
+					Project       types.String      `tfsdk:"project"`
+					Group         types.String      `tfsdk:"group"`
+					Name          types.String      `tfsdk:"name"`
+					Username      types.String      `tfsdk:"username"`
+					ExpiresAt     timetypes.RFC3339 `tfsdk:"expires_at"`
+					Scopes        types.Set         `tfsdk:"scopes"`
+					Token         types.String      `tfsdk:"token"`
+				}
+
+				var sourceStateData sourceModel
+				resp.Diagnostics.Append(req.SourceState.Get(ctx, &sourceStateData)...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+
+				// Only handle project deploy tokens (not group deploy tokens)
+				if sourceStateData.Project.IsNull() || sourceStateData.Project.IsUnknown() {
+					resp.Diagnostics.AddError(
+						"Cannot Move State",
+						"The source gitlab_deploy_token resource is not a project deploy token. Only project deploy tokens can be moved to gitlab_project_deploy_token.",
+					)
+					return
+				}
+
+				// Parse the old ID format: "project:projectId:tokenId"
+				oldId := sourceStateData.Id.ValueString()
+				deployTokenType, projectId, tokenId, err := utils.ParseThreePartID(oldId)
+				if err != nil || deployTokenType != "project" {
+					resp.Diagnostics.AddError(
+						"Cannot Move State",
+						fmt.Sprintf("The source gitlab_deploy_token resource ID %q does not match the expected format 'project:projectId:tokenId'", oldId),
+					)
+					return
+				}
+
+				// Build the new ID format: "projectId:tokenId"
+				newId := utils.BuildTwoPartID(&projectId, &tokenId)
+
+				// Create the target state data
+				targetStateData := gitlabProjectDeployTokenResourceModel{
+					Id:                         types.StringValue(newId),
+					Project:                    sourceStateData.Project,
+					Name:                       sourceStateData.Name,
+					Username:                   sourceStateData.Username,
+					Scopes:                     sourceStateData.Scopes,
+					ExpiresAt:                  sourceStateData.ExpiresAt,
+					Token:                      sourceStateData.Token,
+					ValidatePastExpirationDate: types.BoolValue(false),
+					Expired:                    types.BoolNull(),
+					Revoked:                    types.BoolNull(),
+				}
+
+				tflog.Debug(ctx, fmt.Sprintf("Moving state from gitlab_deploy_token to gitlab_project_deploy_token: old ID %s -> new ID %s", oldId, newId))
+
+				resp.Diagnostics.Append(resp.TargetState.Set(ctx, targetStateData)...)
+			},
+		},
+	}
 }
