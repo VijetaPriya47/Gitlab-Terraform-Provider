@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
+	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -73,7 +74,7 @@ func (d *gitlabRunnersDataSource) Schema(_ context.Context, _ datasource.SchemaR
 				Computed:            true,
 			},
 			"status": schema.StringAttribute{
-				MarkdownDescription: "Filters for runners with the given status. Valid Values are `online`, `offline`, `stale`, and `never_contacted`.",
+				MarkdownDescription: fmt.Sprintf("Filters for runners with the given status. Valid Values are %s.", utils.RenderValueListForDocs(allowedStatusValues)),
 				Optional:            true,
 				Validators:          []validator.String{stringvalidator.OneOf(allowedStatusValues...)},
 			},
@@ -87,7 +88,7 @@ func (d *gitlabRunnersDataSource) Schema(_ context.Context, _ datasource.SchemaR
 				ElementType:         types.StringType,
 			},
 			"type": schema.StringAttribute{
-				MarkdownDescription: "The type of runner to return. Valid values are `instance_type`, `group_type` and `project_type`",
+				MarkdownDescription: fmt.Sprintf("The type of runner to return. Valid values are %s.", utils.RenderValueListForDocs(allowedTypeValues)),
 				Optional:            true,
 				Validators:          []validator.String{stringvalidator.OneOf(allowedTypeValues...)},
 			},
