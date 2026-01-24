@@ -194,12 +194,7 @@ func (d *gitLabProjectEnvironmentsDataSource) Read(ctx context.Context, req data
 		return
 	}
 
-	options := &gitlab.ListEnvironmentsOptions{
-		ListOptions: gitlab.ListOptions{
-			PerPage: 20,
-			Page:    1,
-		},
-	}
+	options := &gitlab.ListEnvironmentsOptions{}
 
 	if !config.Name.IsNull() && !config.Name.IsUnknown() {
 		options.Name = config.Name.ValueStringPointer()
@@ -251,17 +246,11 @@ func (d *gitLabProjectEnvironmentsDataSource) Read(ctx context.Context, req data
 }
 
 func (d *gitLabProjectEnvironmentsDataSource) getAllEnvironments(ctx context.Context, projectID any, options *gitlab.ListEnvironmentsOptions) ([]*gitlab.Environment, error) {
-	var environments []*gitlab.Environment
-	for options.Page != 0 {
-		// Make API call to read environments
-		r, resp, err := d.client.Environments.ListEnvironments(projectID, options, gitlab.WithContext(ctx))
-		if err != nil {
-			return nil, fmt.Errorf("unable to read environments page %d: %w", options.Page, err)
-		}
-
-		environments = append(environments, r...)
-
-		options.Page = resp.NextPage
+	environments, err := gitlab.ScanAndCollect(func(p gitlab.PaginationOptionFunc) ([]*gitlab.Environment, *gitlab.Response, error) {
+		return d.client.Environments.ListEnvironments(projectID, options, p, gitlab.WithContext(ctx))
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to read environments: %w", err)
 	}
 	return environments, nil
 }

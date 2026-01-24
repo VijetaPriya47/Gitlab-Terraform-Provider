@@ -153,12 +153,7 @@ func (d *gitlabRunnersDataSource) Read(ctx context.Context, req datasource.ReadR
 		return
 	}
 
-	options := &gitlab.ListRunnersOptions{
-		ListOptions: gitlab.ListOptions{
-			PerPage: 20,
-			Page:    1,
-		},
-	}
+	options := &gitlab.ListRunnersOptions{}
 
 	if !config.Paused.IsNull() && !config.Paused.IsUnknown() {
 		options.Paused = config.Paused.ValueBoolPointer()
@@ -204,17 +199,11 @@ func (d *gitlabRunnersDataSource) Read(ctx context.Context, req datasource.ReadR
 }
 
 func (d *gitlabRunnersDataSource) getAllRunners(ctx context.Context, options *gitlab.ListRunnersOptions) ([]*gitlab.Runner, error) {
-	var runners []*gitlab.Runner
-	for options.Page != 0 {
-		// Make API call to read gitlab runners
-		r, resp, err := d.client.Runners.ListAllRunners(options, gitlab.WithContext(ctx))
-		if err != nil {
-			return nil, fmt.Errorf("Unable to read runners: %s", err.Error())
-		}
-
-		runners = append(runners, r...)
-
-		options.Page = resp.NextPage
+	runners, err := gitlab.ScanAndCollect(func(p gitlab.PaginationOptionFunc) ([]*gitlab.Runner, *gitlab.Response, error) {
+		return d.client.Runners.ListAllRunners(options, p, gitlab.WithContext(ctx))
+	})
+	if err != nil {
+		return nil, fmt.Errorf("Unable to read runners: %s", err.Error())
 	}
 	return runners, nil
 }

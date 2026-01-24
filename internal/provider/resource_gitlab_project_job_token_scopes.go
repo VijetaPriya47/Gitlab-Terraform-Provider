@@ -426,31 +426,18 @@ func (r *gitlabProjectJobTokenScopesResource) compareAndGenerateActions(desiredI
 
 // getProjectCIJobScopes retrieves a comprehensive list of CI project scope targets
 func (r *gitlabProjectJobTokenScopesResource) getProjectCIJobScopes(ctx context.Context, project string) ([]*gitlab.Project, error) {
-	var projectScopes []*gitlab.Project
-
-	// Get a list of existing CI project scopes for the project, 20 pages at once
-	options := gitlab.GetJobTokenInboundAllowListOptions{
-		ListOptions: gitlab.ListOptions{
-			PerPage: 20,
-			Page:    1,
-		},
+	// Get a list of existing CI project scopes for the project
+	options := gitlab.GetJobTokenInboundAllowListOptions{}
+	projectScopes, err := gitlab.ScanAndCollect(func(p gitlab.PaginationOptionFunc) ([]*gitlab.Project, *gitlab.Response, error) {
+		return r.client.JobTokenScope.GetProjectJobTokenInboundAllowList(project, &options, p, gitlab.WithContext(ctx))
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to read CI/CD Job Token inbound allowlist. %s", err)
 	}
-
-	for options.Page != 0 {
-		paginatedProjects, resp, err := r.client.JobTokenScope.GetProjectJobTokenInboundAllowList(project, &options, gitlab.WithContext(ctx))
-		if err != nil {
-			return nil, fmt.Errorf("unable to read CI/CD Job Token inbound allowlist. %s", err)
-		}
-
-		projectScopes = append(projectScopes, paginatedProjects...)
-		options.Page = resp.NextPage
-
-		tflog.Debug(ctx, "Read CI/CD Job Token inbound allowlist for project", map[string]any{
-			"project":                      project,
-			"page":                         options.Page,
-			"number_of_project_identified": len(projectScopes),
-		})
-	}
+	tflog.Debug(ctx, "Read CI/CD Job Token inbound allowlist for project", map[string]any{
+		"project":                      project,
+		"number_of_project_identified": len(projectScopes),
+	})
 
 	// Remove itself from the list, which will cause issues during the "set" operation, and during post-apply calculations.
 	for i, p := range projectScopes {
@@ -465,31 +452,20 @@ func (r *gitlabProjectJobTokenScopesResource) getProjectCIJobScopes(ctx context.
 
 // getProjectCIJobScopesGroups retrieves a comprehensive list of CI groups scope targets
 func (r *gitlabProjectJobTokenScopesResource) getProjectCIJobScopesGroups(ctx context.Context, projectID string) ([]*gitlab.Group, error) {
-	var groupsScopes []*gitlab.Group
-
-	options := gitlab.GetJobTokenAllowlistGroupsOptions{
-		ListOptions: gitlab.ListOptions{
-			PerPage: 20,
-			Page:    1,
-		},
-	}
-	for options.Page != 0 {
-		paginatedGroups, resp, err := r.client.JobTokenScope.GetJobTokenAllowlistGroups(projectID, &options, gitlab.WithContext(ctx))
-		if err != nil {
-			return nil, fmt.Errorf("unable to read CI/CD Job Token inbound groups_allowlist. %s", err)
-		}
-
-		groupsScopes = append(groupsScopes, paginatedGroups...)
-		options.Page = resp.NextPage
-
-		tflog.Debug(ctx, "Read CI/CD Job Token inbound groups_allowlist for project", map[string]any{
-			"project":                     projectID,
-			"page":                        options.Page,
-			"number_of_groups_identified": len(paginatedGroups),
-		})
+	options := gitlab.GetJobTokenAllowlistGroupsOptions{}
+	groupScopes, err := gitlab.ScanAndCollect(func(p gitlab.PaginationOptionFunc) ([]*gitlab.Group, *gitlab.Response, error) {
+		return r.client.JobTokenScope.GetJobTokenAllowlistGroups(projectID, &options, p, gitlab.WithContext(ctx))
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to read CI/CD Job Token inbound groups_allowlist. %s", err)
 	}
 
-	return groupsScopes, nil
+	tflog.Debug(ctx, "Read CI/CD Job Token inbound groups_allowlist for project", map[string]any{
+		"project":                     projectID,
+		"number_of_groups_identified": len(groupScopes),
+	})
+
+	return groupScopes, nil
 }
 
 // Retrieves a comprehensive list of CI project scope targets

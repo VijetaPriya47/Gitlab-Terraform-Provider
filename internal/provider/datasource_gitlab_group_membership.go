@@ -202,34 +202,18 @@ func (d *gitlabGroupMembershipDataSource) Read(ctx context.Context, req datasour
 	tflog.Info(ctx, "[INFO] Reading Gitlab group memberships")
 
 	// Get group memberships
-	listOptions := &gitlab.ListGroupMembersOptions{
-		ListOptions: gitlab.ListOptions{
-			PerPage: 20,
-			Page:    1,
-		},
-	}
-
-	var allGms []*gitlab.GroupMember
-
+	listOptions := &gitlab.ListGroupMembersOptions{}
 	listMembers := d.client.Groups.ListGroupMembers
 
 	if !data.Inherited.IsNull() && data.Inherited.ValueBool() {
 		listMembers = d.client.Groups.ListAllGroupMembers
 	}
-
-	for {
-		gms, response, err := listMembers(group.ID, listOptions, gitlab.WithContext(ctx))
-		if err != nil {
-			resp.Diagnostics.AddError("API call to ListGroupMembers failed", err.Error())
-			return
-		}
-
-		allGms = append(allGms, gms...)
-
-		if response.NextPage == 0 {
-			break
-		}
-		listOptions.Page = response.NextPage
+	allGms, err := gitlab.ScanAndCollect(func(p gitlab.PaginationOptionFunc) ([]*gitlab.GroupMember, *gitlab.Response, error) {
+		return listMembers(group.ID, listOptions, p, gitlab.WithContext(ctx))
+	})
+	if err != nil {
+		resp.Diagnostics.AddError("API call to ListGroupMembers failed", err.Error())
+		return
 	}
 
 	data.GroupID = types.Int64Value(int64(group.ID))
