@@ -64,6 +64,7 @@ type gitlabTagProtectionAllowedToObjectModel struct {
 	AccessLevelDescription types.String `tfsdk:"access_level_description"`
 	UserId                 types.Int64  `tfsdk:"user_id"`
 	GroupId                types.Int64  `tfsdk:"group_id"`
+	DeployKeyId            types.Int64  `tfsdk:"deploy_key_id"`
 }
 
 func (r *gitlabTagProtectionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -115,7 +116,7 @@ If this is a potential issue for you, please use the ` + "`create_before_destroy
 							Optional:      true,
 							PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
 							Validators: []validator.String{
-								stringvalidator.ExactlyOneOf(path.MatchRelative().AtParent().AtName("user_id"), path.MatchRelative().AtParent().AtName("group_id")),
+								stringvalidator.ExactlyOneOf(path.MatchRelative().AtParent().AtName("user_id"), path.MatchRelative().AtParent().AtName("group_id"), path.MatchRelative().AtParent().AtName("deploy_key_id")),
 								stringvalidator.OneOf(api.ValidProtectedBranchTagAccessLevelNames...),
 							},
 						},
@@ -124,12 +125,17 @@ If this is a potential issue for you, please use the ` + "`create_before_destroy
 							Computed:            true,
 						},
 						"user_id": schema.Int64Attribute{
-							MarkdownDescription: "The ID of a GitLab user allowed to perform the relevant action. Mutually exclusive with `group_id`.",
+							MarkdownDescription: "The ID of a GitLab user allowed to perform the relevant action. Mutually exclusive with `deploy_key_id` and `group_id`.",
 							Optional:            true,
 							PlanModifiers:       []planmodifier.Int64{int64planmodifier.RequiresReplace()},
 						},
 						"group_id": schema.Int64Attribute{
-							MarkdownDescription: "The ID of a GitLab group allowed to perform the relevant action. Mutually exclusive with `user_id`.",
+							MarkdownDescription: "The ID of a GitLab group allowed to perform the relevant action. Mutually exclusive with `deploy_key_id` and `user_id`.",
+							Optional:            true,
+							PlanModifiers:       []planmodifier.Int64{int64planmodifier.RequiresReplace()},
+						},
+						"deploy_key_id": schema.Int64Attribute{
+							MarkdownDescription: "The ID of a GitLab deploy key allowed to perform the relevant action. Mutually exclusive with `group_id` and `user_id`.",
 							Optional:            true,
 							PlanModifiers:       []planmodifier.Int64{int64planmodifier.RequiresReplace()},
 						},
@@ -180,6 +186,9 @@ func (r *gitlabTagProtectionResource) Create(ctx context.Context, req resource.C
 		}
 		if !plannedAllowedTo.GroupId.IsNull() && plannedAllowedTo.GroupId.ValueInt64() != 0 {
 			allowedToTagsPermissionOptionData.GroupID = gitlab.Ptr(plannedAllowedTo.GroupId.ValueInt64())
+		}
+		if !plannedAllowedTo.DeployKeyId.IsNull() && plannedAllowedTo.DeployKeyId.ValueInt64() != 0 {
+			allowedToTagsPermissionOptionData.DeployKeyID = gitlab.Ptr(plannedAllowedTo.DeployKeyId.ValueInt64())
 		}
 		allowedToCreate = append(allowedToCreate, allowedToTagsPermissionOptionData)
 	}
@@ -333,6 +342,9 @@ func populateTagAllowedToObjectList(access_levels []*gitlab.TagAccessDescription
 		}
 		if v.GroupID != 0 {
 			allowedToData.GroupId = types.Int64Value(int64(v.GroupID))
+		}
+		if v.DeployKeyID != 0 {
+			allowedToData.DeployKeyId = types.Int64Value(int64(v.DeployKeyID))
 		}
 		allowedTosData[i] = &allowedToData
 	}
