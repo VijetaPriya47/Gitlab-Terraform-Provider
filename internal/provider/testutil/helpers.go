@@ -991,6 +991,24 @@ func CreateDeployKey(t *testing.T, projectID int64, options *gitlab.AddDeployKey
 	return deployKey
 }
 
+// AddDeployKey is a test helper function for adding a deploy key to a project with default options
+func AddDeployKey(t *testing.T, projectID int64) *gitlab.ProjectDeployKey {
+	t.Helper()
+
+	rInt := acctest.RandInt()
+	// Generate an ED25519 SSH key (compatible with GitLab CE 18.6+)
+	// This format is accepted by newer GitLab versions that have stricter SSH key validation
+	sshKey := "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGbPhiQgg7/l7kicmUmT9WdwecHsxJmv7rTXM5phfUML test@example.com"
+
+	options := &gitlab.AddDeployKeyOptions{
+		Title:   gitlab.Ptr(fmt.Sprintf("test-deploy-key-%d", rInt)),
+		Key:     gitlab.Ptr(sshKey),
+		CanPush: gitlab.Ptr(true),
+	}
+
+	return CreateDeployKey(t, projectID, options)
+}
+
 // CreateProjectEnvironment is a test helper function for creating a project environment
 func CreateProjectEnvironment(t *testing.T, projectID int64, options *gitlab.CreateEnvironmentOptions) *gitlab.Environment {
 	t.Helper()

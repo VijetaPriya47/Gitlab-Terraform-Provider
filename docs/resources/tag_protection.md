@@ -57,8 +57,9 @@ resource "gitlab_tag_protection" "TagProtect" {
 Optional:
 
 - `access_level` (String) Access levels allowed to create protected tags. Valid values are: `no one`, `developer`, `maintainer`, `admin`.
-- `group_id` (Number) The ID of a GitLab group allowed to perform the relevant action. Mutually exclusive with `user_id`.
-- `user_id` (Number) The ID of a GitLab user allowed to perform the relevant action. Mutually exclusive with `group_id`.
+- `deploy_key_id` (Number) The ID of a GitLab deploy key allowed to perform the relevant action. Mutually exclusive with `group_id` and `user_id`.
+- `group_id` (Number) The ID of a GitLab group allowed to perform the relevant action. Mutually exclusive with `deploy_key_id` and `user_id`.
+- `user_id` (Number) The ID of a GitLab user allowed to perform the relevant action. Mutually exclusive with `deploy_key_id` and `group_id`.
 
 Read-Only:
 

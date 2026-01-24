@@ -319,6 +319,100 @@ func TestAccGitlabTagProtection_adminCreateAccessLevel(t *testing.T) {
 	})
 }
 
+func TestAccGitlabTagProtection_customAccessLevel_deployKeyIdIsSupported(t *testing.T) {
+	testutil.SkipIfCE(t)
+
+	var pt gitlab.ProtectedTag
+	rInt := acctest.RandInt()
+
+	project := testutil.CreateProject(t)
+	deployKey := testutil.AddDeployKey(t, project.ID)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabTagProtectionDestroy,
+		Steps: []resource.TestStep{
+			// GIVEN a tag protection with deploy_key_id in allowed_to_create
+			// WHEN creating the protection
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_tag_protection" "TagProtect" {
+				  project = %d
+				  tag = "TagProtect-%d"
+				  create_access_level = "developer"
+				  allowed_to_create {
+				    deploy_key_id = %d
+				  }
+				}`,
+					project.ID, rInt, deployKey.ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabTagProtectionExists("gitlab_tag_protection.TagProtect", &pt),
+					testAccCheckGitlabTagProtectionPersistsInStateCorrectly("gitlab_tag_protection.TagProtect", &pt),
+					// THEN the deploy key should be set in allowed_to_create
+					testAccCheckGitlabTagProtectionAttributes(&pt, &testAccGitlabTagProtectionExpectedAttributes{
+						Name:                      fmt.Sprintf("TagProtect-%d", rInt),
+						CreateAccessLevel:         api.AccessLevelValueToName[gitlab.DeveloperPermissions],
+						DeployKeysAllowedToCreate: []string{deployKey.Title},
+					}),
+				),
+			},
+			// Verify Import
+			{
+				ResourceName:      "gitlab_tag_protection.TagProtect",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccGitlabTagProtection_customAccessLevel_deployKeyIdMutualExclusivity(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+				resource "gitlab_tag_protection" "TagProtect" {
+				  project = 9999
+				  tag = "TagProtect-validation"
+				  create_access_level = "developer"
+				  allowed_to_create {
+				    deploy_key_id = 9999
+				    user_id = 9999
+				  }
+				}`,
+				ExpectError: regexp.MustCompile("Invalid Attribute Combination"),
+			},
+			{
+				Config: `
+				resource "gitlab_tag_protection" "TagProtect" {
+				  project = 9999
+				  tag = "TagProtect-validation"
+				  create_access_level = "developer"
+				  allowed_to_create {
+				    deploy_key_id = 9999
+				    group_id = 9999
+				  }
+				}`,
+				ExpectError: regexp.MustCompile("Invalid Attribute Combination"),
+			},
+			{
+				Config: `
+				resource "gitlab_tag_protection" "TagProtect" {
+				  project = 9999
+				  tag = "TagProtect-validation"
+				  create_access_level = "developer"
+				  allowed_to_create {
+				    deploy_key_id = 9999
+				    access_level = "maintainer"
+				  }
+				}`,
+				ExpectError: regexp.MustCompile("Invalid Attribute Combination"),
+			},
+		},
+	})
+}
+
 func testAccCheckGitlabTagProtectionPersistsInStateCorrectly(n string, pt *gitlab.ProtectedTag) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
@@ -377,6 +471,7 @@ type testAccGitlabTagProtectionExpectedAttributes struct {
 	CreateAccessLevel           string
 	UsersAllowedToCreate        []string
 	GroupsAllowedToCreate       []string
+	DeployKeysAllowedToCreate   []string
 	AccessLevelsAllowedToCreate []string
 }
 
@@ -430,6 +525,30 @@ func testAccCheckGitlabTagProtectionAttributes(pt *gitlab.ProtectedTag, want *te
 			}
 			remainingWantedGroupIDsAllowedToCreate[group.ID] = struct{}{}
 		}
+		remainingWantedDeployKeyIDsAllowedToCreate := map[int64]struct{}{}
+		for _, v := range want.DeployKeysAllowedToCreate {
+			// Get project ID from the gitlab_tag_protection resource in state
+			var project string
+			for _, rs := range s.RootModule().Resources {
+				if rs.Type == "gitlab_tag_protection" {
+					projectID, _, err := utils.ParseTwoPartID(rs.Primary.ID)
+					if err != nil {
+						return fmt.Errorf("error parsing project ID from tag protection resource: %v", err)
+					}
+					project = projectID
+					break
+				}
+			}
+			deployKeys, _, err := testutil.TestGitlabClient.DeployKeys.ListProjectDeployKeys(project, &gitlab.ListProjectDeployKeysOptions{})
+			if err != nil {
+				return fmt.Errorf("error listing deploy keys: %v", err)
+			}
+			filteredDeployKeys := slices.DeleteFunc(deployKeys, func(key *gitlab.ProjectDeployKey) bool { return key.Title != v })
+			if len(filteredDeployKeys) != 1 {
+				return fmt.Errorf("error finding deploy key by name %v; found %v", v, len(filteredDeployKeys))
+			}
+			remainingWantedDeployKeyIDsAllowedToCreate[filteredDeployKeys[0].ID] = struct{}{}
+		}
 		for _, v := range pt.CreateAccessLevels {
 			if v.UserID != 0 {
 				if _, ok := remainingWantedUserIDsAllowedToCreate[v.UserID]; !ok {
@@ -441,6 +560,11 @@ func testAccCheckGitlabTagProtectionAttributes(pt *gitlab.ProtectedTag, want *te
 					return fmt.Errorf("found unwanted group ID %v", v.GroupID)
 				}
 				delete(remainingWantedGroupIDsAllowedToCreate, v.GroupID)
+			} else if v.DeployKeyID != 0 {
+				if _, ok := remainingWantedDeployKeyIDsAllowedToCreate[v.DeployKeyID]; !ok {
+					return fmt.Errorf("found unwanted deploy key ID %v", v.DeployKeyID)
+				}
+				delete(remainingWantedDeployKeyIDsAllowedToCreate, v.DeployKeyID)
 			} else if api.AccessLevelValueToName[v.AccessLevel] != "" {
 				if _, ok := remainingWantedAccessLevelsAllowedToCreate[int(v.AccessLevel)]; !ok {
 					return fmt.Errorf("found unwanted access level %v", v.AccessLevel)
@@ -453,6 +577,9 @@ func testAccCheckGitlabTagProtectionAttributes(pt *gitlab.ProtectedTag, want *te
 		}
 		if len(remainingWantedGroupIDsAllowedToCreate) > 0 {
 			return fmt.Errorf("failed to find wanted group IDs %v", remainingWantedGroupIDsAllowedToCreate)
+		}
+		if len(remainingWantedDeployKeyIDsAllowedToCreate) > 0 {
+			return fmt.Errorf("failed to find wanted deploy key IDs %v", remainingWantedDeployKeyIDsAllowedToCreate)
 		}
 		if len(remainingWantedAccessLevelsAllowedToCreate) > 0 {
 			return fmt.Errorf("failed to find wanted access levels %v", remainingWantedAccessLevelsAllowedToCreate)
