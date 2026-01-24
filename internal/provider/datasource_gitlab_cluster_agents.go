@@ -111,21 +111,13 @@ func (d *gitlabClusterAgentsDataSource) Read(ctx context.Context, req datasource
 	}
 
 	project := data.Project.ValueString()
-	options := &gitlab.ListAgentsOptions{
-		ListOptions: gitlab.ListOptions{
-			PerPage: 20,
-			Page:    1,
-		},
-	}
-	var clusterAgents []*gitlab.Agent
-	for options.Page != 0 {
-		paginatedClusterAgents, response, err := d.client.ClusterAgents.ListAgents(project, options, gitlab.WithContext(ctx))
-		if err != nil {
-			resp.Diagnostics.AddError("Failed to get cluster agents", err.Error())
-			return
-		}
-		clusterAgents = append(clusterAgents, paginatedClusterAgents...)
-		options.Page = response.NextPage
+	options := &gitlab.ListAgentsOptions{}
+	clusterAgents, err := gitlab.ScanAndCollect(func(p gitlab.PaginationOptionFunc) ([]*gitlab.Agent, *gitlab.Response, error) {
+		return d.client.ClusterAgents.ListAgents(project, options, p, gitlab.WithContext(ctx))
+	})
+	if err != nil {
+		resp.Diagnostics.AddError("Failed to get cluster agents", err.Error())
+		return
 	}
 
 	data.ID = types.StringValue(project)

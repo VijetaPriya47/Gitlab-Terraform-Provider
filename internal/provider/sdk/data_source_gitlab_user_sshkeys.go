@@ -53,13 +53,7 @@ func dataSourceGitlabUserKeysRead(ctx context.Context, d *schema.ResourceData, m
 	client := meta.(*gitlab.Client)
 	tflog.Info(ctx, "[INFO] Reading Gitlab user")
 
-	options := gitlab.ListSSHKeysForUserOptions{
-		ListOptions: gitlab.ListOptions{
-			PerPage: 2,
-			Page:    1,
-		},
-	}
-	var keys []*gitlab.SSHKey
+	options := gitlab.ListSSHKeysForUserOptions{}
 
 	userIDData, userIDOk := d.GetOk("user_id")
 	usernameData, usernameOk := d.GetOk("username")
@@ -72,13 +66,11 @@ func dataSourceGitlabUserKeysRead(ctx context.Context, d *schema.ResourceData, m
 		return diag.Errorf("one and only one of user_id or username must be set")
 	}
 
-	for options.Page != 0 {
-		paginatedKeys, resp, err := client.Users.ListSSHKeysForUser(uid, &options, gitlab.WithContext(ctx))
-		if err != nil {
-			return diag.FromErr(err)
-		}
-		keys = append(keys, paginatedKeys...)
-		options.Page = resp.NextPage
+	keys, err := gitlab.ScanAndCollect(func(p gitlab.PaginationOptionFunc) ([]*gitlab.SSHKey, *gitlab.Response, error) {
+		return client.Users.ListSSHKeysForUser(uid, &options, p, gitlab.WithContext(ctx))
+	})
+	if err != nil {
+		return diag.FromErr(err)
 	}
 
 	d.SetId(fmt.Sprintf("%d", userIDData))

@@ -115,23 +115,13 @@ func (d *gitlabGroupVariablesDataSource) Read(ctx context.Context, req datasourc
 
 	group := state.Group.ValueString()
 	environmentScope := state.EnvironmentScope.ValueString()
-	options := &gitlab.ListGroupVariablesOptions{
-		ListOptions: gitlab.ListOptions{
-			Page:    1,
-			PerPage: 20,
-		},
-	}
-
-	var variables []*gitlab.GroupVariable
-	for options.Page != 0 {
-		paginatedVariables, resp1, err := d.client.GroupVariables.ListVariables(group, options, gitlab.WithContext(ctx), utils.WithEnvironmentScopeFilter(ctx, environmentScope))
-		if err != nil {
-			resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to read group variables: %s", err.Error()))
-			return
-		}
-
-		variables = append(variables, paginatedVariables...)
-		options.Page = resp1.NextPage
+	options := &gitlab.ListGroupVariablesOptions{}
+	variables, err := gitlab.ScanAndCollect(func(p gitlab.PaginationOptionFunc) ([]*gitlab.GroupVariable, *gitlab.Response, error) {
+		return d.client.GroupVariables.ListVariables(group, options, p, gitlab.WithContext(ctx), utils.WithEnvironmentScopeFilter(ctx, environmentScope))
+	})
+	if err != nil {
+		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to read group variables: %s", err.Error()))
+		return
 	}
 
 	state.ID = types.StringValue(fmt.Sprintf("%s:%s", group, environmentScope))

@@ -160,24 +160,12 @@ func (d *gitlabGroupBillableMemberMembershipsDataSource) Read(ctx context.Contex
 }
 
 func (d *gitlabGroupBillableMemberMembershipsDataSource) fetchAllOfListMembershipsForBillableGroupMember(groupId any, userId int64, ctx context.Context) ([]*gitlab.BillableUserMembership, error) {
-	var membership []*gitlab.BillableUserMembership
-
-	listOptions := &gitlab.ListMembershipsForBillableGroupMemberOptions{
-		ListOptions: gitlab.ListOptions{
-			PerPage: 20,
-			Page:    1,
-		},
-	}
-
-	for listOptions.Page != 0 {
-		m, resp, err := d.client.Groups.ListMembershipsForBillableGroupMember(groupId, userId, listOptions, gitlab.WithContext(ctx))
-		if err != nil {
-			return nil, err
-		}
-
-		membership = append(membership, m...)
-
-		listOptions.Page = resp.NextPage
+	listOptions := &gitlab.ListMembershipsForBillableGroupMemberOptions{}
+	membership, err := gitlab.ScanAndCollect(func(p gitlab.PaginationOptionFunc) ([]*gitlab.BillableUserMembership, *gitlab.Response, error) {
+		return d.client.Groups.ListMembershipsForBillableGroupMember(groupId, userId, listOptions, p, gitlab.WithContext(ctx))
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	return membership, nil

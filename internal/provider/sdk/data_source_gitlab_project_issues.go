@@ -214,12 +214,7 @@ func dataSourceGitlabProjectIssuesRead(ctx context.Context, d *schema.ResourceDa
 	client := meta.(*gitlab.Client)
 
 	project := d.Get("project").(string)
-	options := gitlab.ListProjectIssuesOptions{
-		ListOptions: gitlab.ListOptions{
-			PerPage: 20,
-			Page:    1,
-		},
-	}
+	options := gitlab.ListProjectIssuesOptions{}
 
 	if v, ok := d.GetOk("iids"); ok {
 		options.IIDs = intSetToInt64Slice(v.(*schema.Set))
@@ -343,15 +338,11 @@ func dataSourceGitlabProjectIssuesRead(ctx context.Context, d *schema.ResourceDa
 		options.IssueType = gitlab.Ptr(v.(string))
 	}
 
-	var issues []*gitlab.Issue
-	for options.Page != 0 {
-		paginatedIssues, resp, err := client.Issues.ListProjectIssues(project, &options, gitlab.WithContext(ctx))
-		if err != nil {
-			return diag.FromErr(err)
-		}
-
-		issues = append(issues, paginatedIssues...)
-		options.Page = resp.NextPage
+	issues, err := gitlab.ScanAndCollect(func(p gitlab.PaginationOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
+		return client.Issues.ListProjectIssues(project, &options, p, gitlab.WithContext(ctx))
+	})
+	if err != nil {
+		return diag.FromErr(err)
 	}
 
 	optionsHash, err := hashstructure.Hash(&options, hashstructure.FormatV1, nil)
