@@ -79,7 +79,7 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Metadata(ctx context.Cont
 
 func (r *gitlabGroupServiceAccountAccessTokenResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `The ` + "`" + `gitlab_group_service_account_access_token` + "`" + ` resource allows to manage the lifecycle of a group service account access token.
+		MarkdownDescription: `The ` + "`" + `gitlab_group_service_account_access_token` + "`" + ` resource manages the lifecycle of a group service account access token.
 
 ~> Use of the ` + "`timestamp()`" + ` function with expires_at will cause the resource to be re-created with every apply, it's recommended to use ` + "`plantimestamp()`" + ` or a static value instead.
 

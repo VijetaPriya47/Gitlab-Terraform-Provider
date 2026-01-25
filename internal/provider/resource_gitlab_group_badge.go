@@ -53,7 +53,7 @@ func (r *gitlabGroupBadgeResource) Metadata(ctx context.Context, req resource.Me
 
 func (r *gitlabGroupBadgeResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `The ` + "`gitlab_group_badge`" + ` resource allows to manage the lifecycle of group badges.
+		MarkdownDescription: `The ` + "`gitlab_group_badge`" + ` resource manages the lifecycle of group badges.
 
 **Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/user/project/badges/#group-badges)`,
 

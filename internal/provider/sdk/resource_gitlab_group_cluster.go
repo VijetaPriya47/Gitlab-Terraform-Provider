@@ -17,7 +17,7 @@ import (
 
 var _ = registerResource("gitlab_group_cluster", func() *schema.Resource {
 	return &schema.Resource{
-		Description: `The ` + "`gitlab_group_cluster`" + ` resource allows to manage the lifecycle of a group cluster.
+		Description: `The ` + "`gitlab_group_cluster`" + ` resource manages the lifecycle of a group cluster.
 
 ~> This is deprecated, due for removal in GitLab 19.0.
 

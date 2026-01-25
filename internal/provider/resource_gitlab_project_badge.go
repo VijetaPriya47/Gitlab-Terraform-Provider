@@ -54,7 +54,7 @@ func (r *gitlabProjectBadgeResource) Metadata(ctx context.Context, req resource.
 
 func (r *gitlabProjectBadgeResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `The ` + "`gitlab_project_badge`" + ` resource allows to manage the lifecycle of project badges.
+		MarkdownDescription: `The ` + "`gitlab_project_badge`" + ` resource manages the lifecycle of project badges.
 
 **Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/user/project/badges/#project-badges)`,
 

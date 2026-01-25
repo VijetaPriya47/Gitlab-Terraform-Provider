@@ -3,7 +3,7 @@
 page_title: "gitlab_project Resource - terraform-provider-gitlab"
 subcategory: ""
 description: |-
-  The gitlab_project resource allows to manage the lifecycle of a project.
+  The gitlab_project resource manages the lifecycle of a project.
   A project can either be created in a group or user namespace.
   -> Default Branch Protection Workaround Projects are created with default branch protection.
   Since this default branch protection is not currently managed via Terraform, to workaround this limitation,
@@ -16,7 +16,7 @@ description: |-
 
 # gitlab_project (Resource)
 
-The `gitlab_project` resource allows to manage the lifecycle of a project.
+The `gitlab_project` resource manages the lifecycle of a project.
 
 A project can either be created in a group or user namespace.
 

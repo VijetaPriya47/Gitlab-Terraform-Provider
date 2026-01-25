@@ -275,7 +275,7 @@ func (d *gitlabProjectLevelMrApprovalsResource) UpgradeState(context.Context) ma
 func (d *gitlabProjectLevelMrApprovalsResource) getV1Schema() schema.Schema {
 	return schema.Schema{
 		Version: 1,
-		MarkdownDescription: `The ` + "`" + `gitlab_project_level_mr_approval_rule` + "`" + ` resource allows to manage the lifecycle of a Merge Request-level approval rule.
+		MarkdownDescription: `The ` + "`" + `gitlab_project_level_mr_approval_rule` + "`" + ` resource manages the lifecycle of a Merge Request-level approval rule.
 
 -> This resource requires a GitLab Enterprise instance.
 		
@@ -347,7 +347,7 @@ type gitlabProjectLevelMrApprovalsModelSchema0 struct {
 func (d *gitlabProjectLevelMrApprovalsResource) getV0Schema() schema.Schema {
 	return schema.Schema{
 		Version: 0,
-		MarkdownDescription: `The ` + "`" + `gitlab_project_level_mr_approval_rule` + "`" + ` resource allows to manage the lifecycle of a Merge Request-level approval rule.
+		MarkdownDescription: `The ` + "`" + `gitlab_project_level_mr_approval_rule` + "`" + ` resource manages the lifecycle of a Merge Request-level approval rule.
 
 -> This resource requires a GitLab Enterprise instance.
 				

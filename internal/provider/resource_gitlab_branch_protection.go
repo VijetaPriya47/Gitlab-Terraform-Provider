@@ -89,7 +89,7 @@ func (r *gitlabBranchProtectionResource) Schema(ctx context.Context, req resourc
 func (d *gitlabBranchProtectionResource) getV1Schema() schema.Schema {
 	return schema.Schema{
 		Version: 1,
-		MarkdownDescription: fmt.Sprintf(`The ` + "`gitlab_branch_protection`" + ` resource allows to manage the lifecycle of a protected branch of a repository.
+		MarkdownDescription: fmt.Sprintf(`The ` + "`gitlab_branch_protection`" + ` resource manages the lifecycle of a protected branch of a repository.
 
 ~> **Branch Protection Behavior for the default branch**
    Depending on the GitLab instance, group or project setting the default branch of a project is created automatically by GitLab behind the scenes.
@@ -877,7 +877,7 @@ type gitlabBranchProtectionResourceModelv0 struct {
 func (d *gitlabBranchProtectionResource) getV0Schema() schema.Schema {
 	return schema.Schema{
 		Version: 0,
-		MarkdownDescription: fmt.Sprintf(`The ` + "`gitlab_branch_protection`" + ` resource allows to manage the lifecycle of a protected branch of a repository.
+		MarkdownDescription: fmt.Sprintf(`The ` + "`gitlab_branch_protection`" + ` resource manages the lifecycle of a protected branch of a repository.
 
 ~> **Branch Protection Behavior for the default branch**
    Depending on the GitLab instance, group or project setting the default branch of a project is created automatically by GitLab behind the scenes.

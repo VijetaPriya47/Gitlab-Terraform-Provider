@@ -15,7 +15,7 @@ import (
 
 var _ = registerResource("gitlab_group_saml_link", func() *schema.Resource {
 	return &schema.Resource{
-		Description: `The ` + "`gitlab_group_saml_link`" + ` resource allows to manage the lifecycle of an SAML integration with a group.
+		Description: `The ` + "`gitlab_group_saml_link`" + ` resource manages the lifecycle of an SAML integration with a group.
 
 **Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/saml/#saml-group-links)`,
 

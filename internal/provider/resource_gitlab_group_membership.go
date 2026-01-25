@@ -63,7 +63,7 @@ func (r *gitlabGroupMembershipResource) Metadata(ctx context.Context, req resour
 
 func (r *gitlabGroupMembershipResource) Schema(ctc context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `The ` + "`gitlab_group_membership`" + ` resource allows to manage the lifecycle of a users group membership.
+		MarkdownDescription: `The ` + "`gitlab_group_membership`" + ` resource manages the lifecycle of a users group membership.
 
 -> If a group should grant membership to another group use the ` + "`gitlab_group_share_group`" + ` resource instead.
 

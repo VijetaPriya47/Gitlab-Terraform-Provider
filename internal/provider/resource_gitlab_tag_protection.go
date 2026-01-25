@@ -69,7 +69,7 @@ type gitlabTagProtectionAllowedToObjectModel struct {
 
 func (r *gitlabTagProtectionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: fmt.Sprintf(`The ` + "`gitlab_tag_protection`" + ` resource allows to manage the lifecycle of a tag protection.
+		MarkdownDescription: fmt.Sprintf(`The ` + "`gitlab_tag_protection`" + ` resource manages the lifecycle of a tag protection.
 
 ~> As tag protections cannot be updated, they are deleted and recreated when a change is requested. This means that if the deletion succeeds but the creation fails, tags will be left unprotected.
 If this is a potential issue for you, please use the ` + "`create_before_destroy`" + ` meta-argument: https://developer.hashicorp.com/terraform/language/meta-arguments/lifecycle

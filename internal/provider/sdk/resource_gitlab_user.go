@@ -24,7 +24,7 @@ var validUserStateValues = []string{
 
 var _ = registerResource("gitlab_user", func() *schema.Resource {
 	return &schema.Resource{
-		Description: `The ` + "`gitlab_user`" + ` resource allows to manage the lifecycle of a user.
+		Description: `The ` + "`gitlab_user`" + ` resource manages the lifecycle of a user.
 
 -> the provider needs to be configured with admin-level access for this resource to work.
 

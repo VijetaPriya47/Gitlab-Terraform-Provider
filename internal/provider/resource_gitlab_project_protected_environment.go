@@ -79,7 +79,7 @@ func (r *gitlabProjectProtectedEnvironmentResource) Metadata(ctx context.Context
 
 func (r *gitlabProjectProtectedEnvironmentResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `The ` + "`gitlab_project_protected_environment`" + ` resource allows to manage the lifecycle of a protected environment in a project.
+		MarkdownDescription: `The ` + "`gitlab_project_protected_environment`" + ` resource manages the lifecycle of a protected environment in a project.
 
 ~> In order to use a user or group in the ` + "`deploy_access_levels`" + ` configuration,
    you need to make sure that users have access to the project and groups must have this project shared.

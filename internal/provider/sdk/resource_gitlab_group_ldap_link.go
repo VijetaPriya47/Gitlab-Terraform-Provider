@@ -18,7 +18,7 @@ import (
 
 var _ = registerResource("gitlab_group_ldap_link", func() *schema.Resource {
 	return &schema.Resource{
-		Description: `The ` + "`gitlab_group_ldap_link`" + ` resource allows to manage the lifecycle of an LDAP integration with a group.
+		Description: `The ` + "`gitlab_group_ldap_link`" + ` resource manages the lifecycle of an LDAP integration with a group.
 
 **Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/group_ldap_links/)`,
 

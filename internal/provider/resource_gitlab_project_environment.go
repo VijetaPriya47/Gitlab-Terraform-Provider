@@ -73,7 +73,7 @@ func (r *gitlabProjectEnvironmentResource) Schema(ctx context.Context, req resou
 	allowedEnvironmentAutoStopSettings := []string{"always", "with_action"}
 
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `The ` + "`gitlab_project_environment`" + ` resource allows to manage the lifecycle of an environment in a project.
+		MarkdownDescription: `The ` + "`gitlab_project_environment`" + ` resource manages the lifecycle of an environment in a project.
 
 -> During a terraform destroy this resource by default will not attempt to stop the environment first.
 An environment is required to be in a stopped state before a deletion of the environment can occur.

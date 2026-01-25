@@ -64,7 +64,7 @@ func (r *gitlabClusterAgentTokenResource) Schema(ctx context.Context, req resour
 	tokenStatuses := []string{"active", "revoked"}
 
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `The ` + "`" + `gitlab_cluster_agent_token` + "`" + ` resource allows to manage the lifecycle of a token for a GitLab Agent for Kubernetes.
+		MarkdownDescription: `The ` + "`" + `gitlab_cluster_agent_token` + "`" + ` resource manages the lifecycle of a token for a GitLab Agent for Kubernetes.
 
 -> Requires at least maintainer permissions on the project.
 

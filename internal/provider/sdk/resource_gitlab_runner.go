@@ -15,7 +15,7 @@ import (
 
 var _ = registerResource("gitlab_runner", func() *schema.Resource {
 	return &schema.Resource{
-		Description: `The ` + "`gitlab_runner`" + ` resource allows to manage the lifecycle of a runner.
+		Description: `The ` + "`gitlab_runner`" + ` resource manages the lifecycle of a runner.
 
 ~> This resource has been deprecated in favor of the ` + "`gitlab_user_runner`" + ` resource. Please use that resource, and the new registration flow, instead. To be removed in 19.0.
 

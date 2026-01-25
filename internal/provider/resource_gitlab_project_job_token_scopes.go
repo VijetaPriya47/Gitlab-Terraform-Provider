@@ -71,7 +71,7 @@ func (r *gitlabProjectJobTokenScopesResource) Metadata(ctx context.Context, req 
 
 func (r *gitlabProjectJobTokenScopesResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `The ` + "`gitlab_project_job_token_scopes`" + ` resource allows to manage the CI/CD Job Token scopes in a project.
+		MarkdownDescription: `The ` + "`gitlab_project_job_token_scopes`" + ` resource manages the CI/CD Job Token scopes in a project.
 Any project or group not within the defined set of ` + "`target_project_ids` or `target_group_ids`" + `, respectively, will be removed,
 which allows this resource to be used as an explicit deny.
 

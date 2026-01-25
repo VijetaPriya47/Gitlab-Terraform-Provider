@@ -16,7 +16,7 @@ import (
 
 var _ = registerResource("gitlab_user_sshkey", func() *schema.Resource {
 	return &schema.Resource{
-		Description: `The ` + "`" + `gitlab_user_sshkey` + "`" + ` resource allows to manage the lifecycle of an SSH key assigned to a user.
+		Description: `The ` + "`" + `gitlab_user_sshkey` + "`" + ` resource manages the lifecycle of an SSH key assigned to a user.
 
 **Upstream API**: [GitLab API docs](https://docs.gitlab.com/api/user_keys/#get-an-ssh-key-for-a-user)`,
 

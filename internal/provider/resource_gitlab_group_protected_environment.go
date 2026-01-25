@@ -80,7 +80,7 @@ func (r *gitlabGroupProtectedEnvironmentResource) Schema(ctx context.Context, re
 	var validEnvironments = []string{"production", "staging", "testing", "development", "other"}
 
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `The ` + "`gitlab_group_protected_environment`" + ` resource allows to manage the lifecycle of a protected environment in a group.
+		MarkdownDescription: `The ` + "`gitlab_group_protected_environment`" + ` resource manages the lifecycle of a protected environment in a group.
 
 ~> In order to use a user_id in the ` + "`deploy_access_levels`" + ` configuration,
    you need to make sure that users have access to the group with Maintainer role or higher.

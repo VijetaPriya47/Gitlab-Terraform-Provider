@@ -56,7 +56,7 @@ type gitlabInstanceVariableResourceModel struct {
 
 func (r *gitlabInstanceVariableResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `The ` + "`" + `gitlab_instance_variable` + "`" + ` resource allows to manage the lifecycle of an instance-level CI/CD variable.
+		MarkdownDescription: `The ` + "`" + `gitlab_instance_variable` + "`" + ` resource manages the lifecycle of an instance-level CI/CD variable.
 
 **Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/instance_level_ci_variables/)`,
 		Attributes: map[string]schema.Attribute{

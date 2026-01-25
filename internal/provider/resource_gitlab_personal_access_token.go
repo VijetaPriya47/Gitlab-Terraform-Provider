@@ -77,7 +77,7 @@ func (r *gitlabPersonalAccessTokenResource) Metadata(ctx context.Context, req re
 
 func (r *gitlabPersonalAccessTokenResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `The ` + "`" + `gitlab_personal_access_token` + "`" + ` resource allows to manage the lifecycle of a personal access token.
+		MarkdownDescription: `The ` + "`" + `gitlab_personal_access_token` + "`" + ` resource manages the lifecycle of a personal access token.
 
 -> This resource requires administration privileges.
 

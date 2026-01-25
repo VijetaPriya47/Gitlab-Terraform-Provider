@@ -333,7 +333,7 @@ func (d *gitlabGroupHookResource) getSchema() schema.Schema {
 
 	return schema.Schema{
 		Version: 0,
-		MarkdownDescription: `The ` + "`" + `gitlab_group_hook` + "`" + ` resource allows to manage the lifecycle of a group hook.
+		MarkdownDescription: `The ` + "`" + `gitlab_group_hook` + "`" + ` resource manages the lifecycle of a group hook.
 
 ~> Note that ` + "`" + `push_events` + "`" + ` defaults to ` + "`" + `true` + "`" + `.
 

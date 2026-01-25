@@ -52,7 +52,7 @@ func validateGroupPath(v any, k string) (ws []string, errors []error) {
 
 var _ = registerResource("gitlab_group", func() *schema.Resource {
 	return &schema.Resource{
-		Description: `The ` + "`gitlab_group`" + ` resource allows to manage the lifecycle of a group.
+		Description: `The ` + "`gitlab_group`" + ` resource manages the lifecycle of a group.
 
 -> On GitLab.com, you cannot use the ` + "`gitlab_group`" + ` resource to create a [top-level group](https://docs.gitlab.com/user/group/#group-hierarchy). Instead, you must [create a group](https://docs.gitlab.com/user/group/#create-a-group) in the UI, then import the group into your Terraform configuration. From here, you can manage the group using the Terraform Provider.
 

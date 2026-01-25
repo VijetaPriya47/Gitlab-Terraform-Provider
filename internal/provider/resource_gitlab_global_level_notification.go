@@ -70,7 +70,7 @@ func (d *gitlabGlobalLevelNotificationsResource) Metadata(_ context.Context, req
 func (d *gitlabGlobalLevelNotificationsResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Version: 1,
-		MarkdownDescription: `The ` + "`" + `gitlab_global_level_notifications` + "`" + ` resource allows to manage global notifications.
+		MarkdownDescription: `The ` + "`" + `gitlab_global_level_notifications` + "`" + ` resource manages global notifications.
 		
 **Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/notification_settings/#get-group-or-project-notification-settings)`,
 

@@ -72,7 +72,7 @@ func (r *gitlabProjectIssueLinkResource) Metadata(ctx context.Context, req resou
 
 func (r *gitlabProjectIssueLinkResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `The ` + "`gitlab_project_issue_link`" + ` resource allows to manage the lifecycle of project issue links.
+		MarkdownDescription: `The ` + "`gitlab_project_issue_link`" + ` resource manages the lifecycle of project issue links.
 
 **Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/issue_links/)`,
 		Attributes: map[string]schema.Attribute{

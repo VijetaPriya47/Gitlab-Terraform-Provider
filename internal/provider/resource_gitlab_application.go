@@ -66,7 +66,7 @@ func (r *gitlabApplicationResource) Schema(ctx context.Context, req resource.Sch
 		"write_registry", "sudo", "admin_mode", "openid", "profile", "email",
 	}
 	resp.Schema = schema.Schema{
-		MarkdownDescription: fmt.Sprintf(`The ` + "`gitlab_application`" + ` resource allows to manage the lifecycle of applications in gitlab.
+		MarkdownDescription: fmt.Sprintf(`The ` + "`gitlab_application`" + ` resource manages the lifecycle of applications in gitlab.
 
 ~> In order to use a user for a user to create an application, they must have admin privileges at the instance level.
 To create an OIDC application, a scope of "openid".

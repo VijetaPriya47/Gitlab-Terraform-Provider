@@ -15,7 +15,7 @@ import (
 
 var _ = registerResource("gitlab_project_issue_board", func() *schema.Resource {
 	return &schema.Resource{
-		Description: `The ` + "`" + `gitlab_project_issue_board` + "`" + ` resource allows to manage the lifecycle of a Project Issue Board.
+		Description: `The ` + "`" + `gitlab_project_issue_board` + "`" + ` resource manages the lifecycle of a Project Issue Board.
 
 ~> **NOTE:** If the board lists are changed all lists will be recreated.
 

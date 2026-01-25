@@ -24,7 +24,7 @@ var _ = registerResource("gitlab_project_approval_rule", func() *schema.Resource
 		"code_coverage",
 	}
 	return &schema.Resource{
-		Description: `The ` + "`" + `gitlab_project_approval_rule` + "`" + ` resource allows to manage the lifecycle of a project-level approval rule.
+		Description: `The ` + "`" + `gitlab_project_approval_rule` + "`" + ` resource manages the lifecycle of a project-level approval rule.
 
 -> This resource requires a GitLab Enterprise instance.
 

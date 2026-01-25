@@ -51,7 +51,7 @@ func (r *gitlabProjectFreezePeriodResource) Metadata(ctx context.Context, req re
 
 func (r *gitlabProjectFreezePeriodResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `The ` + "`" + `gitlab_project_freeze_period` + "`" + ` resource allows to manage the lifecycle of a freeze period for a project.
+		MarkdownDescription: `The ` + "`" + `gitlab_project_freeze_period` + "`" + ` resource manages the lifecycle of a freeze period for a project.
 
 **Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/freeze_periods/)`,
 		Version: 1,
@@ -246,7 +246,7 @@ type gitlabProjectFreezePeriodResourceModelV0 struct {
 
 func (r *gitlabProjectFreezePeriodResource) getV0Schema() *schema.Schema {
 	return &schema.Schema{
-		MarkdownDescription: `The ` + "`" + `gitlab_project_freeze_period` + "`" + ` resource allows to manage the lifecycle of a freeze period for a project.
+		MarkdownDescription: `The ` + "`" + `gitlab_project_freeze_period` + "`" + ` resource manages the lifecycle of a freeze period for a project.
 
 **Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/freeze_periods/)`,
 		Version: 0,

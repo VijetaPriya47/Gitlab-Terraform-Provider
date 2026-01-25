@@ -73,7 +73,7 @@ type gitlabBranchCommitResourceModel struct {
 
 func (r *gitlabBranchResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `The ` + "`gitlab_branch`" + ` resource allows to manage the lifecycle of a repository branch.
+		MarkdownDescription: `The ` + "`gitlab_branch`" + ` resource manages the lifecycle of a repository branch.
 
 !> The ` + "`ref`" + ` attribute is only set in state on resource creation. Imports or divergent branches can lead Terraform to destroy and recreate the resource. Use the lifecycle meta-argument to ignore changes to avoid this behavior.
 

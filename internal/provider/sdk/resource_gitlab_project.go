@@ -896,7 +896,7 @@ var resourceContainerExpirationPolicyAttributesSchema = &schema.Resource{
 
 var _ = registerResource("gitlab_project", func() *schema.Resource {
 	return &schema.Resource{
-		Description: `The ` + "`gitlab_project`" + ` resource allows to manage the lifecycle of a project.
+		Description: `The ` + "`gitlab_project`" + ` resource manages the lifecycle of a project.
 
 A project can either be created in a group or user namespace.
 
