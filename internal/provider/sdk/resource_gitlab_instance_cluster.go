@@ -16,7 +16,7 @@ import (
 
 var _ = registerResource("gitlab_instance_cluster", func() *schema.Resource {
 	return &schema.Resource{
-		Description: `The ` + "`" + `gitlab_instance_cluster` + "`" + ` resource allows to manage the lifecycle of an instance cluster.
+		Description: `The ` + "`" + `gitlab_instance_cluster` + "`" + ` resource manages the lifecycle of an instance cluster.
 
 ~> This is deprecated, due for removal in GitLab 19.0.
 

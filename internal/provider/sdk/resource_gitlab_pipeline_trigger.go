@@ -15,7 +15,7 @@ import (
 
 var _ = registerResource("gitlab_pipeline_trigger", func() *schema.Resource {
 	return &schema.Resource{
-		Description: `The ` + "`" + `gitlab_pipeline_trigger` + "`" + ` resource allows to manage the lifecycle of a pipeline trigger.
+		Description: `The ` + "`" + `gitlab_pipeline_trigger` + "`" + ` resource manages the lifecycle of a pipeline trigger.
 
 **Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/pipeline_triggers/)`,
 

@@ -54,7 +54,7 @@ type gitlabSystemHookResourceModel struct {
 
 func (r *gitlabSystemHookResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `The ` + "`gitlab_system_hook`" + ` resource allows to manage the lifecycle of a system hook.
+		MarkdownDescription: `The ` + "`gitlab_system_hook`" + ` resource manages the lifecycle of a system hook.
 
 **Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/system_hooks/)`,
 		Attributes: map[string]schema.Attribute{

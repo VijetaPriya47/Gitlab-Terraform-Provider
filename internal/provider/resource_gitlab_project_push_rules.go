@@ -65,7 +65,7 @@ func (d *gitlabProjectPushRulesResource) Metadata(_ context.Context, req resourc
 
 func (r *gitlabProjectPushRulesResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `The ` + "`gitlab_project_push_rules`" + ` resource allows to manage the lifecycle of push rules on a project.
+		MarkdownDescription: `The ` + "`gitlab_project_push_rules`" + ` resource manages the lifecycle of push rules on a project.
 
 ~> This resource will compete with the ` + "`gitlab_project`" + ` resource if push rules are also defined as 
    part of that resource, since this resource will take over ownership of the project push rules created for the referenced project.

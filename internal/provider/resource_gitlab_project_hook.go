@@ -319,7 +319,7 @@ func (d *gitlabProjectHookResource) UpgradeState(ctx context.Context) map[int64]
 func (d *gitlabProjectHookResource) getSchema() schema.Schema {
 	return schema.Schema{
 		Version: 1,
-		MarkdownDescription: `The ` + "`" + `gitlab_project_hook` + "`" + ` resource allows to manage the lifecycle of a project hook.
+		MarkdownDescription: `The ` + "`" + `gitlab_project_hook` + "`" + ` resource manages the lifecycle of a project hook.
 
 ~> Note that ` + "`" + `push_events` + "`" + ` defaults to ` + "`" + `true` + "`" + `.
 

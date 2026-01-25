@@ -80,7 +80,7 @@ func (r *gitlabProjectAccessTokenResource) Metadata(ctx context.Context, req res
 
 func (r *gitlabProjectAccessTokenResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `The ` + "`" + `gitlab_project_access_token` + "`" + ` resource allows to manage the lifecycle of a project access token.
+		MarkdownDescription: `The ` + "`" + `gitlab_project_access_token` + "`" + ` resource manages the lifecycle of a project access token.
 
 ~> Observability scopes are in beta and may not work on all instances. See more details in [the documentation](https://docs.gitlab.com/development/tracing/)
 

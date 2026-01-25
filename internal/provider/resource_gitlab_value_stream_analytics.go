@@ -76,7 +76,7 @@ func (r *gitlabValueStreamAnalyticsResource) Schema(ctx context.Context, req res
 	}
 
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `The ` + "`gitlab_value_stream_analytics`" + ` resource allows to manage the lifecycle of value stream analytics.
+		MarkdownDescription: `The ` + "`gitlab_value_stream_analytics`" + ` resource manages the lifecycle of value stream analytics.
 
 -> This resource requires a GitLab Enterprise instance with a Premium license to create custom value stream analytics.
 

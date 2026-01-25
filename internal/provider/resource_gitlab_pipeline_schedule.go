@@ -63,7 +63,7 @@ func (d *gitlabPipelineScheduleResource) Metadata(_ context.Context, req resourc
 
 func (d *gitlabPipelineScheduleResource) getV1Schema() schema.Schema {
 	return schema.Schema{
-		MarkdownDescription: `The ` + "`gitlab_pipeline_schedule` " + `resource allows to manage the lifecycle of a scheduled pipeline.
+		MarkdownDescription: `The ` + "`gitlab_pipeline_schedule` " + `resource manages the lifecycle of a scheduled pipeline.
 
 **Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/pipeline_schedules/)`,
 

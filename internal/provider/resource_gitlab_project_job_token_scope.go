@@ -68,7 +68,7 @@ func (r *gitlabProjectJobTokenScopeResource) Metadata(ctx context.Context, req r
 
 func (d *gitlabProjectJobTokenScopeResource) getV1Schema(resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `The ` + "`gitlab_project_job_token_scope`" + ` resource allows to manage the CI/CD Job Token scope in a project.
+		MarkdownDescription: `The ` + "`gitlab_project_job_token_scope`" + ` resource manages the CI/CD Job Token scope in a project.
 Any projects added to the CI/CD Job Token scope outside of TF will be untouched by the resource.
 
 ~> Conflicts with the use of ` + "`gitlab_project_job_token_scopes`" + ` when used on the same project. Use one or the other to ensure the desired state.
@@ -272,7 +272,7 @@ func (r *gitlabProjectJobTokenScopeResource) Delete(ctx context.Context, req res
 // GetV0Schema returns the schema for the V0 version of the resource
 func (r *gitlabProjectJobTokenScopeResource) getV0Schema() schema.Schema {
 	return schema.Schema{
-		MarkdownDescription: `The ` + "`gitlab_project_job_token_scope`" + ` resource allows to manage the CI/CD Job Token scope in a project.
+		MarkdownDescription: `The ` + "`gitlab_project_job_token_scope`" + ` resource manages the CI/CD Job Token scope in a project.
 Any projects added to the CI/CD Job Token scope outside of TF will be untouched by the resource.
 
 ~> Conflicts with the use of ` + "`gitlab_project_job_token_scopes`" + ` when used on the same project. Use one or the other to ensure the desired state.

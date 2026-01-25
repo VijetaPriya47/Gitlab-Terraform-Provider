@@ -105,9 +105,9 @@ func (r *gitlabMemberRoleResource) Schema(ctx context.Context, req resource.Sche
 	}
 
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `The ` + "`gitlab_member_role`" + ` resource allows to manage the lifecycle of a custom member role.
+		MarkdownDescription: `The ` + "`gitlab_member_role`" + ` resource manages the lifecycle of a custom member role.
 
-Custom roles allow an organization to create user roles with the precise privileges and permissions required for that organization’s needs.
+Custom roles allow an organization to create user roles with the precise privileges and permissions required for that organization's needs.
 
 -> This resource requires an Ultimate license.
 

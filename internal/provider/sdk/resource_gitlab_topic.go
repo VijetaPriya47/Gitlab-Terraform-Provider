@@ -15,7 +15,7 @@ import (
 
 var _ = registerResource("gitlab_topic", func() *schema.Resource {
 	return &schema.Resource{
-		Description: `The ` + "`gitlab_topic`" + ` resource allows to manage the lifecycle of topics that are then assignable to projects.
+		Description: `The ` + "`gitlab_topic`" + ` resource manages the lifecycle of topics that are then assignable to projects.
 
 -> Topics are the successors for project tags. Aside from avoiding terminology collisions with Git tags, they are more descriptive and better searchable.
 

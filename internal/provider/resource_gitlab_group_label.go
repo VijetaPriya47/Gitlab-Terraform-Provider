@@ -257,7 +257,7 @@ func (r *gitlabGroupLabelResource) upgradeIdToV2Id(ctx context.Context, input *g
 // UpgradeState function.
 func (r *gitlabGroupLabelResource) getV0Schema() schema.Schema {
 	return schema.Schema{
-		MarkdownDescription: `The ` + "`gitlab_group_label`" + ` resource allows to manage the lifecycle of labels within a group.
+		MarkdownDescription: `The ` + "`gitlab_group_label`" + ` resource manages the lifecycle of labels within a group.
 
 **Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/group_labels/)`,
 		Version: 2,

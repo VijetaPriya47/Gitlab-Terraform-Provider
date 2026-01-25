@@ -59,7 +59,7 @@ func (r *gitlabGroupEpicBoardResource) Metadata(ctx context.Context, req resourc
 
 func (r *gitlabGroupEpicBoardResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `The ` + "`gitlab_group_epic_board`" + ` resource allows to manage the lifecycle of a epic board in a group.
+		MarkdownDescription: `The ` + "`gitlab_group_epic_board`" + ` resource manages the lifecycle of a epic board in a group.
 
 ~> Multiple epic boards on one group requires a GitLab Premium or above License.
 

@@ -53,7 +53,7 @@ func (d *gitlabProjectComplianceFrameworksResource) Metadata(_ context.Context, 
 
 func (r *gitlabProjectComplianceFrameworksResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `The ` + "`gitlab_project_compliance_frameworks`" + ` resource allows to manage the lifecycle of compliance frameworks on a project.
+		MarkdownDescription: `The ` + "`gitlab_project_compliance_frameworks`" + ` resource manages the lifecycle of compliance frameworks on a project.
 
 -> This resource requires a GitLab Enterprise instance with a Premium license to set the compliance frameworks on a project.
 

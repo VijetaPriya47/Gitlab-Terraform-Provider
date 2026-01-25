@@ -17,7 +17,7 @@ import (
 
 var _ = registerResource("gitlab_user_gpgkey", func() *schema.Resource {
 	return &schema.Resource{
-		Description: `The ` + "`" + `gitlab_user_gpgkey` + "`" + ` resource allows to manage the lifecycle of a GPG key assigned to the current user or a specific user.
+		Description: `The ` + "`" + `gitlab_user_gpgkey` + "`" + ` resource manages the lifecycle of a GPG key assigned to the current user or a specific user.
 		
 -> Managing GPG keys for arbitrary users requires admin privileges.
 

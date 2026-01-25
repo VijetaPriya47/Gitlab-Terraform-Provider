@@ -21,7 +21,7 @@ var issueStateToStateEvent = map[string]string{
 
 var _ = registerResource("gitlab_project_issue", func() *schema.Resource {
 	return &schema.Resource{
-		Description: `The ` + "`gitlab_project_issue`" + ` resource allows to manage the lifecycle of an issue within a project.
+		Description: `The ` + "`gitlab_project_issue`" + ` resource manages the lifecycle of an issue within a project.
 
 -> During a terraform destroy this resource will close the issue. Set the delete_on_destroy flag to true to delete the issue instead of closing it.
 

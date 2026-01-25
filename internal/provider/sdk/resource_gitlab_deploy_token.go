@@ -18,7 +18,7 @@ import (
 
 var _ = registerResource("gitlab_deploy_token", func() *schema.Resource {
 	return &schema.Resource{
-		Description: `The ` + "`gitlab_deploy_token`" + ` resource allows to manage the lifecycle of group and project deploy tokens.
+		Description: `The ` + "`gitlab_deploy_token`" + ` resource manages the lifecycle of group and project deploy tokens.
 
 ~> This resource is deprecated and will be removed in 19.0. Use ` + "`gitlab_project_deploy_token`" + ` or ` + "`gitlab_group_deploy_token`" + ` instead!
 

@@ -40,7 +40,7 @@ var validEncodingValues = []string{
 
 var _ = registerResource("gitlab_repository_file", func() *schema.Resource {
 	return &schema.Resource{
-		Description: `The ` + "`gitlab_repository_file`" + ` resource allows to manage the lifecycle of a file within a repository.
+		Description: `The ` + "`gitlab_repository_file`" + ` resource manages the lifecycle of a file within a repository.
 
 -> **Timeouts** Default timeout for *Create*, *Update* and *Delete* is one minute and can be configured in the ` + "`timeouts`" + ` block.
 

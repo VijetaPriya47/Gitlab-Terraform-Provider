@@ -108,7 +108,7 @@ type gitlabReleaseLinks struct {
 
 func (r *gitlabReleaseResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: fmt.Sprintf(`The ` + "`gitlab_release`" + ` resource allows to manage the lifecycle of releases in gitlab.
+		MarkdownDescription: fmt.Sprintf(`The ` + "`gitlab_release`" + ` resource manages the lifecycle of releases in gitlab.
 
 **Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/releases/)`),
 
