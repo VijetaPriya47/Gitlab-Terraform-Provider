@@ -105,7 +105,7 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 		Computed:    true,
 	},
 	"import_url": {
-		Description:   "Git URL to a repository to be imported. Together with `mirror = true` it will setup a Pull Mirror. This can also be used together with `forked_from_project_id` to setup a Pull Mirror for a fork. The fork takes precedence over the import. Make sure to provide the credentials in `import_url_username` and `import_url_password`. GitLab never returns the credentials, thus the provider cannot detect configuration drift in the credentials. They can also not be imported using `terraform import`. See the examples section for how to properly use it.",
+		Description:   "Git URL to a repository to be imported. Use with creating a mirror is deprecated - use `gitlab_project_pull_mirror` instead. Together with `mirror = true` it will setup a Pull Mirror. This can also be used together with `forked_from_project_id` to setup a Pull Mirror for a fork. The fork takes precedence over the import. Make sure to provide the credentials in `import_url_username` and `import_url_password`. GitLab never returns the credentials, thus the provider cannot detect configuration drift in the credentials. They can also not be imported using `terraform import`. See the examples section for how to properly use it.",
 		Type:          schema.TypeString,
 		Optional:      true,
 		Computed:      true, // Prevent conflict with the new `gitlab_project_pull_mirror`
@@ -379,12 +379,12 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 					Optional:    true,
 				},
 				"reject_unsigned_commits": {
-					Description: "Reject commit when it’s not signed through GPG.",
+					Description: "Reject commit when it's not signed through GPG.",
 					Type:        schema.TypeBool,
 					Optional:    true,
 				},
 				"reject_non_dco_commits": {
-					Description: "Reject commit when it’s not DCO certified.",
+					Description: "Reject commit when it's not DCO certified.",
 					Type:        schema.TypeBool,
 					Optional:    true,
 				},
@@ -432,32 +432,36 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 	// The GitLab API requires that import_url is also set when mirror options are used
 	// Ref: https://gitlab.com/gitlab-org/terraform-provider-gitlab/pull/449#discussion_r549729230
 	"mirror": {
-		Description:  "Enable project pull mirror.",
+		Description:  "Deprecated: to be removed in 19.0. Use `gitlab_project_pull_mirror` instead. Enable project pull mirror.",
 		Type:         schema.TypeBool,
 		Optional:     true,
 		Computed:     true, // Prevent conflict with the new `gitlab_project_pull_mirror`
 		RequiredWith: []string{"import_url"},
+		Deprecated:   "To be removed in 19.0. Use `gitlab_project_pull_mirror` instead.",
 	},
 	"mirror_trigger_builds": {
-		Description:  "Enable trigger builds on pushes for a mirrored project.",
+		Description:  "Deprecated: to be removed in 19.0. Use `gitlab_project_pull_mirror.mirror_trigger_builds` instead. Enable trigger builds on pushes for a mirrored project.",
 		Type:         schema.TypeBool,
 		Optional:     true,
 		Computed:     true,
 		RequiredWith: []string{"import_url"},
+		Deprecated:   "To be removed in 19.0. Use `gitlab_project_pull_mirror.mirror_trigger_builds` instead.",
 	},
 	"mirror_overwrites_diverged_branches": {
-		Description:  "Enable overwrite diverged branches for a mirrored project.",
+		Description:  "Deprecated: to be removed in 19.0. Use `gitlab_project_pull_mirror.mirror_overwrites_diverged_branches` instead. Enable overwrite diverged branches for a mirrored project.",
 		Type:         schema.TypeBool,
 		Optional:     true,
 		Computed:     true,
 		RequiredWith: []string{"import_url"},
+		Deprecated:   "To be removed in 19.0. Use `gitlab_project_pull_mirror.mirror_overwrites_diverged_branches` instead.",
 	},
 	"only_mirror_protected_branches": {
-		Description:  "Enable only mirror protected branches for a mirrored project.",
+		Description:  "Deprecated: to be removed in 19.0. Use `gitlab_project_pull_mirror.only_mirror_protected_branches` instead. Enable only mirror protected branches for a mirrored project.",
 		Type:         schema.TypeBool,
 		Optional:     true,
 		Computed:     true,
 		RequiredWith: []string{"import_url"},
+		Deprecated:   "To be removed in 19.0. Use `gitlab_project_pull_mirror.only_mirror_protected_branches` instead.",
 	},
 	"issues_template": {
 		Description: "Sets the template for new issues in the project.",
@@ -561,7 +565,7 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 		ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(validProjectAccessLevels, false)),
 	},
 	"auto_cancel_pending_pipelines": {
-		Description:      "Auto-cancel pending pipelines. This isn’t a boolean, but enabled/disabled.",
+		Description:      "Auto-cancel pending pipelines. This isn't a boolean, but enabled/disabled.",
 		Type:             schema.TypeString,
 		Optional:         true,
 		Computed:         true,
