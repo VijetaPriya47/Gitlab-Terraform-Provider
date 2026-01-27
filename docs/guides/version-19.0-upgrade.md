@@ -177,7 +177,7 @@ resource "gitlab_project_approval_rule" "default_rule" {
 }
 ```
 
-### Migration Process
+### Approval Rule Migration Process
 
 All projects have a default approval rule, regardless of whether `approvals_before_merge` is in use.
 By default, `gitlab_project_approval_rule` will automatically import the default approval rule.
@@ -188,6 +188,64 @@ By default, `gitlab_project_approval_rule` will automatically import the default
 
 During the update process, the approvers total will be set to zero by the project resource for a short time.
 The approval rule resource will then import the rule and update the approvers total to the desired amount in the same apply operation.
+
+## Resource gitlab_project.mirror Replacement
+
+The mirror attributes on `gitlab_project` should be replaced by equivalent attributes on the new `gitlab_project_pull_mirror` resource.
+
+Example old config:
+
+```hcl
+resource "gitlab_project" "import_private_with_mirror" {
+  name                                = "import-from-public-project"
+  import_url                          = "https://gitlab.example.com/repo.git"
+  import_url_username                 = "user"
+  import_url_password                 = "pass"
+  mirror                              = true
+  mirror_trigger_builds               = true
+  only_mirror_protected_branches      = true
+  mirror_overwrites_diverged_branches = true
+}
+```
+
+Example new config:
+
+```hcl
+resource "gitlab_project" "import_private_with_mirror" {
+  name = "import-from-public-project"
+}
+
+resource "gitlab_project_pull_mirror" "mirror" {
+  project                             = gitlab_project.import_private_with_mirror.id
+  url                                 = "https://gitlab.example.com/repo.git"
+  auth_user                           = "user"
+  auth_password                       = "pass"
+  mirror_trigger_builds               = true
+  only_mirror_protected_branches      = true
+  mirror_overwrites_diverged_branches = true
+}
+```
+
+### Mirror Migration Process
+
+- Remove any usage of the following attributes on the `gitlab_project` resource:
+  - `import_url`
+  - `import_url_username`
+  - `import_url_password`
+  - `mirror`
+  - `mirror_trigger_builds`
+  - `only_mirror_protected_branches`
+  - `mirror_overwrites_diverged_branches`
+- Add code for the new `gitlab_project_pull_mirror` resource with the following attribute values if set on the old resource:
+  - `url` from `gitlab_project.import_url`
+  - `auth_user` from `gitlab_project.import_url_username`
+  - `auth_password` from `gitlab_project.import_url_password`
+  - `mirror_trigger_builds` from `gitlab_project.mirror_trigger_builds`
+  - `only_mirror_protected_branches` from `gitlab_project.only_mirror_protected_branches`
+  - `mirror_overwrites_diverged_branches` from `gitlab_project.mirror_overwrites_diverged_branches`
+- Run an apply.
+  - As there is a relationship between the two resources, the `gitlab_project` resource will apply first. This will temporarily remove the mirror.
+  - Then the new pull mirror resource will apply and add the mirror back in.
 
 ## Resources removed
 

@@ -35,7 +35,7 @@ resource "gitlab_project" "fork" {
   forked_from_project_id = gitlab_project.example.id
 }
 
-# Fork a project and setup a pull mirror
+# Fork a project and setup a pull mirror (Deprecated, use gitlab_project_pull_mirror instead)
 resource "gitlab_project" "fork" {
   name                   = "my-fork"
   description            = "This is a fork"
@@ -50,7 +50,7 @@ resource "gitlab_project" "import_public" {
   import_url = "https://gitlab.example.com/repo.git"
 }
 
-# Create a project by importing it from a public project and setup the pull mirror
+# Create a project by importing it from a public project and setup the pull mirror (Deprecated, use gitlab_project_pull_mirror instead)
 resource "gitlab_project" "import_public_with_mirror" {
   name       = "import-from-public-project"
   import_url = "https://gitlab.example.com/repo.git"
@@ -65,7 +65,7 @@ resource "gitlab_project" "import_private" {
   import_url_password = "pass"
 }
 
-# Create a project by importing it from a private project and setup the pull mirror
+# Create a project by importing it from a private project and setup the pull mirror (Deprecated, use gitlab_project_pull_mirror instead)
 resource "gitlab_project" "import_private_with_mirror" {
   name                = "import-from-public-project"
   import_url          = "https://gitlab.example.com/repo.git"
