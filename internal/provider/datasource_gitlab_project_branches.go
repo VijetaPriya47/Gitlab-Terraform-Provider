@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -31,9 +32,37 @@ type gitlabProjectBranchesDataSource struct {
 	client *gitlab.Client
 }
 
+type compiledRegexValidator struct{}
+
+var _ validator.String = compiledRegexValidator{}
+
+func (compiledRegexValidator) Description(_ context.Context) string {
+	return "Ensures the provided value is a valid regular expression."
+}
+
+func (compiledRegexValidator) MarkdownDescription(ctx context.Context) string {
+	return compiledRegexValidator{}.Description(ctx)
+}
+
+func (compiledRegexValidator) ValidateString(ctx context.Context, req validator.StringRequest, resp *validator.StringResponse) {
+	if req.ConfigValue.IsNull() || req.ConfigValue.IsUnknown() {
+		return
+	}
+
+	if _, err := regexp.Compile(req.ConfigValue.ValueString()); err != nil {
+		resp.Diagnostics.AddAttributeError(
+			req.Path,
+			"Invalid regex pattern",
+			fmt.Sprintf("The provided regex pattern could not be compiled: %s", err.Error()),
+		)
+	}
+}
+
 type gitlabProjectBranchesDataSourceModel struct {
 	ID       types.String                         `tfsdk:"id"`
 	Project  types.String                         `tfsdk:"project"`
+	Regex    types.String                         `tfsdk:"regex"`
+	Search   types.String                         `tfsdk:"search"`
 	Branches []gitlabProjectBranchDataSourceModel `tfsdk:"branches"`
 }
 
@@ -67,6 +96,15 @@ func (d *gitlabProjectBranchesDataSource) Schema(_ context.Context, _ datasource
 				MarkdownDescription: "ID or URL-encoded path of the project owned by the authenticated user.",
 				Required:            true,
 				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			},
+			"regex": schema.StringAttribute{
+				MarkdownDescription: "Regex pattern to filter the returned branches by name.",
+				Optional:            true,
+				Validators:          []validator.String{compiledRegexValidator{}},
+			},
+			"search": schema.StringAttribute{
+				MarkdownDescription: "A search string to filter branches by name.",
+				Optional:            true,
 			},
 			"branches": schema.ListNestedAttribute{
 				MarkdownDescription: "The list of branches of the project, as defined below.",
@@ -186,6 +224,9 @@ func (d *gitlabProjectBranchesDataSource) Read(ctx context.Context, req datasour
 	project := data.Project.ValueString()
 
 	options := &gitlab.ListBranchesOptions{}
+
+	options.Regex = data.Regex.ValueStringPointer()
+	options.Search = data.Search.ValueStringPointer()
 
 	allBranches, err := gitlab.ScanAndCollect(func(p gitlab.PaginationOptionFunc) ([]*gitlab.Branch, *gitlab.Response, error) {
 		return d.client.Branches.ListBranches(project, options, p, gitlab.WithContext(ctx))

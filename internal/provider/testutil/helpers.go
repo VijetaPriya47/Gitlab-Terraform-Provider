@@ -498,6 +498,22 @@ func CreateBranches(t *testing.T, project *gitlab.Project, n int) []*gitlab.Bran
 	return branches
 }
 
+// CreateBranch is a test helper for creating a branch with a specific name.
+// It assumes the project will be destroyed at the end of the test and will not cleanup created branch.
+func CreateBranch(t *testing.T, project *gitlab.Project, name string) *gitlab.Branch {
+	t.Helper()
+
+	branch, _, err := TestGitlabClient.Branches.CreateBranch(project.ID, &gitlab.CreateBranchOptions{
+		Branch: gitlab.Ptr(name),
+		Ref:    gitlab.Ptr(project.DefaultBranch),
+	})
+	if err != nil {
+		t.Fatalf("could not create test branch %q: %v", name, err)
+	}
+
+	return branch
+}
+
 // CreateProtectedBranches is a test helper for creating a specified number of protected branches.
 // It assumes the project will be destroyed at the end of the test and will not cleanup created branches.
 func CreateProtectedBranches(t *testing.T, project *gitlab.Project, n int) []*gitlab.ProtectedBranch {
