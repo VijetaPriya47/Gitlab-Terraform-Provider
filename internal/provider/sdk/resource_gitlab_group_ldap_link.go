@@ -2,7 +2,6 @@ package sdk
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -145,7 +144,7 @@ func resourceGitLabGroupLDAPLinkBuildId(group, ldapProvider, cn, filter string) 
 func resourceGitLabGroupLDAPLinkParseId(id string) (string, string, string, string, error) {
 	parts := strings.Split(id, ":")
 	if len(parts) != 4 {
-		return "", "", "", "", errors.New("unexpected ID format: Group LDAP Link ID had fewer than 4 parts. Expected <group>:<LDAPProvider>:<CN>:<filter>")
+		return "", "", "", "", fmt.Errorf("unexpected ID format: Group LDAP Link ID did not split into 4 parts. Expected <group>:<LDAPProvider>:<CN>:<filter>, got %s", id)
 	}
 	return parts[0], parts[1], parts[2], parts[3], nil
 }
