@@ -51,6 +51,7 @@ type gitlabProjectHookDataSourceModel struct {
 	VulnerabilityEvents      types.Bool   `tfsdk:"vulnerability_events"`
 	EnableSSLVerification    types.Bool   `tfsdk:"enable_ssl_verification"`
 	CustomWebhookTemplate    types.String `tfsdk:"custom_webhook_template"`
+	BranchFilterStrategy     types.String `tfsdk:"branch_filter_strategy"`
 }
 
 func (d *gitlabProjectHookDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -157,6 +158,10 @@ func (d *gitlabProjectHookDataSource) Schema(_ context.Context, _ datasource.Sch
 				MarkdownDescription: "Set a custom webhook template.",
 				Computed:            true,
 			},
+			"branch_filter_strategy": schema.StringAttribute{
+				MarkdownDescription: "Filter push events by branch.",
+				Computed:            true,
+			},
 		},
 	}
 }
@@ -207,6 +212,7 @@ func (d *gitlabProjectHookDataSource) Read(ctx context.Context, req datasource.R
 	data.VulnerabilityEvents = types.BoolValue(hook.VulnerabilityEvents)
 	data.EnableSSLVerification = types.BoolValue(hook.EnableSSLVerification)
 	data.CustomWebhookTemplate = types.StringValue(hook.CustomWebhookTemplate)
+	data.BranchFilterStrategy = types.StringValue(hook.BranchFilterStrategy)
 	data.Token = types.StringValue("") // Token is not available in API response for security reasons
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }

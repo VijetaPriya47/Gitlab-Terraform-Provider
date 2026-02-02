@@ -316,6 +316,8 @@ func resourceGitlabUserDelete(ctx context.Context, d *schema.ResourceData, meta 
 		return diag.FromErr(err)
 	}
 
+	// GitLab performs user deletion asynchronously. To avoid very long waits
+	// and flaky acceptance tests, we keep the existing 10 minute upper bound.
 	stateConf := &retry.StateChangeConf{
 		Timeout: 10 * time.Minute,
 		Target:  []string{"Deleted"},

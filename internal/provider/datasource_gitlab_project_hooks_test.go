@@ -28,6 +28,8 @@ func TestAccDataSourceGitlabProjectHooks_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("data.gitlab_project_hooks.this", "hooks.#", fmt.Sprintf("%d", len(testHooks))),
 					resource.TestCheckResourceAttr("data.gitlab_project_hooks.this", "hooks.0.url", testHooks[0].URL),
 					resource.TestCheckResourceAttr("data.gitlab_project_hooks.this", "hooks.1.url", testHooks[1].URL),
+					resource.TestCheckResourceAttr("data.gitlab_project_hooks.this", "hooks.0.branch_filter_strategy", "wildcard"),
+					resource.TestCheckResourceAttr("data.gitlab_project_hooks.this", "hooks.1.branch_filter_strategy", "wildcard"),
 				),
 			},
 			{

@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"strconv"
 
@@ -65,6 +66,7 @@ type gitlabProjectHookResourceModel struct {
 	ReleasesEvents            types.Bool   `tfsdk:"releases_events"`
 	VulnerabilityEvents       types.Bool   `tfsdk:"vulnerability_events"`
 	EnableSSLVerification     types.Bool   `tfsdk:"enable_ssl_verification"`
+	BranchFilterStrategy      types.String `tfsdk:"branch_filter_strategy"`
 
 	CustomWebhookTemplate types.String `tfsdk:"custom_webhook_template"`
 
@@ -133,6 +135,10 @@ func (r *gitlabProjectHookResource) Create(ctx context.Context, req resource.Cre
 
 	if !data.Token.IsNull() {
 		options.Token = data.Token.ValueStringPointer()
+	}
+
+	if !data.BranchFilterStrategy.IsNull() && !data.BranchFilterStrategy.IsUnknown() {
+		options.BranchFilterStrategy = data.BranchFilterStrategy.ValueStringPointer()
 	}
 
 	if len(data.CustomHeaders) > 0 {
@@ -244,6 +250,10 @@ func (r *gitlabProjectHookResource) Update(ctx context.Context, req resource.Upd
 		options.Token = data.Token.ValueStringPointer()
 	}
 
+	if !data.BranchFilterStrategy.IsNull() && !data.BranchFilterStrategy.IsUnknown() {
+		options.BranchFilterStrategy = data.BranchFilterStrategy.ValueStringPointer()
+	}
+
 	if len(data.CustomHeaders) > 0 {
 		headers := make([]*gitlab.HookCustomHeader, 0, len(data.CustomHeaders))
 		for _, header := range data.CustomHeaders {
@@ -317,6 +327,8 @@ func (d *gitlabProjectHookResource) UpgradeState(ctx context.Context) map[int64]
 // Retrieve the attributes for the schema. Separated out from the rest of the schema
 // so that the migration can refer to it more easily
 func (d *gitlabProjectHookResource) getSchema() schema.Schema {
+	allowedBranchFilterStrategies := []string{"wildcard", "regex", "all_branches"}
+
 	return schema.Schema{
 		Version: 1,
 		MarkdownDescription: `The ` + "`" + `gitlab_project_hook` + "`" + ` resource manages the lifecycle of a project hook.
@@ -476,6 +488,12 @@ func (d *gitlabProjectHookResource) getSchema() schema.Schema {
 				Optional:            true,
 				Computed:            true,
 			},
+			"branch_filter_strategy": schema.StringAttribute{
+				MarkdownDescription: fmt.Sprintf("Filter push events by branch. Valid values are: %s.", utils.RenderValueListForDocs(allowedBranchFilterStrategies)),
+				Optional:            true,
+				Computed:            true,
+				Validators:          []validator.String{stringvalidator.OneOf(allowedBranchFilterStrategies...)},
+			},
 			"custom_headers": schema.ListNestedAttribute{
 				MarkdownDescription: "Custom headers for the project webhook. Available from GitLab 17.1 onwards.",
 				Optional:            true,
@@ -525,6 +543,7 @@ func (d *gitlabProjectHookResourceModel) modelToStateModel(a *gitlab.ProjectHook
 	d.VulnerabilityEvents = types.BoolValue(a.VulnerabilityEvents)
 	d.EnableSSLVerification = types.BoolValue(a.EnableSSLVerification)
 	d.CustomWebhookTemplate = types.StringValue(a.CustomWebhookTemplate)
+	d.BranchFilterStrategy = types.StringValue(a.BranchFilterStrategy)
 
 	if len(a.CustomHeaders) > 0 || len(d.CustomHeaders) > 0 {
 		// create a map of key/value data from state currently, so we don't overwrite

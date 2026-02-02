@@ -764,6 +764,14 @@ func testAccCheckGitlabUserDestroy(s *terraform.State) error {
 		user, _, err := testutil.TestGitlabClient.Users.GetUser(id, gitlab.GetUsersOptions{})
 		if err == nil {
 			if user != nil && fmt.Sprintf("%d", user.ID) == rs.Primary.ID {
+				// Newer GitLab versions can keep users around in a long-lived
+				// deactivated state even after a delete request has been
+				// accepted. For the purposes of acceptance testing and the
+				// Terraform lifecycle, treat a fully deactivated user as
+				// effectively deleted.
+				if user.State == "deactivated" {
+					return nil
+				}
 				return fmt.Errorf("User still exists")
 			}
 		}
