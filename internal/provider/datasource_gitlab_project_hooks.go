@@ -56,6 +56,7 @@ type gitlabProjectHooksIndividualDataSourceModel struct {
 	VulnerabilityEvents      types.Bool   `tfsdk:"vulnerability_events"`
 	EnableSSLVerification    types.Bool   `tfsdk:"enable_ssl_verification"`
 	CustomWebhookTemplate    types.String `tfsdk:"custom_webhook_template"`
+	BranchFilterStrategy     types.String `tfsdk:"branch_filter_strategy"`
 }
 
 func (d *gitlabProjectHooksDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -171,6 +172,10 @@ func (d *gitlabProjectHooksDataSource) Schema(_ context.Context, _ datasource.Sc
 							MarkdownDescription: "Set a custom webhook template.",
 							Computed:            true,
 						},
+						"branch_filter_strategy": schema.StringAttribute{
+							MarkdownDescription: "Filter push events by branch.",
+							Computed:            true,
+						},
 					},
 				},
 			},
@@ -231,6 +236,7 @@ func (d *gitlabProjectHooksDataSource) Read(ctx context.Context, req datasource.
 			VulnerabilityEvents:      types.BoolValue(hook.VulnerabilityEvents),
 			EnableSSLVerification:    types.BoolValue(hook.EnableSSLVerification),
 			CustomWebhookTemplate:    types.StringValue(hook.CustomWebhookTemplate),
+			BranchFilterStrategy:     types.StringValue(hook.BranchFilterStrategy),
 		}
 		data.Hooks = append(data.Hooks, modelHook)
 	}

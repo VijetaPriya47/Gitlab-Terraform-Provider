@@ -60,6 +60,7 @@ resource "gitlab_project_hook" "custom_headers" {
 
 ### Optional
 
+- `branch_filter_strategy` (String) Filter push events by branch. Valid values are: `wildcard`, `regex`, `all_branches`.
 - `confidential_issues_events` (Boolean) Invoke the hook for confidential issues events. Defaults to `false`.
 - `confidential_note_events` (Boolean) Invoke the hook for confidential note events. Defaults to `false`.
 - `custom_headers` (Attributes List) Custom headers for the project webhook. Available from GitLab 17.1 onwards. (see [below for nested schema](#nestedatt--custom_headers))

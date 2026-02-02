@@ -42,6 +42,7 @@ data "gitlab_project_hooks" "examples" {
 
 Read-Only:
 
+- `branch_filter_strategy` (String) Filter push events by branch.
 - `confidential_issues_events` (Boolean) Invoke the hook for confidential issues events.
 - `confidential_note_events` (Boolean) Invoke the hook for confidential notes events.
 - `custom_webhook_template` (String) Set a custom webhook template.

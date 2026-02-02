@@ -70,6 +70,7 @@ func TestAccGitlabProjectHook_basic(t *testing.T) {
 						URL:                   fmt.Sprintf("https://example.com/hook-%d", rInt),
 						PushEvents:            true,
 						EnableSSLVerification: true,
+						BranchFilterStrategy:  "wildcard",
 					}),
 				),
 			},
@@ -96,6 +97,7 @@ func TestAccGitlabProjectHook_basic(t *testing.T) {
 						Description:           "Testing",
 						PushEvents:            true,
 						EnableSSLVerification: true,
+						BranchFilterStrategy:  "wildcard",
 					}),
 				),
 			},
@@ -129,6 +131,7 @@ func TestAccGitlabProjectHook_basic(t *testing.T) {
 				  deployment_events = true
 				  releases_events = true
 				  vulnerability_events = true
+				  branch_filter_strategy = "wildcard"
 				}
 					`, project.ID, rInt),
 				Check: resource.ComposeTestCheckFunc(
@@ -154,6 +157,7 @@ func TestAccGitlabProjectHook_basic(t *testing.T) {
 						VulnerabilityEvents:       true,
 						ResourceAccessTokenEvents: true,
 						EnableSSLVerification:     false,
+						BranchFilterStrategy:      "wildcard",
 					}),
 				),
 			},
@@ -176,6 +180,7 @@ func TestAccGitlabProjectHook_basic(t *testing.T) {
 						URL:                   fmt.Sprintf("https://example.com/hook-%d", rInt),
 						PushEvents:            true,
 						EnableSSLVerification: true,
+						BranchFilterStrategy:  "wildcard",
 					}),
 				),
 			},
@@ -245,6 +250,7 @@ func TestAccGitlabProjectHook_customTemplate(t *testing.T) {
 						ReleasesEvents:            true,
 						EnableSSLVerification:     false,
 						CustomWebhookTemplate:     "{\"event\":\"{{object_kind}}\"}",
+						BranchFilterStrategy:      "wildcard",
 					}),
 				),
 			},
@@ -523,6 +529,7 @@ type testAccGitlabProjectHookExpectedAttributes struct {
 	VulnerabilityEvents       bool
 	EnableSSLVerification     bool
 	CustomWebhookTemplate     string
+	BranchFilterStrategy      string
 }
 
 func testAccCheckGitlabProjectHookAttributes(hook *gitlab.ProjectHook, want *testAccGitlabProjectHookExpectedAttributes) resource.TestCheckFunc {
@@ -609,6 +616,10 @@ func testAccCheckGitlabProjectHookAttributes(hook *gitlab.ProjectHook, want *tes
 
 		if hook.CustomWebhookTemplate != want.CustomWebhookTemplate {
 			return fmt.Errorf("got custom_webhook_template %q; want %q", hook.CustomWebhookTemplate, want.CustomWebhookTemplate)
+		}
+
+		if hook.BranchFilterStrategy != want.BranchFilterStrategy {
+			return fmt.Errorf("got branch_filter_strategy %q; want %q", hook.BranchFilterStrategy, want.BranchFilterStrategy)
 		}
 
 		return nil
