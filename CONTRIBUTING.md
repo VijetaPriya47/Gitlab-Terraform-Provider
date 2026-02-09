@@ -422,6 +422,12 @@ make testacc GITLAB_TOKEN=example123 GITLAB_BASE_URL=https://example.com/api/v4
   make testacc-up GITLAB_CE_VERSION=15.0.0-ce.0
   ```
 
+  Note: You can override the Docker image platform by setting the environment variable `GITLAB_IMAGE_PLATFORM`. For example:
+
+  ```sh
+  GITLAB_IMAGE_PLATFORM=linux/arm64/v8 make testacc-up
+  ```
+
 - **Run a single test:**
 
   You can pass a pattern to the `RUN` variable to run a reduced number of tests. For example:
