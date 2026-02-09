@@ -3,7 +3,7 @@
 services:
   gitlab-ce:
     image: docker.io/gitlab/gitlab-ce:${GITLAB_CE_VERSION:-latest}
-    platform: linux/amd64
+    platform: ${GITLAB_IMAGE_PLATFORM:-linux/amd64}
     shm_size: 256m
     ports:
       - 8085:80
@@ -27,7 +27,7 @@ services:
 
   gitlab-ee:
     image: docker.io/gitlab/gitlab-ee:${GITLAB_EE_VERSION:-latest}
-    platform: linux/amd64
+    platform: ${GITLAB_IMAGE_PLATFORM:-linux/amd64}
     shm_size: 256m
     ports:
       - 8085:80

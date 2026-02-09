@@ -8,6 +8,19 @@ TERRAFORM_PLUGIN_DIR ?= ~/.terraform.d/plugins/gitlab.local/x/gitlab/99.99.99
 TERRAFORM_PLATFORM_DIR ?= darwin_amd64
 CONTAINER_COMPOSE_ENGINE ?= $(shell docker compose version >/dev/null 2>&1 && echo 'docker compose' || echo 'docker-compose')
 
+CPU_AMD64 := x86_64 amd64
+CPU_ARM64 := arm64 aarch64
+ifndef GITLAB_IMAGE_PLATFORM
+UNAME_M := $(shell uname -m)
+ifneq ($(filter $(UNAME_M),$(CPU_AMD64)),)
+GITLAB_IMAGE_PLATFORM = linux/amd64
+else ifneq ($(filter $(UNAME_M),$(CPU_ARM64)),)
+GITLAB_IMAGE_PLATFORM = linux/arm64
+else
+GITLAB_IMAGE_PLATFORM = linux/amd64
+endif
+endif
+
 build: ## Build the provider binary.
 	go mod tidy
 	GOBIN=$(GOBIN) go install
@@ -77,7 +90,7 @@ GITLAB_SAAS_NAMESPACE_ID ?= 101118380
 GITLAB_EARLY_AUTH_CHECK ?= false
 
 testacc-up: | certs ## Launch a GitLab instance.
-	GITLAB_TOKEN=$(GITLAB_TOKEN) $(CONTAINER_COMPOSE_ENGINE) up -d $(SERVICE)
+	GITLAB_IMAGE_PLATFORM=$(GITLAB_IMAGE_PLATFORM) GITLAB_TOKEN=$(GITLAB_TOKEN) $(CONTAINER_COMPOSE_ENGINE) up -d $(SERVICE)
 	GITLAB_BASE_URL=$(GITLAB_BASE_URL) GITLAB_TOKEN=$(GITLAB_TOKEN) ./scripts/await-healthy.sh
 
 testacc-down: ## Teardown a GitLab instance.
