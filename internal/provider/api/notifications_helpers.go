@@ -6,3 +6,8 @@ var ValidBranchesToBeNotified = []string{
 	"protected",
 	"default_and_protected",
 }
+
+var ValidLabelsToBeNotifiedBehavior = []string{
+	"match_any",
+	"match_all",
+}
