@@ -314,6 +314,31 @@ func TestAccGitlabApplicationSettings_PackageMetadataPurlTypes(t *testing.T) {
 	})
 }
 
+func TestAccGitlabApplicationSettings_NotifyOnUnknownSignIn(t *testing.T) {
+	// lintignore:AT001
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+					resource "gitlab_application_settings" "this" {
+						notify_on_unknown_sign_in = true
+					}
+				`,
+				Check: resource.TestCheckResourceAttr("gitlab_application_settings.this", "notify_on_unknown_sign_in", "true"),
+			},
+			{
+				Config: `
+					resource "gitlab_application_settings" "this" {
+						notify_on_unknown_sign_in = false
+					}
+				`,
+				Check: resource.TestCheckResourceAttr("gitlab_application_settings.this", "notify_on_unknown_sign_in", "false"),
+			},
+		},
+	})
+}
+
 /*
 README: Adding a test destroy function seems a easier-to-understand path to illustrate
 application settings nature and its inability to be destroyed than simply using a nil

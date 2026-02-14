@@ -236,6 +236,7 @@ resource "gitlab_application_settings" "this" {
 - `mirror_capacity_threshold` (Number) Minimum capacity to be available before scheduling more mirrors preemptively.
 - `mirror_max_capacity` (Number) Maximum number of mirrors that can be synchronizing at the same time.
 - `mirror_max_delay` (Number) Maximum time (in minutes) between updates that a mirror can have when scheduled to synchronize.
+- `notify_on_unknown_sign_in` (Boolean) Enable sending notification if sign in from unknown IP address happens
 - `npm_package_requests_forwarding` (Boolean) Use npmjs.org as a default remote repository when the package is not found in the GitLab Package Registry for npm.
 - `nuget_skip_metadata_url_validation` (Boolean) Indicates whether to skip metadata URL validation for the NuGet package.
 - `outbound_local_requests_whitelist` (List of String) Define a list of trusted domains or IP addresses to which local requests are allowed when local requests for hooks and services are disabled.
