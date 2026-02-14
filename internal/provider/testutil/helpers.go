@@ -862,6 +862,22 @@ func CreateProjectLabels(t *testing.T, pid any, n int) []*gitlab.Label {
 	return labels
 }
 
+// CreateProjectLabelsWithCustomOptions allows customizing the label creation with different options for each label.
+func CreateProjectLabelsWithCustomOptions(t *testing.T, pid any, opts []*gitlab.CreateLabelOptions) []*gitlab.Label {
+	t.Helper()
+
+	var labels []*gitlab.Label
+	for _, opt := range opts {
+		label, _, err := TestGitlabClient.Labels.CreateLabel(pid, opt)
+		if err != nil {
+			t.Fatalf("could not create test label: %v", err)
+		}
+		labels = append(labels, label)
+	}
+
+	return labels
+}
+
 // AddLabelToIssue is a test helper for adding a label to an issue.
 // It assumes the project and issue will be destroyed at the end of the test and will not cleanup the label assignment.
 func AddLabelToIssue(t *testing.T, projectID any, issueIID int64, label *gitlab.Label) {
