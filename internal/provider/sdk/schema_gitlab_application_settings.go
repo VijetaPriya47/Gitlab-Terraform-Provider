@@ -1394,6 +1394,13 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 
+		"notify_on_unknown_sign_in": {
+			Description: "Enable sending notification if sign in from unknown IP address happens",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
+		
 		"npm_package_requests_forwarding": {
 			Description: "Use npmjs.org as a default remote repository when the package is not found in the GitLab Package Registry for npm.",
 			Type:        schema.TypeBool,
@@ -2448,6 +2455,7 @@ func gitlabApplicationSettingsToStateMap(settings *gitlab.Settings) map[string]a
 	stateMap["mirror_capacity_threshold"] = settings.MirrorCapacityThreshold
 	stateMap["mirror_max_capacity"] = settings.MirrorMaxCapacity
 	stateMap["mirror_max_delay"] = settings.MirrorMaxDelay
+	stateMap["notify_on_unknown_sign_in"] = settings.NotifyOnUnknownSignIn
 	stateMap["npm_package_requests_forwarding"] = settings.NPMPackageRequestsForwarding
 	stateMap["nuget_skip_metadata_url_validation"] = settings.NugetSkipMetadataURLValidation
 	stateMap["outbound_local_requests_whitelist"] = settings.OutboundLocalRequestsWhitelist
@@ -3297,6 +3305,10 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 		options.MirrorMaxDelay = gitlab.Ptr(int64(d.Get("mirror_max_delay").(int)))
 	}
 
+	if d.HasChange("notify_on_unknown_sign_in") {
+		options.NotifyOnUnknownSignIn = gitlab.Ptr(d.Get("notify_on_unknown_sign_in").(bool))
+	}
+	
 	if d.HasChange("npm_package_requests_forwarding") {
 		options.NPMPackageRequestsForwarding = gitlab.Ptr(d.Get("npm_package_requests_forwarding").(bool))
 	}
