@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -22,6 +23,7 @@ var (
 	_ resource.Resource                = &gitlabProjectIntegrationExternalWikiResource{}
 	_ resource.ResourceWithConfigure   = &gitlabProjectIntegrationExternalWikiResource{}
 	_ resource.ResourceWithImportState = &gitlabProjectIntegrationExternalWikiResource{}
+	_ resource.ResourceWithMoveState   = &gitlabProjectIntegrationExternalWikiResource{}
 )
 
 func init() {
@@ -256,5 +258,103 @@ func (d *gitlabProjectIntegrationExternalWikiResourceModel) modelToStateModel(se
 		d.UpdatedAt = types.StringValue(service.UpdatedAt.Format(time.RFC3339))
 	} else {
 		d.UpdatedAt = types.StringNull()
+	}
+}
+
+// MoveState implements the ResourceWithMoveState interface to support moving state from the deprecated gitlab_integration_external_wiki resource.
+// This enables users to migrate from gitlab_integration_external_wiki to gitlab_project_integration_external_wiki using Terraform's moved block.
+// Note: Cross-resource-type state moves require Terraform 1.8 or later.
+func (r *gitlabProjectIntegrationExternalWikiResource) MoveState(ctx context.Context) []resource.StateMover {
+	return []resource.StateMover{
+		// This first StateMover implements the migration from
+		// `gitlab_integration_external_wiki` -> `gitlab_project_integration_external_wiki`.
+		// The SourceSchema needs to match the deprecated `gitlab_integration_external_wiki` as a result.
+		{
+			SourceSchema: &schema.Schema{
+				Attributes: map[string]schema.Attribute{
+					"id": schema.StringAttribute{
+						Computed: true,
+					},
+					"project": schema.StringAttribute{
+						Required: true,
+					},
+					"external_wiki_url": schema.StringAttribute{
+						Required: true,
+					},
+					"title": schema.StringAttribute{
+						Computed: true,
+					},
+					"created_at": schema.StringAttribute{
+						Computed: true,
+					},
+					"updated_at": schema.StringAttribute{
+						Computed: true,
+					},
+					"slug": schema.StringAttribute{
+						Computed: true,
+					},
+					"active": schema.BoolAttribute{
+						Computed: true,
+					},
+				},
+			},
+			StateMover: func(ctx context.Context, req resource.MoveStateRequest, resp *resource.MoveStateResponse) {
+				// Only handle moves from gitlab_integration_external_wiki resource
+				if req.SourceTypeName != "gitlab_integration_external_wiki" {
+
+					tflog.Warn(ctx, "Received a request to migrate to `gitlab_project_integration_external_wiki`. Skipping StateMover because source isn't a `gitlab_integration_external_wiki`", map[string]any{
+						"receivedResourceType": req.SourceTypeName,
+					})
+					return
+				}
+
+				// Check provider address (without hostname for compatibility)
+				// Accept anything that ends with gitlab, which seems the safest.
+				//  hashicorp/gitlab is used in tests
+				//  gitlab-org/gitlab is used in production
+				//  gitlabhq/gitlab is referenced on the provider docs.
+				if !strings.HasSuffix(req.SourceProviderAddress, "gitlab") {
+					tflog.Warn(ctx, "Failed to validate the SourceProviderAddress when moving resources. Exiting early.", map[string]any{
+						"receivedAddress": req.SourceProviderAddress,
+					})
+					return
+				}
+
+				// Define the source model matching the old gitlab_integration_external_wiki schema
+				type sourceModel struct {
+					Id              types.String `tfsdk:"id"`
+					Project         types.String `tfsdk:"project"`
+					ExternalWikiURL types.String `tfsdk:"external_wiki_url"`
+					Title           types.String `tfsdk:"title"`
+					CreatedAt       types.String `tfsdk:"created_at"`
+					UpdatedAt       types.String `tfsdk:"updated_at"`
+					Slug            types.String `tfsdk:"slug"`
+					Active          types.Bool   `tfsdk:"active"`
+				}
+
+				var sourceStateData sourceModel
+				resp.Diagnostics.Append(req.SourceState.Get(ctx, &sourceStateData)...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+
+				project := sourceStateData.Id.ValueString()
+
+				// Create the target state data
+				targetStateData := gitlabProjectIntegrationExternalWikiResourceModel{
+					ID:              types.StringValue(project),
+					Project:         sourceStateData.Project,
+					ExternalWikiURL: sourceStateData.ExternalWikiURL,
+					Title:           sourceStateData.Title,
+					CreatedAt:       sourceStateData.CreatedAt,
+					UpdatedAt:       sourceStateData.UpdatedAt,
+					Slug:            sourceStateData.Slug,
+					Active:          sourceStateData.Active,
+				}
+
+				tflog.Debug(ctx, "Moving state from gitlab_integration_external_wiki to gitlab_project_integration_external_wiki")
+				resp.Diagnostics.Append(resp.TargetState.Set(ctx, targetStateData)...)
+			},
+		},
 	}
 }
