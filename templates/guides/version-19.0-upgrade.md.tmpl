@@ -56,7 +56,7 @@ Perform a state move using one of the available options:
 - `gitlab_deploy_token` renamed to `gitlab_project_deploy_token`
 - `gitlab_integration_custom_issue_tracker` renamed to `gitlab_project_integration_custom_issue_tracker`
 - `gitlab_integration_emails_on_push` renamed to `gitlab_project_integration_emails_on_push`
-- `gitlab_integration_external_wiki_resource` renamed to `gitlab_project_integration_external_wiki_resource`
+- `gitlab_integration_external_wiki` renamed to `gitlab_project_integration_external_wiki`
 - `gitlab_integration_github` renamed to `gitlab_project_integration_github`
 - `gitlab_integration_harbor` renamed to `gitlab_project_integration_harbor`
 - `gitlab_integration_jenkins` renamed to `gitlab_project_integration_jenkins`
