@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -25,6 +26,7 @@ var (
 	_ resource.Resource                = &gitlabProjectIntegrationEmailsOnPushResource{}
 	_ resource.ResourceWithConfigure   = &gitlabProjectIntegrationEmailsOnPushResource{}
 	_ resource.ResourceWithImportState = &gitlabProjectIntegrationEmailsOnPushResource{}
+	_ resource.ResourceWithMoveState   = &gitlabProjectIntegrationEmailsOnPushResource{}
 )
 
 func init() {
@@ -298,4 +300,127 @@ func (d *gitlabProjectIntegrationEmailsOnPushResourceModel) modelToStateModel(se
 	}
 	d.Slug = types.StringValue(service.Slug)
 	d.Active = types.BoolValue(service.Active)
+}
+
+// MoveState implements the ResourceWithMoveState interface to support moving state from the deprecated gitlab_integration_emails_on_push resource.
+// This enables users to migrate from gitlab_integration_emails_on_push to gitlab_project_integration_emails_on_push using Terraform's moved block.
+// Note: Cross-resource-type state moves require Terraform 1.8 or later.
+func (r *gitlabProjectIntegrationEmailsOnPushResource) MoveState(ctx context.Context) []resource.StateMover {
+	return []resource.StateMover{
+		// This first StateMover implements the migration from
+		// `gitlab_integration_emails_on_push` -> `gitlab_project_integration_emails_on_push`.
+		// The SourceSchema needs to match the deprecated `gitlab_integration_emails_on_push` as a result.
+		{
+			SourceSchema: &schema.Schema{
+				Attributes: map[string]schema.Attribute{
+					"id": schema.StringAttribute{
+						Computed: true,
+					},
+					"project": schema.StringAttribute{
+						Required: true,
+					},
+					"recipients": schema.StringAttribute{
+						Computed: true,
+					},
+					"disable_diffs": schema.BoolAttribute{
+						Computed: true,
+					},
+					"send_from_committer_email": schema.BoolAttribute{
+						Computed: true,
+					},
+					"push_events": schema.BoolAttribute{
+						Computed: true,
+					},
+					"tag_push_events": schema.BoolAttribute{
+						Computed: true,
+					},
+					"branches_to_be_notified": schema.StringAttribute{
+						Computed: true,
+					},
+					"title": schema.StringAttribute{
+						Computed: true,
+					},
+					"created_at": schema.StringAttribute{
+						Computed: true,
+					},
+					"updated_at": schema.StringAttribute{
+						Computed: true,
+					},
+					"slug": schema.StringAttribute{
+						Computed: true,
+					},
+					"active": schema.BoolAttribute{
+						Computed: true,
+					},
+				},
+			},
+			StateMover: func(ctx context.Context, req resource.MoveStateRequest, resp *resource.MoveStateResponse) {
+				// Only handle moves from gitlab_integration_emails_on_push resource
+				if req.SourceTypeName != "gitlab_integration_emails_on_push" {
+
+					tflog.Warn(ctx, "Received a request to migrate to `gitlab_project_integration_emails_on_push`. Skipping StateMover because source isn't a `gitlab_integration_emails_on_push`", map[string]any{
+						"receivedResourceType": req.SourceTypeName,
+					})
+					return
+				}
+
+				// Check provider address (without hostname for compatibility)
+				// Accept anything that ends with gitlab, which seems the safest.
+				//  hashicorp/gitlab is used in tests
+				//  gitlab-org/gitlab is used in production
+				//  gitlabhq/gitlab is referenced on the provider docs.
+				if !strings.HasSuffix(req.SourceProviderAddress, "gitlab") {
+					tflog.Warn(ctx, "Failed to validate the SourceProviderAddress when moving resources. Exiting early.", map[string]any{
+						"receivedAddress": req.SourceProviderAddress,
+					})
+					return
+				}
+
+				// Define the source model matching the old gitlab_integration_emails_on_push schema
+				type sourceModel struct {
+					Id                     types.String `tfsdk:"id"`
+					Project                types.String `tfsdk:"project"`
+					Recipients             types.String `tfsdk:"recipients"`
+					DisableDiffs           types.Bool   `tfsdk:"disable_diffs"`
+					SendFromCommitterEmail types.Bool   `tfsdk:"send_from_committer_email"`
+					PushEvents             types.Bool   `tfsdk:"push_events"`
+					TagPushEvents          types.Bool   `tfsdk:"tag_push_events"`
+					BranchesToBeNotified   types.String `tfsdk:"branches_to_be_notified"`
+					Title                  types.String `tfsdk:"title"`
+					CreatedAt              types.String `tfsdk:"created_at"`
+					UpdatedAt              types.String `tfsdk:"updated_at"`
+					Slug                   types.String `tfsdk:"slug"`
+					Active                 types.Bool   `tfsdk:"active"`
+				}
+
+				var sourceStateData sourceModel
+				resp.Diagnostics.Append(req.SourceState.Get(ctx, &sourceStateData)...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+
+				project := sourceStateData.Id.ValueString()
+
+				// Create the target state data
+				targetStateData := gitlabProjectIntegrationEmailsOnPushResourceModel{
+					ID:                     types.StringValue(project),
+					Project:                sourceStateData.Project,
+					Recipients:             sourceStateData.Recipients,
+					DisableDiffs:           sourceStateData.DisableDiffs,
+					SendFromCommitterEmail: sourceStateData.SendFromCommitterEmail,
+					PushEvents:             sourceStateData.PushEvents,
+					TagPushEvents:          sourceStateData.TagPushEvents,
+					BranchesToBeNotified:   sourceStateData.BranchesToBeNotified,
+					Title:                  sourceStateData.Title,
+					CreatedAt:              sourceStateData.CreatedAt,
+					UpdatedAt:              sourceStateData.UpdatedAt,
+					Slug:                   sourceStateData.Slug,
+					Active:                 sourceStateData.Active,
+				}
+
+				tflog.Debug(ctx, "Moving state from gitlab_integration_emails_on_push to gitlab_project_integration_emails_on_push")
+				resp.Diagnostics.Append(resp.TargetState.Set(ctx, targetStateData)...)
+			},
+		},
+	}
 }
