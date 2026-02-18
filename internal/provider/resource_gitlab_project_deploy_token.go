@@ -416,10 +416,7 @@ func (r *gitlabProjectDeployTokenResource) MoveState(ctx context.Context) []reso
 			StateMover: func(ctx context.Context, req resource.MoveStateRequest, resp *resource.MoveStateResponse) {
 				// Only handle moves from gitlab_deploy_token resource
 				if req.SourceTypeName != "gitlab_deploy_token" {
-
-					tflog.Warn(ctx, "Received a request to migrate to `gitlab_project_deploy_token`. Skipping StateMover because source isn't a `gitlab_deploy_token`", map[string]any{
-						"receivedResourceType": req.SourceTypeName,
-					})
+					resp.Diagnostics.AddError("Invalid source resource type", fmt.Sprintf("Expected source type 'gitlab_deploy_token', got '%s'", req.SourceTypeName))
 					return
 				}
 
@@ -429,9 +426,7 @@ func (r *gitlabProjectDeployTokenResource) MoveState(ctx context.Context) []reso
 				//  gitlab-org/gitlab is used in production
 				//  gitlabhq/gitlab is referenced on the provider docs.
 				if !strings.HasSuffix(req.SourceProviderAddress, "gitlab") {
-					tflog.Warn(ctx, "Failed to validate the SourceProviderAddress when moving resources. Exiting early.", map[string]any{
-						"receivedAddress": req.SourceProviderAddress,
-					})
+					resp.Diagnostics.AddError("Invalid source provider address", fmt.Sprintf("Expected provider address ending with 'gitlab', got '%s'", req.SourceProviderAddress))
 					return
 				}
 

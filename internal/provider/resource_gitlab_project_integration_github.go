@@ -321,10 +321,7 @@ func (r *gitlabProjectIntegrationGithubResource) MoveState(ctx context.Context) 
 			StateMover: func(ctx context.Context, req resource.MoveStateRequest, resp *resource.MoveStateResponse) {
 				// Only handle moves from gitlab_integration_github resource
 				if req.SourceTypeName != "gitlab_integration_github" {
-
-					tflog.Warn(ctx, "Received a request to migrate to `gitlab_project_integration_github`. Skipping StateMover because source isn't a `gitlab_integration_github`", map[string]any{
-						"receivedResourceType": req.SourceTypeName,
-					})
+					resp.Diagnostics.AddError("Invalid source resource type", fmt.Sprintf("Expected source type 'gitlab_integration_github', got '%s'", req.SourceTypeName))
 					return
 				}
 
@@ -334,9 +331,7 @@ func (r *gitlabProjectIntegrationGithubResource) MoveState(ctx context.Context) 
 				//  gitlab-org/gitlab is used in production
 				//  gitlabhq/gitlab is referenced on the provider docs.
 				if !strings.HasSuffix(req.SourceProviderAddress, "gitlab") {
-					tflog.Warn(ctx, "Failed to validate the SourceProviderAddress when moving resources. Exiting early.", map[string]any{
-						"receivedAddress": req.SourceProviderAddress,
-					})
+					resp.Diagnostics.AddError("Invalid source provider address", fmt.Sprintf("Expected provider address ending with 'gitlab', got '%s'", req.SourceProviderAddress))
 					return
 				}
 
