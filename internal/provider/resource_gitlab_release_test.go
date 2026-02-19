@@ -103,6 +103,43 @@ func TestAcc_GitlabRelease_basic(t *testing.T) {
 	})
 }
 
+func TestAcc_GitlabRelease_milestones(t *testing.T) {
+	project := testutil.CreateProject(t)
+	milestones := testutil.AddProjectMilestones(t, project, 2)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAcc_GitlabRelease_CheckDestroy,
+		Steps: []resource.TestStep{
+			// Create a basic release with milestones
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_release" "this" {
+					project     = "%d"
+					tag_name    = "v1.0.0"
+					ref         = "main"
+					milestones  = ["%s", "%s"]
+				}`, project.ID, milestones[0].Title, milestones[1].Title),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_release.this", "id", fmt.Sprintf("%d:v1.0.0", project.ID)),
+					resource.TestCheckResourceAttr("gitlab_release.this", "project", fmt.Sprintf("%d", project.ID)),
+					resource.TestCheckResourceAttr("gitlab_release.this", "tag_name", "v1.0.0"),
+					resource.TestCheckResourceAttr("gitlab_release.this", "milestones.#", "2"),
+					resource.TestCheckResourceAttr("gitlab_release.this", "milestones.0", milestones[0].Title),
+					resource.TestCheckResourceAttr("gitlab_release.this", "milestones.1", milestones[1].Title),
+				),
+			},
+			// Verify import
+			{
+				ResourceName:            "gitlab_release.this",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"ref"},
+			},
+		},
+	})
+}
+
 func testAcc_GitlabRelease_CheckDestroy(s *terraform.State) error {
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "gitlab_release" {

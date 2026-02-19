@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
@@ -368,11 +369,11 @@ func (r *gitlabReleaseResource) Create(ctx context.Context, req resource.CreateR
 		options.ReleasedAt = &releasedAtTime
 	}
 
-	milestones := make([]string, 0, len(data.Milestones.Elements()))
-	for _, milestone := range data.Milestones.Elements() {
-		milestones = append(milestones, milestone.String())
+	if !data.Milestones.IsNull() && !data.Milestones.IsUnknown() {
+		var milestones []string
+		data.Milestones.ElementsAs(ctx, &milestones, true)
+		options.Milestones = &milestones
 	}
-	options.Milestones = &milestones
 
 	release, _, err := r.client.Releases.CreateRelease(projectID, options, gitlab.WithContext(ctx))
 	if err != nil {
@@ -496,6 +497,11 @@ func (r *gitlabReleaseResourceModel) releaseModelToState(release *gitlab.Release
 	r.Description = types.StringValue(release.Description)
 	r.DescriptionHTML = types.StringValue(release.DescriptionHTML)
 	r.CreatedAt = types.StringValue(release.CreatedAt.Format(time.RFC3339))
+	milestones, diag := convertMilestonesToModel(ctx, release.Milestones)
+	if diag.HasError() {
+		return diag
+	}
+	r.Milestones = milestones
 	r.ReleasedAt = types.StringValue(release.ReleasedAt.Format(time.RFC3339))
 	author, diag := (&gitlabReleaseAuthor{
 		ID:        types.Int64Value(int64(release.Author.ID)),
@@ -506,11 +512,11 @@ func (r *gitlabReleaseResourceModel) releaseModelToState(release *gitlab.Release
 		WebURL:    types.StringValue(release.Author.WebURL),
 	}).toObjectType()
 	r.Author = author
-	if diag != nil {
+	if diag.HasError() {
 		return diag
 	}
 	parentIDs, diag := types.SetValueFrom(ctx, types.StringType, release.Commit.ParentIDs)
-	if diag != nil {
+	if diag.HasError() {
 		return diag
 	}
 	commit, diag := (&gitlabReleaseCommit{
@@ -527,7 +533,7 @@ func (r *gitlabReleaseResourceModel) releaseModelToState(release *gitlab.Release
 		CommittedDate:  types.StringValue(release.Commit.CommittedDate.Format(time.RFC3339)),
 		Message:        types.StringValue(release.Commit.Message),
 	}).toObjectType()
-	if diag != nil {
+	if diag.HasError() {
 		return diag
 	}
 	r.Commit = commit
@@ -536,7 +542,7 @@ func (r *gitlabReleaseResourceModel) releaseModelToState(release *gitlab.Release
 	assets, diag := (&gitlabReleaseAsset{
 		Count: types.Int64Value(int64(release.Assets.Count)),
 	}).toObjectType()
-	if diag != nil {
+	if diag.HasError() {
 		return diag
 	}
 	r.Assets = assets
@@ -549,11 +555,19 @@ func (r *gitlabReleaseResourceModel) releaseModelToState(release *gitlab.Release
 		OpenedMergeRequestsURL: types.StringValue(release.Links.OpenedMergeRequest),
 		Self:                   types.StringValue(release.Links.Self),
 	}).toObjectType()
-	if diag != nil {
+	if diag.HasError() {
 		return diag
 	}
 	r.Links = links
 	return nil
+}
+
+func convertMilestonesToModel(ctx context.Context, milestones []*gitlab.ReleaseMilestone) (basetypes.SetValue, diag.Diagnostics) {
+	var milestoneNames []string
+	for _, milestone := range milestones {
+		milestoneNames = append(milestoneNames, milestone.Title)
+	}
+	return types.SetValueFrom(ctx, types.StringType, milestoneNames)
 }
 
 // toObjectType converts the model struct into a `types.Object` type, making it support
