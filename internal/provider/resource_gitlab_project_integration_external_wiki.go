@@ -301,10 +301,7 @@ func (r *gitlabProjectIntegrationExternalWikiResource) MoveState(ctx context.Con
 			StateMover: func(ctx context.Context, req resource.MoveStateRequest, resp *resource.MoveStateResponse) {
 				// Only handle moves from gitlab_integration_external_wiki resource
 				if req.SourceTypeName != "gitlab_integration_external_wiki" {
-
-					tflog.Warn(ctx, "Received a request to migrate to `gitlab_project_integration_external_wiki`. Skipping StateMover because source isn't a `gitlab_integration_external_wiki`", map[string]any{
-						"receivedResourceType": req.SourceTypeName,
-					})
+					resp.Diagnostics.AddError("Invalid source resource type", fmt.Sprintf("Expected source type 'gitlab_integration_external_wiki', got '%s'", req.SourceTypeName))
 					return
 				}
 
@@ -314,9 +311,7 @@ func (r *gitlabProjectIntegrationExternalWikiResource) MoveState(ctx context.Con
 				//  gitlab-org/gitlab is used in production
 				//  gitlabhq/gitlab is referenced on the provider docs.
 				if !strings.HasSuffix(req.SourceProviderAddress, "gitlab") {
-					tflog.Warn(ctx, "Failed to validate the SourceProviderAddress when moving resources. Exiting early.", map[string]any{
-						"receivedAddress": req.SourceProviderAddress,
-					})
+					resp.Diagnostics.AddError("Invalid source provider address", fmt.Sprintf("Expected provider address ending with 'gitlab', got '%s'", req.SourceProviderAddress))
 					return
 				}
 
