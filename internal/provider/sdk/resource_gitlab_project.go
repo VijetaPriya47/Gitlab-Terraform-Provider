@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -1941,7 +1942,7 @@ func editOrAddPushRules(ctx context.Context, client *gitlab.Client, projectID st
 
 	pushRules, _, err := client.Projects.GetProjectPushRules(d.Id(), gitlab.WithContext(ctx))
 	// NOTE: push rules id `0` indicates that there haven't been any push rules set.
-	if err != nil || pushRules.ID == 0 {
+	if err != nil || pushRules == nil || pushRules.ID == 0 {
 		if addOptions := expandAddProjectPushRuleOptions(d); (gitlab.AddProjectPushRuleOptions{}) != addOptions {
 			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Creating new push rules for project %q", projectID))
 			_, _, err = client.Projects.AddProjectPushRule(projectID, &addOptions, gitlab.WithContext(ctx))
@@ -2030,6 +2031,21 @@ func expandEditProjectPushRuleOptions(d *schema.ResourceData, currentPushRules *
 func expandAddProjectPushRuleOptions(d *schema.ResourceData) gitlab.AddProjectPushRuleOptions {
 	options := gitlab.AddProjectPushRuleOptions{}
 
+	rawConfig := d.GetRawConfig()
+	if rawConfig.IsNull() {
+		return options
+	}
+
+	pushRulesConfig := rawConfig.GetAttr("push_rules")
+	if pushRulesConfig.IsNull() || pushRulesConfig.LengthInt() == 0 {
+		return options
+	}
+
+	pushRulesBlock := pushRulesConfig.Index(cty.NumberIntVal(0))
+	if pushRulesBlock.IsNull() {
+		return options
+	}
+
 	if v, ok := d.GetOk("push_rules.0.author_email_regex"); ok {
 		options.AuthorEmailRegex = gitlab.Ptr(v.(string))
 	}
@@ -2050,32 +2066,32 @@ func expandAddProjectPushRuleOptions(d *schema.ResourceData) gitlab.AddProjectPu
 		options.FileNameRegex = gitlab.Ptr(v.(string))
 	}
 
-	if v, ok := d.GetOk("push_rules.0.commit_committer_check"); ok {
-		options.CommitCommitterCheck = gitlab.Ptr(v.(bool))
+	if !pushRulesBlock.GetAttr("commit_committer_check").IsNull() {
+		options.CommitCommitterCheck = gitlab.Ptr(d.Get("push_rules.0.commit_committer_check").(bool))
 	}
 
-	if v, ok := d.GetOk("push_rules.0.commit_committer_name_check"); ok {
-		options.CommitCommitterNameCheck = gitlab.Ptr(v.(bool))
+	if !pushRulesBlock.GetAttr("commit_committer_name_check").IsNull() {
+		options.CommitCommitterNameCheck = gitlab.Ptr(d.Get("push_rules.0.commit_committer_name_check").(bool))
 	}
 
-	if v, ok := d.GetOk("push_rules.0.deny_delete_tag"); ok {
-		options.DenyDeleteTag = gitlab.Ptr(v.(bool))
+	if !pushRulesBlock.GetAttr("deny_delete_tag").IsNull() {
+		options.DenyDeleteTag = gitlab.Ptr(d.Get("push_rules.0.deny_delete_tag").(bool))
 	}
 
-	if v, ok := d.GetOk("push_rules.0.member_check"); ok {
-		options.MemberCheck = gitlab.Ptr(v.(bool))
+	if !pushRulesBlock.GetAttr("member_check").IsNull() {
+		options.MemberCheck = gitlab.Ptr(d.Get("push_rules.0.member_check").(bool))
 	}
 
-	if v, ok := d.GetOk("push_rules.0.prevent_secrets"); ok {
-		options.PreventSecrets = gitlab.Ptr(v.(bool))
+	if !pushRulesBlock.GetAttr("prevent_secrets").IsNull() {
+		options.PreventSecrets = gitlab.Ptr(d.Get("push_rules.0.prevent_secrets").(bool))
 	}
 
-	if v, ok := d.GetOk("push_rules.0.reject_unsigned_commits"); ok {
-		options.RejectUnsignedCommits = gitlab.Ptr(v.(bool))
+	if !pushRulesBlock.GetAttr("reject_unsigned_commits").IsNull() {
+		options.RejectUnsignedCommits = gitlab.Ptr(d.Get("push_rules.0.reject_unsigned_commits").(bool))
 	}
 
-	if v, ok := d.GetOk("push_rules.0.reject_non_dco_commits"); ok {
-		options.RejectNonDCOCommits = gitlab.Ptr(v.(bool))
+	if !pushRulesBlock.GetAttr("reject_non_dco_commits").IsNull() {
+		options.RejectNonDCOCommits = gitlab.Ptr(d.Get("push_rules.0.reject_non_dco_commits").(bool))
 	}
 
 	if v, ok := d.GetOk("push_rules.0.max_file_size"); ok {

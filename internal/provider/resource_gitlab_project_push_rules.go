@@ -253,6 +253,14 @@ func (r *gitlabProjectPushRulesResource) Read(ctx context.Context, req resource.
 		return
 	}
 
+	if pushRules == nil {
+		tflog.Debug(ctx, "push rules for project do not exist, removing resource from state", map[string]any{
+			"project": projectID,
+		})
+		resp.State.RemoveResource(ctx)
+		return
+	}
+
 	// persist API response in state model
 	r.projectPushRulesToStateModel(projectID, pushRules, data)
 
@@ -276,7 +284,7 @@ func (r *gitlabProjectPushRulesResource) Create(ctx context.Context, req resourc
 
 	// check for existing push rules; if found then update, otherwise add new
 	existingPushRules, _, err := r.client.Projects.GetProjectPushRules(projectID, gitlab.WithContext(ctx))
-	if err == nil && existingPushRules.ID != 0 {
+	if err == nil && existingPushRules != nil && existingPushRules.ID != 0 {
 		// push rules exist, update them
 		err := r.update(ctx, data, &resp.Diagnostics)
 		if err != nil {
@@ -343,6 +351,11 @@ func (r *gitlabProjectPushRulesResource) Create(ctx context.Context, req resourc
 		pushRules, _, err := r.client.Projects.AddProjectPushRule(projectID, &options, gitlab.WithContext(ctx))
 		if err != nil {
 			resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to add project push rules details: %s", err.Error()))
+			return
+		}
+
+		if pushRules == nil {
+			resp.Diagnostics.AddError("GitLab API error occurred", "AddProjectPushRule returned nil push rules")
 			return
 		}
 
@@ -465,6 +478,11 @@ func (r *gitlabProjectPushRulesResource) update(ctx context.Context, data *gitla
 	if err != nil {
 		diags.AddError("GitLab API error occurred", fmt.Sprintf("Unable to update project push rules details: %s", err.Error()))
 		return err
+	}
+
+	if pushRules == nil {
+		diags.AddError("GitLab API error occurred", "EditProjectPushRule returned nil push rules")
+		return fmt.Errorf("EditProjectPushRule returned nil push rules")
 	}
 
 	// persist API response in state model
