@@ -3828,6 +3828,10 @@ func testAccCheckGitlabProjectPushRules(name string, wantPushRules *gitlab.Proje
 			return err
 		}
 
+		if gotPushRules == nil {
+			return fmt.Errorf("push rules not found for project %s", projectResource.ID)
+		}
+
 		var messages []string
 
 		if gotPushRules.AuthorEmailRegex != wantPushRules.AuthorEmailRegex {
