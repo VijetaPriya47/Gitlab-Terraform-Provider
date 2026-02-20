@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -27,6 +28,7 @@ var (
 	_ resource.Resource                = &gitlabProjectIntegrationCustomIssueTrackerResource{}
 	_ resource.ResourceWithConfigure   = &gitlabProjectIntegrationCustomIssueTrackerResource{}
 	_ resource.ResourceWithImportState = &gitlabProjectIntegrationCustomIssueTrackerResource{}
+	_ resource.ResourceWithMoveState   = &gitlabProjectIntegrationCustomIssueTrackerResource{}
 )
 
 func init() {
@@ -256,4 +258,97 @@ func (r *gitlabProjectIntegrationCustomIssueTrackerResource) Delete(ctx context.
 
 func (r *gitlabProjectIntegrationCustomIssueTrackerResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+// MoveState implements the ResourceWithMoveState interface to support moving state from the deprecated gitlab_integration_custom_issue_tracker resource.
+// This enables users to migrate from gitlab_integration_custom_issue_tracker to gitlab_project_integration_custom_issue_tracker using Terraform's moved block.
+// Note: Cross-resource-type state moves require Terraform 1.8 or later.
+func (r *gitlabProjectIntegrationCustomIssueTrackerResource) MoveState(ctx context.Context) []resource.StateMover {
+	return []resource.StateMover{
+		// This first StateMover implements the migration from
+		// `gitlab_integration_custom_issue_tracker` -> `gitlab_project_integration_custom_issue_tracker`.
+		// The SourceSchema needs to match the deprecated `gitlab_integration_custom_issue_tracker` as a result.
+		{
+			SourceSchema: &schema.Schema{
+				Attributes: map[string]schema.Attribute{
+					"id": schema.StringAttribute{
+						Computed: true,
+					},
+					"project": schema.StringAttribute{
+						Required: true,
+					},
+					"project_url": schema.StringAttribute{
+						Required: true,
+					},
+					"issues_url": schema.StringAttribute{
+						Required: true,
+					},
+					"created_at": schema.StringAttribute{
+						Computed: true,
+					},
+					"updated_at": schema.StringAttribute{
+						Computed: true,
+					},
+					"slug": schema.StringAttribute{
+						Computed: true,
+					},
+					"active": schema.BoolAttribute{
+						Computed: true,
+					},
+				},
+			},
+			StateMover: func(ctx context.Context, req resource.MoveStateRequest, resp *resource.MoveStateResponse) {
+				// Only handle moves from gitlab_integration_custom_issue_tracker resource
+				if req.SourceTypeName != "gitlab_integration_custom_issue_tracker" {
+					resp.Diagnostics.AddError("Invalid source resource type", fmt.Sprintf("Expected source type 'gitlab_integration_custom_issue_tracker', got '%s'", req.SourceTypeName))
+					return
+				}
+
+				// Check provider address (without hostname for compatibility)
+				// Accept anything that ends with gitlab, which seems the safest.
+				//  hashicorp/gitlab is used in tests
+				//  gitlab-org/gitlab is used in production
+				//  gitlabhq/gitlab is referenced on the provider docs.
+				if !strings.HasSuffix(req.SourceProviderAddress, "gitlab") {
+					resp.Diagnostics.AddError("Invalid source provider address", fmt.Sprintf("Expected provider address ending with 'gitlab', got '%s'", req.SourceProviderAddress))
+					return
+				}
+
+				// Define the source model matching the old gitlab_integration_custom_issue_tracker schema
+				type sourceModel struct {
+					Id         types.String `tfsdk:"id"`
+					Project    types.String `tfsdk:"project"`
+					ProjectURL types.String `tfsdk:"project_url"`
+					IssuesURL  types.String `tfsdk:"issues_url"`
+					CreatedAt  types.String `tfsdk:"created_at"`
+					UpdatedAt  types.String `tfsdk:"updated_at"`
+					Slug       types.String `tfsdk:"slug"`
+					Active     types.Bool   `tfsdk:"active"`
+				}
+
+				var sourceStateData sourceModel
+				resp.Diagnostics.Append(req.SourceState.Get(ctx, &sourceStateData)...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+
+				project := sourceStateData.Id.ValueString()
+
+				// Create the target state data
+				targetStateData := gitlabProjectIntegrationCustomIssueTrackerResourceModel{
+					Id:         types.StringValue(project),
+					Project:    sourceStateData.Project,
+					ProjectURL: sourceStateData.ProjectURL,
+					IssuesURL:  sourceStateData.IssuesURL,
+					CreatedAt:  sourceStateData.CreatedAt,
+					UpdatedAt:  sourceStateData.UpdatedAt,
+					Slug:       sourceStateData.Slug,
+					Active:     sourceStateData.Active,
+				}
+
+				tflog.Debug(ctx, "Moving state from gitlab_integration_custom_issue_tracker to gitlab_project_integration_custom_issue_tracker")
+				resp.Diagnostics.Append(resp.TargetState.Set(ctx, targetStateData)...)
+			},
+		},
+	}
 }
