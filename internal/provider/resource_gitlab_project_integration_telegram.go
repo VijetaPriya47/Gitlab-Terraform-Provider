@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -25,6 +26,7 @@ var (
 	_ resource.Resource                = &gitlabProjectIntegrationTelegramResource{}
 	_ resource.ResourceWithConfigure   = &gitlabProjectIntegrationTelegramResource{}
 	_ resource.ResourceWithImportState = &gitlabProjectIntegrationTelegramResource{}
+	_ resource.ResourceWithMoveState   = &gitlabProjectIntegrationTelegramResource{}
 )
 
 func init() {
@@ -296,4 +298,133 @@ func (r *gitlabProjectIntegrationTelegramResource) Delete(ctx context.Context, r
 
 func (r *gitlabProjectIntegrationTelegramResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+// MoveState implements the ResourceWithMoveState interface to support moving state from the deprecated gitlab_integration_telegram resource.
+// This enables users to migrate from gitlab_integration_telegram to gitlab_project_integration_telegram using Terraform's moved block.
+// Note: Cross-resource-type state moves require Terraform 1.8 or later.
+func (r *gitlabProjectIntegrationTelegramResource) MoveState(ctx context.Context) []resource.StateMover {
+	return []resource.StateMover{
+		// This first StateMover implements the migration from
+		// `gitlab_integration_telegram` -> `gitlab_project_integration_telegram`.
+		// The SourceSchema needs to match the deprecated `gitlab_integration_telegram` as a result.
+		{
+			SourceSchema: &schema.Schema{
+				Attributes: map[string]schema.Attribute{
+					"id": schema.StringAttribute{
+						Computed: true,
+					},
+					"project": schema.StringAttribute{
+						Required: true,
+					},
+					"token": schema.StringAttribute{
+						Required:  true,
+						Sensitive: true,
+					},
+					"room": schema.StringAttribute{
+						Required: true,
+					},
+					"notify_only_broken_pipelines": schema.BoolAttribute{
+						Computed: true,
+					},
+					"branches_to_be_notified": schema.StringAttribute{
+						Computed: true,
+					},
+					"push_events": schema.BoolAttribute{
+						Required: true,
+					},
+					"issues_events": schema.BoolAttribute{
+						Required: true,
+					},
+					"confidential_issues_events": schema.BoolAttribute{
+						Required: true,
+					},
+					"merge_requests_events": schema.BoolAttribute{
+						Required: true,
+					},
+					"tag_push_events": schema.BoolAttribute{
+						Required: true,
+					},
+					"note_events": schema.BoolAttribute{
+						Required: true,
+					},
+					"confidential_note_events": schema.BoolAttribute{
+						Required: true,
+					},
+					"pipeline_events": schema.BoolAttribute{
+						Required: true,
+					},
+					"wiki_page_events": schema.BoolAttribute{
+						Required: true,
+					},
+				},
+			},
+			StateMover: func(ctx context.Context, req resource.MoveStateRequest, resp *resource.MoveStateResponse) {
+				// Only handle moves from gitlab_integration_telegram resource
+				if req.SourceTypeName != "gitlab_integration_telegram" {
+					resp.Diagnostics.AddError("Invalid source resource type", fmt.Sprintf("Expected source type 'gitlab_integration_telegram', got '%s'", req.SourceTypeName))
+					return
+				}
+
+				// Check provider address (without hostname for compatibility)
+				// Accept anything that ends with gitlab, which seems the safest.
+				//  hashicorp/gitlab is used in tests
+				//  gitlab-org/gitlab is used in production
+				//  gitlabhq/gitlab is referenced on the provider docs.
+				if !strings.HasSuffix(req.SourceProviderAddress, "gitlab") {
+					resp.Diagnostics.AddError("Invalid source provider address", fmt.Sprintf("Expected provider address ending with 'gitlab', got '%s'", req.SourceProviderAddress))
+					return
+				}
+
+				// Define the source model matching the old gitlab_integration_telegram schema
+				type sourceModel struct {
+					ID                        types.String `tfsdk:"id"`
+					Project                   types.String `tfsdk:"project"`
+					Token                     types.String `tfsdk:"token"`
+					Room                      types.String `tfsdk:"room"`
+					NotifyOnlyBrokenPipelines types.Bool   `tfsdk:"notify_only_broken_pipelines"`
+					BranchesToBeNotified      types.String `tfsdk:"branches_to_be_notified"`
+					PushEvents                types.Bool   `tfsdk:"push_events"`
+					IssuesEvents              types.Bool   `tfsdk:"issues_events"`
+					ConfidentialIssuesEvents  types.Bool   `tfsdk:"confidential_issues_events"`
+					MergeRequestsEvents       types.Bool   `tfsdk:"merge_requests_events"`
+					TagPushEvents             types.Bool   `tfsdk:"tag_push_events"`
+					NoteEvents                types.Bool   `tfsdk:"note_events"`
+					ConfidentialNoteEvents    types.Bool   `tfsdk:"confidential_note_events"`
+					PipelineEvents            types.Bool   `tfsdk:"pipeline_events"`
+					WikiPageEvents            types.Bool   `tfsdk:"wiki_page_events"`
+				}
+
+				var sourceStateData sourceModel
+				resp.Diagnostics.Append(req.SourceState.Get(ctx, &sourceStateData)...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+
+				project := sourceStateData.ID.ValueString()
+
+				// Create the target state data
+				targetStateData := gitlabProjectIntegrationTelegramResourceModel{
+					Id:                        types.StringValue(project),
+					Project:                   sourceStateData.Project,
+					Token:                     sourceStateData.Token,
+					Room:                      sourceStateData.Room,
+					NotifyOnlyBrokenPipelines: sourceStateData.NotifyOnlyBrokenPipelines,
+					BranchesToBeNotified:      sourceStateData.BranchesToBeNotified,
+					PushEvents:                sourceStateData.PushEvents,
+					IssuesEvents:              sourceStateData.IssuesEvents,
+					ConfidentialIssuesEvents:  sourceStateData.ConfidentialIssuesEvents,
+					MergeRequestsEvents:       sourceStateData.MergeRequestsEvents,
+					TagPushEvents:             sourceStateData.TagPushEvents,
+					NoteEvents:                sourceStateData.NoteEvents,
+					ConfidentialNoteEvents:    sourceStateData.ConfidentialNoteEvents,
+					PipelineEvents:            sourceStateData.PipelineEvents,
+					WikiPageEvents:            sourceStateData.WikiPageEvents,
+				}
+
+				tflog.Debug(ctx, "Moving state from gitlab_integration_telegram to gitlab_project_integration_telegram")
+				resp.Diagnostics.Append(resp.TargetState.Set(ctx, targetStateData)...)
+			},
+		},
+	}
 }
