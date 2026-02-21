@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -19,9 +20,10 @@ import (
 )
 
 var (
-	_ resource.Resource              = &gitlabProjectIntegrationHarborResource{}
-	_ resource.ResourceWithConfigure = &gitlabProjectIntegrationHarborResource{}
-	// _ resource.ResourceWithImportState = &gitlabProjectIntegrationHarborResource{}
+	_ resource.Resource                = &gitlabProjectIntegrationHarborResource{}
+	_ resource.ResourceWithConfigure   = &gitlabProjectIntegrationHarborResource{}
+	_ resource.ResourceWithImportState = &gitlabProjectIntegrationHarborResource{}
+	_ resource.ResourceWithMoveState   = &gitlabProjectIntegrationHarborResource{}
 )
 
 func init() {
@@ -248,4 +250,98 @@ func (d *gitlabProjectIntegrationHarborResourceModel) modelToStateModel(r *gitla
 	d.Username = types.StringValue(r.Properties.Username)
 	d.UseInheritedSettings = types.BoolValue(r.Properties.UseInheritedSettings)
 	d.Active = types.BoolValue(r.Active)
+}
+
+// MoveState implements the ResourceWithMoveState interface to support moving state from the deprecated gitlab_integration_harbor resource.
+// This enables users to migrate from gitlab_integration_harbor to gitlab_project_integration_harbor using Terraform's moved block.
+// Note: Cross-resource-type state moves require Terraform 1.8 or later.
+func (r *gitlabProjectIntegrationHarborResource) MoveState(ctx context.Context) []resource.StateMover {
+	return []resource.StateMover{
+		// This first StateMover implements the migration from
+		// `gitlab_integration_harbor` -> `gitlab_project_integration_harbor`.
+		// The SourceSchema needs to match the deprecated `gitlab_integration_harbor` as a result.
+		{
+			SourceSchema: &schema.Schema{
+				Attributes: map[string]schema.Attribute{
+					"id": schema.StringAttribute{
+						Computed: true,
+					},
+					"project": schema.StringAttribute{
+						Required: true,
+					},
+					"url": schema.StringAttribute{
+						Required: true,
+					},
+					"project_name": schema.StringAttribute{
+						Required: true,
+					},
+					"username": schema.StringAttribute{
+						Required: true,
+					},
+					"password": schema.StringAttribute{
+						Required:  true,
+						Sensitive: true,
+					},
+					"use_inherited_settings": schema.BoolAttribute{
+						Computed: true,
+					},
+					"active": schema.BoolAttribute{
+						Computed: true,
+					},
+				},
+			},
+			StateMover: func(ctx context.Context, req resource.MoveStateRequest, resp *resource.MoveStateResponse) {
+				// Only handle moves from gitlab_integration_harbor resource
+				if req.SourceTypeName != "gitlab_integration_harbor" {
+					resp.Diagnostics.AddError("Invalid source resource type", fmt.Sprintf("Expected source type 'gitlab_integration_harbor', got '%s'", req.SourceTypeName))
+					return
+				}
+
+				// Check provider address (without hostname for compatibility)
+				// Accept anything that ends with gitlab, which seems the safest.
+				//  hashicorp/gitlab is used in tests
+				//  gitlab-org/gitlab is used in production
+				//  gitlabhq/gitlab is referenced on the provider docs.
+				if !strings.HasSuffix(req.SourceProviderAddress, "gitlab") {
+					resp.Diagnostics.AddError("Invalid source provider address", fmt.Sprintf("Expected provider address ending with 'gitlab', got '%s'", req.SourceProviderAddress))
+					return
+				}
+
+				// Define the source model matching the old gitlab_integration_harbor schema
+				type sourceModel struct {
+					ID                   types.String `tfsdk:"id"`
+					Project              types.String `tfsdk:"project"`
+					URL                  types.String `tfsdk:"url"`
+					ProjectName          types.String `tfsdk:"project_name"`
+					Username             types.String `tfsdk:"username"`
+					Password             types.String `tfsdk:"password"`
+					UseInheritedSettings types.Bool   `tfsdk:"use_inherited_settings"`
+					Active               types.Bool   `tfsdk:"active"`
+				}
+
+				var sourceStateData sourceModel
+				resp.Diagnostics.Append(req.SourceState.Get(ctx, &sourceStateData)...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+
+				project := sourceStateData.ID.ValueString()
+
+				// Create the target state data
+				targetStateData := gitlabProjectIntegrationHarborResourceModel{
+					ID:                   types.StringValue(project),
+					Project:              sourceStateData.Project,
+					URL:                  sourceStateData.URL,
+					ProjectName:          sourceStateData.ProjectName,
+					Username:             sourceStateData.Username,
+					Password:             sourceStateData.Password,
+					UseInheritedSettings: sourceStateData.UseInheritedSettings,
+					Active:               sourceStateData.Active,
+				}
+
+				tflog.Debug(ctx, "Moving state from gitlab_integration_harbor to gitlab_project_integration_harbor")
+				resp.Diagnostics.Append(resp.TargetState.Set(ctx, targetStateData)...)
+			},
+		},
+	}
 }
