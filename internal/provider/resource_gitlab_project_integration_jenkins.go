@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -23,6 +24,7 @@ var (
 	_ resource.Resource                = &gitlabProjectIntegrationJenkinsResource{}
 	_ resource.ResourceWithConfigure   = &gitlabProjectIntegrationJenkinsResource{}
 	_ resource.ResourceWithImportState = &gitlabProjectIntegrationJenkinsResource{}
+	_ resource.ResourceWithMoveState   = &gitlabProjectIntegrationJenkinsResource{}
 )
 
 func init() {
@@ -265,4 +267,113 @@ func (d *gitlabProjectIntegrationJenkinsResourceModel) modelToStateModel(r *gitl
 	d.PushEvents = types.BoolValue(r.PushEvents)
 	d.TagPushEvents = types.BoolValue(r.TagPushEvents)
 	d.Active = types.BoolValue(r.Active)
+}
+
+// MoveState implements the ResourceWithMoveState interface to support moving state from the deprecated gitlab_integration_jenkins resource.
+// This enables users to migrate from gitlab_integration_jenkins to gitlab_project_integration_jenkins using Terraform's moved block.
+// Note: Cross-resource-type state moves require Terraform 1.8 or later.
+func (r *gitlabProjectIntegrationJenkinsResource) MoveState(ctx context.Context) []resource.StateMover {
+	return []resource.StateMover{
+		// This first StateMover implements the migration from
+		// `gitlab_integration_jenkins` -> `gitlab_project_integration_jenkins`.
+		// The SourceSchema needs to match the deprecated `gitlab_integration_jenkins` as a result.
+		{
+			SourceSchema: &schema.Schema{
+				Attributes: map[string]schema.Attribute{
+					"id": schema.StringAttribute{
+						Computed: true,
+					},
+					"project": schema.StringAttribute{
+						Required: true,
+					},
+					"enable_ssl_verification": schema.BoolAttribute{
+						Computed: true,
+					},
+					"jenkins_url": schema.StringAttribute{
+						Required: true,
+					},
+					"project_name": schema.StringAttribute{
+						Required: true,
+					},
+					"username": schema.StringAttribute{
+						Optional: true,
+					},
+					"password": schema.StringAttribute{
+						Optional:  true,
+						Sensitive: true,
+					},
+					"push_events": schema.BoolAttribute{
+						Computed: true,
+					},
+					"merge_request_events": schema.BoolAttribute{
+						Computed: true,
+					},
+					"tag_push_events": schema.BoolAttribute{
+						Computed: true,
+					},
+					"active": schema.BoolAttribute{
+						Computed: true,
+					},
+				},
+			},
+			StateMover: func(ctx context.Context, req resource.MoveStateRequest, resp *resource.MoveStateResponse) {
+				// Only handle moves from gitlab_integration_jenkins resource
+				if req.SourceTypeName != "gitlab_integration_jenkins" {
+					resp.Diagnostics.AddError("Invalid source resource type", fmt.Sprintf("Expected source type 'gitlab_integration_jenkins', got '%s'", req.SourceTypeName))
+					return
+				}
+
+				// Check provider address (without hostname for compatibility)
+				// Accept anything that ends with gitlab, which seems the safest.
+				//  hashicorp/gitlab is used in tests
+				//  gitlab-org/gitlab is used in production
+				//  gitlabhq/gitlab is referenced on the provider docs.
+				if !strings.HasSuffix(req.SourceProviderAddress, "gitlab") {
+					resp.Diagnostics.AddError("Invalid source provider address", fmt.Sprintf("Expected provider address ending with 'gitlab', got '%s'", req.SourceProviderAddress))
+					return
+				}
+
+				// Define the source model matching the old gitlab_integration_jenkins schema
+				type sourceModel struct {
+					ID                    types.String `tfsdk:"id"`
+					Project               types.String `tfsdk:"project"`
+					EnableSSLVerification types.Bool   `tfsdk:"enable_ssl_verification"`
+					JenkinsURL            types.String `tfsdk:"jenkins_url"`
+					ProjectName           types.String `tfsdk:"project_name"`
+					Username              types.String `tfsdk:"username"`
+					Password              types.String `tfsdk:"password"`
+					PushEvents            types.Bool   `tfsdk:"push_events"`
+					MergeRequestEvents    types.Bool   `tfsdk:"merge_request_events"`
+					TagPushEvents         types.Bool   `tfsdk:"tag_push_events"`
+					Active                types.Bool   `tfsdk:"active"`
+				}
+
+				var sourceStateData sourceModel
+				resp.Diagnostics.Append(req.SourceState.Get(ctx, &sourceStateData)...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+
+				project := sourceStateData.ID.ValueString()
+
+				// Create the target state data
+				targetStateData := gitlabProjectIntegrationJenkinsResourceModel{
+					ID:                    types.StringValue(project),
+					Project:               sourceStateData.Project,
+					EnableSSLVerification: sourceStateData.EnableSSLVerification,
+					JenkinsURL:            sourceStateData.JenkinsURL,
+					ProjectName:           sourceStateData.ProjectName,
+					Username:              sourceStateData.Username,
+					Password:              sourceStateData.Password,
+					PushEvents:            sourceStateData.PushEvents,
+					MergeRequestEvents:    sourceStateData.MergeRequestEvents,
+					TagPushEvents:         sourceStateData.TagPushEvents,
+					Active:                sourceStateData.Active,
+				}
+
+				tflog.Debug(ctx, "Moving state from gitlab_integration_jenkins to gitlab_project_integration_jenkins")
+				resp.Diagnostics.Append(resp.TargetState.Set(ctx, targetStateData)...)
+			},
+		},
+	}
 }
