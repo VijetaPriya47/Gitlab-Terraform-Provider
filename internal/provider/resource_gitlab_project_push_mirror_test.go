@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
@@ -201,11 +202,13 @@ func TestAccGitlabProjectMirror_migrateFromSDKToFramework(t *testing.T) {
 				Check: testAccCheckGitlabProjectMirrorExists("gitlab_project_mirror.foo", &mirror),
 			},
 			// Verify upstream attributes with an import
+			// Note: URL is ignored because GitLab API returns redacted URLs without credentials
 			{
 				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 				ResourceName:             "gitlab_project_mirror.foo",
 				ImportState:              true,
 				ImportStateVerify:        true,
+				ImportStateVerifyIgnore:  []string{"url"},
 			},
 		},
 	})
@@ -272,10 +275,12 @@ func TestAccGitlabProjectMirror_AuthMethod(t *testing.T) {
 				),
 			},
 			// Verify upstream attributes with an import
+			// Note: URL is ignored because GitLab API returns redacted URLs without credentials
 			{
-				ResourceName:      "gitlab_project_mirror.foo",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "gitlab_project_mirror.foo",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"url"},
 			},
 			{
 				Config: fmt.Sprintf(`resource "gitlab_project_mirror" "bar" {
@@ -298,10 +303,12 @@ func TestAccGitlabProjectMirror_AuthMethod(t *testing.T) {
 				),
 			},
 			// Verify upstream attributes with an import
+			// Note: URL is ignored because GitLab API returns redacted URLs without credentials
 			{
-				ResourceName:      "gitlab_project_mirror.bar",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "gitlab_project_mirror.bar",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"url"},
 			},
 		},
 	})
@@ -340,10 +347,12 @@ func TestAccGitlabProjectMirror_urlValidations(t *testing.T) {
 					enabled = true
 				}`, project.ID),
 			},
+			// Note: URL is ignored because GitLab API returns redacted URLs without credentials
 			{
-				ResourceName:      "gitlab_project_mirror.foo",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "gitlab_project_mirror.foo",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"url"},
 			},
 		},
 	})
@@ -413,10 +422,12 @@ func TestAccGitlabProjectMirror_branchRegex(t *testing.T) {
 				),
 			},
 			// Verify upstream attributes with an import
+			// Note: URL is ignored because GitLab API returns redacted URLs without credentials
 			{
-				ResourceName:      "gitlab_project_mirror.foo",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "gitlab_project_mirror.foo",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"url"},
 			},
 			// Update regex
 			{
@@ -439,10 +450,12 @@ func TestAccGitlabProjectMirror_branchRegex(t *testing.T) {
 				),
 			},
 			// Verify upstream attributes with an import
+			// Note: URL is ignored because GitLab API returns redacted URLs without credentials
 			{
-				ResourceName:      "gitlab_project_mirror.foo",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "gitlab_project_mirror.foo",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"url"},
 			},
 			// test to verify mirror_branch_regex doesn't always show as unknown in plan when not provided
 			// for https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/issues/6473
@@ -485,6 +498,143 @@ func TestAccGitlabProjectMirror_branchRegex(t *testing.T) {
 			  		}
 				`, project.ID),
 				PlanOnly: true,
+			},
+		},
+	})
+}
+
+func TestAccGitlabProjectMirror_credentialChange(t *testing.T) {
+	var mirror gitlab.ProjectMirror
+	project := testutil.CreateProject(t)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabProjectMirrorDestroy,
+		Steps: []resource.TestStep{
+			// Create a mirror with URL containing credentials
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_mirror" "foo" {
+						project = "%d"
+						url     = "https://user1:pass1@example.com/test.git"
+					}
+				`, project.ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabProjectMirrorExists("gitlab_project_mirror.foo", &mirror),
+				),
+			},
+			// Update to different credentials (same host/path, different credentials)
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_mirror" "foo" {
+						project = "%d"
+						url     = "https://user2:pass2@example.com/test.git"
+					}
+				`, project.ID),
+				// Check that an "Replace" is being performed since the username and password have changed
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("gitlab_project_mirror.foo", plancheck.ResourceActionReplace),
+					},
+				},
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabProjectMirrorExists("gitlab_project_mirror.foo", &mirror),
+				),
+			},
+			// Verify import
+			{
+				ResourceName:            "gitlab_project_mirror.foo",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"url"},
+			},
+		},
+	})
+}
+
+func TestAccGitlabProjectMirror_credentialChangeWarning(t *testing.T) {
+	project := testutil.CreateProject(t)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabProjectMirrorDestroy,
+		Steps: []resource.TestStep{
+			// Create a mirror with URL containing credentials
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_mirror" "foo" {
+						project = "%d"
+						url     = "https://user:pass@example.com/test.git"
+					}
+				`, project.ID),
+				ExpectNonEmptyPlan: false,
+			},
+			// Verify that a plan with credentials shows a warning
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_mirror" "foo" {
+						project = "%d"
+						url     = "https://user:pass@example.com/test.git"
+					}
+				`, project.ID),
+				PlanOnly: true,
+			},
+		},
+	})
+}
+
+func TestAccGitlabProjectMirror_urlChangeWithoutCredentials(t *testing.T) {
+	var mirror gitlab.ProjectMirror
+	project := testutil.CreateProject(t)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabProjectMirrorDestroy,
+		Steps: []resource.TestStep{
+			// Create a mirror with URL without credentials
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_mirror" "foo" {
+						project = "%d"
+						url     = "https://example.com/test1.git"
+					}
+				`, project.ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabProjectMirrorExists("gitlab_project_mirror.foo", &mirror),
+					testAccCheckGitlabProjectMirrorAttributes(&mirror, &testAccGitlabProjectMirrorExpectedAttributes{
+						URL:                   "https://example.com/test1.git",
+						Enabled:               true,
+						OnlyProtectedBranches: true,
+						KeepDivergentRefs:     true,
+						AuthMethod:            "password",
+					}),
+				),
+			},
+			// Update to different path (no credentials)
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project_mirror" "foo" {
+						project = "%d"
+						url     = "https://example.com/test2.git"
+					}
+				`, project.ID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabProjectMirrorExists("gitlab_project_mirror.foo", &mirror),
+					testAccCheckGitlabProjectMirrorAttributes(&mirror, &testAccGitlabProjectMirrorExpectedAttributes{
+						URL:                   "https://example.com/test2.git",
+						Enabled:               true,
+						OnlyProtectedBranches: true,
+						KeepDivergentRefs:     true,
+						AuthMethod:            "password",
+					}),
+				),
+			},
+			// Verify import
+			{
+				ResourceName:            "gitlab_project_mirror.foo",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"url"},
 			},
 		},
 	})

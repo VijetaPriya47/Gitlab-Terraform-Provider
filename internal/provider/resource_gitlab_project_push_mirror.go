@@ -28,6 +28,7 @@ var (
 	_ resource.Resource                = &gitlabProjectMirrorResource{}
 	_ resource.ResourceWithConfigure   = &gitlabProjectMirrorResource{}
 	_ resource.ResourceWithImportState = &gitlabProjectMirrorResource{}
+	_ resource.ResourceWithModifyPlan  = &gitlabProjectMirrorResource{}
 )
 
 // Register the resource with the provider.
@@ -95,30 +96,62 @@ func (r *gitlabProjectMirrorResource) ModifyPlan(ctx context.Context, req resour
 		return
 	}
 
-	// Compare URLs ignoring credentials
-	oldURL, err := url.Parse(stateData.URL.ValueString())
+	// Parse both state and plan URLs
+	oldStateURL, err := url.Parse(stateData.URL.ValueString())
 	if err != nil {
 		return
 	}
-	newURL, err := url.Parse(planData.URL.ValueString())
+	newPlanURL, err := url.Parse(planData.URL.ValueString())
 	if err != nil {
 		return
 	}
 
-	if oldURL.User != nil {
-		oldURL.User = url.UserPassword("redacted", "redacted")
-	}
-	if newURL.User != nil {
-		newURL.User = url.UserPassword("redacted", "redacted")
-	}
+	// Check if either URL contains credentials
+	hasCredentials := oldStateURL.User != nil || newPlanURL.User != nil
 
-	if oldURL.String() == newURL.String() {
-		// Keep the original URL from state to maintain consistency
-		planData.URL = stateData.URL
-		resp.Diagnostics.Append(resp.Plan.Set(ctx, planData)...)
+	if hasCredentials {
+		// If credentials are present, compare URLs without redaction
+		// and add deprecation warning
+		tflog.Debug(ctx, "Credentials have been provided in the URL for push mirror. Printing deprecation warning.")
+
+		// TODO - add support for the `auth_user` and `auth_password`
+		// resp.Diagnostics.AddWarning(
+		// 	"Credentials in URL Deprecated",
+		// 	"Including username and password in the URL is deprecated and will be removed in Provider version 19.0. "+
+		// 		"Please use explicit auth_user and auth_password attributes instead (to be added in a future release).",
+		// )
+
+		// Compare URLs directly to detect credential changes
+		if oldStateURL.String() != newPlanURL.String() {
+			// Log that we're requiring replace and why.
+			tflog.Debug(ctx, "Credentials have been provided in the URL for push mirror, and comparing the raw values between state and plan shows differences. Marking for replacement.",
+				map[string]any{
+					"oldURL":          oldStateURL.Host, // note - just printing the host to prevent printing credentials
+					"newURL":          newPlanURL.Host,
+					"usernameChanged": (oldStateURL.User != nil && newPlanURL.User != nil) && (oldStateURL.User.Username() != newPlanURL.User.Username()),
+					// Printing if the password changed would require more complex logic, so it's left out for now. It can be inferred anyway.
+				})
+
+			// URLs are different, mark for replacement
+			resp.RequiresReplace = append(resp.RequiresReplace, path.Root("url"))
+		}
 	} else {
-		// URLs are different, mark for replacement
-		resp.RequiresReplace = append(resp.RequiresReplace, path.Root("url"))
+		// No credentials: use existing redaction logic for backward compatibility
+		if oldStateURL.User != nil {
+			oldStateURL.User = url.UserPassword("redacted", "redacted")
+		}
+		if newPlanURL.User != nil {
+			newPlanURL.User = url.UserPassword("redacted", "redacted")
+		}
+
+		if oldStateURL.String() == newPlanURL.String() {
+			// Keep the original URL from state to maintain consistency
+			planData.URL = stateData.URL
+			resp.Diagnostics.Append(resp.Plan.Set(ctx, planData)...)
+		} else {
+			// URLs are different, mark for replacement
+			resp.RequiresReplace = append(resp.RequiresReplace, path.Root("url"))
+		}
 	}
 }
 
@@ -225,8 +258,12 @@ func (r *gitlabProjectMirrorResource) Read(ctx context.Context, req resource.Rea
 		return
 	}
 
+	// Keep the URL from the state instead of using the one from the API
+	// This ensures that we don't redact or lose the credentials when we save to state.
+	stateURL := data.URL
 	data.Project = types.StringValue(project)
 	data.modelToStateModel(mirror)
+	data.URL = stateURL
 	resp.Diagnostics.Append(resp.State.Set(ctx, data)...)
 }
 
@@ -353,7 +390,7 @@ This is for *pushing* changes to a remote repository. *Pull Mirroring* can be co
 			"url": schema.StringAttribute{
 				Required:            true,
 				Sensitive:           true,
-				MarkdownDescription: "The URL of the remote repository to be mirrored.",
+				MarkdownDescription: "The URL of the remote repository to be mirrored. Note that URLs with credentials will not import properly, and will require a replace on the first apply.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 					stringplanmodifier.UseStateForUnknown(),
