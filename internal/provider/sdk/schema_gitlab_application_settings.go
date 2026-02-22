@@ -1400,7 +1400,7 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Computed:    true,
 		},
-		
+
 		"npm_package_requests_forwarding": {
 			Description: "Use npmjs.org as a default remote repository when the package is not found in the GitLab Package Registry for npm.",
 			Type:        schema.TypeBool,
@@ -3308,7 +3308,7 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	if d.HasChange("notify_on_unknown_sign_in") {
 		options.NotifyOnUnknownSignIn = gitlab.Ptr(d.Get("notify_on_unknown_sign_in").(bool))
 	}
-	
+
 	if d.HasChange("npm_package_requests_forwarding") {
 		options.NPMPackageRequestsForwarding = gitlab.Ptr(d.Get("npm_package_requests_forwarding").(bool))
 	}
