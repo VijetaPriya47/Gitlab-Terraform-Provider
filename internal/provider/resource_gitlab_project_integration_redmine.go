@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -24,6 +25,7 @@ var (
 	_ resource.Resource                = &gitlabProjectIntegrationRedmineResource{}
 	_ resource.ResourceWithConfigure   = &gitlabProjectIntegrationRedmineResource{}
 	_ resource.ResourceWithImportState = &gitlabProjectIntegrationRedmineResource{}
+	_ resource.ResourceWithMoveState   = &gitlabProjectIntegrationRedmineResource{}
 )
 
 func init() {
@@ -260,4 +262,87 @@ func (r *gitlabProjectIntegrationRedmineResource) updateRedmineService(ctx conte
 
 	data.redmineServiceToStateModel(projectId, redmineService)
 	return nil
+}
+
+// MoveState implements the ResourceWithMoveState interface to support moving state from the deprecated gitlab_integration_redmine resource.
+// This enables users to migrate from gitlab_integration_redmine to gitlab_project_integration_redmine using Terraform's moved block.
+// Note: Cross-resource-type state moves require Terraform 1.8 or later.
+func (r *gitlabProjectIntegrationRedmineResource) MoveState(ctx context.Context) []resource.StateMover {
+	return []resource.StateMover{
+		// This first StateMover implements the migration from
+		// `gitlab_integration_redmine` -> `gitlab_project_integration_redmine`.
+		// The SourceSchema needs to match the deprecated `gitlab_integration_redmine` as a result.
+		{
+			SourceSchema: &schema.Schema{
+				Attributes: map[string]schema.Attribute{
+					"id": schema.StringAttribute{
+						Computed: true,
+					},
+					"project": schema.StringAttribute{
+						Required: true,
+					},
+					"new_issue_url": schema.StringAttribute{
+						Required: true,
+					},
+					"project_url": schema.StringAttribute{
+						Required: true,
+					},
+					"issues_url": schema.StringAttribute{
+						Required: true,
+					},
+					"use_inherited_settings": schema.BoolAttribute{
+						Computed: true,
+					},
+				},
+			},
+			StateMover: func(ctx context.Context, req resource.MoveStateRequest, resp *resource.MoveStateResponse) {
+				// Only handle moves from gitlab_integration_redmine resource
+				if req.SourceTypeName != "gitlab_integration_redmine" {
+					resp.Diagnostics.AddError("Invalid source resource type", fmt.Sprintf("Expected source type 'gitlab_integration_redmine', got '%s'", req.SourceTypeName))
+					return
+				}
+
+				// Check provider address (without hostname for compatibility)
+				// Accept anything that ends with gitlab, which seems the safest.
+				//  hashicorp/gitlab is used in tests
+				//  gitlab-org/gitlab is used in production
+				//  gitlabhq/gitlab is referenced on the provider docs.
+				if !strings.HasSuffix(req.SourceProviderAddress, "gitlab") {
+					resp.Diagnostics.AddError("Invalid source provider address", fmt.Sprintf("Expected provider address ending with 'gitlab', got '%s'", req.SourceProviderAddress))
+					return
+				}
+
+				// Define the source model matching the old gitlab_integration_redmine schema
+				type sourceModel struct {
+					ID                   types.String `tfsdk:"id"`
+					Project              types.String `tfsdk:"project"`
+					NewIssueURL          types.String `tfsdk:"new_issue_url"`
+					ProjectURL           types.String `tfsdk:"project_url"`
+					IssuesURL            types.String `tfsdk:"issues_url"`
+					UseInheritedSettings types.Bool   `tfsdk:"use_inherited_settings"`
+				}
+
+				var sourceStateData sourceModel
+				resp.Diagnostics.Append(req.SourceState.Get(ctx, &sourceStateData)...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+
+				project := sourceStateData.ID.ValueString()
+
+				// Create the target state data
+				targetStateData := gitlabProjectIntegrationRedmineResourceModel{
+					ID:                   types.StringValue(project),
+					Project:              sourceStateData.Project,
+					NewIssueURL:          sourceStateData.NewIssueURL,
+					ProjectURL:           sourceStateData.ProjectURL,
+					IssuesURL:            sourceStateData.IssuesURL,
+					UseInheritedSettings: sourceStateData.UseInheritedSettings,
+				}
+
+				tflog.Debug(ctx, "Moving state from gitlab_integration_redmine to gitlab_project_integration_redmine")
+				resp.Diagnostics.Append(resp.TargetState.Set(ctx, targetStateData)...)
+			},
+		},
+	}
 }
