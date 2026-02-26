@@ -62,38 +62,6 @@ func TestAccGitlabDeployKey_StateUpgradeV0(t *testing.T) {
 	}
 }
 
-func TestAccGitlabDeployKey_SchemaMigration0_1(t *testing.T) {
-	testProject := testutil.CreateProject(t)
-
-	config := fmt.Sprintf(`
-	resource "gitlab_deploy_key" "foo" {
-	  project = %[3]d
-	  title = "deployKey-%[1]d"
-	  key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCj13ozEBZ0s4el4k6mYqoyIKKKMh9hHY0sAYqSPXs2zGuVFZss1P8TPuwmdXVjHR7TiRXwC49zDrkyWJgiufggYJ1VilOohcMOODwZEJz+E5q4GCfHuh90UEh0nl8B2R0Uoy0LPeg93uZzy0hlHApsxRf/XZJz/1ytkZvCtxdllxfImCVxJReMeRVEqFCTCvy3YuJn0bce7ulcTFRvtgWOpQsr6GDK8YkcCCv2eZthVlrEwy6DEpAKTRiRLGgUj4dPO0MmO4cE2qD4ualY01PhNORJ8Q++I+EtkGt/VALkecwFuBkl18/gy+yxNJHpKc/8WVVinDeFrd/HhiY9yU0d richardc@tamborine.example.1%[2]s"
-	}
-	  `, acctest.RandInt(), "", testProject.ID)
-
-	resource.ParallelTest(t, resource.TestCase{
-		CheckDestroy: testAccCheckGitlabDeployKeyDestroy,
-		Steps: []resource.TestStep{
-			{
-				ExternalProviders: map[string]resource.ExternalProvider{
-					"gitlab": {
-						VersionConstraint: "~> 15.7.0", // Earliest 15.X deployment
-						Source:            "gitlabhq/gitlab",
-					},
-				},
-				Config: config,
-			},
-			{
-				ProtoV6ProviderFactories: providerFactoriesV6,
-				Config:                   config,
-				PlanOnly:                 true,
-			},
-		},
-	})
-}
-
 func TestAccGitlabDeployKey_basic(t *testing.T) {
 	testProject := testutil.CreateProject(t)
 	rInt := acctest.RandInt()

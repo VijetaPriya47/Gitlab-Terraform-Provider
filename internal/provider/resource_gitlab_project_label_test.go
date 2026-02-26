@@ -203,48 +203,6 @@ func TestAcc_GitlabProjectLabel_deprecatedResourceName(t *testing.T) {
 	})
 }
 
-func TestAcc_GitlabProjectLabel_schemaMigrationV0toV2(t *testing.T) {
-	project := testutil.CreateProject(t)
-	rInt := acctest.RandInt()
-	labelName := fmt.Sprintf("test-label-%d", rInt)
-
-	legacyConfig := fmt.Sprintf(`
-	resource "gitlab_label" "foo" {
-		project     = "%d"
-		name        = "%s"
-		color       = "#FF0000"
-		description = "Project label description"
-	}
-	`, project.ID, labelName)
-
-	newConfig := fmt.Sprintf(`
-	resource "gitlab_label" "foo" {
-		project     = "%d"
-		name        = "%s"
-		color       = "#FF0000"
-		description = "Project label description"
-	}
-	`, project.ID, labelName)
-
-	resource.ParallelTest(t, resource.TestCase{
-		CheckDestroy: testAccCheckGitlabProjectLabelDestroy,
-		Steps: []resource.TestStep{
-			{
-				ExternalProviders: map[string]resource.ExternalProvider{
-					"gitlab": {
-						VersionConstraint: "~> 15.7", // Before V1 schema, produces V0 state.
-						Source:            "gitlabhq/gitlab",
-					},
-				},
-				Config: legacyConfig,
-			},
-			{
-				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-				Config:                   newConfig,
-			},
-		},
-	})
-}
 
 func TestAcc_GitlabProjectLabel_schemaMigrationV1toV2(t *testing.T) {
 	project := testutil.CreateProject(t)

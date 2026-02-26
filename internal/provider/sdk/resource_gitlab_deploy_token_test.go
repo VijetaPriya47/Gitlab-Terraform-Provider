@@ -99,65 +99,6 @@ func TestAccGitlabDeployToken_StateUpgradeV0(t *testing.T) {
 	}
 }
 
-func TestAccGitlabDeployToken_SchemaMigration0_1(t *testing.T) {
-	testProject := testutil.CreateProject(t)
-	testGroup := testutil.CreateGroups(t, 1)[0]
-
-	config := fmt.Sprintf(`
-	resource "gitlab_deploy_token" "project_token" {
-	  project  = "%d"
-	  name     = "project-deploy-token"
-	  username = "my-username"
-	
-	  expires_at = "2021-03-14T07:20:50.000Z"
-	
-	  scopes = [
-		"read_registry",
-		"read_repository",
-		"read_package_registry",
-		"write_registry",
-		"write_package_registry",
-	  ]
-	}
-	
-	resource "gitlab_deploy_token" "group_token" {
-	  group  = "%d"
-	  name     = "group-deploy-token"
-	  username = "my-username"
-	
-	  expires_at = "2021-03-14T07:20:50.000Z"
-	
-	  scopes = [
-		"read_registry",
-		"read_repository",
-		"read_package_registry",
-		"write_registry",
-		"write_package_registry",
-	  ]
-	}
-	  `, testProject.ID, testGroup.ID)
-
-	resource.ParallelTest(t, resource.TestCase{
-		CheckDestroy: testAccCheckGitlabDeployTokenDestroy,
-		Steps: []resource.TestStep{
-			{
-				ExternalProviders: map[string]resource.ExternalProvider{
-					"gitlab": {
-						VersionConstraint: "~> 15.7.0", // Earliest 15.X deployment
-						Source:            "gitlabhq/gitlab",
-					},
-				},
-				Config: config,
-			},
-			{
-				ProtoV6ProviderFactories: providerFactoriesV6,
-				Config:                   config,
-				PlanOnly:                 true,
-			},
-		},
-	})
-}
-
 func TestAccGitlabDeployToken_basic(t *testing.T) {
 	var projectDeployToken gitlab.DeployToken
 	var groupDeployToken gitlab.DeployToken

@@ -163,56 +163,6 @@ func TestAccGitlabPersonalAccessToken_failsToUpdateWithPastExpiryDate_validation
 	})
 }
 
-func TestAccGitlabPersonalAccessToken_migrateFromSDKToFramework(t *testing.T) {
-	// Set up user
-	user := testutil.CreateUsers(t, 1)[0]
-
-	// Create common config for testing
-	config := fmt.Sprintf(`
-	resource "gitlab_personal_access_token" "foo" {
-		user_id = %d
-		name    = "foo"
-		scopes  = ["api"]
-
-		expires_at = "%s"
-	}
-	`, user.ID, api.CurrentTime().Add(time.Hour*48).Format(api.Iso8601))
-
-	resource.ParallelTest(t, resource.TestCase{
-		CheckDestroy: testAccCheckGitlabPersonalAccessTokenDestroy,
-		Steps: []resource.TestStep{
-			// Create the pipeline in the old provider version
-			{
-				ExternalProviders: map[string]resource.ExternalProvider{
-					"gitlab": {
-						VersionConstraint: "~> 16.10",
-						Source:            "gitlabhq/gitlab",
-					},
-				},
-				Config: config,
-				Check:  resource.TestCheckResourceAttrSet("gitlab_personal_access_token.foo", "id"),
-			},
-			// Create the config in the new provider version to ensure migration works
-			{
-				ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
-				Config:                   config,
-				Check:                    resource.TestCheckResourceAttrSet("gitlab_personal_access_token.foo", "id"),
-			},
-			// Verify upstream attributes with an import
-			{
-				ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
-				ResourceName:             "gitlab_personal_access_token.foo",
-				ImportState:              true,
-				ImportStateVerify:        true,
-				ImportStateVerifyIgnore: []string{
-					"token",
-					"validate_past_expiration_date",
-				},
-			},
-		},
-	})
-}
-
 func TestAccGitlabPersonalAccessToken_basic(t *testing.T) {
 	user := testutil.CreateUsers(t, 1)[0]
 

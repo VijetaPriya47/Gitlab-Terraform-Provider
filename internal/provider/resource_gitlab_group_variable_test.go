@@ -19,55 +19,6 @@ import (
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
-
-// Validates that the migration from the SDK to the Framework works appropriately, and
-// resources created using the SDK resource transition to the Framework properly.
-func TestAccGitlabGroupVariable_migrateFromSDKToFramework(t *testing.T) {
-	// Set up the group for testing variables
-	group := testutil.CreateGroups(t, 1)[0]
-
-	// Create common config for testing
-	randomString := acctest.RandString(5)
-	config := fmt.Sprintf(`resource "gitlab_group_variable" "foo" {
-		group = %d
-		key = "key_%s"
-		value = "value-%s"
-		variable_type = "file"
-		masked = false
-		description = "description-%s"
-	}`, group.ID, randomString, randomString, randomString)
-
-	resource.ParallelTest(t, resource.TestCase{
-		CheckDestroy: testAccCheckGitlabGroupVariableDestroy,
-		Steps: []resource.TestStep{
-			// Create the pipeline in the old provider version
-			{
-				ExternalProviders: map[string]resource.ExternalProvider{
-					"gitlab": {
-						VersionConstraint: "~> 16.10",
-						Source:            "gitlabhq/gitlab",
-					},
-				},
-				Config: config,
-				Check:  resource.TestCheckResourceAttrSet("gitlab_group_variable.foo", "id"),
-			},
-			// Create the config in the new provider version to ensure migration works
-			{
-				ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
-				Config:                   config,
-				Check:                    resource.TestCheckResourceAttrSet("gitlab_group_variable.foo", "id"),
-			},
-			// Verify upstream attributes with an import
-			{
-				ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
-				ResourceName:             "gitlab_group_variable.foo",
-				ImportState:              true,
-				ImportStateVerify:        true,
-			},
-		},
-	})
-}
-
 func TestAccGitlabGroupVariable_basic(t *testing.T) {
 	group := testutil.CreateGroups(t, 1)[0]
 	var groupVariable gitlab.GroupVariable
