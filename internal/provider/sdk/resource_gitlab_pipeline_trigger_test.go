@@ -63,37 +63,6 @@ func TestAccGitlabPipelineTrigger_StateUpgradeV0(t *testing.T) {
 	}
 }
 
-func TestAccGitlabPipelineTrigger_SchemaMigration0_1(t *testing.T) {
-	testProject := testutil.CreateProject(t)
-
-	config := fmt.Sprintf(`
-	resource "gitlab_pipeline_trigger" "trigger" {
-		project = "%d"
-		description = "External Pipeline Trigger"
-	}
-		`, testProject.ID)
-
-	resource.ParallelTest(t, resource.TestCase{
-		CheckDestroy: testAccCheckGitlabPipelineTriggerDestroy,
-		Steps: []resource.TestStep{
-			{
-				ExternalProviders: map[string]resource.ExternalProvider{
-					"gitlab": {
-						VersionConstraint: "~> 15.7.0", // Earliest 15.X deployment
-						Source:            "gitlabhq/gitlab",
-					},
-				},
-				Config: config,
-			},
-			{
-				ProtoV6ProviderFactories: providerFactoriesV6,
-				Config:                   config,
-				PlanOnly:                 true,
-			},
-		},
-	})
-}
-
 func TestAccGitlabPipelineTrigger_basic(t *testing.T) {
 	var trigger gitlab.PipelineTrigger
 

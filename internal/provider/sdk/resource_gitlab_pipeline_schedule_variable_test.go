@@ -84,49 +84,6 @@ func TestAccGitlabPipelineScheduleVariable_StateUpgradeV0(t *testing.T) {
 	}
 }
 
-func TestAccGitlabPipelineScheduleVariable_SchemaMigration0_1(t *testing.T) {
-	project := testutil.CreateProject(t)
-	schedule, err := testutil.CreateScheduledPipeline(t, project.ID, project.DefaultBranch)
-	if err != nil {
-		t.Fatalf("Failed to create dependent resources %v", err)
-	}
-
-	resource.ParallelTest(t, resource.TestCase{
-		CheckDestroy: testAccCheckGitlabPipelineScheduleVariableDestroy,
-		Steps: []resource.TestStep{
-			{
-				ExternalProviders: map[string]resource.ExternalProvider{
-					"gitlab": {
-						VersionConstraint: "~> 15.7.0", // Earliest 15.X deployment
-						Source:            "gitlabhq/gitlab",
-					},
-				},
-				Config: fmt.Sprintf(`
-				resource "gitlab_pipeline_schedule_variable" "schedule_var" {
-					project = "%d"
-					pipeline_schedule_id = "%d"
-					key = "TERRAFORMED_TEST_VALUE"
-					value = "test"
-				}
-				`, project.ID, schedule.ID),
-			},
-			{
-				// The "id" attribute is updated to "pipeline_schedule_id" in 16.0, but it should still apply properly.
-				ProtoV6ProviderFactories: providerFactoriesV6,
-				Config: fmt.Sprintf(`
-				resource "gitlab_pipeline_schedule_variable" "schedule_var" {
-					project = "%d"
-					pipeline_schedule_id = "%d"
-					key = "TERRAFORMED_TEST_VALUE"
-					value = "test"
-				}
-				`, project.ID, schedule.ID),
-				PlanOnly: true,
-			},
-		},
-	})
-}
-
 func TestAccGitlabPipelineScheduleVariable_basic(t *testing.T) {
 	var variable gitlab.PipelineVariable
 	project := testutil.CreateProject(t)

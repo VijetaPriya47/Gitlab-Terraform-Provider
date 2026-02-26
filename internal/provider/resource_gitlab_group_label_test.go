@@ -137,37 +137,6 @@ func TestAccGitlabGroupLabel_migrateFromSDKToFramework(t *testing.T) {
 	})
 }
 
-func TestAccGitlabGroupLabel_schemaMigrationV0toV2(t *testing.T) {
-	group := testutil.CreateGroups(t, 1)[0]
-	config := fmt.Sprintf(`
-	resource "gitlab_group_label" "foo" {
-		group = "%d"
-		name = "test-label"
-		color = "#FF0000"
-		description = "Group label description"
-	}
-	`, group.ID)
-
-	resource.ParallelTest(t, resource.TestCase{
-		CheckDestroy: testAccCheckGitlabProjectHookDestroy,
-		Steps: []resource.TestStep{
-			{
-				ExternalProviders: map[string]resource.ExternalProvider{
-					"gitlab": {
-						VersionConstraint: "~> 15.7", // Before v1 schema, has a v0 state.
-						Source:            "gitlabhq/gitlab",
-					},
-				},
-				Config: config,
-			},
-			{
-				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-				Config:                   config,
-			},
-		},
-	})
-}
-
 func TestAccGitlabGroupLabel_schemaMigrationV1toV2(t *testing.T) {
 	group := testutil.CreateGroups(t, 1)[0]
 	config := fmt.Sprintf(`

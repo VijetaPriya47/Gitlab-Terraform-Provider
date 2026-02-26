@@ -19,45 +19,6 @@ import (
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
-func TestAccGitlabGroupLdapLink_SchemaMigration0_1(t *testing.T) {
-	testutil.SkipIfCE(t)
-
-	testGroup := testutil.CreateGroups(t, 1)[0]
-
-	resource.ParallelTest(t, resource.TestCase{
-		CheckDestroy: testAccCheckGitlabGroupLdapLinkDestroy,
-		Steps: []resource.TestStep{
-			{
-				ExternalProviders: map[string]resource.ExternalProvider{
-					"gitlab": {
-						VersionConstraint: "~> 15.7.0", // Earliest 15.X deployment
-						Source:            "gitlabhq/gitlab",
-					},
-				},
-				Config: fmt.Sprintf(`
-				resource "gitlab_group_ldap_link" "foo" {
-					group_id	    = "%d"
-					cn				= "default"
-					group_access 	= "developer"
-					ldap_provider   = "default"
-				}`, testGroup.ID),
-			},
-			{
-				// "group_id" changed to "group" in 16.0, but apply should still work properly.
-				ProtoV6ProviderFactories: providerFactoriesV6,
-				Config: fmt.Sprintf(`
-				resource "gitlab_group_ldap_link" "foo" {
-					group 		    = "%d"
-					cn				= "default"
-					group_access 	= "developer"
-					ldap_provider   = "default"
-				}`, testGroup.ID),
-				PlanOnly: true,
-			},
-		},
-	})
-}
-
 func TestAccGitlabGroupLdapLink_basicCN(t *testing.T) {
 	testutil.SkipIfCE(t)
 

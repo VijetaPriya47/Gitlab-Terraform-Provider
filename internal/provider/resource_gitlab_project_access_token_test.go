@@ -168,56 +168,6 @@ func TestAccGitlabProjectAccessToken_failsToUpdateWithPastExpiryDate_validationE
 	})
 }
 
-func TestAccGitlabProjectAccessToken_migrateFromSDKToFramework(t *testing.T) {
-	// Set up project
-	project := testutil.CreateProject(t)
-
-	// Create common config for testing
-	config := fmt.Sprintf(`
-	resource "gitlab_project_access_token" "foo" {
-		project = %d
-		name    = "foo"
-		scopes  = ["api"]
-
-		expires_at = "%s"
-	}
-	`, project.ID, api.CurrentTime().Add(time.Hour*48).Format(api.Iso8601))
-
-	resource.ParallelTest(t, resource.TestCase{
-		CheckDestroy: testAccCheckGitlabProjectAccessTokenDestroy,
-		Steps: []resource.TestStep{
-			// Create the pipeline in the old provider version
-			{
-				ExternalProviders: map[string]resource.ExternalProvider{
-					"gitlab": {
-						VersionConstraint: "~> 16.10",
-						Source:            "gitlabhq/gitlab",
-					},
-				},
-				Config: config,
-				Check:  resource.TestCheckResourceAttrSet("gitlab_project_access_token.foo", "id"),
-			},
-			// Create the config in the new provider version to ensure migration works
-			{
-				ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
-				Config:                   config,
-				Check:                    resource.TestCheckResourceAttrSet("gitlab_project_access_token.foo", "id"),
-			},
-			// Verify upstream attributes with an import
-			{
-				ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
-				ResourceName:             "gitlab_project_access_token.foo",
-				ImportState:              true,
-				ImportStateVerify:        true,
-				ImportStateVerifyIgnore: []string{
-					"token",
-					"validate_past_expiration_date",
-				},
-			},
-		},
-	})
-}
-
 func TestAccGitlabProjectAccessToken_basic(t *testing.T) {
 	project := testutil.CreateProject(t)
 

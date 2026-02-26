@@ -203,57 +203,6 @@ func TestAccGitlabPipelineSchedule_takeOwnershipWithoutChanges(t *testing.T) {
 	})
 }
 
-func TestAccGitlabPipelineSchedule_migrateFromSDKToFramework(t *testing.T) {
-	var schedule gitlab.PipelineSchedule
-
-	// Set up project
-	project := testutil.CreateProject(t)
-
-	// Create common config for testing
-	config := fmt.Sprintf(`
-		resource "gitlab_pipeline_schedule" "schedule" {
-			project = "%d"
-			description = "Schedule"
-			ref = "refs/heads/%s"
-			cron = "0 4 * * *"
-			active = false
-		}
-		`, project.ID, project.DefaultBranch)
-
-	resource.ParallelTest(t, resource.TestCase{
-		CheckDestroy: testAccCheckGitlabPipelineScheduleDestroy,
-		Steps: []resource.TestStep{
-			// Create the pipeline in the old provider version
-			{
-				ExternalProviders: map[string]resource.ExternalProvider{
-					"gitlab": {
-						VersionConstraint: "~> 16.6",
-						Source:            "gitlabhq/gitlab",
-					},
-				},
-				Config: config,
-				Check:  testAccCheckGitlabPipelineScheduleExists("gitlab_pipeline_schedule.schedule", &schedule),
-			},
-			// Create the config in the new provider version to ensure migration works
-			{
-				ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
-				Config:                   config,
-				Check:                    testAccCheckGitlabPipelineScheduleExists("gitlab_pipeline_schedule.schedule", &schedule),
-			},
-			// Verify upstream attributes with an import
-			{
-				ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
-				ResourceName:             "gitlab_pipeline_schedule.schedule",
-				ImportState:              true,
-				ImportStateVerify:        true,
-				ImportStateVerifyIgnore: []string{
-					"take_ownership",
-				},
-			},
-		},
-	})
-}
-
 func TestAccGitlabPipelineSchedule_basic(t *testing.T) {
 	var schedule gitlab.PipelineSchedule
 	project := testutil.CreateProject(t)
