@@ -4,7 +4,9 @@ package provider
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
@@ -127,6 +129,70 @@ func TestAcc_GitlabRelease_milestones(t *testing.T) {
 					resource.TestCheckResourceAttr("gitlab_release.this", "milestones.#", "2"),
 					resource.TestCheckResourceAttr("gitlab_release.this", "milestones.0", milestones[0].Title),
 					resource.TestCheckResourceAttr("gitlab_release.this", "milestones.1", milestones[1].Title),
+				),
+			},
+			// Verify import
+			{
+				ResourceName:            "gitlab_release.this",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"ref"},
+			},
+		},
+	})
+}
+
+func TestAcc_GitlabRelease_releasedAt(t *testing.T) {
+	project := testutil.CreateProject(t)
+	futureReleasedAt := time.Now().AddDate(0, 0, 1).Format(time.RFC3339)
+	pastReleasedAt := time.Now().AddDate(0, 0, -1).Format(time.RFC3339)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAcc_GitlabRelease_CheckDestroy,
+		Steps: []resource.TestStep{
+			// Attempt to create a basic release with an invalid released_at date
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_release" "this" {
+					project     = "%d"
+					tag_name    = "v1.0.0"
+					ref         = "main"
+					released_at = "2026-01-01"
+				}`, project.ID),
+				ExpectError: regexp.MustCompile("Invalid RFC3339 String Value"),
+			},
+			// Create a basic release with a released_at date in the future
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_release" "this" {
+					project     = "%d"
+					tag_name    = "v1.0.0"
+					ref         = "main"
+					released_at = "%s"
+				}`, project.ID, futureReleasedAt),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_release.this", "id", fmt.Sprintf("%d:v1.0.0", project.ID)),
+				),
+			},
+			// Verify import
+			{
+				ResourceName:            "gitlab_release.this",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"ref"},
+			},
+			// Create a basic release with a released_at date in the past
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_release" "this" {
+					project     = "%d"
+					tag_name    = "v1.0.0"
+					ref         = "main"
+					released_at = "%s"
+				}`, project.ID, pastReleasedAt),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_release.this", "id", fmt.Sprintf("%d:v1.0.0", project.ID)),
 				),
 			},
 			// Verify import
