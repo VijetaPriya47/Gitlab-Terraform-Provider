@@ -212,3 +212,70 @@ func testAcc_GitlabGroupSecurityPolicyAttachment_CheckDestroy(s *terraform.State
 	}
 	return nil
 }
+
+func TestAcc_GitlabGroupSecurityPolicyAttachment_RecreateOnExternalDelete(t *testing.T) {
+	testutil.SkipIfCE(t)
+
+	group := testutil.CreateGroups(t, 1)[0]
+	policyProject := testutil.CreateProject(t)
+
+	config := fmt.Sprintf(`
+        resource "gitlab_group_security_policy_attachment" "this" {
+            group          = %d
+            policy_project = %d
+        }`, group.ID, policyProject.ID)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAcc_GitlabGroupSecurityPolicyAttachment_CheckDestroy,
+		Steps: []resource.TestStep{
+			// Step 1: Create the attachment initially
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_group_security_policy_attachment.this", "group", strconv.FormatInt(group.ID, 10)),
+					resource.TestCheckResourceAttr("gitlab_group_security_policy_attachment.this", "policy_project", strconv.FormatInt(policyProject.ID, 10)),
+				),
+			},
+			// Step 2: Delete it via the API, then apply the same config. Terraform should recreate it.
+			{
+				PreConfig: func() {
+					unassignSecurityPolicyProject(t, group.FullPath)
+				},
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_group_security_policy_attachment.this", "group", strconv.FormatInt(group.ID, 10)),
+					resource.TestCheckResourceAttr("gitlab_group_security_policy_attachment.this", "policy_project", strconv.FormatInt(policyProject.ID, 10)),
+				),
+			},
+		},
+	})
+}
+
+func unassignSecurityPolicyProject(t *testing.T, fullPath string) {
+	t.Helper()
+
+	mutation := fmt.Sprintf(`
+        mutation {
+            securityPolicyProjectUnassign(input: {fullPath: "%s"}) {
+                errors
+            }
+        }
+    `, fullPath)
+
+	var response struct {
+		Data struct {
+			SecurityPolicyProjectUnassign struct {
+				Errors []string `json:"errors"`
+			} `json:"securityPolicyProjectUnassign"`
+		} `json:"data"`
+	}
+
+	_, err := testutil.TestGitlabClient.GraphQL.Do(gitlab.GraphQLQuery{Query: mutation}, &response)
+	if err != nil {
+		t.Fatalf("Failed to execute GraphQL mutation to unassign security policy project: %v", err)
+	}
+	if len(response.Data.SecurityPolicyProjectUnassign.Errors) > 0 {
+		t.Fatalf("GraphQL returned errors when unassigning security policy project: %v", response.Data.SecurityPolicyProjectUnassign.Errors)
+	}
+}

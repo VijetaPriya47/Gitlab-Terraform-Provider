@@ -224,7 +224,7 @@ func (d *gitlabGroupSecurityPolicyAttachmentResource) Read(ctx context.Context, 
 	response, err := d.readPolicy(ctx, groupIds)
 	if err != nil {
 		tflog.Error(ctx, "Received an error when reading the policy. Exiting", map[string]any{
-			"grooup":         group,
+			"group":          group,
 			"policy_project": policyProject,
 		})
 		resp.Diagnostics.AddError("Failed to read policy", "Could not read policy: "+err.Error())
@@ -233,30 +233,39 @@ func (d *gitlabGroupSecurityPolicyAttachmentResource) Read(ctx context.Context, 
 
 	if response.Data.Group == nil {
 		tflog.Warn(ctx, "Group for the gitlab_group_security_policy_attachment returned nil from the GraphQL call, which usually means the group doesn't exist anymore.", map[string]any{
-			"grooup":         group,
+			"group":          group,
 			"policy_project": policyProject,
 		})
 		resp.State.RemoveResource(ctx)
 		return
 	}
-	// Get the policy project ID, which is the final digit in the GraphQL ID of the response
-	if response.Data.Group.SecurityPolicyProject != nil && response.Data.Group.SecurityPolicyProject.ID != "" {
-		parts := strings.Split(response.Data.Group.SecurityPolicyProject.ID, "/")
-		parsedPolicyId := parts[len(parts)-1]
 
-		data.PolicyProject = types.StringValue(parsedPolicyId)
-
-		tflog.Debug(ctx, "Parsed a valid security policy project. Adding to state", map[string]any{
+	// Check if the security policy project attachment still exists
+	if response.Data.Group.SecurityPolicyProject == nil || response.Data.Group.SecurityPolicyProject.ID == "" {
+		tflog.Warn(ctx, "Security policy project for the gitlab_group_security_policy_attachment returned nil or empty from the GraphQL call, which usually means the attachment doesn't exist anymore.", map[string]any{
 			"group":          group,
-			"policy_project": parsedPolicyId,
+			"policy_project": policyProject,
 		})
+		resp.State.RemoveResource(ctx)
+		return
+	}
 
-		// Parse GraphQL IDs again to validate the policy project GID
-		_, err := d.parseGraphQLIds(ctx, data)
-		if err != nil {
-			resp.Diagnostics.AddError("Failed to parse GraphQL ID of the policy project", err.Error())
-			return
-		}
+	// Get the policy project ID, which is the final digit in the GraphQL ID of the response
+	parts := strings.Split(response.Data.Group.SecurityPolicyProject.ID, "/")
+	parsedPolicyId := parts[len(parts)-1]
+
+	data.PolicyProject = types.StringValue(parsedPolicyId)
+
+	tflog.Debug(ctx, "Parsed a valid security policy project. Adding to state", map[string]any{
+		"group":          group,
+		"policy_project": parsedPolicyId,
+	})
+
+	// Parse GraphQL IDs again to validate the policy project GID
+	_, err = d.parseGraphQLIds(ctx, data)
+	if err != nil {
+		resp.Diagnostics.AddError("Failed to parse GraphQL ID of the policy project", err.Error())
+		return
 	}
 
 	// Save updated data into Terraform state
@@ -391,12 +400,59 @@ func (d *gitlabGroupSecurityPolicyAttachmentResource) Delete(ctx context.Context
 		return
 	}
 
+	err = d.verifyPolicyUnassociation(ctx, projectIds)
+	if err != nil {
+		resp.Diagnostics.AddError("Failed to verify policy unassociation", err.Error())
+		return
+	}
+
 	tflog.Debug(ctx, "Successfully deleted security policy project from group", map[string]any{
 		"group":          data.Group.ValueString(),
 		"policy_project": data.PolicyProject.ValueString(),
 	})
 
 	resp.State.RemoveResource(ctx)
+}
+
+// verifyPolicyUnassociation checks every 5 seconds for up to 1 minute to ensure the policy association was removed
+func (d *gitlabGroupSecurityPolicyAttachmentResource) verifyPolicyUnassociation(ctx context.Context, groupIds *api.GroupIdentifiers) error {
+	timeoutCtx, cancel := context.WithTimeout(ctx, 1*time.Minute)
+	defer cancel()
+
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+
+	// Check immediately first
+	response, err := d.readPolicy(ctx, groupIds)
+	if err != nil {
+		return fmt.Errorf("failed to read policy during unassociation verification: %w", err)
+	}
+
+	if response.Data.Group == nil || response.Data.Group.SecurityPolicyProject == nil || response.Data.Group.SecurityPolicyProject.ID == "" {
+		tflog.Debug(ctx, "Policy unassociation verified successfully", map[string]any{
+			"group": groupIds.GroupFullPath,
+		})
+		return nil
+	}
+
+	for {
+		select {
+		case <-timeoutCtx.Done():
+			return fmt.Errorf("policy unassociation verification timed out after 1 minute")
+		case <-ticker.C:
+			response, err := d.readPolicy(ctx, groupIds)
+			if err != nil {
+				continue
+			}
+
+			if response.Data.Group == nil || response.Data.Group.SecurityPolicyProject == nil || response.Data.Group.SecurityPolicyProject.ID == "" {
+				tflog.Debug(ctx, "Policy unassociation verified successfully", map[string]any{
+					"group": groupIds.GroupFullPath,
+				})
+				return nil
+			}
+		}
+	}
 }
 
 // Create a function that reads the security policy associated to the group
