@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-framework-timetypes/timetypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -18,7 +19,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
-	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
 
@@ -49,24 +49,24 @@ type gitlabReleaseResource struct {
 
 // gitlabReleaseResourceModel describes the resource data model
 type gitlabReleaseResourceModel struct {
-	ID              types.String `tfsdk:"id"`
-	Project         types.String `tfsdk:"project"`
-	Name            types.String `tfsdk:"name"`
-	TagName         types.String `tfsdk:"tag_name"`
-	TagMessage      types.String `tfsdk:"tag_message"`
-	TagPath         types.String `tfsdk:"tag_path"`
-	Description     types.String `tfsdk:"description"`
-	DescriptionHTML types.String `tfsdk:"description_html"`
-	Ref             types.String `tfsdk:"ref"`
-	Milestones      types.Set    `tfsdk:"milestones"`
-	CreatedAt       types.String `tfsdk:"created_at"`
-	ReleasedAt      types.String `tfsdk:"released_at"`
-	Author          types.Object `tfsdk:"author"`
-	Commit          types.Object `tfsdk:"commit"`
-	UpcomingRelease types.Bool   `tfsdk:"upcoming_release"`
-	CommitPath      types.String `tfsdk:"commit_path"`
-	Assets          types.Object `tfsdk:"assets"`
-	Links           types.Object `tfsdk:"links"`
+	ID              types.String      `tfsdk:"id"`
+	Project         types.String      `tfsdk:"project"`
+	Name            types.String      `tfsdk:"name"`
+	TagName         types.String      `tfsdk:"tag_name"`
+	TagMessage      types.String      `tfsdk:"tag_message"`
+	TagPath         types.String      `tfsdk:"tag_path"`
+	Description     types.String      `tfsdk:"description"`
+	DescriptionHTML types.String      `tfsdk:"description_html"`
+	Ref             types.String      `tfsdk:"ref"`
+	Milestones      types.Set         `tfsdk:"milestones"`
+	CreatedAt       types.String      `tfsdk:"created_at"`
+	ReleasedAt      timetypes.RFC3339 `tfsdk:"released_at"`
+	Author          types.Object      `tfsdk:"author"`
+	Commit          types.Object      `tfsdk:"commit"`
+	UpcomingRelease types.Bool        `tfsdk:"upcoming_release"`
+	CommitPath      types.String      `tfsdk:"commit_path"`
+	Assets          types.Object      `tfsdk:"assets"`
+	Links           types.Object      `tfsdk:"links"`
 }
 
 type gitlabReleaseAuthor struct {
@@ -170,6 +170,7 @@ func (r *gitlabReleaseResource) Schema(ctx context.Context, req resource.SchemaR
 				MarkdownDescription: "Date and time for the release. Defaults to the current time. Expected in ISO 8601 format (2019-03-15T08:00:00Z). Only provide this field if creating an upcoming or historical release.",
 				Optional:            true,
 				Computed:            true,
+				CustomType:          timetypes.RFC3339Type{},
 			},
 			"author": schema.SingleNestedAttribute{
 				MarkdownDescription: "The author of the release.",
@@ -357,16 +358,12 @@ func (r *gitlabReleaseResource) Create(ctx context.Context, req resource.CreateR
 	}
 
 	if !data.ReleasedAt.IsNull() && len(data.ReleasedAt.ValueString()) > 0 {
-		releasedAt := data.ReleasedAt.ValueString()
-		releasedAtTime, err := time.Parse(api.Iso8601, releasedAt)
-		if err != nil {
-			resp.Diagnostics.AddError(
-				"Error parsing released at date",
-				fmt.Sprintf("Could not parse released at date %q: %s", releasedAt, err),
-			)
+		releasedAt, diag := data.ReleasedAt.ValueRFC3339Time()
+		resp.Diagnostics.Append(diag...)
+		if resp.Diagnostics.HasError() {
 			return
 		}
-		options.ReleasedAt = &releasedAtTime
+		options.ReleasedAt = &releasedAt
 	}
 
 	if !data.Milestones.IsNull() && !data.Milestones.IsUnknown() {
@@ -382,6 +379,9 @@ func (r *gitlabReleaseResource) Create(ctx context.Context, req resource.CreateR
 	}
 	data.ID = types.StringValue(utils.BuildTwoPartID(&projectID, data.TagName.ValueStringPointer()))
 	resp.Diagnostics.Append(data.releaseModelToState(release, ctx)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 
 	// Log the creation of the resource
@@ -417,6 +417,9 @@ func (r *gitlabReleaseResource) Read(ctx context.Context, req resource.ReadReque
 	data.Project = types.StringValue(projectID)
 	data.TagName = types.StringValue(tagName)
 	resp.Diagnostics.Append(data.releaseModelToState(release, ctx)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -444,12 +447,12 @@ func (r *gitlabReleaseResource) Update(ctx context.Context, req resource.UpdateR
 		options.Milestones = &milestones
 	}
 	if !data.ReleasedAt.IsNull() && !data.ReleasedAt.IsUnknown() {
-		releasedAt, err := time.Parse(time.RFC3339, data.ReleasedAt.ValueString())
-		if err != nil {
-			resp.Diagnostics.AddError("Invalid released_at date format", fmt.Sprintf("Error parsing released_at value to RFC3339 format: %v", err))
+		releasedAt, diag := data.ReleasedAt.ValueRFC3339Time()
+		resp.Diagnostics.Append(diag...)
+		if resp.Diagnostics.HasError() {
 			return
 		}
-		options.ReleasedAt = gitlab.Ptr(releasedAt)
+		options.ReleasedAt = &releasedAt
 	}
 
 	release, _, err := r.client.Releases.UpdateRelease(projectID, tagName, options, gitlab.WithContext(ctx))
@@ -460,6 +463,9 @@ func (r *gitlabReleaseResource) Update(ctx context.Context, req resource.UpdateR
 
 	data.ID = types.StringValue(utils.BuildTwoPartID(&projectID, &tagName))
 	resp.Diagnostics.Append(data.releaseModelToState(release, ctx)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -502,7 +508,11 @@ func (r *gitlabReleaseResourceModel) releaseModelToState(release *gitlab.Release
 		return diag
 	}
 	r.Milestones = milestones
-	r.ReleasedAt = types.StringValue(release.ReleasedAt.Format(time.RFC3339))
+	releasedAt, diag := timetypes.NewRFC3339Value(release.ReleasedAt.Format(time.RFC3339))
+	if diag.HasError() {
+		return diag
+	}
+	r.ReleasedAt = releasedAt
 	author, diag := (&gitlabReleaseAuthor{
 		ID:        types.Int64Value(int64(release.Author.ID)),
 		Name:      types.StringValue(release.Author.Name),
