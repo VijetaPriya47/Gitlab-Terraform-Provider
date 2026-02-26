@@ -99,7 +99,7 @@ func (r *gitlabValueStreamAnalyticsResource) Schema(ctx context.Context, req res
 				Optional:            true,
 				PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 				Validators: []validator.String{
-					stringvalidator.ConflictsWith(path.MatchRoot("project_full_path")),
+					stringvalidator.ExactlyOneOf(path.MatchRoot("project_full_path")),
 				},
 			},
 			"project_full_path": schema.StringAttribute{
@@ -107,7 +107,7 @@ func (r *gitlabValueStreamAnalyticsResource) Schema(ctx context.Context, req res
 				Optional:            true,
 				PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 				Validators: []validator.String{
-					stringvalidator.ConflictsWith(path.MatchRoot("group_full_path")),
+					stringvalidator.ExactlyOneOf(path.MatchRoot("group_full_path")),
 				},
 			},
 			"stages": schema.ListNestedAttribute{
@@ -194,11 +194,6 @@ func (r *gitlabValueStreamAnalyticsResource) ModifyPlan(ctx context.Context, req
 		// Log a note that there is no plan data, usually because we're importing.
 		tflog.Debug(ctx, "Plan data is nil, no further validation is needed.")
 		return
-	}
-
-	// Validate that group_full_path or project_full_path is defined.
-	if (planData.GroupFullPath.IsNull() || planData.GroupFullPath.ValueString() == "") && (planData.ProjectFullPath.IsNull() || planData.ProjectFullPath.ValueString() == "") {
-		resp.Diagnostics.AddAttributeError(path.Root("group_full_path"), "Missing Attribute", "Either `group_full_path` or `project_full_path` is required")
 	}
 
 	// Based on each stage's start and end event identifiers, validate whether a label id is provided or not.
