@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
@@ -63,6 +64,186 @@ func TestAcc_GitlabValueStreamAnalytics_ProjectDefaultStages(t *testing.T) {
 				ResourceName:      "gitlab_value_stream_analytics.foo",
 				ImportState:       true,
 				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAcc_GitlabValueStreamAnalytics_GroupCreationInSameApply(t *testing.T) {
+	testutil.SkipIfCE(t)
+
+	rInt := acctest.RandInt()
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		CheckDestroy:             testAcc_GitlabProjectValueStreamAnalytics_CheckDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_group" "foo" {
+						name = "foo-name-%d"
+						path = "foo-path-%d"
+						description = "Terraform acceptance tests"
+				
+						visibility_level = "public"
+					}
+
+					resource "gitlab_value_stream_analytics" "foo" {
+						name = "test"
+						group_full_path = gitlab_group.foo.full_path
+						stages = [
+							{
+								name = "Issue"
+								custom = false
+								hidden = true
+							},
+							{
+								name = "Plan"
+								custom = false
+								hidden = false
+							}
+						]
+					}
+				`, rInt, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("gitlab_value_stream_analytics.foo", "id"),
+					resource.TestCheckResourceAttr("gitlab_value_stream_analytics.foo", "name", "test"),
+					resource.TestCheckResourceAttrSet("gitlab_value_stream_analytics.foo", "group_full_path"),
+					resource.TestCheckTypeSetElemNestedAttrs("gitlab_value_stream_analytics.foo", "stages.*", map[string]string{
+						"name":   "Issue",
+						"custom": "false",
+						"hidden": "true",
+					}),
+					resource.TestCheckTypeSetElemNestedAttrs("gitlab_value_stream_analytics.foo", "stages.*", map[string]string{
+						"name":   "Plan",
+						"custom": "false",
+						"hidden": "false",
+					}),
+				),
+			},
+			{
+				ResourceName:      "gitlab_value_stream_analytics.foo",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAcc_GitlabValueStreamAnalytics_ProjectCreationInSameApply(t *testing.T) {
+	testutil.SkipIfCE(t)
+
+	rInt := acctest.RandInt()
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		CheckDestroy:             testAcc_GitlabProjectValueStreamAnalytics_CheckDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project" "foo" {
+						name = "foo-%d"
+						visibility_level = "public"
+					}
+
+					resource "gitlab_value_stream_analytics" "foo" {
+						name = "test"
+						project_full_path = gitlab_project.foo.path_with_namespace
+						stages = [
+							{
+								name = "Issue"
+								custom = false
+								hidden = true
+							},
+							{
+								name = "Plan"
+								custom = false
+								hidden = false
+							}
+						]
+					}
+				`, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("gitlab_value_stream_analytics.foo", "id"),
+					resource.TestCheckResourceAttr("gitlab_value_stream_analytics.foo", "name", "test"),
+					resource.TestCheckResourceAttrSet("gitlab_value_stream_analytics.foo", "project_full_path"),
+					resource.TestCheckTypeSetElemNestedAttrs("gitlab_value_stream_analytics.foo", "stages.*", map[string]string{
+						"name":   "Issue",
+						"custom": "false",
+						"hidden": "true",
+					}),
+					resource.TestCheckTypeSetElemNestedAttrs("gitlab_value_stream_analytics.foo", "stages.*", map[string]string{
+						"name":   "Plan",
+						"custom": "false",
+						"hidden": "false",
+					}),
+				),
+			},
+			{
+				ResourceName:      "gitlab_value_stream_analytics.foo",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAcc_GitlabValueStreamAnalytics_EnsureErrorOnInvalidAttributeCombo(t *testing.T) {
+	testutil.SkipIfCE(t)
+
+	testGroup := testutil.CreateGroups(t, 1)[0]
+	testProject := testutil.CreateProjectWithNamespace(t, testGroup.ID)
+	err_regex, err := regexp.Compile("Error: Invalid Attribute Combination")
+	if err != nil {
+		t.Errorf("Unable to format expected error regex: %s", err)
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+					resource "gitlab_value_stream_analytics" "foo" {
+						name = "test"
+
+						stages = [
+							{
+								name = "Issue"
+								custom = false
+								hidden = true
+							},
+							{
+								name = "Plan"
+								custom = false
+								hidden = false
+							}
+						]
+					}
+				`,
+				ExpectError: err_regex,
+			},
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_value_stream_analytics" "foo" {
+						name              = "test"
+						project_full_path = "%s"
+						group_full_path   = "%s"
+
+						stages = [
+							{
+								name = "Issue"
+								custom = false
+								hidden = true
+							},
+							{
+								name = "Plan"
+								custom = false
+								hidden = false
+							}
+						]
+					}
+				`, testProject.PathWithNamespace, testGroup.FullPath),
+				ExpectError: err_regex,
 			},
 		},
 	})
