@@ -661,6 +661,75 @@ func TestAcc_GitlabProjectProtectedEnvironment_GroupInheritanceType(t *testing.T
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
+			// Set deploy access rule with explicit group inheritance type 0
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_protected_environment" "this" {
+					project     = %d
+					environment = %q
+
+					deploy_access_levels_attribute = [{
+						group_id = %d
+						group_inheritance_type = 0
+					}]
+
+					approval_rules = [
+						{
+							group_id = %d
+							required_approvals = 3
+						}
+					]
+				}`, project.ID, environment, group.ID, group.ID),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("gitlab_project_protected_environment.this", "deploy_access_levels_attribute.0.access_level_description"),
+					resource.TestCheckResourceAttrSet("gitlab_project_protected_environment.this", "approval_rules.0.access_level_description"),
+					resource.TestCheckResourceAttr("gitlab_project_protected_environment.this", "deploy_access_levels_attribute.0.group_inheritance_type", "0"),
+				),
+			},
+			// Verify upstream attributes with an import.
+			{
+				ResourceName:      "gitlab_project_protected_environment.this",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"deploy_access_levels_attribute.0.group_inheritance_type",
+				},
+			},
+			// Set approval rule with explicit group inheritance type 0
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_protected_environment" "this" {
+					project     = %d
+					environment = %q
+
+					deploy_access_levels_attribute = [{
+						group_id = %d
+					}]
+
+					approval_rules = [
+						{
+							group_id = %d
+							required_approvals = 3
+							group_inheritance_type = 0
+						}
+					]
+				}`, project.ID, environment, group.ID, group.ID),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("gitlab_project_protected_environment.this", "deploy_access_levels_attribute.0.access_level_description"),
+					resource.TestCheckResourceAttrSet("gitlab_project_protected_environment.this", "approval_rules.0.access_level_description"),
+					resource.TestCheckResourceAttr("gitlab_project_protected_environment.this", "approval_rules.0.group_inheritance_type", "0"),
+				),
+			},
+			// Verify upstream attributes with an import.
+			{
+				ResourceName:      "gitlab_project_protected_environment.this",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"deploy_access_levels_attribute.0.group_inheritance_type",
+					"approval_rules.0.group_inheritance_type",
+				},
+			},
 		},
 	})
 }

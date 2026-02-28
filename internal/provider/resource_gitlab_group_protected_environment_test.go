@@ -326,6 +326,100 @@ func TestAcc_GitlabGroupProtectedEnvironment_GroupInheritanceType(t *testing.T) 
 	})
 }
 
+func TestAcc_GitlabGroupProtectedEnvironment_GroupInheritanceType_Zero(t *testing.T) {
+	testutil.SkipIfCE(t)
+
+	// Set up group and subgroup.
+	group := testutil.CreateGroups(t, 1)[0]
+	subGroup := testutil.CreateSubGroups(t, group, 1)[0]
+
+	// Set up group user with Maintainer access.
+	user := testutil.CreateUsers(t, 1)[0]
+	testutil.AddGroupMembersWithAccessLevel(t, group.ID, []*gitlab.User{user}, gitlab.MaintainerPermissions)
+
+	environment := "testing"
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAcc_GitlabGroupProtectedEnvironment_CheckDestroy(group.ID, environment),
+		Steps: []resource.TestStep{
+			// Set deploy access rule with explicit group inheritance type 0.
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group_protected_environment" "this" {
+					group       = %d
+					environment = %q
+
+					deploy_access_levels = [
+						{
+							group_id = %d
+							group_inheritance_type = 0
+						}
+					]
+
+					approval_rules = [
+						{
+							group_id = %d
+							required_approvals = 3
+						}
+					]
+				}`, group.ID, environment, subGroup.ID, subGroup.ID),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("gitlab_group_protected_environment.this", "deploy_access_levels.0.access_level_description"),
+					resource.TestCheckResourceAttrSet("gitlab_group_protected_environment.this", "approval_rules.0.access_level_description"),
+					resource.TestCheckResourceAttr("gitlab_group_protected_environment.this", "deploy_access_levels.0.group_inheritance_type", "0"),
+				),
+			},
+			// Verify upstream attributes with an import.
+			{
+				ResourceName:      "gitlab_group_protected_environment.this",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"deploy_access_levels.0.group_inheritance_type",
+				},
+			},
+			// Set approval rule with explicit group inheritance type 0.
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_group_protected_environment" "this" {
+					group       = %d
+					environment = %q
+
+					deploy_access_levels = [
+						{
+							group_id = %d
+						}
+					]
+
+					approval_rules = [
+						{
+							group_id = %d
+							required_approvals = 3
+							group_inheritance_type = 0
+						}
+					]
+				}`, group.ID, environment, subGroup.ID, subGroup.ID),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("gitlab_group_protected_environment.this", "deploy_access_levels.0.access_level_description"),
+					resource.TestCheckResourceAttrSet("gitlab_group_protected_environment.this", "approval_rules.0.access_level_description"),
+					resource.TestCheckResourceAttr("gitlab_group_protected_environment.this", "approval_rules.0.group_inheritance_type", "0"),
+				),
+			},
+			// Verify upstream attributes with an import.
+			{
+				ResourceName:      "gitlab_group_protected_environment.this",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"deploy_access_levels.0.group_inheritance_type",
+					"approval_rules.0.group_inheritance_type",
+				},
+			},
+		},
+	})
+}
+
 func TestAcc_GitlabGroupProtectedEnvironment_approvalRules_InvalidGroupInheritanceType(t *testing.T) {
 	testutil.SkipIfCE(t)
 

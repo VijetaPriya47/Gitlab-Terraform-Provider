@@ -315,7 +315,7 @@ func (r *gitlabGroupProtectedEnvironmentResource) Create(ctx context.Context, re
 		if !v.GroupId.IsNull() && v.GroupId.ValueInt64() != 0 {
 			deployAccessLevelOptions.GroupID = gitlab.Ptr(v.GroupId.ValueInt64())
 		}
-		if !v.GroupInheritanceType.IsNull() && v.GroupInheritanceType.ValueInt64() != 0 {
+		if !v.GroupInheritanceType.IsNull() && !v.GroupInheritanceType.IsUnknown() {
 			deployAccessLevelOptions.GroupInheritanceType = gitlab.Ptr(v.GroupInheritanceType.ValueInt64())
 		}
 
@@ -342,7 +342,7 @@ func (r *gitlabGroupProtectedEnvironmentResource) Create(ctx context.Context, re
 		if !v.GroupId.IsNull() && v.GroupId.ValueInt64() != 0 {
 			approvalRuleOptions.GroupID = gitlab.Ptr(v.GroupId.ValueInt64())
 		}
-		if !v.GroupInheritanceType.IsNull() && v.GroupInheritanceType.ValueInt64() != 0 {
+		if !v.GroupInheritanceType.IsNull() && !v.GroupInheritanceType.IsUnknown() {
 			approvalRuleOptions.GroupInheritanceType = gitlab.Ptr(v.GroupInheritanceType.ValueInt64())
 		}
 		if !v.RequiredApprovals.IsNull() && v.RequiredApprovals.ValueInt64() != 0 {
@@ -494,7 +494,7 @@ func (r *gitlabGroupProtectedEnvironmentResource) Update(ctx context.Context, re
 		if !v.GroupId.IsNull() && v.GroupId.ValueInt64() != 0 {
 			deployAccessLevelOptions.GroupID = gitlab.Ptr(v.GroupId.ValueInt64())
 		}
-		if !v.GroupInheritanceType.IsNull() && v.GroupInheritanceType.ValueInt64() != 0 {
+		if !v.GroupInheritanceType.IsNull() && !v.GroupInheritanceType.IsUnknown() {
 			deployAccessLevelOptions.GroupInheritanceType = gitlab.Ptr(v.GroupInheritanceType.ValueInt64())
 		}
 
@@ -561,7 +561,7 @@ func (r *gitlabGroupProtectedEnvironmentResource) Update(ctx context.Context, re
 		if !v.GroupId.IsNull() && v.GroupId.ValueInt64() != 0 {
 			approvalRuleOptions.GroupID = gitlab.Ptr(v.GroupId.ValueInt64())
 		}
-		if !v.GroupInheritanceType.IsNull() && v.GroupInheritanceType.ValueInt64() != 0 {
+		if !v.GroupInheritanceType.IsNull() && !v.GroupInheritanceType.IsUnknown() {
 			approvalRuleOptions.GroupInheritanceType = gitlab.Ptr(v.GroupInheritanceType.ValueInt64())
 		}
 		if !v.RequiredApprovals.IsNull() && v.RequiredApprovals.ValueInt64() != 0 {
@@ -688,7 +688,7 @@ func (r *gitlabGroupProtectedEnvironmentResource) protectedEnvironmentToStateMod
 		if obj.GroupID != 0 {
 			deployAccessLevelData.GroupId = types.Int64Value(int64(obj.GroupID))
 		}
-		if obj.GroupInheritanceType != 0 {
+		if obj.GroupInheritanceType != 0 || data.deployAccessLevelHasConfiguredGroupInheritanceType(ctx, &obj) {
 			deployAccessLevelData.GroupInheritanceType = types.Int64Value(int64(obj.GroupInheritanceType))
 		}
 
@@ -714,7 +714,7 @@ func (r *gitlabGroupProtectedEnvironmentResource) protectedEnvironmentToStateMod
 		if obj.GroupID != 0 {
 			approvalRuleData.GroupId = types.Int64Value(int64(obj.GroupID))
 		}
-		if obj.GroupInheritanceType != 0 {
+		if obj.GroupInheritanceType != 0 || data.approvalRuleHasConfiguredGroupInheritanceType(ctx, &obj) {
 			approvalRuleData.GroupInheritanceType = types.Int64Value(int64(obj.GroupInheritanceType))
 		}
 		if obj.RequiredApprovalCount != 0 {
@@ -726,4 +726,82 @@ func (r *gitlabGroupProtectedEnvironmentResource) protectedEnvironmentToStateMod
 	approvalRulesSetType, newDiag := types.SetValueFrom(ctx, groupApprovalRuleSchema().NestedObject.Type(), approvalRulesData)
 	existingDiag.Append(newDiag...)
 	data.ApprovalRules = approvalRulesSetType
+}
+
+func (data *gitlabGroupProtectedEnvironmentResourceModel) approvalRuleHasConfiguredGroupInheritanceType(ctx context.Context, apiRule *gitlab.GroupEnvironmentApprovalRule) bool {
+	if data.ApprovalRules.IsNull() || data.ApprovalRules.IsUnknown() {
+		return false
+	}
+
+	rules := make([]*gitlabGroupProtectedEnvironmentApprovalRuleModel, 0, len(data.ApprovalRules.Elements()))
+	if diags := data.ApprovalRules.ElementsAs(ctx, &rules, true); diags.HasError() {
+		return false
+	}
+
+	for _, rule := range rules {
+		if rule == nil || rule.GroupInheritanceType.IsNull() || rule.GroupInheritanceType.IsUnknown() || rule.GroupInheritanceType.ValueInt64() != 0 {
+			continue
+		}
+
+		if !rule.ID.IsNull() && rule.ID.ValueInt64() != 0 && rule.ID.ValueInt64() == apiRule.ID {
+			return true
+		}
+
+		ruleGroupID := int64(0)
+		if !rule.GroupId.IsNull() && !rule.GroupId.IsUnknown() {
+			ruleGroupID = rule.GroupId.ValueInt64()
+		}
+		ruleUserID := int64(0)
+		if !rule.UserId.IsNull() && !rule.UserId.IsUnknown() {
+			ruleUserID = rule.UserId.ValueInt64()
+		}
+		ruleRequiredApprovals := int64(0)
+		if !rule.RequiredApprovals.IsNull() && !rule.RequiredApprovals.IsUnknown() {
+			ruleRequiredApprovals = rule.RequiredApprovals.ValueInt64()
+		}
+
+		if ruleGroupID == apiRule.GroupID &&
+			ruleUserID == apiRule.UserID &&
+			ruleRequiredApprovals == apiRule.RequiredApprovalCount {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (data *gitlabGroupProtectedEnvironmentResourceModel) deployAccessLevelHasConfiguredGroupInheritanceType(ctx context.Context, apiLevel *gitlab.GroupEnvironmentAccessDescription) bool {
+	if data.DeployAccessLevels.IsNull() || data.DeployAccessLevels.IsUnknown() {
+		return false
+	}
+
+	levels := make([]*gitlabGroupProtectedEnvironmentDeployAccessLevelModel, 0, len(data.DeployAccessLevels.Elements()))
+	if diags := data.DeployAccessLevels.ElementsAs(ctx, &levels, false); diags.HasError() {
+		return false
+	}
+
+	for _, level := range levels {
+		if level == nil || level.GroupInheritanceType.IsNull() || level.GroupInheritanceType.IsUnknown() || level.GroupInheritanceType.ValueInt64() != 0 {
+			continue
+		}
+
+		if !level.ID.IsNull() && level.ID.ValueInt64() != 0 && level.ID.ValueInt64() == apiLevel.ID {
+			return true
+		}
+
+		levelGroupID := int64(0)
+		if !level.GroupId.IsNull() && !level.GroupId.IsUnknown() {
+			levelGroupID = level.GroupId.ValueInt64()
+		}
+		levelUserID := int64(0)
+		if !level.UserId.IsNull() && !level.UserId.IsUnknown() {
+			levelUserID = level.UserId.ValueInt64()
+		}
+
+		if levelGroupID == apiLevel.GroupID && levelUserID == apiLevel.UserID {
+			return true
+		}
+	}
+
+	return false
 }
