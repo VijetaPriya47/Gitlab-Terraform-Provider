@@ -35,7 +35,10 @@ services:
       GITLAB_ROOT_PASSWORD: "FoQ7PaTZqWaftrZ7zvAK"
       # The token uses the value of GITLAB_TOKEN, which is set in the makefile (unless overridden)
       GITLAB_TOKEN: $GITLAB_TOKEN
-      GITLAB_LICENSE_FILE: /Gitlab-license.txt
+      # This is NOT the `GITLAB_ACTIVATION_CODE` variable, because we cannot use it due to
+      # https://gitlab.com/gitlab-org/gitlab/-/merge_requests/225495
+      # We manually activate the license in the healthcheck-and-setup.sh script.
+      __GITLAB_ACTIVATION_CODE: $GITLAB_ACTIVATION_CODE
     labels:
       terraform-provider-gitlab/owned: ""
     volumes:
@@ -43,7 +46,6 @@ services:
       - logs-ee:/var/log/gitlab
       - data-ee:/var/opt/gitlab
       - ${PWD}/scripts/healthcheck-and-setup.sh:/healthcheck-and-setup.sh:Z
-      - ${PWD}/Gitlab-license.txt:/Gitlab-license.txt:Z
       - ${PWD}/scripts/gitlab.rb:/etc/gitlab/gitlab.rb:ro
       - ${PWD}/certs:/etc/gitlab/ssl:ro
     healthcheck:

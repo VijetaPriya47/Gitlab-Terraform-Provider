@@ -18,6 +18,19 @@ done=/var/gitlab-acctest-initialized
 test -f $done || {
   echo 'Initializing GitLab for acceptance tests'
 
+  if [ -n "$__GITLAB_ACTIVATION_CODE" ]; then
+    echo 'Activating license'
+    gitlab-rails console <<EOF
+result = GitlabSubscriptions::ActivateService.new.execute('$__GITLAB_ACTIVATION_CODE', automated: true)
+if result[:success]
+  puts 'Activation successful'
+else
+  puts "Activation failed: #{result[:errors]}"
+  raise 'Activation unsuccessful'
+end
+EOF
+  fi
+
   echo 'Creating access token'
   gitlab-rails console <<EOF
 terraform_token = PersonalAccessToken.create(

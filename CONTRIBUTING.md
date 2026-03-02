@@ -282,7 +282,7 @@ See instructions on [Setting up devcontainers with WSL2](https://code.visualstud
 
 If you are working on a resource or datasource that is only available to Premium or Ultimate tiers, you will need an EE license. Please see the [documentation](https://docs.gitlab.com/development/contributing/#contributing-to-premiumultimate-features-with-an-enterprise-edition-license) for requesting a license.
 
-Once you have received a license, create a `Gitlab-license.txt` file containing the license at the root of the repo. 
+Once you have received a license, [expose the `GITLAB_ACTIVATION_CODE`](https://docs.gitlab.com/administration/license_file/#activate-subscription-during-installation) in your shell when launching the acceptance test docker container.
 
 
 ### Set Up Your Local Environment
@@ -527,13 +527,12 @@ It'll auto-close every PR with a comment that we only accept contributions in ou
 
 The GitLab pipeline tests against an ephemeral GitLab Enterprise omnibus instance
 which requires an Ultimate license.
-This license must be renewed every three months using an Access Request.
+This license must be renewed every year using the customer test portal.
 
 ### Renew process
 
 This process can only be followed by GitLab Team Members.
 
-1. A GitLab Team Member (ping `@timofurrer`) has to submit the [license request form](https://support-super-form-gitlab-com-support-support-op-651f22e90ce6d7.gitlab.io/)
-1. Make sure to use an `Ultimate` license with at least `100` seats.
-1. Follow the form instructions.
-1. Update the license that is sent to you in the `GITLAB_LICENSE` CI/CD variable of this project.
+1. Obtain an activation code for a 150 seat Ultimate license by following
+   https://handbook.gitlab.com/handbook/support/internal-support/#gitlab-plan-or-license-for-team-members.
+1. Update the `GITLAB_ACTIVATION_CODE` CI/CD variable of this project.

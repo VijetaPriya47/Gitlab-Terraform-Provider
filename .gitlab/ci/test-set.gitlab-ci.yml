@@ -44,7 +44,6 @@ stages:
   before_script:
     - export GITLAB_$(echo "${GITLAB_EDITION}" | tr '[:lower:]' '[:upper:]')_VERSION=${GITLAB_VERSION}
     - docker-compose pull 2>"${GITLAB_EDITION}-${GITLAB_VERSION}-docker-compose-pull-logs.txt"
-    - test -f "${GITLAB_LICENSE}" && cp "${GITLAB_LICENSE}" "${CI_PROJECT_DIR}/Gitlab-license.txt"
     - make testacc-up SERVICE=gitlab-${GITLAB_EDITION} GITLAB_$(echo "${GITLAB_EDITION}" | tr '[:lower:]' '[:upper:]')_VERSION=${GITLAB_VERSION}
   script:
     - make testacc
