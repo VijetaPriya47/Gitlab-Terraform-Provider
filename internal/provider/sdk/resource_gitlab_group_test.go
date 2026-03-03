@@ -340,6 +340,7 @@ func TestAccGitlabGroup_defaultBranchProtectionDefaults(t *testing.T) {
 					allow_force_push = false
 					allowed_to_merge = ["no one"]
 					developer_can_initial_push = true
+					code_owner_approval_required = true
 				  }
 				}
 				  `, rInt, rInt),
@@ -372,6 +373,7 @@ func TestAccGitlabGroup_defaultBranchProtectionDefaults(t *testing.T) {
 					allow_force_push = false
 					allowed_to_merge = ["maintainer"]
 					developer_can_initial_push = true
+					code_owner_approval_required = false
 				  }
 				}
 				  `, rInt, rInt),
@@ -404,6 +406,7 @@ func TestAccGitlabGroup_defaultBranchProtectionDefaults(t *testing.T) {
 					allow_force_push = false
 					allowed_to_merge = ["maintainer"]
 					developer_can_initial_push = true
+					code_owner_approval_required = true
 				  }
 				}
 				  `, rInt, rInt),
@@ -1897,6 +1900,7 @@ func TestAccGitlabGroup_WithAvatarAndDefaultBranchProtection(t *testing.T) {
 			allowed_to_merge           = ["developer"]
 			allowed_to_push            = ["developer"]
 			developer_can_initial_push = false
+			code_owner_approval_required = false
 		}
 	}
 	`, acctest.RandomWithPrefix("acctest"))
@@ -1929,6 +1933,7 @@ func TestAccGitlabGroup_WithAvatarAndDefaultBranchProtectionsError(t *testing.T)
 						allowed_to_merge           = ["developer", "maintainer"]
 						allowed_to_push            = ["developer", "maintainer"]
 						developer_can_initial_push = false
+						code_owner_approval_required = false
 						}
 					}
 					`, acctest.RandomWithPrefix("acctest")),
@@ -2073,10 +2078,11 @@ func testAccCheckGitlabGroupExists(n string, group *gitlab.Group) resource.TestC
 }
 
 type testDefaultBranchProtectionDefaults struct {
-	AllowedToPush           []*gitlab.GroupAccessLevel
-	AllowForcePush          bool
-	AllowedToMerge          []*gitlab.GroupAccessLevel
-	DeveloperCanInitialPush bool
+	AllowedToPush             []*gitlab.GroupAccessLevel
+	AllowForcePush            bool
+	AllowedToMerge            []*gitlab.GroupAccessLevel
+	DeveloperCanInitialPush   bool
+	CodeOwnerApprovalRequired bool
 }
 
 type testAccGitlabGroupExpectedAttributes struct {
@@ -2183,6 +2189,10 @@ func testAccCheckGitlabGroupAttributes(group *gitlab.Group, want *testAccGitlabG
 
 			if group.DefaultBranchProtectionDefaults.DeveloperCanInitialPush != want.DefaultBranchProtectionDefaults.DeveloperCanInitialPush {
 				return fmt.Errorf("got default_branch_protection_defaults.developer_can_initial_push %t; want %t", group.DefaultBranchProtectionDefaults.DeveloperCanInitialPush, want.DefaultBranchProtectionDefaults.DeveloperCanInitialPush)
+			}
+
+			if group.DefaultBranchProtectionDefaults.CodeOwnerApprovalRequired != want.DefaultBranchProtectionDefaults.CodeOwnerApprovalRequired {
+				return fmt.Errorf("got default_branch_protection_defaults.code_owner_approval_required %t; want %t", group.DefaultBranchProtectionDefaults.CodeOwnerApprovalRequired, want.DefaultBranchProtectionDefaults.CodeOwnerApprovalRequired)
 			}
 		}
 		var gotIPRestrictionRanges []string

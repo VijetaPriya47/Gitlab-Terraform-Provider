@@ -388,6 +388,12 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 						Optional:    true,
 						Computed:    true,
 					},
+					"code_owner_approval_required": {
+						Description: "Require code owner approval before merging.",
+						Type:        schema.TypeBool,
+						Optional:    true,
+						Computed:    true,
+					},
 				},
 			},
 			Optional: true,
@@ -2588,6 +2594,7 @@ func flattenDefaultBranchProtectionDefaults(input *gitlab.BranchProtectionDefaul
 	v := map[string]any{}
 	v["allow_force_push"] = input.AllowForcePush
 	v["developer_can_initial_push"] = input.DeveloperCanInitialPush
+	v["code_owner_approval_required"] = input.CodeOwnerApprovalRequired
 	if len(input.AllowedToMerge) > 0 {
 		list := []int{}
 		for _, v := range input.AllowedToMerge {
@@ -2828,10 +2835,11 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 		}
 
 		branchProtectionDefault := &gitlab.DefaultBranchProtectionDefaultsOptions{
-			DeveloperCanInitialPush: gitlab.Ptr(values["developer_can_initial_push"].(bool)),
-			AllowForcePush:          gitlab.Ptr(values["allow_force_push"].(bool)),
-			AllowedToPush:           &allowedToPush,
-			AllowedToMerge:          &allowedToMerge,
+			DeveloperCanInitialPush:   gitlab.Ptr(values["developer_can_initial_push"].(bool)),
+			AllowForcePush:            gitlab.Ptr(values["allow_force_push"].(bool)),
+			CodeOwnerApprovalRequired: gitlab.Ptr(values["code_owner_approval_required"].(bool)),
+			AllowedToPush:             &allowedToPush,
+			AllowedToMerge:            &allowedToMerge,
 		}
 		options.DefaultBranchProtectionDefaults = branchProtectionDefault
 	}

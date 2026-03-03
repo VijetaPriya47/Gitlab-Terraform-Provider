@@ -374,4 +374,5 @@ Optional:
 - `allow_force_push` (Boolean) Allow force push for all users with push access.
 - `allowed_to_merge` (List of Number) An array of access levels allowed to merge. Supports Developer (30) or Maintainer (40).
 - `allowed_to_push` (List of Number) An array of access levels allowed to push. Supports Developer (30) or Maintainer (40).
+- `code_owner_approval_required` (Boolean) Require code owner approval before merging.
 - `developer_can_initial_push` (Boolean) Allow developers to initial push.
