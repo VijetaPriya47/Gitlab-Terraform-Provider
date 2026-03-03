@@ -40,6 +40,10 @@ var _ = registerResource("gitlab_user", func() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 
+		Timeouts: &schema.ResourceTimeout{
+			Delete: schema.DefaultTimeout(10 * time.Minute),
+		},
+
 		Schema: map[string]*schema.Schema{
 			"username": {
 				Description: "The username of the user.",
@@ -316,10 +320,9 @@ func resourceGitlabUserDelete(ctx context.Context, d *schema.ResourceData, meta 
 		return diag.FromErr(err)
 	}
 
-	// GitLab performs user deletion asynchronously. To avoid very long waits
-	// and flaky acceptance tests, we keep the existing 10 minute upper bound.
+	deleteTimeout := d.Timeout(schema.TimeoutDelete)
 	stateConf := &retry.StateChangeConf{
-		Timeout: 10 * time.Minute,
+		Timeout: deleteTimeout,
 		Target:  []string{"Deleted"},
 		Refresh: func() (any, string, error) {
 			user, resp, err := client.Users.GetUser(id, gitlab.GetUsersOptions{}, gitlab.WithContext(ctx))

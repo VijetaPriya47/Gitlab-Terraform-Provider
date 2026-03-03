@@ -38,6 +38,10 @@ func TestAccGitlabUser_basic(t *testing.T) {
 				  projects_limit   = 0
 				  can_create_group = false
 				  is_external      = false
+
+				  timeouts {
+				    delete = "40m"
+				  }
 				}
 				  `, rInt, rInt, password, rInt),
 				Check: resource.ComposeTestCheckFunc(
@@ -80,6 +84,10 @@ func TestAccGitlabUser_basic(t *testing.T) {
 				  can_create_group = false
 				  is_external      = false
 				  state            = "blocked"
+
+				  timeouts {
+				    delete = "40m"
+				  }
 				}
 				  `, rInt, rInt, password, rInt),
 				Check: resource.ComposeTestCheckFunc(
@@ -120,6 +128,10 @@ func TestAccGitlabUser_basic(t *testing.T) {
 				  can_create_group = true
 				  is_external      = false
 				  note             = "note%d"
+
+				  timeouts {
+				    delete = "40m"
+				  }
 				}
 				  `, rInt, rInt, password, rInt, rInt),
 				Check: resource.ComposeTestCheckFunc(
@@ -594,6 +606,10 @@ func TestAccGitlabUser_password_reset(t *testing.T) {
 				  username         = "listest%d"
 				  email            = "listest%d@ssss.com"
 				  reset_password   = true
+
+				  timeouts {
+				    delete = "40m"
+				  }
 				}
 				  `, rInt, rInt, rInt),
 				Check: testAccCheckGitlabUserExists("gitlab_user.foo", &user),
