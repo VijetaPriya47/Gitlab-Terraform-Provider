@@ -203,7 +203,6 @@ func TestAcc_GitlabProjectLabel_deprecatedResourceName(t *testing.T) {
 	})
 }
 
-
 func TestAcc_GitlabProjectLabel_schemaMigrationV1toV2(t *testing.T) {
 	project := testutil.CreateProject(t)
 	rInt := acctest.RandInt()

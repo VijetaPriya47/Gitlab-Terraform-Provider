@@ -170,7 +170,6 @@ func TestAccGitlabGroupAccessToken_failsToUpdateWithPastExpiryDate_validationEna
 	})
 }
 
-
 func TestAccGitlabGroupAccessToken_basic(t *testing.T) {
 	var gat testAccGitlabGroupAccessTokenWrapper
 

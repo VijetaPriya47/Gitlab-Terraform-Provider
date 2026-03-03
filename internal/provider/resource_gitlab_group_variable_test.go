@@ -19,6 +19,7 @@ import (
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
+
 func TestAccGitlabGroupVariable_basic(t *testing.T) {
 	group := testutil.CreateGroups(t, 1)[0]
 	var groupVariable gitlab.GroupVariable

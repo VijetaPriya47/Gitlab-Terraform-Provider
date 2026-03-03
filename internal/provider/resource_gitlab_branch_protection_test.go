@@ -550,7 +550,6 @@ func TestAccGitlabBranchProtection_createForProjectDefaultBranch(t *testing.T) {
 	})
 }
 
-
 func TestAccGitlabBranchProtection_FailIfEnterpriseFeaturesUsedForCommunityLicense(t *testing.T) {
 	testutil.SkipIfEE(t)
 
