@@ -75,6 +75,13 @@ func gitlabProjectShareGroupSchema() map[string]*schema.Schema {
 			Deprecated:       "Use `group_access` instead of the `access_level` attribute.",
 			ExactlyOneOf:     []string{"access_level", "group_access"},
 		},
+		"expires_at": {
+			Description:      "Share expiration date. Format: `YYYY-MM-DD`",
+			Type:             schema.TypeString,
+			Optional:         true,
+			ForceNew:         true,
+			ValidateDiagFunc: isISO6801Date,
+		},
 	}
 }
 
@@ -97,6 +104,11 @@ func resourceGitlabProjectShareGroupCreate(ctx context.Context, d *schema.Resour
 		GroupID:     &groupId,
 		GroupAccess: &groupAccess,
 	}
+
+	if v, ok := d.GetOk("expires_at"); ok {
+		options.ExpiresAt = gitlab.Ptr(v.(string))
+	}
+
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab project membership for %d in %s", options.GroupID, project))
 
 	_, err := client.Projects.ShareProjectWithGroup(project, options, gitlab.WithContext(ctx))
@@ -187,6 +199,10 @@ func resourceGitlabProjectShareGroupSetToState(d *schema.ResourceData, group git
 	d.Set("project", projectId)
 	d.Set("group_id", group.GroupID)
 	d.Set("group_access", api.AccessLevelValueToName[convertedAccessLevel])
+
+	if group.ExpiresAt != nil {
+		d.Set("expires_at", group.ExpiresAt.String())
+	}
 
 	groupId := strconv.FormatInt(group.GroupID, 10)
 	d.SetId(utils.BuildTwoPartID(projectId, &groupId))
