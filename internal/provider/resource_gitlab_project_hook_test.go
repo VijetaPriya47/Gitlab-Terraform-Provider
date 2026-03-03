@@ -19,7 +19,6 @@ import (
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
-
 func TestAccGitlabProjectHook_basic(t *testing.T) {
 	var hook gitlab.ProjectHook
 	rInt := acctest.RandInt()
