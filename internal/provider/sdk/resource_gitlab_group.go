@@ -167,6 +167,12 @@ var _ = registerResource("gitlab_group", func() *schema.Resource {
 							Optional:    true,
 							Computed:    true,
 						},
+						"code_owner_approval_required": {
+							Description: "Require code owner approval before merging.",
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Computed:    true,
+						},
 					},
 				},
 			},
@@ -514,10 +520,11 @@ func resourceGitlabGroupCreate(ctx context.Context, d *schema.ResourceData, meta
 	if v, ok := d.GetOk("default_branch_protection_defaults.0"); ok {
 		defaults := v.(map[string]any)
 		options.DefaultBranchProtectionDefaults = &gitlab.DefaultBranchProtectionDefaultsOptions{
-			AllowedToPush:           gitlab.Ptr(convertAccessLevelNamesToValues(defaults["allowed_to_push"].([]any))),
-			AllowForcePush:          gitlab.Ptr(defaults["allow_force_push"].(bool)),
-			AllowedToMerge:          gitlab.Ptr(convertAccessLevelNamesToValues(defaults["allowed_to_merge"].([]any))),
-			DeveloperCanInitialPush: gitlab.Ptr(defaults["developer_can_initial_push"].(bool)),
+			AllowedToPush:             gitlab.Ptr(convertAccessLevelNamesToValues(defaults["allowed_to_push"].([]any))),
+			AllowForcePush:            gitlab.Ptr(defaults["allow_force_push"].(bool)),
+			AllowedToMerge:            gitlab.Ptr(convertAccessLevelNamesToValues(defaults["allowed_to_merge"].([]any))),
+			DeveloperCanInitialPush:   gitlab.Ptr(defaults["developer_can_initial_push"].(bool)),
+			CodeOwnerApprovalRequired: gitlab.Ptr(defaults["code_owner_approval_required"].(bool)),
 		}
 	}
 
@@ -757,10 +764,11 @@ func resourceGitlabGroupRead(ctx context.Context, d *schema.ResourceData, meta a
 	if group.DefaultBranchProtectionDefaults != nil {
 		err = d.Set("default_branch_protection_defaults", []map[string]any{
 			{
-				"allowed_to_push":            convertAccessLevelValuesToNames(group.DefaultBranchProtectionDefaults.AllowedToPush),
-				"allow_force_push":           group.DefaultBranchProtectionDefaults.AllowForcePush,
-				"allowed_to_merge":           convertAccessLevelValuesToNames(group.DefaultBranchProtectionDefaults.AllowedToMerge),
-				"developer_can_initial_push": group.DefaultBranchProtectionDefaults.DeveloperCanInitialPush,
+				"allowed_to_push":              convertAccessLevelValuesToNames(group.DefaultBranchProtectionDefaults.AllowedToPush),
+				"allow_force_push":             group.DefaultBranchProtectionDefaults.AllowForcePush,
+				"allowed_to_merge":             convertAccessLevelValuesToNames(group.DefaultBranchProtectionDefaults.AllowedToMerge),
+				"developer_can_initial_push":   group.DefaultBranchProtectionDefaults.DeveloperCanInitialPush,
+				"code_owner_approval_required": group.DefaultBranchProtectionDefaults.CodeOwnerApprovalRequired,
 			},
 		})
 		if err != nil {
@@ -1187,6 +1195,7 @@ func expandDefaultBranchProtectionDefaults(d *schema.ResourceData) gitlab.Defaul
 	options.AllowForcePush = gitlab.Ptr(d.Get("default_branch_protection_defaults.0.allow_force_push").(bool))
 	options.AllowedToMerge = gitlab.Ptr(convertAccessLevelNamesToValues(d.Get("default_branch_protection_defaults.0.allowed_to_merge").([]any)))
 	options.DeveloperCanInitialPush = gitlab.Ptr(d.Get("default_branch_protection_defaults.0.developer_can_initial_push").(bool))
+	options.CodeOwnerApprovalRequired = gitlab.Ptr(d.Get("default_branch_protection_defaults.0.code_owner_approval_required").(bool))
 
 	return options
 }

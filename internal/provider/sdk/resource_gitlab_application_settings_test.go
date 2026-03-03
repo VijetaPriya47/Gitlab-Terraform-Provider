@@ -70,10 +70,11 @@ func TestAccGitlabApplicationSettings_branchProtectionDefaults(t *testing.T) {
 						default_branch_name = "main"
 
 						default_branch_protection_defaults {
-							allow_force_push           = false
-							developer_can_initial_push = false
-							allowed_to_push            = []
-							allowed_to_merge           = [60]
+							allow_force_push             = false
+							developer_can_initial_push   = false
+							code_owner_approval_required = true
+							allowed_to_push              = []
+							allowed_to_merge             = [60]
 						}
 					}
 				`,

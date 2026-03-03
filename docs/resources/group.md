@@ -144,6 +144,7 @@ Optional:
 - `allow_force_push` (Boolean) Allow force push for all users with push access.
 - `allowed_to_merge` (List of String) An array of access levels allowed to merge. Valid values are: `developer`, `maintainer`, `no one`.
 - `allowed_to_push` (List of String) An array of access levels allowed to push. Valid values are: `developer`, `maintainer`, `no one`.
+- `code_owner_approval_required` (Boolean) Require code owner approval before merging.
 - `developer_can_initial_push` (Boolean) Allow developers to initial push.
 
 
