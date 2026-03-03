@@ -199,3 +199,45 @@ func testAccCheckGitlabProjectShareGroupDestroy(s *terraform.State) error {
 
 	return nil
 }
+
+func TestAccGitlabProjectShareGroup_expiresAtNoDrift(t *testing.T) {
+	project := testutil.CreateProject(t)
+	group := testutil.CreateGroups(t, 1)[0]
+
+	expiresAt := "2026-12-31"
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabProjectShareGroupDestroy,
+		Steps: []resource.TestStep{
+			// Create resource with expires_at
+			{
+				Config: fmt.Sprintf(`
+                    resource "gitlab_project_share_group" "test" {
+                        project      = %d
+                        group_id     = %d
+                        group_access = "developer"
+                        expires_at   = "%s"
+                    }
+                `, project.ID, group.ID, expiresAt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabProjectSharedWithGroup(project.ID, group.ID, gitlab.DeveloperPermissions),
+					resource.TestCheckResourceAttr("gitlab_project_share_group.test", "expires_at", expiresAt),
+				),
+			},
+			// Verify no drift on subsequent read
+			{
+				Config: fmt.Sprintf(`
+                    resource "gitlab_project_share_group" "test" {
+                        project      = %d
+                        group_id     = %d
+                        group_access = "developer"
+                        expires_at   = "%s"
+                    }
+                `, project.ID, group.ID, expiresAt),
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: false,
+			},
+		},
+	})
+}
