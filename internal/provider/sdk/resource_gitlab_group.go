@@ -270,13 +270,13 @@ var _ = registerResource("gitlab_group", func() *schema.Resource {
 				Computed:    true,
 			},
 			"extra_shared_runners_minutes_limit": {
-				Description: "Can be set by administrators only. Additional CI/CD minutes for this group.",
+				Description: "Available in Self-Managed, Premium and Ultimate plans. Can be set by administrators only. Additional CI/CD minutes for this group.",
 				Type:        schema.TypeInt,
 				Optional:    true,
 				Computed:    true,
 			},
 			"shared_runners_minutes_limit": {
-				Description: "Can be set by administrators only. Maximum number of monthly CI/CD minutes for this group. Can be nil (default; inherit system default), 0 (unlimited), or > 0.",
+				Description: "Available in Self-Managed, Premium and Ultimate plans. Can be set by administrators only. Maximum number of monthly CI/CD minutes for this group. Can be nil (default; inherit system default), 0 (unlimited), or > 0.",
 				Type:        schema.TypeInt,
 				Optional:    true,
 				Computed:    true,
