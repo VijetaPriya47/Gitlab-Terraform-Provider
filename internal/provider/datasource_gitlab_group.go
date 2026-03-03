@@ -171,11 +171,11 @@ func (d *gitlabGroupDataSource) Schema(ctx context.Context, req datasource.Schem
 				Computed:            true,
 			},
 			"extra_shared_runners_minutes_limit": schema.Int64Attribute{
-				MarkdownDescription: "Can be set by administrators only. Additional CI/CD minutes for this group.",
+				MarkdownDescription: "Available in Self-Managed, Premium and Ultimate plans. Can be set by administrators only. Additional CI/CD minutes for this group.",
 				Computed:            true,
 			},
 			"shared_runners_minutes_limit": schema.Int64Attribute{
-				MarkdownDescription: "Can be set by administrators only. Maximum number of monthly CI/CD minutes for this group. Can be nil (default; inherit system default), 0 (unlimited), or > 0.",
+				MarkdownDescription: "Available in Self-Managed, Premium and Ultimate plans. Can be set by administrators only. Maximum number of monthly CI/CD minutes for this group. Can be nil (default; inherit system default), 0 (unlimited), or > 0.",
 				Computed:            true,
 			},
 			"wiki_access_level": schema.StringAttribute{
