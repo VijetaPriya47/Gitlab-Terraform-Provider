@@ -1637,6 +1637,46 @@ func CreateProjectSecureFile(t *testing.T, pid any, n int) []*gitlab.SecureFile 
 }
 
 // This helper updates the `EnforceCIInboundJobTokenScopeEnabled` setting on the instance, then
+func CreateRunnerController(t *testing.T) *gitlab.RunnerController {
+	t.Helper()
+
+	controller, _, err := TestGitlabClient.RunnerControllers.CreateRunnerController(&gitlab.CreateRunnerControllerOptions{
+		Description: gitlab.Ptr(fmt.Sprintf("test-controller-%s", acctest.RandString(5))),
+	})
+	if err != nil {
+		t.Fatalf("failed to create runner controller: %v", err)
+	}
+
+	t.Cleanup(func() {
+		_, err := TestGitlabClient.RunnerControllers.DeleteRunnerController(controller.ID)
+		if err != nil {
+			t.Fatalf("could not cleanup test runner controller %d: %v", controller.ID, err)
+		}
+	})
+
+	return controller
+}
+
+func CreateRunnerControllerToken(t *testing.T, controllerID int64) *gitlab.RunnerControllerToken {
+	t.Helper()
+
+	token, _, err := TestGitlabClient.RunnerControllerTokens.CreateRunnerControllerToken(controllerID, &gitlab.CreateRunnerControllerTokenOptions{
+		Description: gitlab.Ptr(fmt.Sprintf("test-token-%s", acctest.RandString(5))),
+	})
+	if err != nil {
+		t.Fatalf("failed to create runner controller token: %v", err)
+	}
+
+	t.Cleanup(func() {
+		_, err := TestGitlabClient.RunnerControllerTokens.RevokeRunnerControllerToken(controllerID, token.ID)
+		if err != nil {
+			t.Fatalf("could not cleanup test runner controller token %d: %v", token.ID, err)
+		}
+	})
+
+	return token
+}
+
 // when the test completes, reverts the setting to the value that it was previously configured to.
 func UpdateEnforceCIInboundJobTokenScopeEnabledSetting(t *testing.T, enabled bool) {
 
