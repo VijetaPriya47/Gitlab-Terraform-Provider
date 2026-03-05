@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/boolvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -29,6 +30,7 @@ var (
 	_ resource.ResourceWithConfigure   = &gitlabProjectMirrorResource{}
 	_ resource.ResourceWithImportState = &gitlabProjectMirrorResource{}
 	_ resource.ResourceWithModifyPlan  = &gitlabProjectMirrorResource{}
+	_ resource.ResourceWithMoveState   = &gitlabProjectMirrorResource{}
 )
 
 // Register the resource with the provider.
@@ -476,4 +478,108 @@ func (d *gitlabProjectMirrorResourceModel) ResourceGitlabProjectMirrorParseId(id
 	}
 
 	return project, mirrorId, nil
+}
+
+// MoveState implements the ResourceWithMoveState interface to support moving state from the deprecated gitlab_project_mirror resource.
+// This enables users to migrate from gitlab_project_mirror to gitlab_project_push_mirror using Terraform's moved block.
+// Note: Cross-resource-type state moves require Terraform 1.8 or later.
+func (r *gitlabProjectMirrorResource) MoveState(ctx context.Context) []resource.StateMover {
+	return []resource.StateMover{
+		// This StateMover implements the migration from
+		// `gitlab_project_mirror` -> `gitlab_project_push_mirror`.
+		// The SourceSchema needs to match the deprecated `gitlab_project_mirror` schema.
+		{
+			SourceSchema: &schema.Schema{
+				Attributes: map[string]schema.Attribute{
+					"id": schema.StringAttribute{
+						Computed: true,
+					},
+					"project": schema.StringAttribute{
+						Required: true,
+					},
+					"mirror_id": schema.Int64Attribute{
+						Computed: true,
+					},
+					"url": schema.StringAttribute{
+						Required:  true,
+						Sensitive: true,
+					},
+					"enabled": schema.BoolAttribute{
+						Optional: true,
+						Computed: true,
+					},
+					"only_protected_branches": schema.BoolAttribute{
+						Optional: true,
+						Computed: true,
+					},
+					"mirror_branch_regex": schema.StringAttribute{
+						Optional: true,
+						Computed: true,
+					},
+					"keep_divergent_refs": schema.BoolAttribute{
+						Optional: true,
+						Computed: true,
+					},
+					"auth_method": schema.StringAttribute{
+						Optional: true,
+						Computed: true,
+					},
+				},
+			},
+			StateMover: func(ctx context.Context, req resource.MoveStateRequest, resp *resource.MoveStateResponse) {
+				// Only handle moves from gitlab_project_mirror resource
+				if req.SourceTypeName != "gitlab_project_mirror" {
+					resp.Diagnostics.AddError("Invalid source resource type", fmt.Sprintf("Expected source type 'gitlab_project_mirror', got '%s'", req.SourceTypeName))
+					return
+				}
+
+				// Check provider address (without hostname for compatibility)
+				// Accept anything that ends with gitlab, which seems the safest.
+				//  hashicorp/gitlab is used in tests
+				//  gitlab-org/gitlab is used in production
+				//  gitlabhq/gitlab is referenced on the provider docs.
+				if !strings.HasSuffix(req.SourceProviderAddress, "gitlab") {
+					resp.Diagnostics.AddError("Invalid source provider address", fmt.Sprintf("Expected provider address ending with 'gitlab', got '%s'", req.SourceProviderAddress))
+					return
+				}
+
+				// Define the source model matching the old gitlab_project_mirror schema
+				type sourceModel struct {
+					ID                    types.String `tfsdk:"id"`
+					Project               types.String `tfsdk:"project"`
+					MirrorID              types.Int64  `tfsdk:"mirror_id"`
+					URL                   types.String `tfsdk:"url"`
+					Enabled               types.Bool   `tfsdk:"enabled"`
+					OnlyProtectedBranches types.Bool   `tfsdk:"only_protected_branches"`
+					MirrorBranchRegex     types.String `tfsdk:"mirror_branch_regex"`
+					KeepDivergentRefs     types.Bool   `tfsdk:"keep_divergent_refs"`
+					AuthMethod            types.String `tfsdk:"auth_method"`
+				}
+
+				var sourceStateData sourceModel
+				resp.Diagnostics.Append(req.SourceState.Get(ctx, &sourceStateData)...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+
+				// Create the target state data
+				// Since both resources use the same schema and underlying struct,
+				// we can directly map all fields without transformation
+				targetStateData := gitlabProjectMirrorResourceModel{
+					ID:                    sourceStateData.ID,
+					Project:               sourceStateData.Project,
+					MirrorID:              sourceStateData.MirrorID,
+					URL:                   sourceStateData.URL,
+					Enabled:               sourceStateData.Enabled,
+					OnlyProtectedBranches: sourceStateData.OnlyProtectedBranches,
+					MirrorBranchRegex:     sourceStateData.MirrorBranchRegex,
+					KeepDivergentRefs:     sourceStateData.KeepDivergentRefs,
+					AuthMethod:            sourceStateData.AuthMethod,
+				}
+
+				tflog.Debug(ctx, "Moving state from gitlab_project_mirror to gitlab_project_push_mirror")
+				resp.Diagnostics.Append(resp.TargetState.Set(ctx, targetStateData)...)
+			},
+		},
+	}
 }
