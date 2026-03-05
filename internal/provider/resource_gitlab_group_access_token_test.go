@@ -978,7 +978,7 @@ func testAccCheckGitlabGroupAccessTokenAttributes(gatWrap *testAccGitlabGroupAcc
 		}
 
 		if gat.AccessLevel != want.accessLevel {
-			return fmt.Errorf("got AccessLevel %q; want %q", gat.AccessLevel, want.accessLevel)
+			return fmt.Errorf("got AccessLevel %d; want %d", gat.AccessLevel, want.accessLevel)
 		}
 
 		for _, scope := range gat.Scopes {

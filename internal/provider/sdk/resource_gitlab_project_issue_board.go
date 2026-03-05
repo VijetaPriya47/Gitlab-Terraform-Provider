@@ -88,7 +88,7 @@ func resourceGitlabProjectIssueBoardRead(ctx context.Context, d *schema.Resource
 		return diag.FromErr(err)
 	}
 
-	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read Project Issue Board in project %q with id %q", project, issueBoardID))
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] read Project Issue Board in project %q with id %d", project, issueBoardID))
 	issueBoard, _, err := client.Boards.GetIssueBoard(project, issueBoardID, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
@@ -131,7 +131,7 @@ func resourceGitlabProjectIssueBoardUpdate(ctx context.Context, d *schema.Resour
 		options.Weight = gitlab.Ptr(int64(d.Get("weight").(int)))
 	}
 
-	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update Project Issue Board %q in project %q", issueBoardID, project))
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] update Project Issue Board %d in project %q", issueBoardID, project))
 	updatedIssueBoard, _, err := client.Boards.UpdateIssueBoard(project, issueBoardID, options, gitlab.WithContext(ctx))
 	if err != nil {
 		return diag.FromErr(err)
@@ -144,7 +144,7 @@ func resourceGitlabProjectIssueBoardUpdate(ctx context.Context, d *schema.Resour
 			tflog.Debug(ctx, fmt.Sprintf("[DEBUG] deleting list %d for Project Issue Board %q in project %q", list.ID, updatedIssueBoard.Name, project))
 			_, err := client.Boards.DeleteIssueBoardList(project, issueBoardID, list.ID, gitlab.WithContext(ctx))
 			if err != nil {
-				return diag.Errorf("failed to delete list %q for Project Issue Board %q in project %q: %s", list.ID, updatedIssueBoard.Name, project, err)
+				return diag.Errorf("failed to delete list %d for Project Issue Board %q in project %q: %s", list.ID, updatedIssueBoard.Name, project, err)
 			}
 		}
 		tflog.Debug(ctx, fmt.Sprintf("[DEBUG] deleted lists for Project Issue Board %q in project %q", updatedIssueBoard.Name, project))
@@ -164,7 +164,7 @@ func resourceGitlabProjectIssueBoardDelete(ctx context.Context, d *schema.Resour
 		return diag.FromErr(err)
 	}
 
-	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] delete Project Issue Board in project %q with id %q", project, issueBoardID))
+	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] delete Project Issue Board in project %q with id %d", project, issueBoardID))
 	if _, err := client.Boards.DeleteIssueBoard(project, issueBoardID, gitlab.WithContext(ctx)); err != nil {
 		return diag.FromErr(err)
 	}
