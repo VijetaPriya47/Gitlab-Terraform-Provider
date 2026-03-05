@@ -13,7 +13,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/tfversion"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
+	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil/framework"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
@@ -203,7 +205,6 @@ func TestAcc_GitlabProjectLabel_deprecatedResourceName(t *testing.T) {
 	})
 }
 
-
 func TestAcc_GitlabProjectLabel_schemaMigrationV1toV2(t *testing.T) {
 	project := testutil.CreateProject(t)
 	rInt := acctest.RandInt()
@@ -381,6 +382,74 @@ func TestAcc_GitlabProjectLabel_regressionNullDescription(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("gitlab_project_label.fixme", "description", "fix this test"),
 				),
+			},
+		},
+	})
+}
+
+// TestAcc_GitlabProjectLabel_stateMove verifies that the moved block works
+// when migrating from gitlab_label to gitlab_project_label.
+// This test requires Terraform 1.8+ because cross-resource-type state moves
+// were introduced in that version.
+func TestAcc_GitlabProjectLabel_stateMove(t *testing.T) {
+	testProject := testutil.CreateProject(t)
+
+	// Run this test explicitly with the 1.8 version of TF; this helper will run the
+	// test independently (not in parallel), and reset the TF version when the
+	// test finishes.
+	framework.RunTestWithVersion(t, "1.8.0", resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
+			tfversion.RequireAbove(tfversion.Version1_8_0), // fail if the TF version isn't set properly.
+		},
+		CheckDestroy: testAccCheckGitlabProjectLabelDestroy,
+		Steps: []resource.TestStep{
+			// Create a label using the old gitlab_label resource
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_label" "old" {
+					project     = %d
+					name        = "moved-label"
+					color       = "#FF0000"
+					description = "Label to be moved"
+				}
+				`, testProject.ID),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_label.old", "name", "moved-label"),
+					resource.TestCheckResourceAttr("gitlab_label.old", "color", "#FF0000"),
+					resource.TestCheckResourceAttr("gitlab_label.old", "description", "Label to be moved"),
+					resource.TestCheckResourceAttrSet("gitlab_label.old", "id"),
+					resource.TestCheckResourceAttrSet("gitlab_label.old", "label_id"),
+				),
+			},
+			// Move the state to the new gitlab_project_label resource
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_label" "new" {
+					project     = %d
+					name        = "moved-label"
+					color       = "#FF0000"
+					description = "Label to be moved"
+				}
+
+				moved {
+					from = gitlab_label.old
+					to   = gitlab_project_label.new
+				}
+				`, testProject.ID),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project_label.new", "name", "moved-label"),
+					resource.TestCheckResourceAttr("gitlab_project_label.new", "color", "#FF0000"),
+					resource.TestCheckResourceAttr("gitlab_project_label.new", "description", "Label to be moved"),
+					resource.TestCheckResourceAttrSet("gitlab_project_label.new", "id"),
+					resource.TestCheckResourceAttrSet("gitlab_project_label.new", "label_id"),
+				),
+			},
+			// Verify the resource still works after the move
+			{
+				ResourceName:      "gitlab_project_label.new",
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 	})

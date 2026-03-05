@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -22,6 +23,7 @@ var (
 	_ resource.ResourceWithConfigure    = &gitlabProjectLabelResource{}
 	_ resource.ResourceWithImportState  = &gitlabProjectLabelResource{}
 	_ resource.ResourceWithUpgradeState = &gitlabProjectLabelResource{}
+	_ resource.ResourceWithMoveState    = &gitlabProjectLabelResource{}
 )
 
 func init() {
@@ -397,6 +399,98 @@ func (r *gitlabProjectLabelResource) upgradeIdToV2Id(ctx context.Context, input 
 
 	input.ID = types.StringValue(newID)
 	return nil
+}
+
+// MoveState implements the ResourceWithMoveState interface to support moving state from the deprecated gitlab_label resource.
+// This enables users to migrate from gitlab_label to gitlab_project_label using Terraform's moved block.
+// Note: Cross-resource-type state moves require Terraform 1.8 or later.
+func (r *gitlabProjectLabelResource) MoveState(ctx context.Context) []resource.StateMover {
+	return []resource.StateMover{
+		// This StateMover implements the migration from
+		// `gitlab_label` -> `gitlab_project_label`.
+		// The SourceSchema needs to match the deprecated `gitlab_label` as a result.
+		{
+			SourceSchema: &schema.Schema{
+				Attributes: map[string]schema.Attribute{
+					"id": schema.StringAttribute{
+						Computed: true,
+					},
+					"label_id": schema.Int64Attribute{
+						Computed: true,
+					},
+					"project": schema.StringAttribute{
+						Required: true,
+					},
+					"name": schema.StringAttribute{
+						Required: true,
+					},
+					"color": schema.StringAttribute{
+						Required: true,
+					},
+					"color_hex": schema.StringAttribute{
+						Computed: true,
+					},
+					"description": schema.StringAttribute{
+						Optional: true,
+						Computed: true,
+					},
+				},
+			},
+			StateMover: func(ctx context.Context, req resource.MoveStateRequest, resp *resource.MoveStateResponse) {
+				// Only handle moves from gitlab_label resource
+				if req.SourceTypeName != "gitlab_label" {
+					resp.Diagnostics.AddError("Invalid source resource type", fmt.Sprintf("Expected source type 'gitlab_label', got '%s'", req.SourceTypeName))
+					return
+				}
+
+				// Check provider address (without hostname for compatibility)
+				// Accept anything that ends with gitlab, which seems the safest.
+				//  hashicorp/gitlab is used in tests
+				//  gitlab-org/gitlab is used in production
+				//  gitlabhq/gitlab is referenced on the provider docs.
+				if !strings.HasSuffix(req.SourceProviderAddress, "gitlab") {
+					resp.Diagnostics.AddError("Invalid source provider address", fmt.Sprintf("Expected provider address ending with 'gitlab', got '%s'", req.SourceProviderAddress))
+					return
+				}
+
+				// Define the source model matching the old gitlab_label schema
+				type sourceModel struct {
+					ID          types.String `tfsdk:"id"`
+					LabelID     types.Int64  `tfsdk:"label_id"`
+					Project     types.String `tfsdk:"project"`
+					Name        types.String `tfsdk:"name"`
+					Color       types.String `tfsdk:"color"`
+					ColorHex    types.String `tfsdk:"color_hex"`
+					Description types.String `tfsdk:"description"`
+				}
+
+				var sourceStateData sourceModel
+				resp.Diagnostics.Append(req.SourceState.Get(ctx, &sourceStateData)...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+
+				// Create the target state data - schema is identical, so direct copy
+				targetStateData := gitlabProjectLabelResourceModel{
+					ID:          sourceStateData.ID,
+					LabelID:     sourceStateData.LabelID,
+					Project:     sourceStateData.Project,
+					Name:        sourceStateData.Name,
+					Color:       sourceStateData.Color,
+					ColorHex:    sourceStateData.ColorHex,
+					Description: sourceStateData.Description,
+				}
+
+				tflog.Debug(ctx, "Moving state from gitlab_label to gitlab_project_label", map[string]any{
+					"id":      sourceStateData.ID.ValueString(),
+					"project": sourceStateData.Project.ValueString(),
+					"name":    sourceStateData.Name.ValueString(),
+				})
+
+				resp.Diagnostics.Append(resp.TargetState.Set(ctx, targetStateData)...)
+			},
+		},
+	}
 }
 
 func (data *gitlabProjectLabelResourceModel) modelToStateModel(label *gitlab.Label, color string, project string) {
