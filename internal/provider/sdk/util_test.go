@@ -53,7 +53,7 @@ func TestGitlab_extractIIDFromGlobalID_invalidGlobalID(t *testing.T) {
 	for _, tc := range cases {
 		iid, err := api.ExtractIIDFromGlobalID(tc.GlobalID)
 		if err == nil {
-			t.Fatalf("expected invalid global id, got id %q instead from global id %q", iid, tc.GlobalID)
+			t.Fatalf("expected invalid global id, got id %d instead from global id %q", iid, tc.GlobalID)
 		}
 	}
 }
