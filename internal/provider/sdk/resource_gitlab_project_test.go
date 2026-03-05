@@ -1342,6 +1342,38 @@ func TestAccGitlabProject_MergePipelines(t *testing.T) {
 	})
 }
 
+func TestAccGitlabProject_CreateWithDisabledModels(t *testing.T) {
+	rInt := acctest.RandInt()
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabProjectDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project" "foo" {
+				  name        = "foo-%d"
+				  path        = "foo.%d"
+				  description = "Terraform acceptance tests"
+
+				  model_experiments_access_level = "disabled"
+				  model_registry_access_level    = "disabled"
+
+				  # So that acceptance tests can be run in a gitlab organization
+				  # with no billing
+				  visibility_level = "public"
+				}
+				`, rInt, rInt),
+			},
+			{
+				ResourceName:      "gitlab_project.foo",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 func TestAccGitlabProject_MergeTrains(t *testing.T) {
 	var project gitlab.Project
 	rInt := acctest.RandInt()
@@ -3999,6 +4031,8 @@ func testProjectDefaults(rInt int) gitlab.Project {
 		WikiAccessLevel:                  gitlab.EnabledAccessControl,
 		SquashCommitTemplate:             "hello squash",
 		MergeCommitTemplate:              "hello merge",
+		ModelExperimentsAccessLevel:      "enabled",
+		ModelRegistryAccessLevel:         "enabled",
 	}
 }
 

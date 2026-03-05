@@ -2586,6 +2586,14 @@ func createProject(ctx context.Context, d *schema.ResourceData, client *gitlab.C
 		options.MonitorAccessLevel = stringToAccessControlValue(v.(string))
 	}
 
+	if v, ok := d.GetOk("model_experiments_access_level"); ok {
+		options.ModelExperimentsAccessLevel = stringToAccessControlValue(v.(string))
+	}
+
+	if v, ok := d.GetOk("model_registry_access_level"); ok {
+		options.ModelRegistryAccessLevel = stringToAccessControlValue(v.(string))
+	}
+
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] create gitlab project %q", *options.Name))
 
 	project, _, err := client.Projects.CreateProject(options, gitlab.WithContext(ctx))
