@@ -11,9 +11,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/tfversion"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
+	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil/framework"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
 
@@ -632,6 +634,69 @@ func TestAccGitlabProjectMirror_urlChangeWithoutCredentials(t *testing.T) {
 			// Verify import
 			{
 				ResourceName:            "gitlab_project_mirror.foo",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"url"},
+			},
+		},
+	})
+}
+
+// TestAcc_GitlabProjectPushMirror_stateMove verifies that the moved block works
+// when migrating from gitlab_project_mirror to gitlab_project_push_mirror.
+// This test requires Terraform 1.8+ because cross-resource-type state moves
+// were introduced in that version.
+func TestAcc_GitlabProjectPushMirror_stateMove(t *testing.T) {
+	testProject := testutil.CreateProject(t)
+
+	// Run this test explicitly with the 1.8 version of TF; this helper will run the
+	// test independently (not in parallel), and reset the TF version when the
+	// test finishes.
+	framework.RunTestWithVersion(t, "1.8.0", resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
+			tfversion.RequireAbove(tfversion.Version1_8_0), // fail if the TF version isn't set properly.
+		},
+		CheckDestroy: testAccCheckGitlabProjectMirrorDestroy,
+		Steps: []resource.TestStep{
+			// Create a project push mirror using the old resource name
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_mirror" "old" {
+					project                 = %d
+					url                     = "https://example.com/mirror-test.git"
+					enabled                 = true
+					only_protected_branches = true
+					keep_divergent_refs     = true
+				}
+				`, testProject.ID),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("gitlab_project_mirror.old", "id"),
+				),
+			},
+			// Move the state to the new resource
+			{
+				Config: fmt.Sprintf(`
+				resource "gitlab_project_push_mirror" "new" {
+					project                 = %d
+					url                     = "https://example.com/mirror-test.git"
+					enabled                 = true
+					only_protected_branches = true
+					keep_divergent_refs     = true
+				}
+
+				moved {
+					from = gitlab_project_mirror.old
+					to   = gitlab_project_push_mirror.new
+				}
+				`, testProject.ID),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("gitlab_project_push_mirror.new", "id"),
+				),
+			},
+			// Verify the resource still works after the move
+			{
+				ResourceName:            "gitlab_project_push_mirror.new",
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"url"},
