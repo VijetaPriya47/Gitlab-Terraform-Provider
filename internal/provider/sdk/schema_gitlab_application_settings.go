@@ -2270,6 +2270,24 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Computed:    true,
 		},
+		"prevent_merge_requests_author_approval": {
+			Description: "Prevent approval by merge request creator (author).",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
+		"prevent_merge_requests_committers_approval": {
+			Description: "Prevent approval by committers to merge requests.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
+		"disable_overriding_approvers_per_merge_request": {
+			Description: "Prevent editing approval rules in projects and merge requests.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
 	}
 }
 
@@ -2584,6 +2602,9 @@ func gitlabApplicationSettingsToStateMap(settings *gitlab.Settings) map[string]a
 	stateMap["whats_new_variant"] = settings.WhatsNewVariant
 	stateMap["web_ide_clientside_preview_enabled"] = settings.WebIDEClientsidePreviewEnabled
 	stateMap["wiki_page_max_content_bytes"] = settings.WikiPageMaxContentBytes
+	stateMap["prevent_merge_requests_author_approval"] = settings.PreventMergeRequestsAuthorApproval
+	stateMap["prevent_merge_requests_committers_approval"] = settings.PreventMergeRequestsCommittersApproval
+	stateMap["disable_overriding_approvers_per_merge_request"] = settings.DisableOverridingApproversPerMergeRequest
 
 	stateMap["default_branch_protection_defaults"] = flattenDefaultBranchProtectionDefaults(settings.DefaultBranchProtectionDefaults)
 	return stateMap
@@ -3798,6 +3819,18 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 
 	if d.HasChange("wiki_page_max_content_bytes") {
 		options.WikiPageMaxContentBytes = gitlab.Ptr(int64(d.Get("wiki_page_max_content_bytes").(int)))
+	}
+
+	if d.HasChange("prevent_merge_requests_author_approval") {
+		options.PreventMergeRequestsAuthorApproval = gitlab.Ptr(d.Get("prevent_merge_requests_author_approval").(bool))
+	}
+
+	if d.HasChange("prevent_merge_requests_committers_approval") {
+		options.PreventMergeRequestsCommittersApproval = gitlab.Ptr(d.Get("prevent_merge_requests_committers_approval").(bool))
+	}
+
+	if d.HasChange("disable_overriding_approvers_per_merge_request") {
+		options.DisableOverridingApproversPerMergeRequest = gitlab.Ptr(d.Get("disable_overriding_approvers_per_merge_request").(bool))
 	}
 	return &options
 }
