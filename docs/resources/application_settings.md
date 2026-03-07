@@ -116,6 +116,7 @@ resource "gitlab_application_settings" "this" {
 - `diff_max_patch_bytes` (Number) Maximum diff patch size, in bytes.
 - `disable_admin_oauth_scopes` (Boolean) Stops administrators from connecting their GitLab accounts to non-trusted OAuth 2.0 applications that have the api, read_api, read_repository, write_repository, read_registry, write_registry, or sudo scopes.
 - `disable_feed_token` (Boolean) Disable display of RSS/Atom and calendar feed tokens.
+- `disable_overriding_approvers_per_merge_request` (Boolean) Prevent editing approval rules in projects and merge requests.
 - `disable_personal_access_tokens` (Boolean) Disable personal access tokens. Self-managed, Premium and Ultimate only. There is no method available to enable a personal access token that’s been disabled through the API. This is a known issue.
 - `disabled_oauth_sign_in_sources` (List of String) Disabled OAuth sign-in sources.
 - `dns_rebinding_protection_enabled` (Boolean) Enforce DNS rebinding attack protection.
@@ -256,6 +257,8 @@ resource "gitlab_application_settings" "this" {
 - `plantuml_enabled` (Boolean) (If enabled, requires: plantuml_url) Enable PlantUML integration.
 - `plantuml_url` (String) The PlantUML instance URL for integration.
 - `polling_interval_multiplier` (Number) Interval multiplier used by endpoints that perform polling. Set to 0 to disable polling.
+- `prevent_merge_requests_author_approval` (Boolean) Prevent approval by merge request creator (author).
+- `prevent_merge_requests_committers_approval` (Boolean) Prevent approval by committers to merge requests.
 - `project_export_enabled` (Boolean) Enable project export.
 - `project_jobs_api_rate_limit` (Number) Maximum authenticated requests to /project/:id/jobs per minute.
 - `projects_api_rate_limit_unauthenticated` (Number) Max number of requests per 10 minutes per IP address for unauthenticated requests to the list all projects API. To disable throttling set to 0.
