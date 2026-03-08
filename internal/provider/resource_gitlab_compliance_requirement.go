@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -255,21 +256,21 @@ func (r *gitlabComplianceRequirementResource) Create(ctx context.Context, req re
 				createComplianceRequirement(
 					input: {
 						complianceFrameworkId: "%s",
+						controls: %s,
 						params: {
 							name: "%s",
-							description: "%s",
-							controls: %s
+							description: "%s"
 						}
 					}
 				) {
-					complianceRequirement {
+					requirement {
 						id,
 						name,
 						description
 					}
 					errors
 				}
-			}`, frameworkID, escapeGraphQLString(name), escapeGraphQLString(description), controlsInput),
+			}`, frameworkID, controlsInput, escapeGraphQLString(name), escapeGraphQLString(description)),
 	}
 	tflog.Debug(ctx, "executing GraphQL Query to create compliance requirement")
 
@@ -292,7 +293,7 @@ func (r *gitlabComplianceRequirementResource) Create(ctx context.Context, req re
 		return
 	}
 
-	requirementID := response.Data.CreateComplianceRequirement.ComplianceRequirement.ID
+	requirementID := response.Data.CreateComplianceRequirement.Requirement.ID
 	data.Id = types.StringValue(buildComplianceRequirementID(frameworkID, requirementID))
 
 	tflog.Debug(ctx, "created a compliance requirement", map[string]any{
@@ -411,21 +412,21 @@ func (r *gitlabComplianceRequirementResource) Update(ctx context.Context, req re
 				updateComplianceRequirement(
 					input: {
 						id: "%s",
+						controls: %s,
 						params: {
 							name: "%s",
-							description: "%s",
-							controls: %s
+							description: "%s"
 						}
 					}
 				) {
-					complianceRequirement {
+					requirement {
 						id,
 						name,
 						description
 					}
 					errors
 				}
-			}`, requirementID, escapeGraphQLString(name), escapeGraphQLString(description), controlsInput),
+			}`, requirementID, controlsInput, escapeGraphQLString(name), escapeGraphQLString(description)),
 	}
 	tflog.Debug(ctx, "executing GraphQL Query to update compliance requirement")
 
@@ -546,7 +547,8 @@ func (r *gitlabComplianceRequirementResource) buildControlsInput(ctx context.Con
 			}
 			controlStr += `}`
 		} else {
-			// Internal control with expression
+			// Internal control with expression.
+			// The API accepts `expression` as a JSON string, e.g. '{"field":"...","operator":"...","value":...}'.
 			var expr gitlabControlExpressionModel
 			if !control.Expression.IsNull() && !control.Expression.IsUnknown() {
 				diags := control.Expression.As(ctx, &expr, basetypes.ObjectAsOptions{})
@@ -554,28 +556,33 @@ func (r *gitlabComplianceRequirementResource) buildControlsInput(ctx context.Con
 					return "", fmt.Errorf("failed to parse expression")
 				}
 
-				// Determine if value is boolean or string
+				// Serialize expression as JSON. The value may be a boolean or a string.
 				value := expr.Value.ValueString()
-				var valueStr string
-				if value == "true" || value == "false" {
-					valueStr = value
+				var jsonValue any
+				if value == "true" {
+					jsonValue = true
+				} else if value == "false" {
+					jsonValue = false
 				} else {
-					valueStr = fmt.Sprintf(`"%s"`, escapeGraphQLString(value))
+					jsonValue = value
+				}
+
+				exprJSON, err := json.Marshal(map[string]any{
+					"field":    expr.Field.ValueString(),
+					"operator": strings.ToLower(expr.Operator.ValueString()),
+					"value":    jsonValue,
+				})
+				if err != nil {
+					return "", fmt.Errorf("failed to serialize expression: %w", err)
 				}
 
 				controlStr = fmt.Sprintf(`{
 					name: "%s",
 					controlType: "internal",
-					expression: {
-						field: "%s",
-						operator: "%s",
-						value: %s
-					}
+					expression: "%s"
 				}`,
 					escapeGraphQLString(control.Name.ValueString()),
-					escapeGraphQLString(expr.Field.ValueString()),
-					strings.ToLower(expr.Operator.ValueString()),
-					valueStr)
+					escapeGraphQLString(string(exprJSON)))
 			} else {
 				controlStr = fmt.Sprintf(`{
 					name: "%s",
@@ -604,8 +611,8 @@ func escapeGraphQLString(s string) string {
 type createComplianceRequirementResponse struct {
 	Data struct {
 		CreateComplianceRequirement struct {
-			ComplianceRequirement api.GraphQLComplianceRequirement `json:"complianceRequirement"`
-			Errors                []string                         `json:"errors"`
+			Requirement api.GraphQLComplianceRequirement `json:"requirement"`
+			Errors      []string                         `json:"errors"`
 		} `json:"createComplianceRequirement"`
 	} `json:"data"`
 	Errors []struct {
@@ -630,8 +637,8 @@ type readComplianceRequirementResponse struct {
 type updateComplianceRequirementResponse struct {
 	Data struct {
 		UpdateComplianceRequirement struct {
-			ComplianceRequirement api.GraphQLComplianceRequirement `json:"complianceRequirement"`
-			Errors                []string                         `json:"errors"`
+			Requirement api.GraphQLComplianceRequirement `json:"requirement"`
+			Errors      []string                         `json:"errors"`
 		} `json:"updateComplianceRequirement"`
 	} `json:"data"`
 	Errors []struct {
