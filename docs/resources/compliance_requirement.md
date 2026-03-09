@@ -117,7 +117,7 @@ Optional:
 Required:
 
 - `field` (String) The field to evaluate (e.g., `scanner_dep_scanning_running`).
-- `operator` (String) The operator for comparison. Valid values are `equals`, `not_equals`, `greater_than`, `less_than`.
+- `operator` (String) The operator for comparison. Valid values are `=`, `!=`, `>`, `<`, `>=`, `<=`.
 - `value` (String) The value to compare against. Use `true` or `false` for boolean values.
 
 ## Import

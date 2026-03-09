@@ -37,8 +37,10 @@ var ValidComplianceControlTypes = []string{
 
 // ValidComplianceControlOperators contains the valid operators for internal control expressions.
 var ValidComplianceControlOperators = []string{
-	"equals",
-	"not_equals",
-	"greater_than",
-	"less_than",
+	"=",
+	"!=",
+	">",
+	"<",
+	">=",
+	"<=",
 }

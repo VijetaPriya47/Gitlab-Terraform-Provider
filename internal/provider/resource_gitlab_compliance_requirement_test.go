@@ -45,7 +45,7 @@ func TestAccGitlabComplianceRequirement_basic(t *testing.T) {
 
 							expression = {
 								field    = "scanner_dep_scanning_running"
-								operator = "equals"
+								operator = "="
 								value    = "true"
 							}
 						}]
@@ -86,7 +86,7 @@ func TestAccGitlabComplianceRequirement_basic(t *testing.T) {
 
 							expression = {
 								field    = "scanner_dep_scanning_running"
-								operator = "equals"
+								operator = "="
 								value    = "true"
 							}
 						}]
@@ -172,7 +172,7 @@ func TestAccGitlabComplianceRequirement_multipleControls(t *testing.T) {
 
 								expression = {
 									field    = "scanner_dep_scanning_running"
-									operator = "equals"
+									operator = "="
 									value    = "true"
 								}
 							},
