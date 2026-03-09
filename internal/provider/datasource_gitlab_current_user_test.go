@@ -6,13 +6,13 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	gitlab "gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go/v2"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
 func TestAccDataSourceGitlabCurrentUser_basic(t *testing.T) {
 	// Get the user so we can get the verified email that's randomly generated for them
-	user, _, err := testutil.TestGitlabClient.Users.GetUser(1, gitlab.GetUsersOptions{})
+	user, _, err := testutil.TestGitlabClient.Users.GetUser(1, &gitlab.GetUserOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}

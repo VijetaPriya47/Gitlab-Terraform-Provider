@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	gitlab "gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go/v2"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
@@ -304,7 +304,7 @@ func (r *gitlabGroupServiceAccountResource) waitForServiceAccountDeletion(ctx co
 
 	// Helper function to check if service account is deleted
 	checkDeleted := func() bool {
-		_, _, err := r.client.Users.GetUser(serviceAccountIDInt, gitlab.GetUsersOptions{}, gitlab.WithContext(ctx))
+		_, _, err := r.client.Users.GetUser(serviceAccountIDInt, &gitlab.GetUserOptions{}, gitlab.WithContext(ctx))
 		if api.Is404(err) {
 			tflog.Debug(ctx, "Service account not found - deletion confirmed", map[string]any{
 				"group":              group,

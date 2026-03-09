@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	gitlab "gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go/v2"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 )
 
@@ -165,7 +165,7 @@ func (r *gitlabUserAvatarResource) Read(ctx context.Context, req resource.ReadRe
 	tflog.Debug(ctx, fmt.Sprintf("Read gitlab avatar information for user %d", userId))
 
 	// Read the avatar data
-	user, _, err := r.client.Users.GetUser(userId, gitlab.GetUsersOptions{}, gitlab.WithContext(ctx))
+	user, _, err := r.client.Users.GetUser(userId, &gitlab.GetUserOptions{}, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
 			// The access token doesn't exist anymore; remove the avatar resource.

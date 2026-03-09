@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	gitlab "gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go/v2"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 )
 
@@ -174,7 +174,7 @@ func (r *gitlabInstanceServiceAccountResource) Read(ctx context.Context, req res
 		return
 	}
 
-	serviceAccount, _, err := r.client.Users.GetUser(serviceAccountID, gitlab.GetUsersOptions{}, gitlab.WithContext(ctx))
+	serviceAccount, _, err := r.client.Users.GetUser(serviceAccountID, &gitlab.GetUserOptions{}, gitlab.WithContext(ctx))
 	if err != nil {
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to read service account: %s", err.Error()))
 		return
@@ -252,7 +252,7 @@ func (r *gitlabInstanceServiceAccountResource) Delete(ctx context.Context, req r
 			)
 			return
 		case <-ticker.C:
-			_, _, err := r.client.Users.GetUser(serviceAccountIDInt, gitlab.GetUsersOptions{}, gitlab.WithContext(ctx))
+			_, _, err := r.client.Users.GetUser(serviceAccountIDInt, &gitlab.GetUserOptions{}, gitlab.WithContext(ctx))
 
 			// If we get a 404, the service account has been deleted
 			if api.Is404(err) {

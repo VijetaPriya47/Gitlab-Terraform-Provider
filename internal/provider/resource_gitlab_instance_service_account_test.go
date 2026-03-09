@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	gitlab "gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go/v2"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
@@ -241,7 +241,7 @@ func testAcc_GitlabInstanceServiceAccount_CheckDestroy() resource.TestCheckFunc 
 					return fmt.Errorf("Could not convert id to int64")
 				}
 
-				serviceAccount, _, err := testutil.TestGitlabClient.Users.GetUser(serviceAccountID, gitlab.GetUsersOptions{})
+				serviceAccount, _, err := testutil.TestGitlabClient.Users.GetUser(serviceAccountID, &gitlab.GetUserOptions{})
 				if err == nil {
 					return fmt.Errorf("Found GitLab service account that should have been deleted: %s", gitlab.Stringify(serviceAccount))
 				}

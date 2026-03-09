@@ -24,7 +24,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	gitlab "gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go/v2"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
@@ -785,7 +785,7 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Delete(ctx context.Contex
 
 	if isAdmin {
 		tflog.Debug(ctx, "[DEBUG] Deleting GroupServiceAccountAccessToken - direct delete due to admin (top-level group owner on gitlab.com) privileges", map[string]any{"token_id": accessTokenID, "user_id": userID})
-		_, err = r.client.PersonalAccessTokens.RevokePersonalAccessToken(accessTokenIDInt, gitlab.WithContext(ctx))
+		_, err = r.client.PersonalAccessTokens.RevokePersonalAccessTokenByID(accessTokenIDInt, gitlab.WithContext(ctx))
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Error deleting group service account access token",

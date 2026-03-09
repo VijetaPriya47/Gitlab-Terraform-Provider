@@ -2,7 +2,7 @@ package sdk
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	gitlab "gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go/v2"
 )
 
 var _ = registerResource("gitlab_group_custom_attribute", func() *schema.Resource {

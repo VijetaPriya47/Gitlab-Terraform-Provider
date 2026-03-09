@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	gitlab "gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go/v2"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
@@ -126,7 +126,7 @@ func (r *gitlabRunnerControllerResource) Create(ctx context.Context, req resourc
 	}
 
 	data.ID = types.StringValue(strconv.FormatInt(controller.ID, 10))
-	data.runnerControllerToStateModel(controller)
+	data.runnerControllerToStateModelFromCreate(controller)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -196,7 +196,7 @@ func (r *gitlabRunnerControllerResource) Update(ctx context.Context, req resourc
 		return
 	}
 
-	data.runnerControllerToStateModel(controller)
+	data.runnerControllerToStateModelFromUpdate(controller)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -234,7 +234,29 @@ func (r *gitlabRunnerControllerResource) ImportState(ctx context.Context, req re
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
-func (d *gitlabRunnerControllerResourceModel) runnerControllerToStateModel(controller *gitlab.RunnerController) {
+func (d *gitlabRunnerControllerResourceModel) runnerControllerToStateModel(controller *gitlab.RunnerControllerDetails) {
+	d.Description = types.StringValue(controller.Description)
+	d.State = types.StringValue(string(controller.State))
+	if controller.CreatedAt != nil {
+		d.CreatedAt = types.StringValue(controller.CreatedAt.Format(time.RFC3339))
+	}
+	if controller.UpdatedAt != nil {
+		d.UpdatedAt = types.StringValue(controller.UpdatedAt.Format(time.RFC3339))
+	}
+}
+
+func (d *gitlabRunnerControllerResourceModel) runnerControllerToStateModelFromCreate(controller *gitlab.RunnerController) {
+	d.Description = types.StringValue(controller.Description)
+	d.State = types.StringValue(string(controller.State))
+	if controller.CreatedAt != nil {
+		d.CreatedAt = types.StringValue(controller.CreatedAt.Format(time.RFC3339))
+	}
+	if controller.UpdatedAt != nil {
+		d.UpdatedAt = types.StringValue(controller.UpdatedAt.Format(time.RFC3339))
+	}
+}
+
+func (d *gitlabRunnerControllerResourceModel) runnerControllerToStateModelFromUpdate(controller *gitlab.RunnerController) {
 	d.Description = types.StringValue(controller.Description)
 	d.State = types.StringValue(string(controller.State))
 	if controller.CreatedAt != nil {

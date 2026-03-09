@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	gitlab "gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go/v2"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
@@ -705,7 +705,7 @@ func testAccCheckGitlabUserExists(n string, user *gitlab.User) resource.TestChec
 		}
 		id, _ := strconv.ParseInt(userID, 10, 64)
 
-		gotUser, _, err := testutil.TestGitlabClient.Users.GetUser(id, gitlab.GetUsersOptions{})
+		gotUser, _, err := testutil.TestGitlabClient.Users.GetUser(id, &gitlab.GetUserOptions{})
 		if err != nil {
 			return err
 		}
@@ -777,7 +777,7 @@ func testAccCheckGitlabUserDestroy(s *terraform.State) error {
 
 		id, _ := strconv.ParseInt(rs.Primary.ID, 10, 64)
 
-		user, _, err := testutil.TestGitlabClient.Users.GetUser(id, gitlab.GetUsersOptions{})
+		user, _, err := testutil.TestGitlabClient.Users.GetUser(id, &gitlab.GetUserOptions{})
 		if err == nil {
 			if user != nil && fmt.Sprintf("%d", user.ID) == rs.Primary.ID {
 				// Newer GitLab versions can keep users around in a long-lived
