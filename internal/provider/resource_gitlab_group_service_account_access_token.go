@@ -131,6 +131,7 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Schema(ctx context.Contex
 					setvalidator.ValueStringsAre(
 						stringvalidator.OneOfCaseInsensitive(api.ValidPersonalAccessTokenScopes...),
 					),
+					setvalidator.SizeAtLeast(1),
 				},
 			},
 			"expires_at": schema.StringAttribute{
