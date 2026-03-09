@@ -7,7 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	gitlab "gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go/v2"
 )
 
 var (
@@ -156,7 +156,15 @@ func (d *gitlabProjectLabelDataSource) Read(ctx context.Context, req datasource.
 	data.ClosedIssuesCount = types.Int64Value(int64(label.ClosedIssuesCount))
 	data.OpenMergeRequestsCount = types.Int64Value(int64(label.OpenMergeRequestsCount))
 	data.Subscribed = types.BoolValue(label.Subscribed)
-	data.Priority = types.Int64Value(int64(label.Priority))
+	if label.Priority.IsSpecified() {
+		if priority, err := label.Priority.Get(); err == nil {
+			data.Priority = types.Int64Value(priority)
+		} else {
+			data.Priority = types.Int64Null()
+		}
+	} else {
+		data.Priority = types.Int64Null()
+	}
 	data.IsProjectLabel = types.BoolValue(label.IsProjectLabel)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

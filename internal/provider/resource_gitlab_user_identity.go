@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	gitlab "gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go/v2"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
@@ -144,7 +144,7 @@ func (r *gitlabUserIdentityResource) Read(ctx context.Context, req resource.Read
 		return
 	}
 
-	user, _, err := r.client.Users.GetUser(userID, gitlab.GetUsersOptions{}, gitlab.WithContext(ctx))
+	user, _, err := r.client.Users.GetUser(userID, &gitlab.GetUserOptions{}, gitlab.WithContext(ctx))
 	if err != nil {
 		if api.Is404(err) {
 			resp.Diagnostics.AddWarning("User not found", fmt.Sprintf("[DEBUG] user %d not found so removing from state", userID))

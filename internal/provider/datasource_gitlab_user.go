@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	gitlab "gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go/v2"
 )
 
 var (
@@ -243,7 +243,7 @@ func (d *gitlabUserDataSource) Read(ctx context.Context, req datasource.ReadRequ
 	if !data.UserID.IsNull() && !data.UserID.IsUnknown() {
 		// Get user by id
 		userID := data.UserID.ValueInt64()
-		user, _, err = d.client.Users.GetUser(userID, gitlab.GetUsersOptions{}, gitlab.WithContext(ctx))
+		user, _, err = d.client.Users.GetUser(userID, &gitlab.GetUserOptions{}, gitlab.WithContext(ctx))
 		if err != nil {
 			resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to read user by id %d: %s", userID, err.Error()))
 			return

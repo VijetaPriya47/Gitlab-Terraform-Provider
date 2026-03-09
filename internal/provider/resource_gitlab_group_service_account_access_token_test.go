@@ -14,7 +14,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	gitlab "gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go/v2"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
@@ -1296,7 +1296,7 @@ func revokeServiceAccountAccessToken(userID int64, tokenName string) error {
 		return err
 	}
 
-	_, err = testutil.TestGitlabClient.PersonalAccessTokens.RevokePersonalAccessToken(tokenID)
+	_, err = testutil.TestGitlabClient.PersonalAccessTokens.RevokePersonalAccessTokenByID(tokenID)
 	return err
 }
 

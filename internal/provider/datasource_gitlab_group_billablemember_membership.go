@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	gitlab "gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go/v2"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 )
 
@@ -194,7 +194,7 @@ func gitlabBillableMemberMembershipToStateModel(membership *gitlab.BillableUserM
 		CreatedAt:        types.StringValue(createdAt),
 	}
 	if membership.ExpiresAt != nil {
-		m.ExpiresAt = types.StringValue(membership.ExpiresAt.Format(time.RFC3339))
+		m.ExpiresAt = types.StringValue(membership.ExpiresAt.String())
 	}
 
 	return m

@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	gitlab "gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go/v2"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/utils"
 )
@@ -267,7 +267,7 @@ func (r *gitlabGroupIntegrationMicrosoftTeamsResource) setIntegration(ctx contex
 	diags.Append(state.Set(ctx, &data)...)
 }
 
-func (data *gitlabGroupIntegrationMicrosoftTeamsResourceModel) groupIntegrationMicrosoftTeamsToStateModel(integration *gitlab.Integration, groupId string) {
+func (data *gitlabGroupIntegrationMicrosoftTeamsResourceModel) groupIntegrationMicrosoftTeamsToStateModel(integration *gitlab.MicrosoftTeamsIntegration, groupId string) {
 	data.ID = types.StringValue(groupId)
 	data.Group = types.StringValue(groupId)
 

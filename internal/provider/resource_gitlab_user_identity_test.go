@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	gitlab "gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go/v2"
 	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
@@ -112,7 +112,7 @@ func testAccCheckGitlabUserIdentityDestroy(s *terraform.State) error {
 			return fmt.Errorf("[ERROR] cannot get User ID and Provider from input: %v", rs.Primary.ID)
 		}
 
-		user, _, err := testutil.TestGitlabClient.Users.GetUser(userID, gitlab.GetUsersOptions{})
+		user, _, err := testutil.TestGitlabClient.Users.GetUser(userID, &gitlab.GetUserOptions{})
 		if err != nil {
 			return err
 		}

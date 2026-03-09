@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"gitlab.com/gitlab-org/api/client-go/config"
+	"gitlab.com/gitlab-org/api/client-go/v2/config"
 )
 
 func TestConfig_CustomHeaders(t *testing.T) {
