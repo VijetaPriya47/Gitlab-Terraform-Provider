@@ -127,6 +127,7 @@ func TestAccDataSourceGitlabUser_emailExactMatch(t *testing.T) {
 				`, user.Email),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("data.gitlab_user.test", "email", user.Email),
+					resource.TestCheckResourceAttr("data.gitlab_user.test", "public_email", user.PublicEmail),
 				),
 			},
 			// Validate that when we search with a fuzzy match, we get an error instead of

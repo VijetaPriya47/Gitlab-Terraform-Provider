@@ -334,6 +334,7 @@ func CreateUsersWithPrefix(t *testing.T, n int, prefix string) []*gitlab.User {
 			Email:            gitlab.Ptr(username + "@example.com"),
 			Password:         gitlab.Ptr("42UltraSecurePotatoes."),
 			SkipConfirmation: gitlab.Ptr(true),
+			PublicEmail:      gitlab.Ptr(username + "@example.com"),
 		})
 		if err != nil {
 			t.Fatalf("could not create test user (username=%q): %v", username, err)

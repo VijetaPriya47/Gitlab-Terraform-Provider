@@ -40,6 +40,7 @@ type gitlabUserDataSourceModel struct {
 	UserID           types.Int64  `tfsdk:"user_id"`
 	Username         types.String `tfsdk:"username"`
 	Email            types.String `tfsdk:"email"`
+	PublicEmail      types.String `tfsdk:"public_email"`
 	Name             types.String `tfsdk:"name"`
 	IsAdmin          types.Bool   `tfsdk:"is_admin"`
 	CanCreateGroup   types.Bool   `tfsdk:"can_create_group"`
@@ -100,10 +101,14 @@ func (d *gitlabUserDataSource) Schema(_ context.Context, _ datasource.SchemaRequ
 				Validators:          []validator.String{stringvalidator.ConflictsWith(path.MatchRoot("user_id"), path.MatchRoot("email"))},
 			},
 			"email": schema.StringAttribute{
-				MarkdownDescription: "The public email address of the user.",
+				MarkdownDescription: "The email address of the user.",
 				Computed:            true,
 				Optional:            true,
 				Validators:          []validator.String{stringvalidator.ConflictsWith(path.MatchRoot("user_id"), path.MatchRoot("username"))},
+			},
+			"public_email": schema.StringAttribute{
+				MarkdownDescription: "The public email address of the user.",
+				Computed:            true,
 			},
 			"name": schema.StringAttribute{
 				MarkdownDescription: "The name of the user.",
@@ -276,6 +281,7 @@ func (d *gitlabUserDataSource) Read(ctx context.Context, req datasource.ReadRequ
 	data.UserID = types.Int64Value(int64(user.ID))
 	data.Username = types.StringValue(user.Username)
 	data.Email = types.StringValue(user.Email)
+	data.PublicEmail = types.StringValue(user.PublicEmail)
 	data.Name = types.StringValue(user.Name)
 	data.IsAdmin = types.BoolValue(user.IsAdmin)
 	data.CanCreateGroup = types.BoolValue(user.CanCreateGroup)
