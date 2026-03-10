@@ -37,7 +37,6 @@ func TestAccGitlabComplianceRequirement_basic(t *testing.T) {
 					resource "gitlab_compliance_requirement" "test" {
 						framework_id = gitlab_compliance_framework.test.framework_id
 						name         = "Test Requirement"
-						description  = "A test compliance requirement"
 
 						controls = [{
 							name         = "scanner_dep_scanning_running"
@@ -53,7 +52,6 @@ func TestAccGitlabComplianceRequirement_basic(t *testing.T) {
 				`, testGroup.FullPath),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("gitlab_compliance_requirement.test", "name", "Test Requirement"),
-					resource.TestCheckResourceAttr("gitlab_compliance_requirement.test", "description", "A test compliance requirement"),
 					resource.TestCheckResourceAttrSet("gitlab_compliance_requirement.test", "id"),
 				),
 			},
@@ -78,7 +76,6 @@ func TestAccGitlabComplianceRequirement_basic(t *testing.T) {
 					resource "gitlab_compliance_requirement" "test" {
 						framework_id = gitlab_compliance_framework.test.framework_id
 						name         = "Updated Requirement"
-						description  = "An updated compliance requirement"
 
 						controls = [{
 							name         = "scanner_dep_scanning_running"
@@ -94,7 +91,6 @@ func TestAccGitlabComplianceRequirement_basic(t *testing.T) {
 				`, testGroup.FullPath),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("gitlab_compliance_requirement.test", "name", "Updated Requirement"),
-					resource.TestCheckResourceAttr("gitlab_compliance_requirement.test", "description", "An updated compliance requirement"),
 				),
 			},
 		},
@@ -126,7 +122,7 @@ func TestAccGitlabComplianceRequirement_externalControl(t *testing.T) {
 						description  = "A requirement with external control"
 
 						controls = [{
-							name         = "External Audit Report"
+							name         = "external_audit_report"
 							control_type = "external"
 							external_url = "https://example.com/audit-report"
 						}]
@@ -177,7 +173,7 @@ func TestAccGitlabComplianceRequirement_multipleControls(t *testing.T) {
 								}
 							},
 							{
-								name         = "External Audit"
+								name         = "external_audit"
 								control_type = "external"
 								external_url = "https://example.com/audit"
 							}
