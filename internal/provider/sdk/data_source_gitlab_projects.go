@@ -71,6 +71,19 @@ func flattenProjectLinks(links *gitlab.Links) (values map[string]string) {
 	return values
 }
 
+func flattenCustomAttributes(attributes []*gitlab.CustomAttribute) (values []map[string]string) {
+	if attributes != nil {
+		values = make([]map[string]string, len(attributes))
+		for i, attribute := range attributes {
+			values[i] = map[string]string{
+				"key":   attribute.Key,
+				"value": attribute.Value,
+			}
+		}
+	}
+	return values
+}
+
 func flattenForkedFromProject(forked *gitlab.ForkParent) (values []map[string]any) {
 	if forked != nil {
 		values = []map[string]any{
@@ -170,7 +183,7 @@ func flattenProjects(projects []*gitlab.Project) (values []map[string]any) {
 			"_links":                                           flattenProjectLinks(project.Links),
 			"links":                                            flattenProjectLinks(project.Links),
 			"ci_config_path":                                   project.CIConfigPath,
-			"custom_attributes":                                project.CustomAttributes,
+			"custom_attributes":                                flattenCustomAttributes(project.CustomAttributes),
 			"packages_enabled":                                 project.PackagesEnabled,
 			"build_coverage_regex":                             project.BuildCoverageRegex,
 			"ci_forward_deployment_enabled":                    project.CIForwardDeploymentEnabled,

@@ -41,6 +41,38 @@ func TestAccDataGitlabProjects_search(t *testing.T) {
 	})
 }
 
+func TestAccDataGitlabProjects_customAttributes(t *testing.T) {
+	project := testutil.CreateProject(t)
+	testutil.TestGitlabClient.CustomAttribute.SetCustomProjectAttribute(project.ID, gitlab.CustomAttribute{Key: "test", Value: "potato"})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+				data "gitlab_projects" "search" {
+				  search = "%s"
+
+				  with_custom_attributes = true
+				}
+				`, project.Name),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("data.gitlab_projects.search", "projects.#", "1"),
+					resource.TestCheckResourceAttr("data.gitlab_projects.search", "projects.0.id", fmt.Sprintf("%d", project.ID)),
+					resource.TestCheckResourceAttr("data.gitlab_projects.search", "projects.0.owner.0.id", "1"),
+					resource.TestCheckResourceAttr("data.gitlab_projects.search", "projects.0.permissions.0.project_access.access_level", "50"),
+					resource.TestCheckNoResourceAttr("data.gitlab_projects.search", "projects.0.permissions.0.project_access.group_level"),
+					resource.TestCheckResourceAttr("data.gitlab_projects.search", "projects.0.namespace.0.kind", "user"),
+					resource.TestCheckResourceAttr("data.gitlab_projects.search", "projects.0.prevent_merge_without_jira_issue", "false"),
+					resource.TestCheckResourceAttr("data.gitlab_projects.search", "projects.0.custom_attributes.#", "1"),
+					resource.TestCheckResourceAttr("data.gitlab_projects.search", "projects.0.custom_attributes.0.key", "test"),
+					resource.TestCheckResourceAttr("data.gitlab_projects.search", "projects.0.custom_attributes.0.value", "potato"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccDataGitlabProjects_groups(t *testing.T) {
 	group := testutil.CreateGroups(t, 1)[0]
 	subgroups := testutil.CreateSubGroups(t, group, 2)
