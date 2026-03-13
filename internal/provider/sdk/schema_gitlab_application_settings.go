@@ -1232,11 +1232,11 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 		},
 
 		"lock_memberships_to_saml": {
-           Description: "Set to true to lock all memberships to SAML. Premium and Ultimate only.",
-           Type:        schema.TypeBool,
-           Optional:    true,
-           Computed:    true,
-        },
+			Description: "Set to true to lock all memberships to SAML. Premium and Ultimate only.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
 
 		"lock_duo_features_enabled": {
 			Description: "Indicates whether the GitLab Duo features enabled setting is enforced for all subgroups. Self-managed, Premium and Ultimate only.",
@@ -3263,8 +3263,8 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 	}
 
 	if d.HasChange("lock_memberships_to_saml") {
-    options.LockMembershipsToSAML = gitlab.Ptr(d.Get("lock_memberships_to_saml").(bool))
-    }
+		options.LockMembershipsToSAML = gitlab.Ptr(d.Get("lock_memberships_to_saml").(bool))
+	}
 
 	if d.HasChange("mailgun_signing_key") {
 		options.MailgunSigningKey = gitlab.Ptr(d.Get("mailgun_signing_key").(string))
