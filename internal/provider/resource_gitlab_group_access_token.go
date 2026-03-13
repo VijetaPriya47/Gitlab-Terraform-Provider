@@ -75,6 +75,50 @@ type gitlabGroupAccessTokenResourceModel struct {
 	RotationConfiguration *utils.GitlabAccessTokenRotationConfiguration `tfsdk:"rotation_configuration"`
 }
 
+// Implement RotatableToken interface - Getters
+func (m *gitlabGroupAccessTokenResourceModel) GetExpiresAt() types.String {
+	return m.ExpiresAt
+}
+
+func (m *gitlabGroupAccessTokenResourceModel) GetExpirationDays() types.Int64 {
+	if m.RotationConfiguration == nil {
+		return types.Int64Null()
+	}
+	return m.RotationConfiguration.ExpirationDays
+}
+
+func (m *gitlabGroupAccessTokenResourceModel) GetRotateBeforeDays() types.Int64 {
+	if m.RotationConfiguration == nil {
+		return types.Int64Null()
+	}
+	return m.RotationConfiguration.RotateBeforeDays
+}
+
+func (m *gitlabGroupAccessTokenResourceModel) HasRotationConfiguration() bool {
+	return m.RotationConfiguration != nil
+}
+
+func (m *gitlabGroupAccessTokenResourceModel) GetLogPrefix() string {
+	return "GroupAccessToken"
+}
+
+// Implement RotatableToken interface - Setters
+func (m *gitlabGroupAccessTokenResourceModel) SetExpiresAt(v types.String) {
+	m.ExpiresAt = v
+}
+
+func (m *gitlabGroupAccessTokenResourceModel) SetID(v types.String) {
+	m.ID = v
+}
+
+func (m *gitlabGroupAccessTokenResourceModel) SetToken(v types.String) {
+	m.Token = v
+}
+
+func (m *gitlabGroupAccessTokenResourceModel) SetCreatedAt(v types.String) {
+	m.CreatedAt = v
+}
+
 func (r *gitlabGroupAccessTokenResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_group_access_token"
 }
@@ -289,86 +333,38 @@ func (r *gitlabGroupAccessTokenResource) ModifyPlan(ctx context.Context, req res
 		return
 	}
 
-	// Check to determine if we need to rotate the expiry date
-	shouldSetExpiration := false
-
-	// If expiration (or ANY state) has never been set yet (we're in a "Create" plan), ensure we calculate and set the first time.
-	// This should also run if the expiration date has changed between plan and state, to ensure the ID is set to unknown.
-	if stateData == nil || stateData.ExpiresAt.IsNull() || stateData.ExpiresAt.IsUnknown() || stateData.ExpiresAt != planData.ExpiresAt {
-		// Log some information for debugging later.
-		expiresAt := ""
-		if stateData != nil {
-			expiresAt = stateData.ExpiresAt.ValueString()
-		}
-		tflog.Debug(ctx, "[GroupAccessToken] State is not populated, or the expires_at value is nil. Creating the token for the first time.", map[string]any{
-			"is_state_nil": stateData == nil,
-			"expires_at":   expiresAt,
-		})
-
-		// set token for rotation
-		shouldSetExpiration = true
-
-		// Otherwise, execute the logic if rotation configuration is present
-	} else if stateData.RotationConfiguration != nil {
-
-		// We're in an "Update" plan that already has expiration set, calculate if we need to rotate
-		rotateBefore := stateData.ExpiresAt.ValueString()
-		rotateBeforeTime, err := time.Parse(api.Iso8601, rotateBefore)
-		if err != nil {
-			resp.Diagnostics.AddError(
-				"Error parsing rotation date",
-				fmt.Sprintf("Could not parse rotation date %q: %s", rotateBefore, err),
-			)
-			return
-		}
-
-		// Subtract the rotation days
-		// This is done using `Add` because it returns "time.Time" instead of `Sub` which returns time.Duration. For some reason.
-		gapTime := rotateBeforeTime.Add(-time.Duration(planData.RotationConfiguration.RotateBeforeDays.ValueInt64()) * 24 * time.Hour)
-		if gapTime.Before(api.CurrentTime()) {
-			shouldSetExpiration = true
-		}
-
-		// Logs for assisting with support
-		tflog.Debug(ctx, "[GroupAccessToken] State is populated, and a rotation configuration is detected. Determining if token should be rotated.", map[string]any{
-			"expires_at":             rotateBefore,
-			"detected_current_time":  api.CurrentTime(),
-			"detected_rotation_date": gapTime,
-			"rotate_before_days":     planData.RotationConfiguration.RotateBeforeDays.ValueInt64(),
-			"should_rotate":          shouldSetExpiration,
-		})
+	// Use centralized rotation logic
+	// Note: stateData must be converted to a utils.RotatableToken explicitly to
+	// avoid passing a typed nil (which would not compare equal to nil in the interface).
+	var stateForRotation utils.RotatableToken
+	if stateData != nil {
+		stateForRotation = stateData
+	}
+	shouldRotate, err := utils.ShouldRotateToken(
+		ctx,
+		planData,
+		stateForRotation,
+	)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error determining rotation",
+			fmt.Sprintf("Could not determine if token needs rotation: %s", err),
+		)
+		return
 	}
 
-	if shouldSetExpiration {
-		// We need to re-calculate the expiryDate, and set it in the plan
-		expiryDate, _, err := utils.DetermineExpiryDate(planData.ExpiresAt, planData.RotationConfiguration, nil)
+	if shouldRotate && stateData != nil {
+		// Apply rotation using centralized logic
+		planModified, err := utils.ApplyTokenRotation(ctx, planData, planData.RotationConfiguration, stateData, nil)
 		if err != nil {
 			resp.Diagnostics.AddError(
-				"Error determining new expiry date",
-				fmt.Sprintf("Could not determine new expiry date: %s", err),
+				"Error applying token rotation",
+				fmt.Sprintf("Could not apply token rotation: %s", err),
 			)
 			return
 		}
 
-		// If the newly calculated expiryDate is different than what's in state, modify the plan
-		// This check is required to prevent the ID being unknown on every apply with rotation_configuration even
-		// if the calculated date is exactly the same as it currently is
-		if stateData != nil && !expiryDate.IsNull() && !expiryDate.IsUnknown() && expiryDate.ValueString() != stateData.ExpiresAt.ValueString() {
-			// Set the new expiration date in the plan
-			planData.ExpiresAt = expiryDate
-			// Set several attributes to unknown since they will change as part of rotation
-			planData.ID = types.StringUnknown()
-			planData.Token = types.StringUnknown()
-			planData.CreatedAt = types.StringUnknown()
-
-			// Logs for assisting with support
-			tflog.Debug(ctx, "[GroupAccessToken] Rotation is required, settings plan data", map[string]any{
-				"new_expires_at": expiryDate.ValueString(),
-				"expires_at":     stateData.ExpiresAt.ValueString(),
-				"group":          planData.Group.ValueString(),
-				"name":           planData.Name.ValueString(),
-			})
-
+		if planModified {
 			resp.Diagnostics.Append(resp.Plan.Set(ctx, planData)...)
 		}
 	}
