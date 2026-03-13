@@ -2295,6 +2295,12 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Computed:    true,
 		},
+		"inactive_resource_access_tokens_delete_after_days": {
+			Description: "Specifies retention period for inactive project and group access tokens. Default is 30.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
+		},
 	}
 }
 
@@ -2613,7 +2619,7 @@ func gitlabApplicationSettingsToStateMap(settings *gitlab.Settings) map[string]a
 	stateMap["prevent_merge_requests_author_approval"] = settings.PreventMergeRequestsAuthorApproval
 	stateMap["prevent_merge_requests_committers_approval"] = settings.PreventMergeRequestsCommittersApproval
 	stateMap["disable_overriding_approvers_per_merge_request"] = settings.DisableOverridingApproversPerMergeRequest
-
+        stateMap["inactive_resource_access_tokens_delete_after_days"] = settings.InactiveResourceAccessTokensDeleteAfterDays
 	stateMap["default_branch_protection_defaults"] = flattenDefaultBranchProtectionDefaults(settings.DefaultBranchProtectionDefaults)
 	return stateMap
 }
@@ -3843,6 +3849,9 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 
 	if d.HasChange("disable_overriding_approvers_per_merge_request") {
 		options.DisableOverridingApproversPerMergeRequest = gitlab.Ptr(d.Get("disable_overriding_approvers_per_merge_request").(bool))
+	}
+	if d.HasChange("inactive_resource_access_tokens_delete_after_days") {
+		options.InactiveResourceAccessTokensDeleteAfterDays = gitlab.Ptr(int64(d.Get("inactive_resource_access_tokens_delete_after_days").(int)))
 	}
 	return &options
 }
