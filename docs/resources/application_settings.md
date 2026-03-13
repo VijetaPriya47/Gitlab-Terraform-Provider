@@ -203,6 +203,7 @@ resource "gitlab_application_settings" "this" {
 - `inactive_projects_delete_after_months` (Number) If delete_inactive_projects is true, the time (in months) to wait before deleting inactive projects.
 - `inactive_projects_min_size_mb` (Number) If delete_inactive_projects is true, the minimum repository size for projects to be checked for inactivity.
 - `inactive_projects_send_warning_email_after_months` (Number) If delete_inactive_projects is true, sets the time (in months) to wait before emailing maintainers that the project is scheduled be deleted because it is inactive.
+- `inactive_resource_access_tokens_delete_after_days` (Number) Specifies retention period for inactive project and group access tokens. Default is 30.
 - `include_optional_metrics_in_service_ping` (Boolean) Whether or not optional metrics are enabled in Service Ping.
 - `invisible_captcha_enabled` (Boolean) Enable Invisible CAPTCHA spam detection during sign-up.
 - `issues_create_limit` (Number) Max number of issue creation requests per minute per user.
