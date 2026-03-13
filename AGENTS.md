@@ -14,6 +14,8 @@ Before making any changes to this repository, read the following documents in or
 
 - **`internal/provider/`** - New resources and data sources using Terraform Plugin Framework
 - **`internal/provider/sdk/`** - Legacy resources using Terraform Plugin SDK (maintenance only)
+- **`internal/provider/api/`** - Shared API utilities and helpers
+- **`internal/provider/utils/`** - Shared utility functions
 - **`docs/`** - Auto-generated documentation (do not edit manually)
 - **`examples/`** - Example configurations for resources and data sources
 - **`scripts/`** - Helper scripts for development and CI/CD
@@ -239,7 +241,9 @@ When creating a new resource, follow the comprehensive guide at [docs/developmen
 
 If you are migrating a datasource or resource from the SDK to Terraform Framework Plugin, follow the guide at [Migration.md](Migration.md) for specific instructions.
 
+
 ## Code Guidelines
+
 
 ### Resource ID and Import
 

@@ -73,6 +73,50 @@ type gitlabGroupServiceAccountAccessTokenResourceModel struct {
 	RotationConfiguration *utils.GitlabAccessTokenRotationConfiguration `tfsdk:"rotation_configuration"`
 }
 
+// Implement RotatableToken interface - Getters
+func (m *gitlabGroupServiceAccountAccessTokenResourceModel) GetExpiresAt() types.String {
+	return m.ExpiresAt
+}
+
+func (m *gitlabGroupServiceAccountAccessTokenResourceModel) GetExpirationDays() types.Int64 {
+	if m.RotationConfiguration == nil {
+		return types.Int64Null()
+	}
+	return m.RotationConfiguration.ExpirationDays
+}
+
+func (m *gitlabGroupServiceAccountAccessTokenResourceModel) GetRotateBeforeDays() types.Int64 {
+	if m.RotationConfiguration == nil {
+		return types.Int64Null()
+	}
+	return m.RotationConfiguration.RotateBeforeDays
+}
+
+func (m *gitlabGroupServiceAccountAccessTokenResourceModel) HasRotationConfiguration() bool {
+	return m.RotationConfiguration != nil
+}
+
+func (m *gitlabGroupServiceAccountAccessTokenResourceModel) GetLogPrefix() string {
+	return "ServiceAccountAccessToken"
+}
+
+// Implement RotatableToken interface - Setters
+func (m *gitlabGroupServiceAccountAccessTokenResourceModel) SetExpiresAt(v types.String) {
+	m.ExpiresAt = v
+}
+
+func (m *gitlabGroupServiceAccountAccessTokenResourceModel) SetID(v types.String) {
+	m.ID = v
+}
+
+func (m *gitlabGroupServiceAccountAccessTokenResourceModel) SetToken(v types.String) {
+	m.Token = v
+}
+
+func (m *gitlabGroupServiceAccountAccessTokenResourceModel) SetCreatedAt(v types.String) {
+	m.CreatedAt = v
+}
+
 func (r *gitlabGroupServiceAccountAccessTokenResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_group_service_account_access_token"
 }
@@ -323,95 +367,39 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) ModifyPlan(ctx context.Co
 		return
 	}
 
-	// Check to determine if we need to rotate the expiry date
-	shouldSetExpiration := false
-
-	if configData.ExpiresAt.IsNull() && planData.RotationConfiguration == nil && stateData != nil && !stateData.ExpiresAt.IsNull() {
-		// The token already exists, but we want no expiry on it anymore, so need to set the expiry to null
-		shouldSetExpiration = true
-
-		tflog.Debug(ctx, "[ServiceAccountAccessToken] Plan says to remove expiry as expires_at and rotation_configuration are not set.", map[string]any{
-			"is_state_nil": stateData == nil,
-			"expires_at":   stateData.ExpiresAt.String(),
-		})
-	} else if stateData == nil || stateData.ExpiresAt.IsNull() || stateData.ExpiresAt.IsUnknown() || stateData.ExpiresAt != planData.ExpiresAt {
-		// If expiration (or ANY state) has never been set yet (we're in a "Create" plan), ensure we calculate and set the first time.
-		// This should also run if the expiration date has changed between plan and state, to ensure the ID is set to unknown.
-		// Log some information for debugging later.
-		expiresAt := ""
-		if stateData != nil {
-			expiresAt = stateData.ExpiresAt.ValueString()
-		}
-		tflog.Debug(ctx, "[ServiceAccountAccessToken] State is not populated, or the expires_at value is nil. Creating the token for the first time.", map[string]any{
-			"is_state_nil": stateData == nil,
-			"expires_at":   expiresAt,
-		})
-
-		// set token for rotation
-		shouldSetExpiration = true
-
-		// Otherwise, execute the logic if rotation configuration is present
-	} else if stateData.RotationConfiguration != nil {
-		// We're in an "Update" plan that already has expiration set, calculate if we need to rotate
-		rotateBefore := stateData.ExpiresAt.ValueString()
-		rotateBeforeTime, err := time.Parse(api.Iso8601, rotateBefore)
-		if err != nil {
-			resp.Diagnostics.AddError(
-				"Error parsing rotation date",
-				fmt.Sprintf("Could not parse rotation date %q: %s", rotateBefore, err),
-			)
-			return
-		}
-
-		// Subtract the rotation days
-		// This is done using `Add` because it returns "time.Time" instead of `Sub` which returns time.Duration. For some reason.
-		gapTime := rotateBeforeTime.Add(-time.Duration(planData.RotationConfiguration.RotateBeforeDays.ValueInt64()) * 24 * time.Hour)
-		if gapTime.Before(api.CurrentTime()) {
-			shouldSetExpiration = true
-		}
-
-		// Logs for assisting with support
-		tflog.Debug(ctx, "[ServiceAccountAccessToken] State is populated, and a rotation configuration is detected. Determining if token should be rotated.", map[string]any{
-			"expires_at":             rotateBefore,
-			"detected_current_time":  api.CurrentTime(),
-			"detected_rotation_date": gapTime,
-			"rotate_before_days":     planData.RotationConfiguration.RotateBeforeDays.ValueInt64(),
-			"should_rotate":          shouldSetExpiration,
-		})
+	// Use centralized rotation logic
+	// Note: stateData must be converted to a utils.RotatableToken explicitly to
+	// avoid passing a typed nil (which would not compare equal to nil in the interface).
+	var stateForRotation utils.RotatableToken
+	if stateData != nil {
+		stateForRotation = stateData
+	}
+	shouldRotate, err := utils.ShouldRotateToken(
+		ctx,
+		planData,
+		stateForRotation,
+	)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error determining rotation",
+			fmt.Sprintf("Could not determine if token needs rotation: %s", err),
+		)
+		return
 	}
 
-	if shouldSetExpiration {
-		// We need to re-calculate the expiryDate, and set it in the plan
+	if shouldRotate && stateData != nil {
+		// Apply rotation using centralized logic with fallback expiration days
 		fallbackExpirationDays := DEFAULT_EXPIRATION_DAYS
-		expiryDate, _, err := utils.DetermineExpiryDate(planData.ExpiresAt, planData.RotationConfiguration, &fallbackExpirationDays)
+		planModified, err := utils.ApplyTokenRotation(ctx, planData, planData.RotationConfiguration, stateData, &fallbackExpirationDays)
 		if err != nil {
 			resp.Diagnostics.AddError(
-				"Error determining new expiry date",
-				fmt.Sprintf("Could not determine new expiry date: %s", err),
+				"Error applying token rotation",
+				fmt.Sprintf("Could not apply token rotation: %s", err),
 			)
 			return
 		}
 
-		// If the newly calculated expiryDate is different than what's in state, modify the plan
-		// This check is required to prevent the ID being unknown on every apply with rotation_configuration even
-		// if the calculated date is exactly the same as it currently is
-		if stateData != nil && ((!expiryDate.IsNull() && !expiryDate.IsUnknown() && expiryDate.ValueString() != stateData.ExpiresAt.ValueString()) || (expiryDate.IsNull() && !stateData.ExpiresAt.IsNull())) {
-			// Set the new expiration date in the plan
-			planData.ExpiresAt = expiryDate
-			// We need to re-create the token on apply because the expiration date has changed
-			// Set several attributes to unknown since they will change as part of rotation
-			planData.ID = types.StringUnknown()
-			planData.Token = types.StringUnknown()
-			planData.CreatedAt = types.StringUnknown()
-
-			// Logs for assisting with support
-			tflog.Debug(ctx, "[ServiceAccountAccessToken] Rotation is required, settings plan data", map[string]any{
-				"new_expires_at": planData.ExpiresAt,
-				"expires_at":     stateData.ExpiresAt.ValueString(),
-				"group":          planData.Group.ValueString(),
-				"name":           planData.Name.ValueString(),
-			})
-
+		if planModified {
 			resp.Diagnostics.Append(resp.Plan.Set(ctx, planData)...)
 		}
 	}
