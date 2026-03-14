@@ -1296,7 +1296,17 @@ func CreateScheduledPipeline(t *testing.T, project int64, branch string) (*gitla
 		Ref:          gitlab.Ptr(branch),
 		Cron:         gitlab.Ptr("0 0 1 1 *"),
 		CronTimezone: gitlab.Ptr("UTC"),
+		Inputs:       []*gitlab.PipelineInput{{Name: "deploy_strategy", Value: "blue-green"}, {Name: "environment", Value: "production"}},
 	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Fetch the pipeline schedule again to get inputs populated
+	pipeline, _, err = TestGitlabClient.PipelineSchedules.GetPipelineSchedule(project, pipeline.ID)
+	if err != nil {
+		return nil, err
+	}
 
 	t.Cleanup(func() {
 		_, _ = TestGitlabClient.PipelineSchedules.DeletePipelineSchedule(project, pipeline.ID)

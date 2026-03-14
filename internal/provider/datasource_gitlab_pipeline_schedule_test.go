@@ -46,6 +46,15 @@ func TestAccDataGitlabPipelineSchedule_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("data.gitlab_pipeline_schedule.this", "owner.state", schedule.Owner.State),
 					resource.TestCheckResourceAttr("data.gitlab_pipeline_schedule.this", "owner.avatar_url", schedule.Owner.AvatarURL),
 					resource.TestCheckResourceAttr("data.gitlab_pipeline_schedule.this", "owner.web_url", schedule.Owner.WebURL),
+					resource.TestCheckResourceAttr("data.gitlab_pipeline_schedule.this", "inputs.#", strconv.Itoa(len(schedule.Inputs))),
+					resource.TestCheckTypeSetElemNestedAttrs("data.gitlab_pipeline_schedule.this", "inputs.*", map[string]string{
+						"name":  schedule.Inputs[0].Name,
+						"value": schedule.Inputs[0].Value.(string),
+					}),
+					resource.TestCheckTypeSetElemNestedAttrs("data.gitlab_pipeline_schedule.this", "inputs.*", map[string]string{
+						"name":  schedule.Inputs[1].Name,
+						"value": schedule.Inputs[1].Value.(string),
+					}),
 				),
 			},
 		},

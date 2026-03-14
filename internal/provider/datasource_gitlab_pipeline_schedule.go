@@ -49,6 +49,7 @@ type gitLabPipelineScheduleDataSourceModel struct {
 	LastPipeline       *gitlabPipelineScheduleLastPipeline `tfsdk:"last_pipeline"`
 	Owner              *gitlabPipelineScheduleOwner        `tfsdk:"owner"`
 	Variables          []*gitlabPipelineScheduleVariable   `tfsdk:"variables"`
+	Inputs             []*gitlabPipelineScheduleInput      `tfsdk:"inputs"`
 }
 
 // The details of the last pipeline run by the schedule
@@ -74,6 +75,12 @@ type gitlabPipelineScheduleVariable struct {
 	Key          types.String `tfsdk:"key"`
 	VariableType types.String `tfsdk:"variable_type"`
 	Value        types.String `tfsdk:"value"`
+}
+
+// The details of a pipeline schedule input
+type gitlabPipelineScheduleInput struct {
+	Name  types.String `tfsdk:"name"`
+	Value types.String `tfsdk:"value"`
 }
 
 // Metadata returns the data source type name.
@@ -206,6 +213,22 @@ func (d *gitlabPipelineScheduleDataSource) Schema(_ context.Context, _ datasourc
 					},
 				},
 			},
+			"inputs": schema.ListNestedAttribute{
+				MarkdownDescription: "List of pipeline schedule inputs. Each element has `name` and `value`.",
+				Computed:            true,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"name": schema.StringAttribute{
+							MarkdownDescription: "The name of the input.",
+							Computed:            true,
+						},
+						"value": schema.StringAttribute{
+							MarkdownDescription: "The value of the input.",
+							Computed:            true,
+						},
+					},
+				},
+			},
 		},
 	}
 }
@@ -271,6 +294,17 @@ func (d *gitlabPipelineScheduleDataSource) Read(ctx context.Context, req datasou
 			Key:          types.StringValue(variable.Key),
 			VariableType: types.StringValue(string(variable.VariableType)),
 			Value:        types.StringValue(variable.Value),
+		})
+	}
+
+	for _, input := range schedule.Inputs {
+		valueStr := ""
+		if input.Value != nil {
+			valueStr = input.Value.(string)
+		}
+		state.Inputs = append(state.Inputs, &gitlabPipelineScheduleInput{
+			Name:  types.StringValue(input.Name),
+			Value: types.StringValue(valueStr),
 		})
 	}
 

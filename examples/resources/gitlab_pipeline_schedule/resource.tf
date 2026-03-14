@@ -3,4 +3,14 @@ resource "gitlab_pipeline_schedule" "example" {
   description = "Used to schedule builds"
   ref         = "refs/heads/main"
   cron        = "0 1 * * *"
+  inputs = [
+    {
+      name  = "deploy_strategy"
+      value = "rolling"
+    },
+    {
+      name  = "environment"
+      value = "production"
+    }
+  ]
 }

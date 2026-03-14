@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -13,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	gitlab "gitlab.com/gitlab-org/api/client-go/v2"
@@ -52,9 +55,38 @@ type gitlabPipelineScheduleResourceModel struct {
 	Active             types.Bool   `tfsdk:"active"`
 	TakeOwnership      types.Bool   `tfsdk:"take_ownership"`
 	Owner              types.Int64  `tfsdk:"owner"`
+	Inputs             types.Set    `tfsdk:"inputs"`
+}
+
+type gitlabPipelineScheduleInputModel struct {
+	Name  types.String `tfsdk:"name"`
+	Value types.String `tfsdk:"value"`
 }
 
 type gitlabPipelineScheduleResourceModelSchema0 = gitlabPipelineScheduleResourceModel
+
+// pipelineScheduleInputSchema returns the schema attribute for the inputs set
+func pipelineScheduleInputSchema() schema.SetNestedAttribute {
+	return schema.SetNestedAttribute{
+		MarkdownDescription: "List of pipeline schedule inputs. Each element in `inputs` has `name` and `value`. Maximum of 20 inputs allowed.",
+		Optional:            true,
+		NestedObject: schema.NestedAttributeObject{
+			Attributes: map[string]schema.Attribute{
+				"name": schema.StringAttribute{
+					MarkdownDescription: "The name of the input.",
+					Required:            true,
+					Validators: []validator.String{
+						stringvalidator.LengthAtLeast(1),
+					},
+				},
+				"value": schema.StringAttribute{
+					MarkdownDescription: "The value of the input.",
+					Required:            true,
+				},
+			},
+		},
+	}
+}
 
 // Metadata returns the resource name
 func (d *gitlabPipelineScheduleResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -117,6 +149,7 @@ func (d *gitlabPipelineScheduleResource) getV1Schema() schema.Schema {
 				MarkdownDescription: "The ID of the user that owns the pipeline schedule.",
 				Computed:            true,
 			},
+			"inputs": pipelineScheduleInputSchema(),
 		},
 		Version: 1,
 	}
@@ -137,7 +170,7 @@ func (r *gitlabPipelineScheduleResource) Configure(ctx context.Context, req reso
 	r.client = resourceData.Client
 }
 
-func (r *gitlabPipelineScheduleResource) pipelineScheduleToStateModel(pid string, pipelineSchedule *gitlab.PipelineSchedule, data *gitlabPipelineScheduleResourceModel) {
+func (r *gitlabPipelineScheduleResource) pipelineScheduleToStateModel(ctx context.Context, pid string, pipelineSchedule *gitlab.PipelineSchedule, data *gitlabPipelineScheduleResourceModel) diag.Diagnostics {
 	data.Project = types.StringValue(pid)
 	data.PipelineScheduleID = types.Int64Value(int64(pipelineSchedule.ID))
 	data.Description = types.StringValue(pipelineSchedule.Description)
@@ -152,6 +185,30 @@ func (r *gitlabPipelineScheduleResource) pipelineScheduleToStateModel(pid string
 		ownerId = pipelineSchedule.Owner.ID
 	}
 	data.Owner = types.Int64Value(ownerId)
+
+	// Convert inputs from API to state.
+	if len(pipelineSchedule.Inputs) == 0 {
+		data.Inputs = types.SetNull(pipelineScheduleInputSchema().NestedObject.Type())
+	} else {
+		inputsData := make([]gitlabPipelineScheduleInputModel, 0, len(pipelineSchedule.Inputs))
+		for _, apiInput := range pipelineSchedule.Inputs {
+			valueStr := ""
+			if apiInput.Value != nil {
+				valueStr = apiInput.Value.(string)
+			}
+			inputsData = append(inputsData, gitlabPipelineScheduleInputModel{
+				Name:  types.StringValue(apiInput.Name),
+				Value: types.StringValue(valueStr),
+			})
+		}
+		inputsSet, diags := types.SetValueFrom(ctx, pipelineScheduleInputSchema().NestedObject.Type(), inputsData)
+		if diags.HasError() {
+			return diags
+		}
+		data.Inputs = inputsSet
+	}
+
+	return nil
 }
 
 // Note: In the framework, every state upgrade function must perform all steps necessary to upgrade the state
@@ -214,6 +271,7 @@ func resourceGitlabPipelineScheduleStateUpgradeV0ToV1(ctx context.Context, data 
 		Active:             data.Active,
 		TakeOwnership:      data.TakeOwnership,
 		Owner:              data.Owner,
+		Inputs:             types.SetNull(pipelineScheduleInputSchema().NestedObject.Type()),
 	}
 	return newData, nil
 }
@@ -308,7 +366,10 @@ func (r *gitlabPipelineScheduleResource) Read(ctx context.Context, req resource.
 	// persist API response in state model
 	rawPipelineScheduleID = strconv.FormatInt(pipelineSchedule.ID, 10)
 	data.ID = types.StringValue(utils.BuildTwoPartID(&projectID, &rawPipelineScheduleID))
-	r.pipelineScheduleToStateModel(projectID, pipelineSchedule, data)
+	resp.Diagnostics.Append(r.pipelineScheduleToStateModel(ctx, projectID, pipelineSchedule, data)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -342,6 +403,20 @@ func (r *gitlabPipelineScheduleResource) Update(ctx context.Context, req resourc
 		return
 	}
 
+	// Retrieve the current pipeline schedule from API to detect drift
+	currentSchedule, _, err := r.client.PipelineSchedules.GetPipelineSchedule(projectID, pipelineScheduleID, gitlab.WithContext(ctx))
+	if err != nil {
+		if api.Is404(err) {
+			resp.Diagnostics.AddError(
+				"Pipeline schedule not found",
+				fmt.Sprintf("The pipeline schedule %d in project %s no longer exists", pipelineScheduleID, projectID),
+			)
+			return
+		}
+		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to read current pipeline schedule: %s", err.Error()))
+		return
+	}
+
 	optionsEdit := &gitlab.EditPipelineScheduleOptions{}
 
 	optionsEdit.Description = gitlab.Ptr(data.Description.ValueString())
@@ -350,6 +425,41 @@ func (r *gitlabPipelineScheduleResource) Update(ctx context.Context, req resourc
 	optionsEdit.CronTimezone = gitlab.Ptr(data.CronTimezone.ValueString())
 	if !data.Active.IsNull() && !data.Active.IsUnknown() {
 		optionsEdit.Active = gitlab.Ptr(data.Active.ValueBool())
+	}
+
+	// Read inputs into a slice
+	inputs := make([]gitlabPipelineScheduleInputModel, 0)
+	if !data.Inputs.IsNull() && !data.Inputs.IsUnknown() {
+		resp.Diagnostics.Append(data.Inputs.ElementsAs(ctx, &inputs, false)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+	}
+
+	// build a map of input names for determining which names need to be deleted
+	allInputs := make([]*gitlab.PipelineInput, 0, len(inputs)+len(currentSchedule.Inputs))
+	configInputNames := make(map[string]bool, len(inputs))
+	for _, input := range inputs {
+		name := input.Name.ValueString()
+		configInputNames[name] = true
+		allInputs = append(allInputs, &gitlab.PipelineInput{
+			Name:  name,
+			Value: input.Value.ValueString(),
+		})
+	}
+
+	// Remove inputs that aren't present in the config (keys don't exist in the map]
+	for _, apiInput := range currentSchedule.Inputs {
+		if !configInputNames[apiInput.Name] {
+			allInputs = append(allInputs, &gitlab.PipelineInput{
+				Name:    apiInput.Name,
+				Destroy: gitlab.Ptr(true),
+			})
+		}
+	}
+
+	if len(allInputs) > 0 {
+		optionsEdit.Inputs = allInputs
 	}
 
 	if data.TakeOwnership.ValueBool() {
@@ -365,16 +475,26 @@ func (r *gitlabPipelineScheduleResource) Update(ctx context.Context, req resourc
 		}
 	}
 
-	pipelineSchedule, _, err := r.client.PipelineSchedules.EditPipelineSchedule(projectID, pipelineScheduleID, optionsEdit, gitlab.WithContext(ctx))
+	_, _, err = r.client.PipelineSchedules.EditPipelineSchedule(projectID, pipelineScheduleID, optionsEdit, gitlab.WithContext(ctx))
 	if err != nil {
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to update pipeline schedule: %s", err.Error()))
+		return
+	}
+
+	// Fetch the complete pipeline schedule to ensure we get all fields including inputs
+	pipelineSchedule, _, err := r.client.PipelineSchedules.GetPipelineSchedule(projectID, pipelineScheduleID, gitlab.WithContext(ctx))
+	if err != nil {
+		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to read pipeline schedule after update: %s", err.Error()))
 		return
 	}
 
 	// persist API response in state model
 	rawPipelineScheduleID = strconv.FormatInt(pipelineSchedule.ID, 10)
 	data.ID = types.StringValue(utils.BuildTwoPartID(&projectID, &rawPipelineScheduleID))
-	r.pipelineScheduleToStateModel(projectID, pipelineSchedule, data)
+	resp.Diagnostics.Append(r.pipelineScheduleToStateModel(ctx, projectID, pipelineSchedule, data)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	// Log the creation of the resource
 	tflog.Debug(ctx, "updated a pipeline schedule", map[string]any{
@@ -448,16 +568,46 @@ func (r *gitlabPipelineScheduleResource) Create(ctx context.Context, req resourc
 		Active:       gitlab.Ptr(pipelineScheduleActive),
 	}
 
+	// Add inputs if provided
+	if !data.Inputs.IsNull() && !data.Inputs.IsUnknown() {
+		var inputs []gitlabPipelineScheduleInputModel
+		diags := data.Inputs.ElementsAs(ctx, &inputs, false)
+		if diags.HasError() {
+			resp.Diagnostics.AddError("Failed to convert inputs", fmt.Sprintf("failed to extract inputs from set: %v", diags))
+			return
+		}
+
+		apiInputs := make([]*gitlab.PipelineInput, 0, len(inputs))
+		for _, input := range inputs {
+			apiInputs = append(apiInputs, &gitlab.PipelineInput{
+				Name:  input.Name.ValueString(),
+				Value: input.Value.ValueString(),
+			})
+		}
+		optionsCreate.Inputs = apiInputs
+	}
+
 	pipelineSchedule, _, err := r.client.PipelineSchedules.CreatePipelineSchedule(projectID, optionsCreate, gitlab.WithContext(ctx))
 	if err != nil {
 		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to create pipeline schedule: %s", err.Error()))
 		return
 	}
 
+	// Fetch the complete pipeline schedule to ensure we get all fields including inputs
+	pipelineScheduleID := pipelineSchedule.ID
+	pipelineSchedule, _, err = r.client.PipelineSchedules.GetPipelineSchedule(projectID, pipelineScheduleID, gitlab.WithContext(ctx))
+	if err != nil {
+		resp.Diagnostics.AddError("GitLab API error occurred", fmt.Sprintf("Unable to read pipeline schedule after creation: %s", err.Error()))
+		return
+	}
+
 	// persist API response in state model
 	rawPipelineScheduleID := strconv.FormatInt(pipelineSchedule.ID, 10)
 	data.ID = types.StringValue(utils.BuildTwoPartID(&projectID, &rawPipelineScheduleID))
-	r.pipelineScheduleToStateModel(projectID, pipelineSchedule, data)
+	resp.Diagnostics.Append(r.pipelineScheduleToStateModel(ctx, projectID, pipelineSchedule, data)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	// Log the creation of the resource
 	tflog.Debug(ctx, "created a pipeline schedule", map[string]any{
