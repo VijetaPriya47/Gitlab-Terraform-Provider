@@ -37,6 +37,7 @@ func TestAccGitlabPipelineSchedule_StateUpgradeV0(t *testing.T) {
 			expectedV1State: gitlabPipelineScheduleResourceModel{
 				Project: types.StringValue("99"),
 				ID:      types.StringValue("99:42"),
+				Inputs:  types.SetNull(pipelineScheduleInputSchema().NestedObject.Type()),
 			},
 		},
 		{
@@ -48,6 +49,7 @@ func TestAccGitlabPipelineSchedule_StateUpgradeV0(t *testing.T) {
 			expectedV1State: gitlabPipelineScheduleResourceModel{
 				Project: types.StringValue("foo/bar"),
 				ID:      types.StringValue("foo/bar:42"),
+				Inputs:  types.SetNull(pipelineScheduleInputSchema().NestedObject.Type()),
 			},
 		},
 	}
@@ -386,4 +388,161 @@ func testAccCheckGitlabPipelineScheduleDestroy(s *terraform.State) error {
 		return nil
 	}
 	return nil
+}
+
+func TestAccGitlabPipelineSchedule_withInputs(t *testing.T) {
+	var schedule gitlab.PipelineSchedule
+	project := testutil.CreateProject(t)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabPipelineScheduleDestroy,
+		Steps: []resource.TestStep{
+			// Create a pipeline schedule with inputs
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_pipeline_schedule" "schedule" {
+						project = "%d"
+						description = "Pipeline Schedule with Inputs"
+						ref = "refs/heads/%s"
+						cron = "0 1 * * *"
+
+						inputs = [
+							{
+								name  = "deploy_strategy"
+								value = "rolling"
+							},
+							{
+								name  = "environment"
+								value = "staging"
+							}
+						]
+					}`, project.ID, project.DefaultBranch),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabPipelineScheduleExists("gitlab_pipeline_schedule.schedule", &schedule),
+					resource.TestCheckResourceAttr("gitlab_pipeline_schedule.schedule", "inputs.#", "2"),
+					resource.TestCheckTypeSetElemNestedAttrs("gitlab_pipeline_schedule.schedule", "inputs.*", map[string]string{
+						"name":  "deploy_strategy",
+						"value": "rolling",
+					}),
+					resource.TestCheckTypeSetElemNestedAttrs("gitlab_pipeline_schedule.schedule", "inputs.*", map[string]string{
+						"name":  "environment",
+						"value": "staging",
+					}),
+				),
+			},
+			// Verify Import
+			{
+				ResourceName:      "gitlab_pipeline_schedule.schedule",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Update inputs - modify one and add a new one
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_pipeline_schedule" "schedule" {
+						project = "%d"
+						description = "Pipeline Schedule with Inputs"
+						ref = "refs/heads/%s"
+						cron = "0 1 * * *"
+
+						inputs = [
+							{
+								name  = "deploy_strategy"
+								value = "blue-green"
+							},
+							{
+								name  = "environment"
+								value = "staging"
+							},
+							{
+								name  = "feature_flag"
+								value = "enabled"
+							}
+						]
+					}`, project.ID, project.DefaultBranch),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabPipelineScheduleExists("gitlab_pipeline_schedule.schedule", &schedule),
+					resource.TestCheckResourceAttr("gitlab_pipeline_schedule.schedule", "inputs.#", "3"),
+					resource.TestCheckTypeSetElemNestedAttrs("gitlab_pipeline_schedule.schedule", "inputs.*", map[string]string{
+						"name":  "deploy_strategy",
+						"value": "blue-green",
+					}),
+					resource.TestCheckTypeSetElemNestedAttrs("gitlab_pipeline_schedule.schedule", "inputs.*", map[string]string{
+						"name":  "environment",
+						"value": "staging",
+					}),
+					resource.TestCheckTypeSetElemNestedAttrs("gitlab_pipeline_schedule.schedule", "inputs.*", map[string]string{
+						"name":  "feature_flag",
+						"value": "enabled",
+					}),
+				),
+			},
+			// Verify Import after update
+			{
+				ResourceName:      "gitlab_pipeline_schedule.schedule",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Remove one input (test deletion with destroy flag)
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_pipeline_schedule" "schedule" {
+						project = "%d"
+						description = "Pipeline Schedule with Inputs"
+						ref = "refs/heads/%s"
+						cron = "0 1 * * *"
+
+						inputs = [
+							{
+								name  = "deploy_strategy"
+								value = "blue-green"
+							},
+							{
+								name  = "environment"
+								value = "production"
+							}
+						]
+					}`, project.ID, project.DefaultBranch),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabPipelineScheduleExists("gitlab_pipeline_schedule.schedule", &schedule),
+					resource.TestCheckResourceAttr("gitlab_pipeline_schedule.schedule", "inputs.#", "2"),
+					resource.TestCheckTypeSetElemNestedAttrs("gitlab_pipeline_schedule.schedule", "inputs.*", map[string]string{
+						"name":  "deploy_strategy",
+						"value": "blue-green",
+					}),
+					resource.TestCheckTypeSetElemNestedAttrs("gitlab_pipeline_schedule.schedule", "inputs.*", map[string]string{
+						"name":  "environment",
+						"value": "production",
+					}),
+				),
+			},
+			// Verify Import after deletion
+			{
+				ResourceName:      "gitlab_pipeline_schedule.schedule",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Remove all inputs
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_pipeline_schedule" "schedule" {
+						project = "%d"
+						description = "Pipeline Schedule with Inputs"
+						ref = "refs/heads/%s"
+						cron = "0 1 * * *"
+					}`, project.ID, project.DefaultBranch),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabPipelineScheduleExists("gitlab_pipeline_schedule.schedule", &schedule),
+					resource.TestCheckResourceAttr("gitlab_pipeline_schedule.schedule", "inputs.#", "0"),
+				),
+			},
+			// Verify Import after removing all inputs
+			{
+				ResourceName:      "gitlab_pipeline_schedule.schedule",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
 }
