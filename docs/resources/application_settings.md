@@ -79,6 +79,7 @@ resource "gitlab_application_settings" "this" {
 - `bulk_import_max_download_file_size` (Number) Maximum download file size when importing from source GitLab instances by direct transfer.
 - `can_create_group` (Boolean) Indicates whether users can create top-level groups.
 - `check_namespace_plan` (Boolean) Enabling this makes only licensed EE features available to projects if the project namespace’s plan includes the feature or if the project is public.
+- `ci_job_live_trace_enabled` (Boolean) Turns on incremental logging for job logs. When turned on, archived job logs are incrementally uploaded to object storage. Object storage must be configured.
 - `ci_max_includes` (Number) The maximum number of includes per pipeline.
 - `ci_max_total_yaml_size_bytes` (Number) The maximum amount of memory, in bytes, that can be allocated for the pipeline configuration, with all included YAML configuration files.
 - `commit_email_hostname` (String) Custom hostname (for private commit emails).

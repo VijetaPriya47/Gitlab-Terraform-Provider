@@ -222,6 +222,13 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 
+		"ci_job_live_trace_enabled": {
+			Description: "Turns on incremental logging for job logs. When turned on, archived job logs are incrementally uploaded to object storage. Object storage must be configured.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
+
 		"ci_max_includes": {
 			Description: "The maximum number of includes per pipeline.",
 			Type:        schema.TypeInt,
@@ -2296,6 +2303,7 @@ func gitlabApplicationSettingsToStateMap(settings *gitlab.Settings) map[string]a
 	stateMap["bulk_import_enabled"] = settings.BulkImportEnabled
 	stateMap["can_create_group"] = settings.CanCreateGroup
 	stateMap["check_namespace_plan"] = settings.CheckNamespacePlan
+	stateMap["ci_job_live_trace_enabled"] = settings.CIJobLiveTraceEnabled
 	stateMap["ci_max_includes"] = settings.CIMaxIncludes
 	stateMap["ci_max_total_yaml_size_bytes"] = settings.CIMaxTotalYAMLSizeBytes
 	stateMap["commit_email_hostname"] = settings.CommitEmailHostname
@@ -2723,6 +2731,10 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 
 	if d.HasChange("check_namespace_plan") {
 		options.CheckNamespacePlan = gitlab.Ptr(d.Get("check_namespace_plan").(bool))
+	}
+
+	if d.HasChange("ci_job_live_trace_enabled") {
+		options.CheckNamespacePlan = gitlab.Ptr(d.Get("ci_job_live_trace_enabled").(bool))
 	}
 
 	if d.HasChange("ci_max_includes") {
