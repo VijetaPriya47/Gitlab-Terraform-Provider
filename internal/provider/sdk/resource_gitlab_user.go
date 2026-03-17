@@ -41,7 +41,7 @@ var _ = registerResource("gitlab_user", func() *schema.Resource {
 		},
 
 		Timeouts: &schema.ResourceTimeout{
-			Delete: schema.DefaultTimeout(10 * time.Minute),
+			Delete: schema.DefaultTimeout(45 * time.Minute),
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -312,32 +312,56 @@ func resourceGitlabUserUpdate(ctx context.Context, d *schema.ResourceData, meta 
 
 func resourceGitlabUserDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
+	startTime := time.Now()
 	tflog.Debug(ctx, fmt.Sprintf("[DEBUG] Delete gitlab user %s", d.Id()))
 
 	id, _ := strconv.ParseInt(d.Id(), 10, 64)
 
-	if _, err := client.Users.DeleteUser(id, gitlab.WithContext(ctx)); err != nil {
+	deleteTimeout := d.Timeout(schema.TimeoutDelete)
+	recentUserStatus := ""
+
+	// Create a new context with the delete timeout to ensure the context deadline
+	// doesn't expire before the StateChangeConf timeout. This is because the `ctx`
+	// passed into this function has a default timeout that is set potentially lower
+	// than the user may set the `deleteTimeout`, which can cause unexpected failures
+	// earlier than the delete timeout :(
+	deleteCtx, cancel := context.WithTimeout(context.Background(), deleteTimeout)
+	defer cancel()
+
+	if _, err := client.Users.DeleteUser(id, gitlab.WithContext(deleteCtx)); err != nil {
 		return diag.FromErr(err)
 	}
 
-	deleteTimeout := d.Timeout(schema.TimeoutDelete)
 	stateConf := &retry.StateChangeConf{
-		Timeout: deleteTimeout,
 		Target:  []string{"Deleted"},
+		Timeout: deleteTimeout,
+		// 4 times per minute since user APIs have a rate limit on them and this can
+		// sometimes take a bit.
+		PollInterval: 15 * time.Second,
 		Refresh: func() (any, string, error) {
-			user, resp, err := client.Users.GetUser(id, &gitlab.GetUserOptions{}, gitlab.WithContext(ctx))
+			user, resp, err := client.Users.GetUser(id, &gitlab.GetUserOptions{}, gitlab.WithContext(deleteCtx))
 			if resp != nil && resp.StatusCode == 404 {
 				return user, "Deleted", nil
 			}
 			if err != nil {
 				return user, "Error", err
 			}
+
+			recentUserStatus = user.State
 			return user, "Deleting", nil
 		},
 	}
 
-	if _, err := stateConf.WaitForStateContext(ctx); err != nil {
-		return diag.Errorf("Could not finish deleting user %d: %s", id, err)
+	if _, err := stateConf.WaitForStateContext(deleteCtx); err != nil {
+		endTimes := time.Now()
+		return diag.Errorf("Could not finish deleting user %d: %s. Start time was %s and end time was %s. Delete timeout is set to %.0f minutes. Most recent user state is %s.",
+			id,
+			err,
+			startTime.Format(time.DateTime),
+			endTimes.Format(time.DateTime),
+			deleteTimeout.Minutes(),
+			recentUserStatus,
+		)
 	}
 
 	return nil
