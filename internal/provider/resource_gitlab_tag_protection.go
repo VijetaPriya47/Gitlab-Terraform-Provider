@@ -200,6 +200,11 @@ func (r *gitlabTagProtectionResource) Create(ctx context.Context, req resource.C
 	// call Gitlab protected repository tag creation API
 	protectedTag, _, err := r.client.ProtectedTags.ProtectRepositoryTags(projectID, &options, gitlab.WithContext(ctx))
 	if err != nil {
+		tflog.Warn(ctx, "Unable to protect repository tag, will attempt to unprotect and then retry", map[string]any{
+			"project_id": projectID,
+			"tag":        data.Tag.ValueString(),
+			"error":      err.Error(),
+		})
 		// Remove existing tag protection
 		_, err = r.client.ProtectedTags.UnprotectRepositoryTags(projectID, data.Tag.ValueString(), gitlab.WithContext(ctx))
 		if err != nil {
