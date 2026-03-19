@@ -14,9 +14,9 @@ stages:
   parallel:
     matrix:
       - GITLAB_VERSION:
-          - "18.7.4-${GITLAB_EDITION}.0"
-          - "18.8.4-${GITLAB_EDITION}.0"
-          - "18.9.0-${GITLAB_EDITION}.0"
+          - "18.8.6-${GITLAB_EDITION}.0"
+          - "18.9.2-${GITLAB_EDITION}.0"
+          - "18.10.0-${GITLAB_EDITION}.0"
 
 # This template is used for running acceptance tests
 .testacc:
