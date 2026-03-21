@@ -2032,6 +2032,27 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 
+		"throttle_authenticated_git_lfs_enabled": {
+			Description: "Enable authenticated Git LFS request rate limit.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
+
+		"throttle_authenticated_git_lfs_period_in_seconds": {
+			Description: "Rate limit period (in seconds).",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
+		},
+
+		"throttle_authenticated_git_lfs_requests_per_period": {
+			Description: "Maximum requests per period per user.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
+		},
+
 		"throttle_authenticated_packages_api_enabled": {
 			Description: "(If enabled, requires: throttle_authenticated_packages_api_period_in_seconds and throttle_authenticated_packages_api_requests_per_period) Enable authenticated API request rate limit. Helps reduce request volume (for example, from crawlers or abusive bots). View Package Registry rate limits for more details.",
 			Type:        schema.TypeBool,
@@ -2581,6 +2602,9 @@ func gitlabApplicationSettingsToStateMap(settings *gitlab.Settings) map[string]a
 	stateMap["throttle_authenticated_api_enabled"] = settings.ThrottleAuthenticatedAPIEnabled
 	stateMap["throttle_authenticated_api_period_in_seconds"] = settings.ThrottleAuthenticatedAPIPeriodInSeconds
 	stateMap["throttle_authenticated_api_requests_per_period"] = settings.ThrottleAuthenticatedAPIRequestsPerPeriod
+	stateMap["throttle_authenticated_git_lfs_enabled"] = settings.ThrottleAuthenticatedGitLFSEnabled
+	stateMap["throttle_authenticated_git_lfs_period_in_seconds"] = settings.ThrottleAuthenticatedGitLFSPeriodInSeconds
+	stateMap["throttle_authenticated_git_lfs_requests_per_period"] = settings.ThrottleAuthenticatedGitLFSRequestsPerPeriod
 	stateMap["throttle_authenticated_packages_api_enabled"] = settings.ThrottleAuthenticatedPackagesAPIEnabled
 	stateMap["throttle_authenticated_packages_api_period_in_seconds"] = settings.ThrottleAuthenticatedPackagesAPIPeriodInSeconds
 	stateMap["throttle_authenticated_packages_api_requests_per_period"] = settings.ThrottleAuthenticatedPackagesAPIRequestsPerPeriod
@@ -3692,6 +3716,18 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 
 	if d.HasChange("throttle_authenticated_api_requests_per_period") {
 		options.ThrottleAuthenticatedAPIRequestsPerPeriod = gitlab.Ptr(int64(d.Get("throttle_authenticated_api_requests_per_period").(int)))
+	}
+
+	if d.HasChange("throttle_authenticated_git_lfs_enabled") {
+		options.ThrottleAuthenticatedGitLFSEnabled = gitlab.Ptr(d.Get("throttle_authenticated_git_lfs_enabled").(bool))
+	}
+
+	if d.HasChange("throttle_authenticated_git_lfs_period_in_seconds") {
+		options.ThrottleAuthenticatedGitLFSPeriodInSeconds = gitlab.Ptr(int64(d.Get("throttle_authenticated_git_lfs_period_in_seconds").(int)))
+	}
+
+	if d.HasChange("throttle_authenticated_git_lfs_requests_per_period") {
+		options.ThrottleAuthenticatedGitLFSRequestsPerPeriod = gitlab.Ptr(int64(d.Get("throttle_authenticated_git_lfs_requests_per_period").(int)))
 	}
 
 	if d.HasChange("throttle_authenticated_packages_api_enabled") {

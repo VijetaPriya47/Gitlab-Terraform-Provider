@@ -189,7 +189,7 @@ func TestAccGitlabApplicationSettings_testState(t *testing.T) {
 					resource "gitlab_application_settings" "this" {
 						housekeeping_enabled = true
 						housekeeping_optimize_repository_period = 10
-					}		
+					}
 				`,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("gitlab_application_settings.this", "housekeeping_enabled", "true"),
@@ -228,7 +228,7 @@ func TestAccGitlabApplicationSettings_elasticSearchSettings(t *testing.T) {
 							2,
 							3,
 						]
-					}		
+					}
 				`,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("gitlab_application_settings.this", "housekeeping_enabled", "true"),
@@ -335,6 +335,51 @@ func TestAccGitlabApplicationSettings_NotifyOnUnknownSignIn(t *testing.T) {
 					}
 				`,
 				Check: resource.TestCheckResourceAttr("gitlab_application_settings.this", "notify_on_unknown_sign_in", "false"),
+			},
+		},
+	})
+}
+
+func TestAccGitlabApplicationSettings_ThrottleAuthenticatedGitLFS(t *testing.T) {
+	// lintignore:AT001
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+					resource "gitlab_application_settings" "this" {
+						throttle_authenticated_git_lfs_enabled = true
+						throttle_authenticated_git_lfs_period_in_seconds = 60
+						throttle_authenticated_git_lfs_requests_per_period = 1000
+					}
+				`,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_application_settings.this", "throttle_authenticated_git_lfs_enabled", "true"),
+					resource.TestCheckResourceAttr("gitlab_application_settings.this", "throttle_authenticated_git_lfs_period_in_seconds", "60"),
+					resource.TestCheckResourceAttr("gitlab_application_settings.this", "throttle_authenticated_git_lfs_requests_per_period", "1000"),
+				),			
+			},
+			{
+				Config: `
+					resource "gitlab_application_settings" "this" {
+						throttle_authenticated_git_lfs_enabled = true
+						throttle_authenticated_git_lfs_period_in_seconds = 120
+						throttle_authenticated_git_lfs_requests_per_period = 2000
+					}
+				`,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_application_settings.this", "throttle_authenticated_git_lfs_enabled", "true"),
+					resource.TestCheckResourceAttr("gitlab_application_settings.this", "throttle_authenticated_git_lfs_period_in_seconds", "120"),
+					resource.TestCheckResourceAttr("gitlab_application_settings.this", "throttle_authenticated_git_lfs_requests_per_period", "2000"),
+				),					
+			},
+			{
+				Config: `
+					resource "gitlab_application_settings" "this" {
+						throttle_authenticated_git_lfs_enabled = false
+					}
+				`,
+				Check: resource.TestCheckResourceAttr("gitlab_application_settings.this", "throttle_authenticated_git_lfs_enabled", "false"),
 			},
 		},
 	})
