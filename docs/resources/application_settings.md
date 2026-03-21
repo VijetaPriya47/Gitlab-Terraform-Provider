@@ -330,6 +330,9 @@ resource "gitlab_application_settings" "this" {
 - `throttle_authenticated_api_enabled` (Boolean) (If enabled, requires: throttle_authenticated_api_period_in_seconds and throttle_authenticated_api_requests_per_period) Enable authenticated API request rate limit. Helps reduce request volume (for example, from crawlers or abusive bots).
 - `throttle_authenticated_api_period_in_seconds` (Number) Rate limit period (in seconds).
 - `throttle_authenticated_api_requests_per_period` (Number) Maximum requests per period per user.
+- `throttle_authenticated_git_lfs_enabled` (Boolean) Enable authenticated Git LFS request rate limit.
+- `throttle_authenticated_git_lfs_period_in_seconds` (Number) Rate limit period (in seconds).
+- `throttle_authenticated_git_lfs_requests_per_period` (Number) Maximum requests per period per user.
 - `throttle_authenticated_packages_api_enabled` (Boolean) (If enabled, requires: throttle_authenticated_packages_api_period_in_seconds and throttle_authenticated_packages_api_requests_per_period) Enable authenticated API request rate limit. Helps reduce request volume (for example, from crawlers or abusive bots). View Package Registry rate limits for more details.
 - `throttle_authenticated_packages_api_period_in_seconds` (Number) Rate limit period (in seconds). View Package Registry rate limits for more details.
 - `throttle_authenticated_packages_api_requests_per_period` (Number) Maximum requests per period per user. View Package Registry rate limits for more details.
