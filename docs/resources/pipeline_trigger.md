@@ -32,7 +32,7 @@ resource "gitlab_pipeline_trigger" "example" {
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `id` (String) The ID of this Terraform resource. In the format of `<project>:<pipeline_trigger_id>`.
 - `pipeline_trigger_id` (Number) The pipeline trigger id.
 - `token` (String, Sensitive) The pipeline trigger token. This value is not available during import.
 
