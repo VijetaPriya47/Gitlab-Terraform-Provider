@@ -277,6 +277,11 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) ValidateConfig(ctx contex
 		return
 	}
 
+	if data.Scopes.IsUnknown() {
+		// We can't check for self_rotate as the value is still unknown.
+		return
+	}
+
 	// find out whether self_rotate is one of the scopes
 	var selfRotate bool
 	var scopes []string
@@ -284,11 +289,8 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) ValidateConfig(ctx contex
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	for _, scope := range scopes {
-		if scope == "self_rotate" {
-			selfRotate = true
-			break
-		}
+	if slices.Contains(scopes, "self_rotate") {
+		selfRotate = true
 	}
 
 	if selfRotate {
@@ -572,7 +574,7 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Create(ctx context.Contex
 	// Create options struct
 	options := &gitlab.CreateServiceAccountPersonalAccessTokenOptions{
 		Name:   data.Name.ValueStringPointer(),
-		Scopes: gitlab.Ptr(scopes),
+		Scopes: new(scopes),
 	}
 
 	// Optional attributes
