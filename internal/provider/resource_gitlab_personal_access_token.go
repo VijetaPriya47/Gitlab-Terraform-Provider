@@ -33,7 +33,7 @@ var (
 	_ resource.Resource                = &gitlabPersonalAccessTokenResource{}
 	_ resource.ResourceWithConfigure   = &gitlabPersonalAccessTokenResource{}
 	_ resource.ResourceWithImportState = &gitlabPersonalAccessTokenResource{}
-	_ resource.ResourceWithModifyPlan  = &gitlabProjectAccessTokenResource{}
+	_ resource.ResourceWithModifyPlan  = &gitlabPersonalAccessTokenResource{}
 )
 
 func init() {
@@ -557,17 +557,21 @@ func (r *gitlabPersonalAccessTokenResource) Update(ctx context.Context, req reso
 	// since modifyplan has determined the expiration date, simply retrieve it from the plan instead of re-calculating it.
 	// re-calculating it here could result in a different value from the plan if the plan is run on a different date than
 	// the apply, causing a "provider error" message to be sent to the user
-	expiresAt, err := gitlab.ParseISOTime(data.ExpiresAt.ValueString())
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error parsing expiry date",
-			fmt.Sprintf("Could not parse expiry date %s: %s", data.ExpiresAt.ValueString(), err),
-		)
-		return
+	var expiresAtPtr *gitlab.ISOTime = nil
+	if !data.ExpiresAt.IsNull() && !data.ExpiresAt.IsUnknown() {
+		expiresAt, err := gitlab.ParseISOTime(data.ExpiresAt.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Error parsing expiry date",
+				fmt.Sprintf("Could not parse expiry date %s: %s", data.ExpiresAt.ValueString(), err),
+			)
+			return
+		}
+		expiresAtPtr = &expiresAt
 	}
 
-	if !data.ValidatePastExpirationDate.IsNull() && data.ValidatePastExpirationDate.ValueBool() {
-		err := utils.ValidateISOTimeExpiryDate(expiresAt)
+	if !data.ValidatePastExpirationDate.IsNull() && data.ValidatePastExpirationDate.ValueBool() && expiresAtPtr != nil {
+		err := utils.ValidateISOTimeExpiryDate(*expiresAtPtr)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Error updating GitLab PersonalAccessToken",
@@ -576,8 +580,10 @@ func (r *gitlabPersonalAccessTokenResource) Update(ctx context.Context, req reso
 			return
 		}
 	} else {
-		// If we have a known value, accept that so we don't error with inconsistent values
-		data.ValidatePastExpirationDate = state.ValidatePastExpirationDate
+		if data.ValidatePastExpirationDate.IsNull() || data.ValidatePastExpirationDate.IsUnknown() {
+			// If we have a known value, accept that so we don't error with inconsistent values
+			data.ValidatePastExpirationDate = state.ValidatePastExpirationDate
+		}
 		// If we're still unknown, set to False
 		if data.ValidatePastExpirationDate.IsUnknown() {
 			data.ValidatePastExpirationDate = types.BoolValue(false)
@@ -601,11 +607,11 @@ func (r *gitlabPersonalAccessTokenResource) Update(ctx context.Context, req reso
 	if selfRotate {
 		tflog.Debug(ctx, "Found `self_rotate` in scopes; attempting to use the self-rotate method to update the token", map[string]interface{}{
 			"user":           userId,
-			"new_expires_at": expiresAt,
+			"new_expires_at": expiresAtPtr,
 			"scopes":         data.Scopes,
 		})
 
-		token, err = r.rotateTokenSelf(ctx, state.Token.ValueString(), expiresAt)
+		token, err = r.rotateTokenSelf(ctx, state.Token.ValueString(), expiresAtPtr)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Error self rotating GitLab PersonalAccessToken",
@@ -614,9 +620,13 @@ func (r *gitlabPersonalAccessTokenResource) Update(ctx context.Context, req reso
 			return
 		}
 	} else {
-		token, _, err = r.client.PersonalAccessTokens.RotatePersonalAccessTokenByID(patIdInt, &gitlab.RotatePersonalAccessTokenOptions{
-			ExpiresAt: &expiresAt,
-		}, gitlab.WithContext(ctx))
+		options := &gitlab.RotatePersonalAccessTokenOptions{}
+
+		if expiresAtPtr != nil {
+			options.ExpiresAt = expiresAtPtr
+		}
+
+		token, _, err = r.client.PersonalAccessTokens.RotatePersonalAccessTokenByID(patIdInt, options, gitlab.WithContext(ctx))
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Error rotating GitLab PersonalAccessToken",
@@ -668,14 +678,16 @@ func (r *gitlabPersonalAccessTokenResource) Delete(ctx context.Context, req reso
 }
 
 // Rotates the token using the token itself. Only works if the token has the `self_rotate` scope.
-func (r *gitlabPersonalAccessTokenResource) rotateTokenSelf(ctx context.Context, originalToken string, expiresAt gitlab.ISOTime) (*gitlab.PersonalAccessToken, error) {
+func (r *gitlabPersonalAccessTokenResource) rotateTokenSelf(ctx context.Context, originalToken string, expiresAt *gitlab.ISOTime) (*gitlab.PersonalAccessToken, error) {
 	tokenClient, err := r.newGitLabClient(ctx, WithToken(originalToken), WithEarlyAuth(false))
 	if err != nil {
 		return nil, fmt.Errorf("Could not create a new client with the token that exists in state. The provider's token can't rotate the personal access token: %v", err)
 	}
 
-	opt := &gitlab.RotatePersonalAccessTokenOptions{
-		ExpiresAt: &expiresAt,
+	opt := &gitlab.RotatePersonalAccessTokenOptions{}
+
+	if expiresAt != nil {
+		opt.ExpiresAt = expiresAt
 	}
 
 	token, _, err := tokenClient.PersonalAccessTokens.RotatePersonalAccessTokenSelf(opt, gitlab.WithContext(ctx))
