@@ -660,17 +660,21 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Update(ctx context.Contex
 	// since modifyplan has determined the expiration date, simply retrieve it from the plan instead of re-calculating it.
 	// re-calculating it here could result in a different value from the plan if the plan is run on a different date than
 	// the apply, causing a "provider error" message to be sent to the user
-	expiresAt, err := gitlab.ParseISOTime(planData.ExpiresAt.ValueString())
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error parsing expiry date",
-			fmt.Sprintf("Could not parse expiry date %s: %s", planData.ExpiresAt.ValueString(), err),
-		)
-		return
+	var expiresAtPtr *gitlab.ISOTime = nil
+	if !planData.ExpiresAt.IsNull() && !planData.ExpiresAt.IsUnknown() {
+		expiresAt, err := gitlab.ParseISOTime(planData.ExpiresAt.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Error parsing expiry date",
+				fmt.Sprintf("Could not parse expiry date %s: %s", planData.ExpiresAt.ValueString(), err),
+			)
+			return
+		}
+		expiresAtPtr = &expiresAt
 	}
 
-	if !planData.ValidatePastExpirationDate.IsNull() && planData.ValidatePastExpirationDate.ValueBool() {
-		err := utils.ValidateISOTimeExpiryDate(expiresAt)
+	if !planData.ValidatePastExpirationDate.IsNull() && planData.ValidatePastExpirationDate.ValueBool() && expiresAtPtr != nil {
+		err := utils.ValidateISOTimeExpiryDate(*expiresAtPtr)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Error updating GitLab GroupServiceAccountAccessToken",
@@ -679,8 +683,10 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Update(ctx context.Contex
 			return
 		}
 	} else {
-		// If we have a known value, accept that so we don't error with inconsistent values
-		planData.ValidatePastExpirationDate = stateData.ValidatePastExpirationDate
+		if planData.ValidatePastExpirationDate.IsNull() || planData.ValidatePastExpirationDate.IsUnknown() {
+			// If we have a known value, accept that so we don't error with inconsistent values
+			planData.ValidatePastExpirationDate = stateData.ValidatePastExpirationDate
+		}
 		// If we're still unknown, set to False
 		if planData.ValidatePastExpirationDate.IsUnknown() {
 			planData.ValidatePastExpirationDate = types.BoolValue(false)
@@ -705,11 +711,11 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Update(ctx context.Contex
 		tflog.Debug(ctx, "Found `self_rotate` in scopes; attempting to use the self-rotate method to update the token", map[string]interface{}{
 			"group":          group,
 			"user":           userID,
-			"new_expires_at": expiresAt,
+			"new_expires_at": expiresAtPtr,
 			"scopes":         planData.Scopes,
 		})
 
-		token, err = r.rotateTokenSelf(ctx, stateData.Token.ValueString(), expiresAt)
+		token, err = r.rotateTokenSelf(ctx, stateData.Token.ValueString(), expiresAtPtr)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Error self rotating GitLab Service Account PersonalAccessToken",
@@ -718,9 +724,13 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Update(ctx context.Contex
 			return
 		}
 	} else {
-		token, _, err = r.client.Groups.RotateServiceAccountPersonalAccessToken(group, userIDInt, accessTokenIDInt, &gitlab.RotateServiceAccountPersonalAccessTokenOptions{
-			ExpiresAt: &expiresAt,
-		}, gitlab.WithContext(ctx))
+		options := &gitlab.RotateServiceAccountPersonalAccessTokenOptions{}
+
+		if expiresAtPtr != nil {
+			options.ExpiresAt = expiresAtPtr
+		}
+
+		token, _, err = r.client.Groups.RotateServiceAccountPersonalAccessToken(group, userIDInt, accessTokenIDInt, options, gitlab.WithContext(ctx))
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Error rotating GitLab GroupServiceAccountAccessToken",
@@ -828,14 +838,16 @@ func (r *gitlabGroupServiceAccountAccessTokenResource) Delete(ctx context.Contex
 }
 
 // Rotates the token using the token itself. Only works if the token has the `self_rotate` scope.
-func (r *gitlabGroupServiceAccountAccessTokenResource) rotateTokenSelf(ctx context.Context, originalToken string, expiresAt gitlab.ISOTime) (*gitlab.PersonalAccessToken, error) {
+func (r *gitlabGroupServiceAccountAccessTokenResource) rotateTokenSelf(ctx context.Context, originalToken string, expiresAt *gitlab.ISOTime) (*gitlab.PersonalAccessToken, error) {
 	tokenClient, err := r.newGitLabClient(ctx, WithToken(originalToken), WithEarlyAuth(false))
 	if err != nil {
 		return nil, fmt.Errorf("Could not create a new client with the token that exists in state. The provider's token can't rotate the group service account access token: %v", err)
 	}
 
-	opt := &gitlab.RotatePersonalAccessTokenOptions{
-		ExpiresAt: &expiresAt,
+	opt := &gitlab.RotatePersonalAccessTokenOptions{}
+
+	if expiresAt != nil {
+		opt.ExpiresAt = expiresAt
 	}
 
 	token, _, err := tokenClient.PersonalAccessTokens.RotatePersonalAccessTokenSelf(opt, gitlab.WithContext(ctx))
