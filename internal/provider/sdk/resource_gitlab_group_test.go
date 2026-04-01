@@ -1584,7 +1584,6 @@ func TestAccGitlabGroup_EE(t *testing.T) {
 }
 
 func TestAccGitlabGroup_AllowMergeSettings(t *testing.T) {
-	testutil.RunIfAtLeast(t, "18.7")
 	testutil.SkipIfCE(t)
 
 	var group gitlab.Group
@@ -1761,7 +1760,6 @@ func TestAccGitlabGroup_PreventSharingGroupsOutsideHierarchy(t *testing.T) {
 }
 
 func TestAccGitlabGroup_MaxArtifactsSize(t *testing.T) {
-
 	var group gitlab.Group
 	rInt := acctest.RandInt()
 
