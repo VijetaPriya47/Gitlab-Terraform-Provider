@@ -81,6 +81,7 @@ func TestAccGitlabGroupHook_basic(t *testing.T) {
 						note_events                = true
 						confidential_note_events   = true
 						job_events                 = true
+						project_events             = true
 						member_events              = true
 						pipeline_events            = true
 						wiki_page_events           = true
@@ -137,6 +138,7 @@ func TestAccGitlabGroupHook_basic(t *testing.T) {
 					note_events                = true
 					confidential_note_events   = true
 					job_events                 = true
+					project_events             = true
 					member_events              = true
 					pipeline_events            = true
 					wiki_page_events           = true
