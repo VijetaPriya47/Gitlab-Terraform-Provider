@@ -42,8 +42,8 @@ var _ = registerResource("gitlab_application_settings", func() *schema.Resource 
 
 func resourceGitlabApplicationSettingsSet(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*gitlab.Client)
-
 	tflog.Debug(ctx, "[DEBUG] update GitLab Application Settings")
+
 	options := gitlabApplicationSettingsToUpdateOptions(d)
 
 	// Since there is logic included in passing "nil" as value to the `enabled_git_access_protocol` and we
