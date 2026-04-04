@@ -104,6 +104,7 @@ resource "gitlab_group_hook" "all_attributes" {
 - `name` (String) Name of the group webhook.
 - `note_events` (Boolean) Invoke the hook for note events. Defaults to `false`.
 - `pipeline_events` (Boolean) Invoke the hook for pipeline events. Defaults to `false`.
+- `project_events` (Boolean) Invoke the hook for project events. Defaults to `false`.
 - `push_events` (Boolean) Invoke the hook for push events. Defaults to `true`.
 - `push_events_branch_filter` (String) Invoke the hook for push events on matching branches only.
 - `releases_events` (Boolean) Invoke the hook for release events. Defaults to `false`.

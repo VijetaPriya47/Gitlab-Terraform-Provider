@@ -57,6 +57,7 @@ type gitlabGroupHookResourceModel struct {
 	NoteEvents               types.Bool   `tfsdk:"note_events"`
 	ConfidentialNoteEvents   types.Bool   `tfsdk:"confidential_note_events"`
 	JobEvents                types.Bool   `tfsdk:"job_events"`
+	ProjectEvents            types.Bool   `tfsdk:"project_events"`
 	MemberEvents             types.Bool   `tfsdk:"member_events"`
 	PipelineEvents           types.Bool   `tfsdk:"pipeline_events"`
 	WikiPageEvents           types.Bool   `tfsdk:"wiki_page_events"`
@@ -124,6 +125,7 @@ func (r *gitlabGroupHookResource) Create(ctx context.Context, req resource.Creat
 		NoteEvents:               data.NoteEvents.ValueBoolPointer(),
 		ConfidentialNoteEvents:   data.ConfidentialNoteEvents.ValueBoolPointer(),
 		JobEvents:                data.JobEvents.ValueBoolPointer(),
+		ProjectEvents:            data.ProjectEvents.ValueBoolPointer(),
 		MemberEvents:             data.MemberEvents.ValueBoolPointer(),
 		PipelineEvents:           data.PipelineEvents.ValueBoolPointer(),
 		WikiPageEvents:           data.WikiPageEvents.ValueBoolPointer(),
@@ -248,6 +250,7 @@ func (r *gitlabGroupHookResource) Update(ctx context.Context, req resource.Updat
 		NoteEvents:               data.NoteEvents.ValueBoolPointer(),
 		ConfidentialNoteEvents:   data.ConfidentialNoteEvents.ValueBoolPointer(),
 		JobEvents:                data.JobEvents.ValueBoolPointer(),
+		ProjectEvents:            data.ProjectEvents.ValueBoolPointer(),
 		MemberEvents:             data.MemberEvents.ValueBoolPointer(),
 		PipelineEvents:           data.PipelineEvents.ValueBoolPointer(),
 		WikiPageEvents:           data.WikiPageEvents.ValueBoolPointer(),
@@ -440,6 +443,12 @@ func (d *gitlabGroupHookResource) getSchema() schema.Schema {
 				Computed:            true,
 				Default:             booldefault.StaticBool(false),
 			},
+			"project_events": schema.BoolAttribute{
+				MarkdownDescription: "Invoke the hook for project events. Defaults to `false`.",
+				Optional:            true,
+				Computed:            true,
+				Default:             booldefault.StaticBool(false),
+			},
 			"member_events": schema.BoolAttribute{
 				MarkdownDescription: "Invoke the hook for member events. Defaults to `false`.",
 				Optional:            true,
@@ -551,6 +560,7 @@ func (d *gitlabGroupHookResourceModel) modelToStateModel(a *gitlab.GroupHook) {
 	d.NoteEvents = types.BoolValue(a.NoteEvents)
 	d.ConfidentialNoteEvents = types.BoolValue(a.ConfidentialNoteEvents)
 	d.JobEvents = types.BoolValue(a.JobEvents)
+	d.ProjectEvents = types.BoolValue(a.ProjectEvents)
 	d.MemberEvents = types.BoolValue(a.MemberEvents)
 	d.PipelineEvents = types.BoolValue(a.PipelineEvents)
 	d.WikiPageEvents = types.BoolValue(a.WikiPageEvents)
