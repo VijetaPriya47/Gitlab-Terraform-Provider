@@ -1549,6 +1549,33 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 
+		"kroki_enabled": {
+			Description:  "(If enabled, requires: kroki_url) Enable Kroki integration.",
+			Type:         schema.TypeBool,
+			Optional:     true,
+			Computed:     true,
+			RequiredWith: []string{"kroki_url"},
+		},
+
+		"kroki_url": {
+			Description:  "The Kroki instance URL for integration.",
+			Type:         schema.TypeString,
+			Optional:     true,
+			Computed:     true,
+			RequiredWith: []string{"kroki_enabled"},
+		},
+
+		"kroki_formats": {
+			Description: "Configuration for formats supported by the Kroki instance.",
+			Type:        schema.TypeMap,
+			Optional:    true,
+			Computed:    true,
+			Elem: &schema.Schema{
+				Type: schema.TypeBool,
+			},
+			RequiredWith: []string{"kroki_enabled", "kroki_url"},
+		},
+
 		"polling_interval_multiplier": {
 			Description: "Interval multiplier used by endpoints that perform polling. Set to 0 to disable polling.",
 			Type:        schema.TypeFloat,
@@ -2541,6 +2568,21 @@ func gitlabApplicationSettingsToStateMap(settings *gitlab.Settings) map[string]a
 	stateMap["pipeline_limit_per_project_user_sha"] = settings.PipelineLimitPerProjectUserSha
 	stateMap["plantuml_enabled"] = settings.PlantumlEnabled
 	stateMap["plantuml_url"] = settings.PlantumlURL
+	stateMap["kroki_enabled"] = settings.KrokiEnabled
+	stateMap["kroki_url"] = settings.KrokiURL
+	formats := map[string]interface{}{
+		"blockdiag":  false,
+		"bpmn":       false,
+		"excalidraw": false,
+		"mermaid":    false,
+	}
+
+	if settings.KrokiFormats != nil {
+		for k, v := range settings.KrokiFormats {
+			formats[k] = v
+		}
+	}
+	stateMap["kroki_formats"] = formats
 	stateMap["polling_interval_multiplier"] = settings.PollingIntervalMultiplier
 	stateMap["project_export_enabled"] = settings.ProjectExportEnabled
 	stateMap["project_jobs_api_rate_limit"] = settings.ProjectJobsAPIRateLimit
@@ -2651,7 +2693,7 @@ func gitlabApplicationSettingsToStateMap(settings *gitlab.Settings) map[string]a
 	stateMap["prevent_merge_requests_author_approval"] = settings.PreventMergeRequestsAuthorApproval
 	stateMap["prevent_merge_requests_committers_approval"] = settings.PreventMergeRequestsCommittersApproval
 	stateMap["disable_overriding_approvers_per_merge_request"] = settings.DisableOverridingApproversPerMergeRequest
-        stateMap["inactive_resource_access_tokens_delete_after_days"] = settings.InactiveResourceAccessTokensDeleteAfterDays
+	stateMap["inactive_resource_access_tokens_delete_after_days"] = settings.InactiveResourceAccessTokensDeleteAfterDays
 	stateMap["default_branch_protection_defaults"] = flattenDefaultBranchProtectionDefaults(settings.DefaultBranchProtectionDefaults)
 	return stateMap
 }
@@ -3454,6 +3496,33 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 
 	if d.HasChange("plantuml_url") {
 		options.PlantumlURL = gitlab.Ptr(d.Get("plantuml_url").(string))
+	}
+
+	if d.HasChange("kroki_enabled") {
+		options.KrokiEnabled = gitlab.Ptr(d.Get("kroki_enabled").(bool))
+	}
+
+	if d.HasChange("kroki_url") {
+		options.KrokiURL = gitlab.Ptr(d.Get("kroki_url").(string))
+	}
+
+	if d.Get("kroki_enabled").(bool) && d.HasChange("kroki_formats") {
+		raw := d.Get("kroki_formats").(map[string]interface{})
+
+		formats := map[string]bool{
+			"blockdiag":  false,
+			"bpmn":       false,
+			"excalidraw": false,
+			"mermaid":    false,
+		}
+
+		for k, v := range raw {
+			if b, ok := v.(bool); ok {
+				formats[k] = b
+			}
+		}
+
+		options.KrokiFormats = &formats
 	}
 
 	if d.HasChange("polling_interval_multiplier") {

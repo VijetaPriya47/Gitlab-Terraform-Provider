@@ -212,6 +212,9 @@ resource "gitlab_application_settings" "this" {
 - `jira_connect_proxy_url` (String) URL of the GitLab instance used as a proxy for the GitLab for Jira Cloud app.
 - `jira_connect_public_key_storage_enabled` (Boolean) Enable public key storage for the GitLab for Jira Cloud app.
 - `keep_latest_artifact` (Boolean) Prevent the deletion of the artifacts from the most recent successful jobs, regardless of the expiry time.
+- `kroki_enabled` (Boolean) (If enabled, requires: kroki_url) Enable Kroki integration.
+- `kroki_formats` (Map of Boolean) Configuration for formats supported by the Kroki instance.
+- `kroki_url` (String) The Kroki instance URL for integration.
 - `local_markdown_version` (Number) Increase this value when any cached Markdown should be invalidated.
 - `lock_duo_features_enabled` (Boolean) Indicates whether the GitLab Duo features enabled setting is enforced for all subgroups. Self-managed, Premium and Ultimate only.
 - `lock_memberships_to_ldap` (Boolean) Set to true to lock all memberships to LDAP. Premium and Ultimate only.
