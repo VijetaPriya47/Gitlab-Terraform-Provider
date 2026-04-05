@@ -357,7 +357,7 @@ func TestAccGitlabApplicationSettings_ThrottleAuthenticatedGitLFS(t *testing.T) 
 					resource.TestCheckResourceAttr("gitlab_application_settings.this", "throttle_authenticated_git_lfs_enabled", "true"),
 					resource.TestCheckResourceAttr("gitlab_application_settings.this", "throttle_authenticated_git_lfs_period_in_seconds", "60"),
 					resource.TestCheckResourceAttr("gitlab_application_settings.this", "throttle_authenticated_git_lfs_requests_per_period", "1000"),
-				),			
+				),
 			},
 			{
 				Config: `
@@ -371,7 +371,7 @@ func TestAccGitlabApplicationSettings_ThrottleAuthenticatedGitLFS(t *testing.T) 
 					resource.TestCheckResourceAttr("gitlab_application_settings.this", "throttle_authenticated_git_lfs_enabled", "true"),
 					resource.TestCheckResourceAttr("gitlab_application_settings.this", "throttle_authenticated_git_lfs_period_in_seconds", "120"),
 					resource.TestCheckResourceAttr("gitlab_application_settings.this", "throttle_authenticated_git_lfs_requests_per_period", "2000"),
-				),					
+				),
 			},
 			{
 				Config: `

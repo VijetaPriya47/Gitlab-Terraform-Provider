@@ -99,6 +99,18 @@ var resourceGitLabProjectSchema = map[string]*schema.Schema{
 		Type:        schema.TypeString,
 		Optional:    true,
 	},
+	"merge_request_title_regex": {
+		Description: "Set the regex pattern that merge request titles must match. Use `merge_request_title_regex_description` to provide a hint to the user.",
+		Type:        schema.TypeString,
+		Optional:    true,
+		Computed:    true,
+	},
+	"merge_request_title_regex_description": {
+		Description: "Set the description shown to users when a merge request title does not match `merge_request_title_regex`.",
+		Type:        schema.TypeString,
+		Optional:    true,
+		Computed:    true,
+	},
 	"default_branch": {
 		Description: "The default branch for the project.",
 		Type:        schema.TypeString,
@@ -1031,6 +1043,8 @@ func resourceGitlabProjectSetToState(d *schema.ResourceData, project *gitlab.Pro
 	d.Set("forking_access_level", string(project.ForkingAccessLevel))
 	d.Set("issues_access_level", string(project.IssuesAccessLevel))
 	d.Set("merge_requests_access_level", string(project.MergeRequestsAccessLevel))
+	d.Set("merge_request_title_regex", project.MergeRequestTitleRegex)
+	d.Set("merge_request_title_regex_description", project.MergeRequestTitleRegexDescription)
 
 	// First, try to set the public_jobs. If it's not available, fall back to public_builds.
 	if err := d.Set("public_jobs", project.PublicJobs); err != nil {
@@ -1586,6 +1600,14 @@ func resourceGitlabProjectUpdate(ctx context.Context, d *schema.ResourceData, me
 
 	if d.HasChange("merge_requests_access_level") {
 		options.MergeRequestsAccessLevel = stringToAccessControlValue(d.Get("merge_requests_access_level").(string))
+	}
+
+	if d.HasChange("merge_request_title_regex") {
+		options.MergeRequestTitleRegex = gitlab.Ptr(d.Get("merge_request_title_regex").(string))
+	}
+
+	if d.HasChange("merge_request_title_regex_description") {
+		options.MergeRequestTitleRegexDescription = gitlab.Ptr(d.Get("merge_request_title_regex_description").(string))
 	}
 
 	// Ignore deprecated public_builds in favor of public_jobs.
@@ -2394,6 +2416,14 @@ func createProject(ctx context.Context, d *schema.ResourceData, client *gitlab.C
 
 	if v, ok := d.GetOk("merge_requests_access_level"); ok {
 		options.MergeRequestsAccessLevel = stringToAccessControlValue(v.(string))
+	}
+
+	if v, ok := d.GetOk("merge_request_title_regex"); ok {
+		options.MergeRequestTitleRegex = gitlab.Ptr(v.(string))
+	}
+
+	if v, ok := d.GetOk("merge_request_title_regex_description"); ok {
+		options.MergeRequestTitleRegexDescription = gitlab.Ptr(v.(string))
 	}
 
 	// Ignore deprecated public_builds in favor of public_jobs.
