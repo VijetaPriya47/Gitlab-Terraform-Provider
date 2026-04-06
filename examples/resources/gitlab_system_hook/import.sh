@@ -1,3 +1,3 @@
-# You can import a system hook using the hook id `{hook-id}`, e.g.
+# You can import a system hook using the hook id `{hook-id}`, for example:
 terraform import gitlab_system_hook.example 42
 # NOTE: the `token` attribute won't be available for imported resources.
