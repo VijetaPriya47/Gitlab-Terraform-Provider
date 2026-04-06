@@ -50,6 +50,6 @@ import {
 Importing using the CLI is supported with the following syntax:
 
 ```shell
-# GitLab pipeline triggers can be imported using an id made up of `{project_id}:{pipeline_trigger_id}`, e.g.
+# GitLab pipeline triggers can be imported using an id made up of `{project_id}:{pipeline_trigger_id}`, for example:
 terraform import gitlab_pipeline_trigger.test 1:3
 ```
