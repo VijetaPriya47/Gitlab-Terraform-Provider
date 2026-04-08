@@ -146,7 +146,7 @@ func (r *gitlabProjectIntegrationHarborResource) Create(ctx context.Context, req
 		return
 	}
 
-	tflog.Debug(ctx, "Creating hardor integration for project", map[string]any{
+	tflog.Debug(ctx, "Creating harbor integration for project", map[string]any{
 		"project":             data.ID.ValueString(),
 		"harbor_url":          data.URL.ValueString(),
 		"harbor_project_name": data.ProjectName.ValueString(),
@@ -186,7 +186,7 @@ func (r *gitlabProjectIntegrationHarborResource) Update(ctx context.Context, req
 		return
 	}
 
-	tflog.Debug(ctx, "Updating hardor integration for project", map[string]any{
+	tflog.Debug(ctx, "Updating harbor integration for project", map[string]any{
 		"project":             data.ID.ValueString(),
 		"harbor_url":          data.URL.ValueString(),
 		"harbor_project_name": data.ProjectName.ValueString(),
@@ -210,7 +210,7 @@ func (r *gitlabProjectIntegrationHarborResource) Delete(ctx context.Context, req
 	_, err := r.client.Services.DeleteHarborService(data.Project.ValueString(), gitlab.WithContext(ctx))
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"GitLab API Error occurred",
+			"GitLab API error occurred",
 			fmt.Sprintf("Unable to delete Harbor integration: %s", err.Error()),
 		)
 		return
