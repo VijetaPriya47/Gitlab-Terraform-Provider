@@ -63,6 +63,12 @@ var ValidProtectedContainerRepositoryAccessLevelNames = []string{
 	"maintainer", "owner", "admin",
 }
 
+// Valid access levels for package protection rules (push)
+// See: https://docs.gitlab.com/api/project_packages_protection_rules/
+var ValidPackageProtectionPushRuleAccessLevelNames = []string{
+	"maintainer", "owner", "admin",
+}
+
 var ValidProtectedEnvironmentDeploymentLevelNames = []string{
 	"developer", "maintainer",
 }

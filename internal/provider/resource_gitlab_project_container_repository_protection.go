@@ -82,7 +82,7 @@ You can apply several protection rules to the same container repository. A conta
 				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
 			"minimum_access_level_for_push": schema.StringAttribute{
-				MarkdownDescription: "Minimum GitLab access level required to push container images to the container registry. For example maintainer, owner or admin. Must be provided when `minimum_access_level_for_delete` is not set.",
+				MarkdownDescription: fmt.Sprintf("Minimum GitLab access level required to push container images to the container registry. Valid values are: %s. Must be provided when `minimum_access_level_for_delete` is not set.", utils.RenderValueListForDocs(api.ValidProtectedContainerRepositoryAccessLevelNames)),
 				Optional:            true,
 				Validators: []validator.String{
 					stringvalidator.OneOf(api.ValidProtectedContainerRepositoryAccessLevelNames...),
@@ -90,7 +90,7 @@ You can apply several protection rules to the same container repository. A conta
 				},
 			},
 			"minimum_access_level_for_delete": schema.StringAttribute{
-				MarkdownDescription: "Minimum GitLab access level required to delete container images in the container registry. For example maintainer, owner, admin. Must be provided when `minimum_access_level_for_push` is not set.",
+				MarkdownDescription: fmt.Sprintf("Minimum GitLab access level required to delete container images in the container registry. Valid values are: %s. Must be provided when `minimum_access_level_for_push` is not set.", utils.RenderValueListForDocs(api.ValidProtectedContainerRepositoryAccessLevelNames)),
 				Optional:            true,
 				Validators: []validator.String{
 					stringvalidator.OneOf(api.ValidProtectedContainerRepositoryAccessLevelNames...),
