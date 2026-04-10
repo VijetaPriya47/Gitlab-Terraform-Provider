@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -72,6 +73,77 @@ func TestAcc_GitlabProjectSecurityPolicyAttachment_basic(t *testing.T) {
 					project          = %d
 					policy_project = %d
 				}`, project.ID, secondSecurityPolicyProject.ID),
+				Destroy: true,
+			},
+		},
+	})
+}
+
+// This is a regression test for issue https://gitlab.com/gitlab-org/terraform-provider-gitlab/-/work_items/6788
+// It is likely to be flakey due to the various elements it requires to function.
+// Therefore it is skipped as standard, but can be run to verify future changes when necessary.
+func TestAcc_GitlabProjectSecurityPolicyAttachment_onProjectCreation(t *testing.T) {
+	t.Skip()
+	testutil.SkipIfCE(t)
+
+	securityPolicyProject := testutil.CreateProject(t)
+	user := testutil.CreateUsers(t, 1)[0]
+	testutil.AddProjectMembersWithAccessLevel(t, securityPolicyProject.ID, []*gitlab.User{user}, gitlab.OwnerPermissions)
+
+	// Wait some time to ensure that membership changes have propagated in the background processes.
+	//nolint // R018 this is part of testing code, not the provider itself.
+	time.Sleep(60 * time.Second)
+
+	userPAT := testutil.CreatePersonalAccessToken(t, user)
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		CheckDestroy:             testAcc_GitlabProjectSecurityPolicyAttachment_CheckDestroy,
+		Steps: []resource.TestStep{
+			{
+				// lintignore:AT004  // we need the provider configuration here to test with a different user token
+
+				Config: fmt.Sprintf(`
+					provider "gitlab" {
+						token = "%s"
+					}
+
+					resource "gitlab_project" "this" {
+						name             = "test"
+						visibility_level = "public"
+					}
+
+					resource "gitlab_project_security_policy_attachment" "this" {
+						project        = gitlab_project.this.id
+						policy_project = %d
+					}`, userPAT.Token, securityPolicyProject.ID),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project_security_policy_attachment.this", "policy_project", strconv.FormatInt(securityPolicyProject.ID, 10)),
+				),
+			},
+			// Verify upstream attributes with an import.
+			{
+				ResourceName:      "gitlab_project_security_policy_attachment.this",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Destroy the security policy
+			{
+				// lintignore:AT004  // we need the provider configuration here to test with a different user token
+				Config: fmt.Sprintf(`
+					provider "gitlab" {
+						token = "%s"
+					}
+
+					resource "gitlab_project" "this" {
+						name             = "test"
+						visibility_level = "public"
+					}
+
+					resource "gitlab_project_security_policy_attachment" "this" {
+						project        = gitlab_project.this.id
+						policy_project = %d
+					}`, userPAT.Token, securityPolicyProject.ID),
 				Destroy: true,
 			},
 		},

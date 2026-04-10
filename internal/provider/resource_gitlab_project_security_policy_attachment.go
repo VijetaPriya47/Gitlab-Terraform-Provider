@@ -131,6 +131,11 @@ func (d *gitlabProjectSecurityPolicyAttachmentResource) ModifyPlan(ctx context.C
 		return
 	}
 
+	if data.Project.IsUnknown() {
+		tflog.Debug(ctx, "Project is unknown, unable to check for token permissions.")
+		return
+	}
+
 	// Check project membership for Owner permissions
 	membership, _, err := d.client.ProjectMembers.GetInheritedProjectMember(data.Project.ValueString(), user.ID, gitlab.WithContext(ctx))
 	if err != nil && !api.Is404(err) {
@@ -308,7 +313,6 @@ func (d *gitlabProjectSecurityPolicyAttachmentResource) Update(ctx context.Conte
 
 		return nil
 	})
-
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to update policy", err.Error())
 		return
