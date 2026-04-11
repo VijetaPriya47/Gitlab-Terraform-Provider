@@ -56,6 +56,51 @@ func TestAccGitlabProject_minimal(t *testing.T) {
 	})
 }
 
+func TestAccGitlabProject_mergeRequestTitleRegex(t *testing.T) {
+	testutil.SkipIfCE(t)
+
+	rInt := acctest.RandInt()
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		CheckDestroy:             testAccCheckGitlabProjectDestroy,
+		Steps: []resource.TestStep{
+			// Create with regex set
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project" "test" {
+						name                                  = "test-%d"
+						merge_request_title_regex             = "^(feat|fix|chore):"
+						merge_request_title_regex_description = "Title must follow conventional commits format"
+					}`, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project.test", "merge_request_title_regex", "^(feat|fix|chore):"),
+					resource.TestCheckResourceAttr("gitlab_project.test", "merge_request_title_regex_description", "Title must follow conventional commits format"),
+				),
+			},
+			// Update to different regex
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_project" "test" {
+						name                                  = "test-%d"
+						merge_request_title_regex             = "^(feat|fix):"
+						merge_request_title_regex_description = "Updated description"
+					}`, rInt),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("gitlab_project.test", "merge_request_title_regex", "^(feat|fix):"),
+					resource.TestCheckResourceAttr("gitlab_project.test", "merge_request_title_regex_description", "Updated description"),
+				),
+			},
+			// Verify Import
+			{
+				ResourceName:      "gitlab_project.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 func TestAccGitlabProject_basic(t *testing.T) {
 	var received, defaults, defaultsMainBranch gitlab.Project
 	rInt := acctest.RandInt()
