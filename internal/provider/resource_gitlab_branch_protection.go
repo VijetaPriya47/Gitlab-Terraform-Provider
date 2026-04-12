@@ -97,7 +97,6 @@ func (d *gitlabBranchProtectionResource) getV1Schema() schema.Schema {
    when creating a new project and trying to manage the branch protection setting for its default branch the ` + "`gitlab_branch_protection`" + ` resource will
    automatically take ownership of the default branch without an explicit import by unprotecting and properly protecting it again.
    Having multiple ` + "`gitlab_branch_protection`" + ` resources for the same project and default branch will result in them overriding each other - make sure to only have a single one.
-   This behavior might change in the future.
 
 ~> The ` + "`allowed_to_push`" + `, ` + "`allowed_to_merge`" + `, ` + "`allowed_to_unprotect`" + `, ` + "`unprotect_access_level`" + ` and ` + "`code_owner_approval_required`" + ` attributes require a GitLab Enterprise instance.
 
@@ -885,7 +884,6 @@ func (d *gitlabBranchProtectionResource) getV0Schema() schema.Schema {
    when creating a new project and trying to manage the branch protection setting for its default branch the ` + "`gitlab_branch_protection`" + ` resource will
    automatically take ownership of the default branch without an explicit import by unprotecting and properly protecting it again.
    Having multiple ` + "`gitlab_branch_protection`" + ` resources for the same project and default branch will result in them overriding each other - make sure to only have a single one.
-   This behavior might change in the future.
 
 ~> The ` + "`allowed_to_push`" + `, ` + "`allowed_to_merge`" + `, ` + "`allowed_to_unprotect`" + `, ` + "`unprotect_access_level`" + ` and ` + "`code_owner_approval_required`" + ` attributes require a GitLab Enterprise instance.
 

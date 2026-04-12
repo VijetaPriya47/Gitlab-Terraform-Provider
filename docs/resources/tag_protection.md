@@ -4,12 +4,21 @@ page_title: "gitlab_tag_protection Resource - terraform-provider-gitlab"
 subcategory: ""
 description: |-
   The gitlab_tag_protection resource manages the lifecycle of a tag protection.
+  ~> If a tag protection already exists for the given tag when creating this resource, the gitlab_tag_protection resource will
+  automatically take ownership of the existing tag protection without an explicit import by unprotecting and properly protecting it again.
+  Having multiple gitlab_tag_protection resources for the same project and tag will result in them overriding each other -
+  make sure to only have a single one.
   Upstream API: GitLab REST API docs https://docs.gitlab.com/api/protected_tags/
 ---
 
 # gitlab_tag_protection (Resource)
 
 The `gitlab_tag_protection` resource manages the lifecycle of a tag protection.
+
+~> If a tag protection already exists for the given tag when creating this resource, the `gitlab_tag_protection` resource will
+   automatically take ownership of the existing tag protection without an explicit import by unprotecting and properly protecting it again.
+   Having multiple `gitlab_tag_protection` resources for the same project and tag will result in them overriding each other -
+   make sure to only have a single one.
 
 **Upstream API**: [GitLab REST API docs](https://docs.gitlab.com/api/protected_tags/)
 
