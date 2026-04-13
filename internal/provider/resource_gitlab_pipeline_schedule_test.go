@@ -546,3 +546,298 @@ func TestAccGitlabPipelineSchedule_withInputs(t *testing.T) {
 		},
 	})
 }
+
+func TestAccGitlabPipelineSchedule_withNonStringInputs(t *testing.T) {
+	var schedule gitlab.PipelineSchedule
+	project := testutil.CreateProject(t)
+
+	// Wait for the default branch protection to be created asynchronously
+	// This ensures we have a consistent state before unprotecting
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+	defer cancel()
+	ticker := time.NewTicker(200 * time.Millisecond)
+	defer ticker.Stop()
+
+	branchProtected := false
+	for !branchProtected {
+		select {
+		case <-ctx.Done():
+			t.Fatal("timed out waiting for default branch to be protected")
+		case <-ticker.C:
+			_, _, err := testutil.TestGitlabClient.ProtectedBranches.GetProtectedBranch(project.ID, project.DefaultBranch)
+			if err == nil {
+				branchProtected = true
+			} else if !api.Is404(err) {
+				t.Fatalf("unexpected error checking branch protection: %v", err)
+			}
+			// If 404, branch not protected yet, continue waiting
+		}
+	}
+
+	// Remove the default branch protection to let us add a CI file directly to the default branch
+	_, err := testutil.TestGitlabClient.ProtectedBranches.UnprotectRepositoryBranches(project.ID, project.DefaultBranch)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Create a CI/CD file with inputs that are non-string types. Otherwise the inputs
+	// default to string type, which cause all other tests to pass.
+	_, _, err = testutil.TestGitlabClient.RepositoryFiles.CreateFile(project.ID, ".gitlab-ci.yml", &gitlab.CreateFileOptions{
+		Branch:        &project.DefaultBranch,
+		Encoding:      gitlab.Ptr("text"),
+		CommitMessage: gitlab.Ptr("Add CI File"),
+		Content: gitlab.Ptr(`
+spec:
+  inputs:
+    enabled:
+      default: true
+      type: boolean
+    timeout:
+      default: 1
+      type: number
+    threshold:
+      default: 2.71828
+      type: number
+    tags:
+      default:
+        - one
+        - two
+      type: array
+    environment:
+      default: stuff
+      type: string
+---
+stages:
+  - test
+test-job:
+  stage: test
+  script:
+    - echo "hello world"
+`),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckGitlabPipelineScheduleDestroy,
+		Steps: []resource.TestStep{
+			// Create a pipeline schedule with inputs that GitLab API may type-convert
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_pipeline_schedule" "schedule" {
+						project = "%d"
+						description = "Pipeline Schedule with Non-String Inputs"
+						ref = "refs/heads/%s"
+						cron = "0 1 * * *"
+
+						inputs = [
+							{
+								name  = "enabled"
+								value = "true"
+							},
+							{
+								name  = "timeout"
+								value = "300"
+							},
+							{
+								name  = "threshold"
+								value = "3.14159"
+							},
+							{
+								name  = "tags"
+								value = "dev,test"
+							},
+							{
+								name  = "environment"
+								value = "staging"
+							}
+						]
+					}`, project.ID, project.DefaultBranch),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabPipelineScheduleExists("gitlab_pipeline_schedule.schedule", &schedule),
+					resource.TestCheckResourceAttr("gitlab_pipeline_schedule.schedule", "inputs.#", "5"),
+					resource.TestCheckTypeSetElemNestedAttrs("gitlab_pipeline_schedule.schedule", "inputs.*", map[string]string{
+						"name":  "enabled",
+						"value": "true",
+					}),
+					resource.TestCheckTypeSetElemNestedAttrs("gitlab_pipeline_schedule.schedule", "inputs.*", map[string]string{
+						"name":  "timeout",
+						"value": "300",
+					}),
+					resource.TestCheckTypeSetElemNestedAttrs("gitlab_pipeline_schedule.schedule", "inputs.*", map[string]string{
+						"name":  "threshold",
+						"value": "3.14159",
+					}),
+					resource.TestCheckTypeSetElemNestedAttrs("gitlab_pipeline_schedule.schedule", "inputs.*", map[string]string{
+						"name":  "tags",
+						"value": "dev,test",
+					}),
+					resource.TestCheckTypeSetElemNestedAttrs("gitlab_pipeline_schedule.schedule", "inputs.*", map[string]string{
+						"name":  "environment",
+						"value": "staging",
+					}),
+				),
+			},
+			// Verify Import
+			{
+				ResourceName:      "gitlab_pipeline_schedule.schedule",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Update inputs with different values
+			{
+				Config: fmt.Sprintf(`
+					resource "gitlab_pipeline_schedule" "schedule" {
+						project = "%d"
+						description = "Pipeline Schedule with Non-String Inputs"
+						ref = "refs/heads/%s"
+						cron = "0 1 * * *"
+
+						inputs = [
+							{
+								name  = "enabled"
+								value = "false"
+							},
+							{
+								name  = "timeout"
+								value = "600"
+							},
+							{
+								name  = "threshold"
+								value = "2.71828"
+							},
+							{
+								name  = "tags"
+								value = "prod,staging"
+							}
+						]
+					}`, project.ID, project.DefaultBranch),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabPipelineScheduleExists("gitlab_pipeline_schedule.schedule", &schedule),
+					resource.TestCheckResourceAttr("gitlab_pipeline_schedule.schedule", "inputs.#", "4"),
+					resource.TestCheckTypeSetElemNestedAttrs("gitlab_pipeline_schedule.schedule", "inputs.*", map[string]string{
+						"name":  "enabled",
+						"value": "false",
+					}),
+					resource.TestCheckTypeSetElemNestedAttrs("gitlab_pipeline_schedule.schedule", "inputs.*", map[string]string{
+						"name":  "timeout",
+						"value": "600",
+					}),
+					resource.TestCheckTypeSetElemNestedAttrs("gitlab_pipeline_schedule.schedule", "inputs.*", map[string]string{
+						"name":  "threshold",
+						"value": "2.71828",
+					}),
+					resource.TestCheckTypeSetElemNestedAttrs("gitlab_pipeline_schedule.schedule", "inputs.*", map[string]string{
+						"name":  "tags",
+						"value": "prod,staging",
+					}),
+				),
+			},
+			// Verify Import after update
+			{
+				ResourceName:      "gitlab_pipeline_schedule.schedule",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccGitlabPipelineSchedule_upgradeWithInputs(t *testing.T) {
+	var schedule gitlab.PipelineSchedule
+	project := testutil.CreateProject(t)
+
+	resource.ParallelTest(t, resource.TestCase{
+		Steps: []resource.TestStep{
+			// Step 1: Create pipeline schedule with older provider version (v18.9.0)
+			{
+				ExternalProviders: map[string]resource.ExternalProvider{
+					"gitlab": {
+						VersionConstraint: "18.7.0",
+						Source:            "gitlabhq/gitlab",
+					},
+				},
+				Config: fmt.Sprintf(`
+					resource "gitlab_pipeline_schedule" "schedule" {
+						project = "%d"
+						description = "Pipeline Schedule for Upgrade Test"
+						ref = "refs/heads/%s"
+						cron = "0 2 * * *"
+					}`, project.ID, project.DefaultBranch),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabPipelineScheduleExists("gitlab_pipeline_schedule.schedule", &schedule),
+					resource.TestCheckResourceAttr("gitlab_pipeline_schedule.schedule", "description", "Pipeline Schedule for Upgrade Test"),
+					resource.TestCheckResourceAttr("gitlab_pipeline_schedule.schedule", "cron", "0 2 * * *"),
+				),
+			},
+			// Step 2: Upgrade to current provider version with no config changes
+			{
+				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+				Config: fmt.Sprintf(`
+					resource "gitlab_pipeline_schedule" "schedule" {
+						project = "%d"
+						description = "Pipeline Schedule for Upgrade Test"
+						ref = "refs/heads/%s"
+						cron = "0 2 * * *"
+					}`, project.ID, project.DefaultBranch),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabPipelineScheduleExists("gitlab_pipeline_schedule.schedule", &schedule),
+					resource.TestCheckResourceAttr("gitlab_pipeline_schedule.schedule", "description", "Pipeline Schedule for Upgrade Test"),
+					resource.TestCheckResourceAttr("gitlab_pipeline_schedule.schedule", "cron", "0 2 * * *"),
+				),
+			},
+			// Step 3: Add inputs with current provider version
+			{
+				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+				Config: fmt.Sprintf(`
+					resource "gitlab_pipeline_schedule" "schedule" {
+						project = "%d"
+						description = "Pipeline Schedule for Upgrade Test"
+						ref = "refs/heads/%s"
+						cron = "0 2 * * *"
+
+						inputs = [
+							{
+								name  = "deploy_env"
+								value = "production"
+							},
+							{
+								name  = "auto_deploy"
+								value = "true"
+							},
+							{
+								name  = "replicas"
+								value = "3"
+							}
+						]
+					}`, project.ID, project.DefaultBranch),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGitlabPipelineScheduleExists("gitlab_pipeline_schedule.schedule", &schedule),
+					resource.TestCheckResourceAttr("gitlab_pipeline_schedule.schedule", "inputs.#", "3"),
+					resource.TestCheckTypeSetElemNestedAttrs("gitlab_pipeline_schedule.schedule", "inputs.*", map[string]string{
+						"name":  "deploy_env",
+						"value": "production",
+					}),
+					resource.TestCheckTypeSetElemNestedAttrs("gitlab_pipeline_schedule.schedule", "inputs.*", map[string]string{
+						"name":  "auto_deploy",
+						"value": "true",
+					}),
+					resource.TestCheckTypeSetElemNestedAttrs("gitlab_pipeline_schedule.schedule", "inputs.*", map[string]string{
+						"name":  "replicas",
+						"value": "3",
+					}),
+				),
+			},
+			// Verify Import after adding inputs
+			{
+				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+				ResourceName:             "gitlab_pipeline_schedule.schedule",
+				ImportState:              true,
+				ImportStateVerify:        true,
+			},
+		},
+		CheckDestroy: testAccCheckGitlabPipelineScheduleDestroy,
+	})
+}
