@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -194,7 +195,35 @@ func (r *gitlabPipelineScheduleResource) pipelineScheduleToStateModel(ctx contex
 		for _, apiInput := range pipelineSchedule.Inputs {
 			valueStr := ""
 			if apiInput.Value != nil {
-				valueStr = apiInput.Value.(string)
+				// Convert API value to string, handling different types that GitLab API may return.
+				// The GitLab API can return boolean, number, array, or string types for input values.
+				// We convert all types to strings to match the plan values that users provide.
+				switch v := apiInput.Value.(type) {
+				case string:
+					// Already a string, use as-is
+					valueStr = v
+				case bool:
+					// Convert boolean to "true" or "false"
+					valueStr = strconv.FormatBool(v)
+				case float64:
+					// JSON numbers are unmarshaled as float64
+					// Use 'f' format with -1 precision to keep all decimals
+					valueStr = strconv.FormatFloat(v, 'f', -1, 64)
+				case int:
+					valueStr = strconv.Itoa(v)
+				case int64:
+					valueStr = strconv.FormatInt(v, 10)
+				case []interface{}:
+					// Convert array to comma-separated string: ["a", "b"] → "a,b"
+					strValues := make([]string, len(v))
+					for i, item := range v {
+						strValues[i] = fmt.Sprintf("%v", item)
+					}
+					valueStr = strings.Join(strValues, ",")
+				default:
+					// Fallback for any other type - use fmt.Sprintf
+					valueStr = fmt.Sprintf("%v", v)
+				}
 			}
 			inputsData = append(inputsData, gitlabPipelineScheduleInputModel{
 				Name:  types.StringValue(apiInput.Name),
