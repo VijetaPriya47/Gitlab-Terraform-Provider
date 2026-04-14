@@ -358,6 +358,7 @@ resource "gitlab_application_settings" "this" {
 - `unique_ips_limit_per_user` (Number) Maximum number of IPs per user.
 - `unique_ips_limit_time_window` (Number) How many seconds an IP is counted towards the limit.
 - `update_runner_versions_enabled` (Boolean) Fetch GitLab Runner release version data from GitLab.com.
+- `updating_name_disabled_for_users` (Boolean) Disable user profile name changes.
 - `usage_ping_enabled` (Boolean) Every week GitLab reports license usage back to GitLab, Inc.
 - `use_clickhouse_for_analytics` (Boolean) Enables ClickHouse as a data source for analytics reports. ClickHouse must be configured for this setting to take effect. Available on Premium and Ultimate only.
 - `user_deactivation_emails_enabled` (Boolean) Send an email to users upon account deactivation.
