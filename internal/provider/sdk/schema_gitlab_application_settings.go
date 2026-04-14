@@ -2241,6 +2241,13 @@ func gitlabApplicationSettingsSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 
+		"updating_name_disabled_for_users": {
+			Description: "Disable user profile name changes.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
+
 		"usage_ping_enabled": {
 			Description: "Every week GitLab reports license usage back to GitLab, Inc.",
 			Type:        schema.TypeBool,
@@ -2677,6 +2684,7 @@ func gitlabApplicationSettingsToStateMap(settings *gitlab.Settings) map[string]a
 	stateMap["unique_ips_limit_per_user"] = settings.UniqueIPsLimitPerUser
 	stateMap["unique_ips_limit_time_window"] = settings.UniqueIPsLimitTimeWindow
 	stateMap["update_runner_versions_enabled"] = settings.UpdateRunnerVersionsEnabled
+	stateMap["updating_name_disabled_for_users"] = settings.UpdatingNameDisabledForUsers
 	stateMap["usage_ping_enabled"] = settings.UsagePingEnabled
 	stateMap["use_clickhouse_for_analytics"] = settings.UseClickhouseForAnalytics
 	stateMap["user_deactivation_emails_enabled"] = settings.UserDeactivationEmailsEnabled
@@ -3897,6 +3905,10 @@ func gitlabApplicationSettingsToUpdateOptions(d *schema.ResourceData) *gitlab.Up
 
 	if d.HasChange("update_runner_versions_enabled") {
 		options.UpdateRunnerVersionsEnabled = gitlab.Ptr(d.Get("update_runner_versions_enabled").(bool))
+	}
+
+	if d.HasChange("updating_name_disabled_for_users") {
+		options.UpdatingNameDisabledForUsers = gitlab.Ptr(d.Get("updating_name_disabled_for_users").(bool))
 	}
 
 	if d.HasChange("usage_ping_enabled") {

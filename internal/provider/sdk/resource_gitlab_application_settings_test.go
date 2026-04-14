@@ -385,6 +385,32 @@ func TestAccGitlabApplicationSettings_ThrottleAuthenticatedGitLFS(t *testing.T) 
 	})
 }
 
+func TestAccGitlabApplicationSettings_UpdatingNameDisabledForUsers(t *testing.T) {
+	testutil.SkipIfCE(t)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: providerFactoriesV6,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+					resource "gitlab_application_settings" "this" {
+						updating_name_disabled_for_users = true
+					}
+				`,
+				Check: resource.TestCheckResourceAttr("gitlab_application_settings.this", "updating_name_disabled_for_users", "true"),
+			},
+			{
+				Config: `
+					resource "gitlab_application_settings" "this" {
+						updating_name_disabled_for_users = false
+					}
+				`,
+				Check: resource.TestCheckResourceAttr("gitlab_application_settings.this", "updating_name_disabled_for_users", "false"),
+			},
+		},
+	})
+}
+
 /*
 README: Adding a test destroy function seems a easier-to-understand path to illustrate
 application settings nature and its inability to be destroyed than simply using a nil
