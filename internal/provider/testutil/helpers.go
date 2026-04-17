@@ -32,6 +32,7 @@ var testGitlabConfig = api.Config{
 	ClientKey:     "",
 	EarlyAuthFail: false,
 	Headers:       nil,
+	Retries:       10,
 }
 
 var TestGitlabClient *gitlab.Client
