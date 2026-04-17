@@ -28,7 +28,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_createWithPastExpiryDate_valida
 
 	pastDate := api.CurrentTime().Add(-24 * time.Hour).Format(api.Iso8601)
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabGroupServiceAccountAccessTokenDestroy,
 		Steps: []resource.TestStep{
@@ -64,7 +64,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_updateWithPastExpiryDate_valida
 	futureDate := api.CurrentTime().Add(48 * time.Hour).Format(api.Iso8601)
 	pastDate := api.CurrentTime().Add(-24 * time.Hour).Format(api.Iso8601)
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabGroupServiceAccountAccessTokenDestroy,
 		Steps: []resource.TestStep{
@@ -119,7 +119,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_failsWithPastExpiryDate_validat
 
 	pastDateForError := parsedDate.Format(time.RFC3339)
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabGroupServiceAccountAccessTokenDestroy,
 		Steps: []resource.TestStep{
@@ -157,7 +157,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_failsToUpdateWithPastExpiryDate
 
 	pastDateForError := parsedDate.Format(time.RFC3339)
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabGroupServiceAccountAccessTokenDestroy,
 		Steps: []resource.TestStep{
@@ -203,7 +203,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_basic(t *testing.T) {
 
 	serviceAccount := testutil.CreateGroupServiceAccounts(t, 1, groupID)[0]
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabGroupServiceAccountAccessTokenDestroy,
 		Steps: []resource.TestStep{
@@ -293,7 +293,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_regression6537(t *testing.T) {
 
 	serviceAccount := testutil.CreateGroupServiceAccounts(t, 1, groupID)[0]
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		CheckDestroy: testAccCheckGitlabGroupServiceAccountAccessTokenDestroy,
 		Steps: []resource.TestStep{
 			// Create the token with config that caused an error in provider version 18.1.0
@@ -339,7 +339,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_noExpiration(t *testing.T) {
 
 	serviceAccount := testutil.CreateGroupServiceAccounts(t, 1, groupID)[0]
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		CheckDestroy:             testAccCheckGitlabGroupServiceAccountAccessTokenDestroy,
 		Steps: []resource.TestStep{
@@ -430,7 +430,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_rotationConfiguration(t *testin
 
 	serviceAccount := testutil.CreateGroupServiceAccounts(t, 1, groupID)[0]
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
 		CheckDestroy:             testAccCheckGitlabGroupServiceAccountAccessTokenDestroy,
 		Steps: []resource.TestStep{
@@ -527,7 +527,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_attributeValidation(t *testing.
 
 	serviceAccount := testutil.CreateGroupServiceAccounts(t, 1, groupID)[0]
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabGroupServiceAccountAccessTokenDestroy,
 		Steps: []resource.TestStep{
@@ -835,7 +835,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_rotationUsingExpiresAt(t *testi
 	updatedExpires := testutil.GetCurrentTimePlusDays(t, 20).String()
 	secondUpdateExpires := testutil.GetCurrentTimePlusDays(t, 30).String()
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabGroupServiceAccountAccessTokenDestroy,
 		Steps: []resource.TestStep{
@@ -1331,7 +1331,7 @@ func TestAccGitlabGroupServiceAccountAccessToken_paginationHandling(t *testing.T
 	expiryDate := testutil.GetCurrentTimePlusDays(t, 2).String()
 	var originalTokenValue string
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckGitlabGroupServiceAccountAccessTokenDestroy,
 		Steps: []resource.TestStep{
