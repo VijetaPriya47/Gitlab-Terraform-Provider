@@ -8,10 +8,24 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	gitlab "gitlab.com/gitlab-org/api/client-go/v2"
+	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/testutil"
 )
 
-func TestAccDataGitlabProjectProtectedBranches_search(t *testing.T) {
-	projectName := fmt.Sprintf("tf-%s", acctest.RandString(5))
+func TestAccDataGitlabProjectProtectedBranches_searchCE(t *testing.T) {
+	testutil.SkipIfEE(t)
+
+	project := testutil.CreateProjectWithOptions(t, &gitlab.CreateProjectOptions{
+		Name:        gitlab.Ptr(acctest.RandomWithPrefix("acctest")),
+		Description: gitlab.Ptr("Terraform acceptance tests"),
+		// So that acceptance tests can be run in a gitlab organization with no billing.
+		Visibility:           gitlab.Ptr(gitlab.PublicVisibility),
+		InitializeWithReadme: gitlab.Ptr(false),
+	})
+	testutil.CreateProtectedBranchWithOptions(t, project, &gitlab.ProtectRepositoryBranchesOptions{
+		PushAccessLevel:  gitlab.Ptr(gitlab.MaintainerPermissions),
+		MergeAccessLevel: gitlab.Ptr(gitlab.DeveloperPermissions),
+	})
 
 	// lintignore:AT001 // Data sources don't need check destroy in their tests
 	resource.ParallelTest(t, resource.TestCase{
@@ -19,34 +33,67 @@ func TestAccDataGitlabProjectProtectedBranches_search(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
-					resource "gitlab_project" "test" {
-						name           = "%s"
-						path           = "%s"
-						default_branch = "main"
-					}
-					
-					resource "gitlab_branch_protection" "test" {
-						project            = gitlab_project.test.id
-						branch             = "main"
-						push_access_level  = "maintainer"
-						merge_access_level = "developer"
-					}
-					
 					data "gitlab_project_protected_branches" "test" {
-						project_id = gitlab_branch_protection.test.project # This expresses the dependency of the data source on the protected branch having first been configured
+						project_id = %d
 					}
-				`, projectName, projectName),
+				`, project.ID),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(
-						"data.gitlab_project_protected_branches.test",
-						"protected_branches.0.name",
-						"main",
-					),
-					resource.TestCheckResourceAttr(
-						"data.gitlab_project_protected_branches.test",
-						"protected_branches.0.push_access_levels.0.access_level",
-						"maintainer",
-					),
+					// number of protected branches is 'main' and the one created above
+					resource.TestCheckResourceAttr("data.gitlab_project_protected_branches.test", "protected_branches.#", "2"),
+					resource.TestCheckResourceAttrSet("data.gitlab_project_protected_branches.test", "protected_branches.0.name"),
+					resource.TestCheckResourceAttrSet("data.gitlab_project_protected_branches.test", "protected_branches.0.push_access_levels.0.access_level"),
+					resource.TestCheckResourceAttrSet("data.gitlab_project_protected_branches.test", "protected_branches.0.merge_access_levels.0.access_level"),
+					resource.TestCheckResourceAttrSet("data.gitlab_project_protected_branches.test", "protected_branches.1.name"),
+					resource.TestCheckResourceAttrSet("data.gitlab_project_protected_branches.test", "protected_branches.1.push_access_levels.0.access_level"),
+					resource.TestCheckResourceAttrSet("data.gitlab_project_protected_branches.test", "protected_branches.1.merge_access_levels.0.access_level"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccDataGitlabProjectProtectedBranches_searchEE(t *testing.T) {
+	testutil.SkipIfCE(t)
+
+	project := testutil.CreateProjectWithOptions(t, &gitlab.CreateProjectOptions{
+		Name:        gitlab.Ptr(acctest.RandomWithPrefix("acctest")),
+		Description: gitlab.Ptr("Terraform acceptance tests"),
+		// So that acceptance tests can be run in a gitlab organization with no billing.
+		Visibility:           gitlab.Ptr(gitlab.PublicVisibility),
+		InitializeWithReadme: gitlab.Ptr(false),
+	})
+	testutil.CreateProtectedBranchWithOptions(t, project, &gitlab.ProtectRepositoryBranchesOptions{
+		AllowedToPush: &[]*gitlab.BranchPermissionOptions{
+			{
+				AccessLevel: gitlab.Ptr(gitlab.MaintainerPermissions),
+			},
+		},
+		AllowedToMerge: &[]*gitlab.BranchPermissionOptions{
+			{
+				AccessLevel: gitlab.Ptr(gitlab.DeveloperPermissions),
+			},
+		},
+	})
+
+	// lintignore:AT001 // Data sources don't need check destroy in their tests
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6MuxProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+					data "gitlab_project_protected_branches" "test" {
+						project_id = %d
+					}
+				`, project.ID),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					// number of protected branches is 'main' and the one created above
+					resource.TestCheckResourceAttr("data.gitlab_project_protected_branches.test", "protected_branches.#", "2"),
+					resource.TestCheckResourceAttrSet("data.gitlab_project_protected_branches.test", "protected_branches.0.name"),
+					resource.TestCheckResourceAttrSet("data.gitlab_project_protected_branches.test", "protected_branches.0.push_access_levels.0.access_level"),
+					resource.TestCheckResourceAttrSet("data.gitlab_project_protected_branches.test", "protected_branches.0.merge_access_levels.0.access_level"),
+					resource.TestCheckResourceAttrSet("data.gitlab_project_protected_branches.test", "protected_branches.1.name"),
+					resource.TestCheckResourceAttrSet("data.gitlab_project_protected_branches.test", "protected_branches.1.push_access_levels.0.access_level"),
+					resource.TestCheckResourceAttrSet("data.gitlab_project_protected_branches.test", "protected_branches.1.merge_access_levels.0.access_level"),
 				),
 			},
 		},

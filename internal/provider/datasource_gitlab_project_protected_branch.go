@@ -11,7 +11,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	gitlab "gitlab.com/gitlab-org/api/client-go/v2"
-	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -36,13 +35,14 @@ type gitLabProjectProtectedBranchDataSource struct {
 
 // gitLabMetadataDataSourceModel describes the data source data model.
 type gitLabProjectProtectedBranchDataSourceModel struct {
-	ProjectId                 types.String                                      `tfsdk:"project_id"`
-	Name                      types.String                                      `tfsdk:"name"`
-	Id                        types.Int64                                       `tfsdk:"id"`
-	PushAccessLevels          []*gitlabBranchProtectionAllowedToPushObjectModel `tfsdk:"push_access_levels"`
-	MergeAccessLevels         []*gitlabBranchProtectionAllowedToObjectModel     `tfsdk:"merge_access_levels"`
-	AllowForcePush            types.Bool                                        `tfsdk:"allow_force_push"`
-	CodeOwnerApprovalRequired types.Bool                                        `tfsdk:"code_owner_approval_required"`
+	ProjectId                 types.String `tfsdk:"project_id"`
+	Name                      types.String `tfsdk:"name"`
+	Id                        types.Int64  `tfsdk:"id"`
+	PushAccessLevels          types.List   `tfsdk:"push_access_levels"`
+	MergeAccessLevels         types.List   `tfsdk:"merge_access_levels"`
+	UnprotectAccessLevels     types.List   `tfsdk:"unprotect_access_levels"`
+	AllowForcePush            types.Bool   `tfsdk:"allow_force_push"`
+	CodeOwnerApprovalRequired types.Bool   `tfsdk:"code_owner_approval_required"`
 }
 
 // Metadata returns the data source type name.
@@ -80,12 +80,77 @@ func (d *gitLabProjectProtectedBranchDataSource) Schema(_ context.Context, _ dat
 				MarkdownDescription: "Reject code pushes that change files listed in the CODEOWNERS file.",
 				Computed:            true,
 			},
-		},
-		Blocks: map[string]schema.Block{
-			"push_access_levels":  schemaAllowedToPushBlock(api.ValidProtectedBranchTagAccessLevelNames),
-			"merge_access_levels": schemaAllowedToBlock("merge", api.ValidProtectedBranchTagAccessLevelNames),
+			"push_access_levels":      pushAccessLevelsSchema(),
+			"merge_access_levels":     mergeAccessLevelsSchema(),
+			"unprotect_access_levels": unprotectAccessLevelsSchema(),
 		},
 	}
+}
+
+func pushAccessLevelsSchema() schema.ListNestedAttribute {
+	return schema.ListNestedAttribute{
+		MarkdownDescription: "Array of push access levels/users/groups/deploy keys allowed for the protected branch.",
+		Computed:            true,
+		NestedObject: schema.NestedAttributeObject{
+			Attributes: map[string]schema.Attribute{
+				"access_level": schema.StringAttribute{
+					MarkdownDescription: "Access level allowed to perform the relevant action.",
+					Computed:            true,
+				},
+				"access_level_description": schema.StringAttribute{
+					MarkdownDescription: "Readable description of access level.",
+					Computed:            true,
+				},
+				"user_id": schema.Int64Attribute{
+					MarkdownDescription: "The ID of a GitLab user allowed to perform the relevant action.",
+					Computed:            true,
+				},
+				"group_id": schema.Int64Attribute{
+					MarkdownDescription: "The ID of a GitLab group allowed to perform the relevant action.",
+					Computed:            true,
+				},
+				"deploy_key_id": schema.Int64Attribute{
+					MarkdownDescription: "The ID of a GitLab deploy key allowed to perform the relevant action.",
+					Computed:            true,
+				},
+			},
+		},
+	}
+}
+
+func accessLevelsSchema(action string) schema.ListNestedAttribute {
+	return schema.ListNestedAttribute{
+		MarkdownDescription: fmt.Sprintf("Array of %s access levels/users/groups allowed for the protected branch.", action),
+		Computed:            true,
+		NestedObject: schema.NestedAttributeObject{
+			Attributes: map[string]schema.Attribute{
+				"access_level": schema.StringAttribute{
+					MarkdownDescription: "Access level allowed to perform the relevant action.",
+					Computed:            true,
+				},
+				"access_level_description": schema.StringAttribute{
+					MarkdownDescription: "Readable description of access level.",
+					Computed:            true,
+				},
+				"user_id": schema.Int64Attribute{
+					MarkdownDescription: "The ID of a GitLab user allowed to perform the relevant action.",
+					Computed:            true,
+				},
+				"group_id": schema.Int64Attribute{
+					MarkdownDescription: "The ID of a GitLab group allowed to perform the relevant action.",
+					Computed:            true,
+				},
+			},
+		},
+	}
+}
+
+func mergeAccessLevelsSchema() schema.ListNestedAttribute {
+	return accessLevelsSchema("merge")
+}
+
+func unprotectAccessLevelsSchema() schema.ListNestedAttribute {
+	return accessLevelsSchema("unprotect")
 }
 
 // Configure adds the provider configured client to the data source.
@@ -119,8 +184,30 @@ func (d *gitLabProjectProtectedBranchDataSource) Read(ctx context.Context, req d
 	state.Id = types.Int64Value(int64(protectedBranch.ID))
 	state.AllowForcePush = types.BoolValue(protectedBranch.AllowForcePush)
 	state.CodeOwnerApprovalRequired = types.BoolValue(protectedBranch.CodeOwnerApprovalRequired)
-	state.PushAccessLevels = populateAllowedToPushObjectList(protectedBranch.PushAccessLevels)
-	state.MergeAccessLevels = populateAllowedToObjectList(protectedBranch.MergeAccessLevels)
+
+	pushAccessLevelsData := populateAllowedToPushToStateModel(protectedBranch.PushAccessLevels)
+	pushAccessLevelsSetType, diag := types.ListValueFrom(ctx, pushAccessLevelsSchema().NestedObject.Type(), pushAccessLevelsData)
+	resp.Diagnostics.Append(diag...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	state.PushAccessLevels = pushAccessLevelsSetType
+
+	mergeAccessLevelsData := populateAllowedToToStateModel(protectedBranch.MergeAccessLevels)
+	mergeAccessLevelsSetType, diag := types.ListValueFrom(ctx, mergeAccessLevelsSchema().NestedObject.Type(), mergeAccessLevelsData)
+	resp.Diagnostics.Append(diag...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	state.MergeAccessLevels = mergeAccessLevelsSetType
+
+	unprotectAccessLevelsData := populateAllowedToToStateModel(protectedBranch.UnprotectAccessLevels)
+	unprotectAccessLevelsSetType, diag := types.ListValueFrom(ctx, unprotectAccessLevelsSchema().NestedObject.Type(), unprotectAccessLevelsData)
+	resp.Diagnostics.Append(diag...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	state.UnprotectAccessLevels = unprotectAccessLevelsSetType
 
 	diags := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)

@@ -155,6 +155,95 @@ As a rough guide:
   }
   ```
 
+### Datasource gitlab_project_protected_branch
+
+The `gitlab_project_protected_branch.merge_access_levels` and `gitlab_project_protected_branch.push_access_levels`
+attributes have been migrated from a Block Set to an Attributes List and are now read-only.
+
+### Datasource gitlab_project_protected_branches
+
+The `gitlab_project_protected_branches.protected_branches` attribute has been migrated from a Block List
+to an Attributes List and is read-only.
+
+The `gitlab_project_protected_branch.protected_branches.merge_access_levels` and
+`gitlab_project_protected_branch.protected_branches.push_access_levels` attributes
+have been migrated from a Block Set to an Attributes List and are now read-only.
+
+## Resource gitlab_branch_protection overhaul
+
+The `gitlab_branch_protection` resource has been reworked to have separate attributes for CE and EE licenses.  This will cause existing
+configurations to break.
+
+CE users will continue to use the `gitlab_branch_protection.push_access_level` and 
+`gitlab_branch_protection.merge_access_level` attributes.
+
+For EE users, the `gitlab_branch_protection.push_access_level`, `gitlab_branch_protection.merge_access_level`, and
+`gitlab_branch_protection.unprotect_access_level` attributes have been removed.  Their usage should be replaced with
+`gitlab_branch_protection.allowed_to_push`, `gitlab_branch_protection.allowed_to_merge`, and
+`gitlab_branch_protection.allowed_to_unprotect` attributes.
+
+Example old EE config:
+
+```hcl
+resource "gitlab_branch_protection" "branchA" {
+  project                      = "12345"
+  branch                       = "branchA"
+  push_access_level            = "developer"
+  merge_access_level           = "developer"
+  unprotect_access_level       = "developer"
+  allow_force_push             = true
+  code_owner_approval_required = true
+
+  allowed_to_push {
+    user_id = 5
+  }
+  allowed_to_merge {
+    user_id = 37
+  }
+  allowed_to_unprotect {
+    group_id = 42
+  }
+}
+```
+
+Example new EE config:
+
+```hcl
+resource "gitlab_branch_protection" "branchA" {
+  project                      = "12345"
+  branch                       = "branchA"
+  allow_force_push             = true
+  code_owner_approval_required = true
+
+  allowed_to_push = [
+    {
+      user_id = 5
+    },
+    {
+      access_level = "developer"
+    }
+  ]
+
+  allowed_to_merge = [
+    {
+      user_id = 37
+    },
+    {
+      access_level = "developer"
+    }
+  ]
+
+  allowed_to_unprotect = [
+    {
+      group_id = 42
+    },
+    {
+      access_level = "developer"
+    }
+  ]
+}
+```
+
 ## Resource gitlab_project.approvals_before_merge Replacement
 
 The `gitlab_project.approvals_before_merge` attribute should be replaced with the `gitlab_project_approval_rule` resource.

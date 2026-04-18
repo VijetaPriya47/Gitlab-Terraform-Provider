@@ -10,8 +10,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	gitlab "gitlab.com/gitlab-org/api/client-go/v2"
-
-	"gitlab.com/gitlab-org/terraform-provider-gitlab/internal/provider/api"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -43,12 +41,13 @@ type gitLabProjectProtectedBranchesDataSourceModel struct {
 
 // gitLabMetadataDataSourceModel describes the data source data model.
 type gitLabProjectProtectedBranchesObjectDataSourceModel struct {
-	Name                      types.String                                      `tfsdk:"name"`
-	Id                        types.Int64                                       `tfsdk:"id"`
-	PushAccessLevels          []*gitlabBranchProtectionAllowedToPushObjectModel `tfsdk:"push_access_levels"`
-	MergeAccessLevels         []*gitlabBranchProtectionAllowedToObjectModel     `tfsdk:"merge_access_levels"`
-	AllowForcePush            types.Bool                                        `tfsdk:"allow_force_push"`
-	CodeOwnerApprovalRequired types.Bool                                        `tfsdk:"code_owner_approval_required"`
+	Name                      types.String `tfsdk:"name"`
+	Id                        types.Int64  `tfsdk:"id"`
+	PushAccessLevels          types.List   `tfsdk:"push_access_levels"`
+	MergeAccessLevels         types.List   `tfsdk:"merge_access_levels"`
+	UnprotectAccessLevels     types.List   `tfsdk:"unprotect_access_levels"`
+	AllowForcePush            types.Bool   `tfsdk:"allow_force_push"`
+	CodeOwnerApprovalRequired types.Bool   `tfsdk:"code_owner_approval_required"`
 }
 
 // Metadata returns the data source type name.
@@ -73,11 +72,10 @@ func (d *gitLabProjectProtectedBranchesDataSource) Schema(_ context.Context, _ d
 				Required:            true,
 				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
-		},
-		Blocks: map[string]schema.Block{
-			"protected_branches": schema.ListNestedBlock{
+			"protected_branches": schema.ListNestedAttribute{
 				MarkdownDescription: "A list of protected branches, as defined below.",
-				NestedObject: schema.NestedBlockObject{
+				Computed:            true,
+				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"id": schema.Int64Attribute{
 							MarkdownDescription: "The ID of this resource.",
@@ -86,7 +84,6 @@ func (d *gitLabProjectProtectedBranchesDataSource) Schema(_ context.Context, _ d
 						"name": schema.StringAttribute{
 							MarkdownDescription: "The name of the protected branch.",
 							Computed:            true,
-							Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 						},
 						"allow_force_push": schema.BoolAttribute{
 							MarkdownDescription: "Whether force push is allowed.",
@@ -96,10 +93,9 @@ func (d *gitLabProjectProtectedBranchesDataSource) Schema(_ context.Context, _ d
 							MarkdownDescription: "Reject code pushes that change files listed in the CODEOWNERS file.",
 							Computed:            true,
 						},
-					},
-					Blocks: map[string]schema.Block{
-						"push_access_levels":  schemaAllowedToPushBlock(api.ValidProtectedBranchTagAccessLevelNames),
-						"merge_access_levels": schemaAllowedToBlock("merge", api.ValidProtectedBranchTagAccessLevelNames),
+						"push_access_levels":      pushAccessLevelsSchema(),
+						"merge_access_levels":     mergeAccessLevelsSchema(),
+						"unprotect_access_levels": unprotectAccessLevelsSchema(),
 					},
 				},
 			},
@@ -153,25 +149,46 @@ func (d *gitLabProjectProtectedBranchesDataSource) Read(ctx context.Context, req
 	}
 
 	state.ProjectId = types.StringValue(project_id)
-	state.ProtectedBranches = populateProtectedBranches(allProtectedBranches)
 	state.Id = types.Int64Value(int64((projectDetails.ID)))
 
-	diags := resp.State.Set(ctx, &state)
-	resp.Diagnostics.Append(diags...)
-}
+	protectedBranches := make([]gitLabProjectProtectedBranchesObjectDataSourceModel, len(allProtectedBranches))
 
-func populateProtectedBranches(pbs []*gitlab.ProtectedBranch) (values []gitLabProjectProtectedBranchesObjectDataSourceModel) {
-	protectedBranches := make([]gitLabProjectProtectedBranchesObjectDataSourceModel, len(pbs))
-
-	for i, protectedBranch := range pbs {
+	for i, protectedBranch := range allProtectedBranches {
 		pb := gitLabProjectProtectedBranchesObjectDataSourceModel{}
 		pb.Id = types.Int64Value(int64(protectedBranch.ID))
 		pb.Name = types.StringValue(protectedBranch.Name)
 		pb.AllowForcePush = types.BoolValue(protectedBranch.AllowForcePush)
 		pb.CodeOwnerApprovalRequired = types.BoolValue(protectedBranch.CodeOwnerApprovalRequired)
-		pb.PushAccessLevels = populateAllowedToPushObjectList(protectedBranch.PushAccessLevels)
-		pb.MergeAccessLevels = populateAllowedToObjectList(protectedBranch.MergeAccessLevels)
+
+		pushAccessLevelsData := populateAllowedToPushToStateModel(protectedBranch.PushAccessLevels)
+		pushAccessLevelsSetType, diag := types.ListValueFrom(ctx, pushAccessLevelsSchema().NestedObject.Type(), pushAccessLevelsData)
+		resp.Diagnostics.Append(diag...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		pb.PushAccessLevels = pushAccessLevelsSetType
+
+		mergeAccessLevelsData := populateAllowedToToStateModel(protectedBranch.MergeAccessLevels)
+		mergeAccessLevelsSetType, diag := types.ListValueFrom(ctx, mergeAccessLevelsSchema().NestedObject.Type(), mergeAccessLevelsData)
+		resp.Diagnostics.Append(diag...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		pb.MergeAccessLevels = mergeAccessLevelsSetType
+
+		unprotectAccessLevelsData := populateAllowedToToStateModel(protectedBranch.UnprotectAccessLevels)
+		unprotectAccessLevelsSetType, diag := types.ListValueFrom(ctx, unprotectAccessLevelsSchema().NestedObject.Type(), unprotectAccessLevelsData)
+		resp.Diagnostics.Append(diag...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		pb.UnprotectAccessLevels = unprotectAccessLevelsSetType
+
 		protectedBranches[i] = pb
 	}
-	return protectedBranches
+
+	state.ProtectedBranches = protectedBranches
+
+	diags := resp.State.Set(ctx, &state)
+	resp.Diagnostics.Append(diags...)
 }
