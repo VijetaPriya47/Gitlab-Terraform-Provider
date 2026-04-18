@@ -537,6 +537,29 @@ func CreateProtectedBranches(t *testing.T, project *gitlab.Project, n int) []*gi
 	return protectedBranches
 }
 
+// CreateProtectedBranchWithOptions is a test helper for creating a protected branch with specified options.
+// It assumes the project will be destroyed at the end of the test and will not cleanup created branches.
+func CreateProtectedBranchWithOptions(t *testing.T, project *gitlab.Project, options *gitlab.ProtectRepositoryBranchesOptions) *gitlab.ProtectedBranch {
+	t.Helper()
+
+	branchName := acctest.RandomWithPrefix("acctest")
+	// use the name provided on the options, otherwise if not provided use a random one
+	if options.Name != nil && *options.Name != "" {
+		branchName = *options.Name
+	} else {
+		options.Name = gitlab.Ptr(branchName)
+	}
+
+	CreateBranch(t, project, branchName)
+
+	protectedBranch, _, err := TestGitlabClient.ProtectedBranches.ProtectRepositoryBranches(project.ID, options)
+	if err != nil {
+		t.Fatalf("could not protect test branch: %v", err)
+	}
+
+	return protectedBranch
+}
+
 // CreateTags is a test helper for creating a specified number of tags.
 // It assumes the project will be destroyed at the end of the test and will not cleanup created tags.
 func CreateTags(t *testing.T, project *gitlab.Project, n int) []*gitlab.Tag {
