@@ -71,8 +71,6 @@ type gitlabComplianceControlModel struct {
 	Name        types.String `tfsdk:"name"`
 	ControlType types.String `tfsdk:"control_type"`
 	Expression  types.Object `tfsdk:"expression"`
-	ExternalURL types.String `tfsdk:"external_url"`
-	SecretToken types.String `tfsdk:"secret_token"`
 }
 
 type gitlabControlExpressionModel struct {
@@ -115,7 +113,8 @@ Compliance requirements define specific compliance conditions that projects must
 			},
 			"description": schema.StringAttribute{
 				MarkdownDescription: "Description for the compliance requirement.",
-				Optional:            true,
+				Required:            true,
+				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
 			"controls": schema.ListNestedAttribute{
 				MarkdownDescription: "List of controls for this compliance requirement. Controls define how compliance is verified.",
@@ -131,20 +130,11 @@ Compliance requirements define specific compliance conditions that projects must
 							Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 						},
 						"control_type": schema.StringAttribute{
-							MarkdownDescription: fmt.Sprintf("Type of control. Valid values are %s.", utils.RenderValueListForDocs(api.ValidComplianceControlTypes)),
+							MarkdownDescription: fmt.Sprintf("Type of control. Valid values are %s.", utils.RenderValueListForDocs([]string{"internal"})),
 							Required:            true,
 							Validators: []validator.String{
-								stringvalidator.OneOf(api.ValidComplianceControlTypes...),
+								stringvalidator.OneOf("internal"),
 							},
-						},
-						"external_url": schema.StringAttribute{
-							MarkdownDescription: "External URL for external controls. Required when `control_type` is `external`.",
-							Optional:            true,
-						},
-						"secret_token": schema.StringAttribute{
-							MarkdownDescription: "Secret token for external controls. Optional when `control_type` is `external`.",
-							Optional:            true,
-							Sensitive:           true,
 						},
 						"expression": schema.SingleNestedAttribute{
 							MarkdownDescription: "Expression for internal controls. Required when `control_type` is `internal`.",
@@ -200,22 +190,12 @@ func (r *gitlabComplianceRequirementResource) ValidateConfig(ctx context.Context
 
 		controlType := control.ControlType.ValueString()
 
-		if controlType == "external" {
-			if control.ExternalURL.IsNull() {
-				resp.Diagnostics.AddAttributeError(
-					path.Root("controls").AtListIndex(i).AtName("external_url"),
-					"Missing Attribute Configuration",
-					"external_url is required when control_type is 'external'",
-				)
-			}
-		} else if controlType == "internal" {
-			if control.Expression.IsNull() {
-				resp.Diagnostics.AddAttributeError(
-					path.Root("controls").AtListIndex(i).AtName("expression"),
-					"Missing Block Configuration",
-					"expression block is required when control_type is 'internal'",
-				)
-			}
+		if controlType == "internal" && control.Expression.IsNull() {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("controls").AtListIndex(i).AtName("expression"),
+				"Missing Block Configuration",
+				"expression block is required when control_type is 'internal'",
+			)
 		}
 	}
 }
@@ -369,11 +349,7 @@ func (r *gitlabComplianceRequirementResource) Read(ctx context.Context, req reso
 	requirement := response.Data.ComplianceFramework.ComplianceRequirements.Nodes[0]
 	data.FrameworkId = types.StringValue(frameworkID)
 	data.Name = types.StringValue(requirement.Name)
-	if requirement.Description != "" {
-		data.Description = types.StringValue(requirement.Description)
-	} else {
-		data.Description = types.StringNull()
-	}
+	data.Description = types.StringValue(requirement.Description)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -532,63 +508,51 @@ func (r *gitlabComplianceRequirementResource) buildControlsInput(ctx context.Con
 		var controlStr string
 		controlType := control.ControlType.ValueString()
 
-		if controlType == "external" {
-			externalURL := control.ExternalURL.ValueString()
-			secretToken := control.SecretToken.ValueString()
+		if controlType != "internal" {
+			return "", fmt.Errorf("unsupported control_type %q: only \"internal\" is currently supported", controlType)
+		}
+
+		// Internal control with expression.
+		// The API accepts `expression` as a JSON string, e.g. '{"field":"...","operator":"...","value":...}'.
+		var expr gitlabControlExpressionModel
+		if !control.Expression.IsNull() && !control.Expression.IsUnknown() {
+			diags := control.Expression.As(ctx, &expr, basetypes.ObjectAsOptions{})
+			if diags.HasError() {
+				return "", fmt.Errorf("failed to parse expression")
+			}
+
+			// Serialize expression as JSON. The value may be a boolean or a string.
+			value := expr.Value.ValueString()
+			var jsonValue any
+			if value == "true" {
+				jsonValue = true
+			} else if value == "false" {
+				jsonValue = false
+			} else {
+				jsonValue = value
+			}
+
+			exprJSON, err := json.Marshal(map[string]any{
+				"field":    expr.Field.ValueString(),
+				"operator": strings.ToLower(expr.Operator.ValueString()),
+				"value":    jsonValue,
+			})
+			if err != nil {
+				return "", fmt.Errorf("failed to serialize expression: %w", err)
+			}
+
 			controlStr = fmt.Sprintf(`{
 				name: "%s",
-				controlType: "external",
-				externalUrl: "%s"`,
+				controlType: "internal",
+				expression: "%s"
+			}`,
 				escapeGraphQLString(control.Name.ValueString()),
-				escapeGraphQLString(externalURL))
-			if secretToken != "" {
-				controlStr += fmt.Sprintf(`,
-				secretToken: "%s"`, escapeGraphQLString(secretToken))
-			}
-			controlStr += `}`
+				escapeGraphQLString(string(exprJSON)))
 		} else {
-			// Internal control with expression.
-			// The API accepts `expression` as a JSON string, e.g. '{"field":"...","operator":"...","value":...}'.
-			var expr gitlabControlExpressionModel
-			if !control.Expression.IsNull() && !control.Expression.IsUnknown() {
-				diags := control.Expression.As(ctx, &expr, basetypes.ObjectAsOptions{})
-				if diags.HasError() {
-					return "", fmt.Errorf("failed to parse expression")
-				}
-
-				// Serialize expression as JSON. The value may be a boolean or a string.
-				value := expr.Value.ValueString()
-				var jsonValue any
-				if value == "true" {
-					jsonValue = true
-				} else if value == "false" {
-					jsonValue = false
-				} else {
-					jsonValue = value
-				}
-
-				exprJSON, err := json.Marshal(map[string]any{
-					"field":    expr.Field.ValueString(),
-					"operator": strings.ToLower(expr.Operator.ValueString()),
-					"value":    jsonValue,
-				})
-				if err != nil {
-					return "", fmt.Errorf("failed to serialize expression: %w", err)
-				}
-
-				controlStr = fmt.Sprintf(`{
-					name: "%s",
-					controlType: "internal",
-					expression: "%s"
-				}`,
-					escapeGraphQLString(control.Name.ValueString()),
-					escapeGraphQLString(string(exprJSON)))
-			} else {
-				controlStr = fmt.Sprintf(`{
-					name: "%s",
-					controlType: "internal"
-				}`, escapeGraphQLString(control.Name.ValueString()))
-			}
+			controlStr = fmt.Sprintf(`{
+				name: "%s",
+				controlType: "internal"
+			}`, escapeGraphQLString(control.Name.ValueString()))
 		}
 		controlStrings = append(controlStrings, controlStr)
 	}

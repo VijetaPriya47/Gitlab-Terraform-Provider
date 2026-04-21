@@ -34,49 +34,10 @@ resource "gitlab_compliance_requirement" "internal_control" {
 
     expression = {
       field    = "scanner_dep_scanning_running"
-      operator = "equals"
+      operator = "="
       value    = "true"
     }
   }]
-}
-
-# Example: Create a compliance requirement with an external control
-resource "gitlab_compliance_requirement" "external_control" {
-  framework_id = gitlab_compliance_framework.example.framework_id
-  name         = "External Audit Verification"
-  description  = "Verification via external audit service"
-
-  controls = [{
-    name         = "External Audit Report"
-    control_type = "external"
-    external_url = "https://example.com/audit-report"
-    secret_token = var.audit_secret_token # Use a variable for sensitive values
-  }]
-}
-
-# Example: Create a compliance requirement with multiple controls
-resource "gitlab_compliance_requirement" "multiple_controls" {
-  framework_id = gitlab_compliance_framework.example.framework_id
-  name         = "Comprehensive Security Check"
-  description  = "Multiple security controls for compliance"
-
-  controls = [
-    {
-      name         = "scanner_dep_scanning_running"
-      control_type = "internal"
-
-      expression = {
-        field    = "scanner_dep_scanning_running"
-        operator = "equals"
-        value    = "true"
-      }
-    },
-    {
-      name         = "External Security Audit"
-      control_type = "external"
-      external_url = "https://example.com/security-audit"
-    }
-  ]
 }
 ```
 
@@ -85,13 +46,13 @@ resource "gitlab_compliance_requirement" "multiple_controls" {
 
 ### Required
 
+- `description` (String) Description for the compliance requirement.
 - `framework_id` (String) The globally unique ID of the compliance framework to add the requirement to.
 - `name` (String) Name for the compliance requirement.
 
 ### Optional
 
 - `controls` (Attributes List) List of controls for this compliance requirement. Controls define how compliance is verified. (see [below for nested schema](#nestedatt--controls))
-- `description` (String) Description for the compliance requirement.
 
 ### Read-Only
 
@@ -102,14 +63,12 @@ resource "gitlab_compliance_requirement" "multiple_controls" {
 
 Required:
 
-- `control_type` (String) Type of control. Valid values are `internal`, `external`.
+- `control_type` (String) Type of control. Valid values are `internal`.
 - `name` (String) Name of the control.
 
 Optional:
 
 - `expression` (Attributes) Expression for internal controls. Required when `control_type` is `internal`. (see [below for nested schema](#nestedatt--controls--expression))
-- `external_url` (String) External URL for external controls. Required when `control_type` is `external`.
-- `secret_token` (String, Sensitive) Secret token for external controls. Optional when `control_type` is `external`.
 
 <a id="nestedatt--controls--expression"></a>
 ### Nested Schema for `controls.expression`
